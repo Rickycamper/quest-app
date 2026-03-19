@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 import { useState } from 'react'
 import { NOTIF_CONFIG, ROLE_CONFIG } from '../lib/constants'
-import { respondToMatch } from '../lib/supabase'
+import { respondToMatch, markNotificationResponded } from '../lib/supabase'
 
 const NOTIF_TAB = {
   package_arrived:    'tracking',
@@ -29,9 +29,13 @@ function MatchActions({ notif, onResponded }) {
     setBusy(true)
     setErr('')
     try {
-      await respondToMatch(notif.meta.matchId, accept)
+      const matchMeta = typeof notif.meta === 'string' ? JSON.parse(notif.meta) : notif.meta
+      const finalStatus = accept ? 'confirmed' : 'rejected'
+      await respondToMatch(matchMeta.matchId, accept)
+      // Persist the response in the notification meta so it survives a refresh
+      await markNotificationResponded(notif.id, finalStatus)
       setDone(accept ? 'accepted' : 'rejected')
-      onResponded?.(notif.id)
+      onResponded?.(notif.id, finalStatus)
     } catch (e) {
       setErr(e.message || 'Error')
       setBusy(false)
@@ -84,9 +88,17 @@ function NotifCard({ notif, onRead, onNavigate, onMatchResponded }) {
   const title = notif.title.split(' ').slice(1).join(' ')
   const timeAgo = new Date(notif.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
 
-  // Pending match = opponent needs to confirm/reject
-  // Only show for unread notifications — once read (after responding) buttons don't reappear
-  const isPendingMatch = notif.type === 'match_result' && notif.meta?.status === 'pending' && !notif.read
+  // Parse meta safely (realtime delivers jsonb as string)
+  const meta = typeof notif.meta === 'string'
+    ? (() => { try { return JSON.parse(notif.meta) } catch { return {} } })()
+    : (notif.meta || {})
+
+  // Show confirm/reject buttons if: it's a match result, has a matchId, and user hasn't responded yet
+  const isPendingMatch = notif.type === 'match_result' &&
+    !!meta.matchId &&
+    meta.status !== 'responded' &&
+    meta.status !== 'confirmed' &&
+    meta.status !== 'rejected'
 
   const handleClick = () => {
     if (isPendingMatch) return   // don't navigate — user must respond first
@@ -124,7 +136,7 @@ function NotifCard({ notif, onRead, onNavigate, onMatchResponded }) {
           <div style={{ fontSize: 11, color: '#374151', marginTop: 5 }}>{timeAgo}</div>
           {/* Accept / Reject buttons for pending match requests */}
           {isPendingMatch && (
-            <MatchActions notif={notif} onResponded={(id) => { onRead(id); onMatchResponded?.(id) }} />
+            <MatchActions notif={notif} onResponded={(id, status) => { onRead(id); onMatchResponded?.(id, status) }} />
           )}
         </div>
         {!notif.read && !isPendingMatch && (
@@ -147,15 +159,16 @@ function NotifCard({ notif, onRead, onNavigate, onMatchResponded }) {
   )
 }
 
-export default function NotificationPanel({ profile, notifications, onClose, onMarkRead, onMarkAll, onNavigate }) {
+export default function NotificationPanel({ profile, notifications, onClose, onMarkRead, onMarkAll, onMarkResponded, onNavigate }) {
   // Track locally which pending match notifications have been responded to (to hide buttons immediately)
   const [respondedIds, setRespondedIds] = useState(new Set())
 
-  const augmented = notifications.map(n =>
-    respondedIds.has(n.id) && n.meta?.status === 'pending'
-      ? { ...n, meta: { ...n.meta, status: 'responded' } }
-      : n
-  )
+  const augmented = notifications.map(n => {
+    const m = typeof n.meta === 'string' ? (() => { try { return JSON.parse(n.meta) } catch { return {} } })() : (n.meta || {})
+    return respondedIds.has(n.id) && m.status === 'pending'
+      ? { ...n, meta: { ...m, status: 'responded' } }
+      : { ...n, meta: m }
+  })
 
   const unreadList = augmented.filter(n => !n.read)
   const readList   = augmented.filter(n =>  n.read)
@@ -163,8 +176,9 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
   const rc = ROLE_CONFIG[profile?.role] || ROLE_CONFIG.client
   const isStaff = profile?.role === 'staff' || profile?.role === 'admin'
 
-  const handleMatchResponded = (id) => {
+  const handleMatchResponded = (id, status) => {
     setRespondedIds(prev => new Set([...prev, id]))
+    onMarkResponded?.(id, status)  // update local state in hook so refresh doesn't show buttons again
   }
 
   return (

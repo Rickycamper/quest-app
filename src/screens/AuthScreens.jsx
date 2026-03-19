@@ -125,8 +125,14 @@ export function EmailSignupScreen({ onBack, onDone }) {
     if (password.length < 6)  { setError('Mínimo 6 caracteres'); return }
     setLoading(true); setError('')
     try {
-      await signUpWithEmail(email, password, email.split('@')[0])
-      setSuccess(true)
+      const data = await signUpWithEmail(email, password, email.split('@')[0])
+      // Session returned directly = email confirmation is disabled → log in right away
+      if (data?.session) {
+        onDone?.()
+      } else {
+        // Email confirmation is enabled → show "check your inbox" screen
+        setSuccess(true)
+      }
     } catch (e) {
       setError(e.message)
     }

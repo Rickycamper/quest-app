@@ -24,7 +24,10 @@
       "Bash(curl -s -X POST \"https://qattyrdmlbolocnzczos.supabase.co/rest/v1/posts\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhdHR5cmRtbGJvbG9jbnpjem9zIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzI3MjExNCwiZXhwIjoyMDg4ODQ4MTE0fQ.fxCBVVgewzFfWEMF3_MfShfsi2A5oThXLrHl0tXCrJs\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhdHR5cmRtbGJvbG9jbnpjem9zIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzI3MjExNCwiZXhwIjoyMDg4ODQ4MTE0fQ.fxCBVVgewzFfWEMF3_MfShfsi2A5oThXLrHl0tXCrJs\" -H \"Content-Type: application/json\" -d '{\"\"tag\"\":\"\"Pok\\\\u00e9mon\"\",\"\"caption\"\":\"\"test\"\",\"\"user_id\"\":\"\"00000000-0000-0000-0000-000000000000\"\"}')",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://qattyrdmlbolocnzczos.supabase.co/rest/v1/posts?select=id&limit=1\" -H \"apikey: sb_publishable_HXqZnx4aN1oHHqil2xEMTQ_xs_MSCM-\" -H \"Authorization: Bearer sb_publishable_HXqZnx4aN1oHHqil2xEMTQ_xs_MSCM-\")",
       "Bash(curl -s \"https://qattyrdmlbolocnzczos.supabase.co/rest/v1/posts?select=id,caption,tag,image_url,created_at,profiles:user_id\\(id,username,avatar_url\\)&limit=3\" -H \"apikey: sb_publishable_HXqZnx4aN1oHHqil2xEMTQ_xs_MSCM-\" -H \"Authorization: Bearer sb_publishable_HXqZnx4aN1oHHqil2xEMTQ_xs_MSCM-\")",
-      "Bash(curl -s \"https://qattyrdmlbolocnzczos.supabase.co/rest/v1/posts?select=id,post_likes\\(count\\),post_comments\\(count\\)&limit=2\" -H \"apikey: sb_publishable_HXqZnx4aN1oHHqil2xEMTQ_xs_MSCM-\" -H \"Authorization: Bearer sb_publishable_HXqZnx4aN1oHHqil2xEMTQ_xs_MSCM-\" -H \"Prefer: count=exact\")"
+      "Bash(curl -s \"https://qattyrdmlbolocnzczos.supabase.co/rest/v1/posts?select=id,post_likes\\(count\\),post_comments\\(count\\)&limit=2\" -H \"apikey: sb_publishable_HXqZnx4aN1oHHqil2xEMTQ_xs_MSCM-\" -H \"Authorization: Bearer sb_publishable_HXqZnx4aN1oHHqil2xEMTQ_xs_MSCM-\" -H \"Prefer: count=exact\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

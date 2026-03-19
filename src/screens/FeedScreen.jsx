@@ -107,6 +107,10 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   }
 
   const handleDelete = async () => {
+    // Admin deleting someone else's post — ask for confirmation
+    if (!isOwnPost && isStaff) {
+      if (!window.confirm(`¿Eliminar el post de @${post.profiles?.username ?? 'este usuario'}?`)) return
+    }
     setShowMenu(false)
     setDeleting(true)
     try { await deletePost(post.id); onDeleted?.(post.id) } catch {}
@@ -116,6 +120,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   const gs = GAME_STYLES[post.tag] ?? GAME_STYLES['MTG']
   const authorId   = post.profiles?.id
   const isOwnPost  = currentUserId && authorId === currentUserId
+  const canDelete  = isOwnPost || isStaff
   const isFollowed = following?.has(authorId)
 
   const handleLike = async () => {
@@ -307,18 +312,20 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
                       </svg>
                     </button>
                   )}
-                  {/* Delete */}
-                  <button onClick={handleDelete} disabled={deleting} style={{ ...menuIconBtn, color: '#F87171' }}>
-                    {deleting
-                      ? <span style={{ fontSize: 13 }}>···</span>
-                      : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6"/>
-                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                          <path d="M10 11v6M14 11v6"/>
-                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                        </svg>
-                    }
-                  </button>
+                  {/* Delete — own post or staff/admin */}
+                  {canDelete && (
+                    <button onClick={handleDelete} disabled={deleting} style={{ ...menuIconBtn, color: '#F87171' }}>
+                      {deleting
+                        ? <span style={{ fontSize: 13 }}>···</span>
+                        : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                            <path d="M10 11v6M14 11v6"/>
+                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                          </svg>
+                      }
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -384,12 +391,18 @@ const menuIconBtn = {
   transition: 'background 0.15s, color 0.15s',
 }
 
+const PULL_THRESHOLD = 65  // px needed to trigger refresh
+
 export default function FeedScreen({ profile, isStaff, onViewProfile }) {
-  const [posts,     setPosts]     = useState([])
-  const [game,      setGame]      = useState(null)
-  const [loading,   setLoading]   = useState(true)
-  const [error,     setError]     = useState('')
-  const [following, setFollowing] = useState(new Set())
+  const [posts,      setPosts]      = useState([])
+  const [game,       setGame]       = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState('')
+  const [following,  setFollowing]  = useState(new Set())
+  const [pullY,      setPullY]      = useState(0)   // 0‥PULL_THRESHOLD, drives indicator
+  const [refreshing, setRefreshing] = useState(false)
+  const touchStartY = useRef(0)
+  const pulling     = useRef(false)
 
   useEffect(() => {
     getFollowing().then(setFollowing).catch(() => {})
@@ -406,6 +419,48 @@ export default function FeedScreen({ profile, isStaff, onViewProfile }) {
 
   useEffect(() => { loadFeed() }, [game])
 
+  // Pull-to-refresh — attach to the parent .screen-scroll container
+  useEffect(() => {
+    const scroller = document.querySelector('.screen-scroll')
+    if (!scroller) return
+
+    const onTouchStart = (e) => {
+      if (scroller.scrollTop === 0) {
+        touchStartY.current = e.touches[0].clientY
+        pulling.current = true
+      }
+    }
+    const onTouchMove = (e) => {
+      if (!pulling.current) return
+      const dy = e.touches[0].clientY - touchStartY.current
+      if (dy > 0) {
+        e.preventDefault()
+        setPullY(Math.min(dy * 0.45, PULL_THRESHOLD))
+      }
+    }
+    const onTouchEnd = () => {
+      if (!pulling.current) return
+      pulling.current = false
+      setPullY(prev => {
+        if (prev >= PULL_THRESHOLD) {
+          setRefreshing(true)
+          loadFeed()
+          setTimeout(() => setRefreshing(false), 800)
+        }
+        return 0
+      })
+    }
+
+    scroller.addEventListener('touchstart', onTouchStart, { passive: true })
+    scroller.addEventListener('touchmove',  onTouchMove,  { passive: false })
+    scroller.addEventListener('touchend',   onTouchEnd,   { passive: true })
+    return () => {
+      scroller.removeEventListener('touchstart', onTouchStart)
+      scroller.removeEventListener('touchmove',  onTouchMove)
+      scroller.removeEventListener('touchend',   onTouchEnd)
+    }
+  }, [game])
+
   const handleFollowChange = (userId, nowFollowing) => {
     setFollowing(prev => {
       const next = new Set(prev)
@@ -419,8 +474,35 @@ export default function FeedScreen({ profile, isStaff, onViewProfile }) {
     setPosts(prev => prev.filter(p => p.id !== postId))
   }
 
+  const pullProgress = pullY / PULL_THRESHOLD   // 0 → 1
+  const showIndicator = pullY > 8 || refreshing
+
   return (
     <div>
+      {/* Pull-to-refresh indicator */}
+      {showIndicator && (
+        <div style={{
+          position: 'fixed', top: 56 + (refreshing ? 12 : pullY * 0.18), left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+          borderRadius: 20, padding: '6px 16px',
+          fontSize: 12, fontWeight: 700, color: '#9CA3AF',
+          fontFamily: 'Inter, sans-serif', zIndex: 100,
+          display: 'flex', alignItems: 'center', gap: 6,
+          backdropFilter: 'blur(8px)',
+          opacity: refreshing ? 1 : pullProgress,
+          transition: refreshing ? 'opacity 0.2s' : 'none',
+          pointerEvents: 'none',
+        }}>
+          <div style={{
+            width: 12, height: 12, borderRadius: '50%',
+            border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#FFF',
+            animation: refreshing ? 'spin 0.6s linear infinite' : 'none',
+            transform: refreshing ? undefined : `rotate(${pullProgress * 540}deg)`,
+          }} />
+          {refreshing ? 'Actualizando…' : pullProgress >= 1 ? '↑ Soltá para recargar' : '↓ Jalá para recargar'}
+        </div>
+      )}
       {/* Game filter */}
       <div className="filter-scroll" style={{ padding: '12px 20px 4px' }}>
         <button onClick={() => setGame(null)} style={{

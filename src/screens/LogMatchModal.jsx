@@ -4,21 +4,21 @@
 // Only Finals post to the feed.
 // Includes user search so you don't need to open a profile first.
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { logMatch, searchUsers } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
+import GameIcon from '../components/GameIcon'
 
 export default function LogMatchModal({ opponent: preselected, onClose, onLogged }) {
   const { profile } = useAuth()
 
   // Opponent selection
   const [opponent,    setOpponent]   = useState(preselected ?? null)
-  const [query,       setQuery]      = useState(preselected ? preselected.username : '')
-  const [results,     setResults]    = useState([])
-  const [searching,   setSearching]  = useState(false)
-  const searchTimer = useRef(null)
+  const [query,       setQuery]      = useState('')
+  const [allUsers,    setAllUsers]   = useState([])   // full list loaded once on mount
+  const [loadingUsers, setLoadingUsers] = useState(false)
 
   // Match config
   const [matchType, setMatchType] = useState('casual')   // 'casual' | 'final'
@@ -30,40 +30,31 @@ export default function LogMatchModal({ opponent: preselected, onClose, onLogged
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
 
-  // Live user search (debounced 300 ms)
+  // Load all users once when modal opens (only if no preselected opponent)
   useEffect(() => {
-    if (opponent) { setResults([]); return }        // already selected
-    clearTimeout(searchTimer.current)
-    if (query.trim().length < 2) { setResults([]); setSearching(false); return }
-    searchTimer.current = setTimeout(async () => {
-      setSearching(true)
-      setError('')
-      try {
-        const data = await searchUsers(query.trim())
-        // Exclude yourself
-        setResults((data ?? []).filter(u => u.id !== profile?.id))
-      } catch (e) {
-        console.error('User search error:', e)
-        setError('Error al buscar jugadores')
-        setResults([])
-      } finally {
-        setSearching(false)
-      }
-    }, 300)
-    return () => clearTimeout(searchTimer.current)
-  }, [query, opponent, profile?.id])
+    if (preselected) return   // already have opponent, no need to load users
+    setLoadingUsers(true)
+    searchUsers('')            // empty string → fetch up to 50 users
+      .then(data => setAllUsers((data ?? []).filter(u => u.id !== profile?.id)))
+      .catch(e => { console.error('Load users error:', e); setError('Error al cargar jugadores') })
+      .finally(() => setLoadingUsers(false))
+  }, [profile?.id])
+
+  // Client-side filter — instant, no debounce needed
+  const q = query.trim().toLowerCase()
+  const results = q.length === 0
+    ? allUsers
+    : allUsers.filter(u => u.username?.toLowerCase().includes(q))
 
   const selectOpponent = (u) => {
     setOpponent(u)
-    setQuery(u.username)
-    setResults([])
+    setQuery('')
     setError('')
   }
 
   const clearOpponent = () => {
     setOpponent(null)
     setQuery('')
-    setResults([])
     setError('')
   }
 
@@ -145,14 +136,17 @@ export default function LogMatchModal({ opponent: preselected, onClose, onLogged
                   boxSizing: 'border-box',
                 }}
               />
-              {/* Results list — inline so the modal scrolls to show them */}
-              {searching && (
-                <div style={{ padding: '8px 12px', fontSize: 12, color: '#555', fontFamily: 'Inter, sans-serif' }}>Buscando…</div>
+              {/* Results list — loads instantly, filtered client-side */}
+              {loadingUsers && (
+                <div style={{ padding: '8px 12px', fontSize: 12, color: '#555', fontFamily: 'Inter, sans-serif' }}>Cargando jugadores…</div>
               )}
-              {!searching && results.length === 0 && query.trim().length >= 2 && (
-                <div style={{ padding: '8px 12px', fontSize: 12, color: '#555', fontFamily: 'Inter, sans-serif' }}>Sin resultados</div>
+              {!loadingUsers && allUsers.length === 0 && (
+                <div style={{ padding: '8px 12px', fontSize: 12, color: '#555', fontFamily: 'Inter, sans-serif' }}>No hay jugadores aún</div>
               )}
-              {results.length > 0 && (
+              {!loadingUsers && allUsers.length > 0 && results.length === 0 && query.trim().length > 0 && (
+                <div style={{ padding: '8px 12px', fontSize: 12, color: '#555', fontFamily: 'Inter, sans-serif' }}>Sin resultados para "{query}"</div>
+              )}
+              {!loadingUsers && results.length > 0 && (
                 <div style={{ background: '#1A1A1F', border: '1px solid #2A2A2A', borderRadius: 10, overflow: 'hidden' }}>
                   {results.map((u, i) => (
                     <button key={u.id} onClick={() => selectOpponent(u)} style={{
@@ -205,7 +199,7 @@ export default function LogMatchModal({ opponent: preselected, onClose, onLogged
                   fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
                   transition: 'all 0.15s',
                 }}>
-                  {gs.emoji} {g}
+                  <GameIcon game={g} size={14} /> {g}
                 </button>
               )
             })}

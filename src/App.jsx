@@ -12,16 +12,17 @@ import ProfileScreen     from './screens/ProfileScreen'
 import EditProfileScreen from './screens/EditProfileScreen'
 import RankingsScreen  from './screens/RankingsScreen'
 import FolderScreen    from './screens/FolderScreen'
-import TrackingScreen  from './screens/TrackingScreen'
+import TrackingScreen, { CreatePackageModal } from './screens/TrackingScreen'
 import CreatePostModal        from './screens/CreatePostModal'
 import ClaimModal             from './screens/ClaimModal'
 import CreateTournamentModal  from './screens/CreateTournamentModal'
 import AdminScreen            from './screens/AdminScreen'
 import ChatScreen             from './screens/ChatScreen'
 import LogMatchModal          from './screens/LogMatchModal'
+import SearchScreen           from './screens/SearchScreen'
 
 import { BottomNav, NotifBell } from './components/Nav'
-import { ShieldIcon } from './components/Icons'
+import { ShieldIcon, SearchIcon } from './components/Icons'
 import NotificationPanel from './components/NotificationPanel'
 import Avatar from './components/Avatar'
 
@@ -48,6 +49,7 @@ const globalCSS = `
   @keyframes spin     { to{transform:rotate(360deg)} }
   @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:0.4} }
   @keyframes bounce   { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-18px)} 60%{transform:translateY(-10px)} }
+  @keyframes fadeInOut{ 0%{opacity:0;transform:translateX(-50%) translateY(-6px)} 20%,80%{opacity:1;transform:translateX(-50%) translateY(0)} 100%{opacity:0;transform:translateX(-50%) translateY(-6px)} }
 `
 
 function AuthFlow() {
@@ -62,9 +64,10 @@ function AuthFlow() {
 
 function MainApp() {
   const { profile, isStaff } = useAuth()
-  const { notifications, unreadCount, markRead, markAll } = useNotifications()
+  const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
   const [activeTab,      setActiveTab]     = useState('feed')
   const [showNotifs,      setShowNotifs]     = useState(false)
+  const [showSearch,      setShowSearch]     = useState(false)
   const [showPost,        setShowPost]       = useState(false)
   const [showClaim,       setShowClaim]      = useState(false)
   const [showTournament,  setShowTournament] = useState(false)
@@ -73,8 +76,10 @@ function MainApp() {
   const [showEditProfile, setShowEditProfile]= useState(false)
   const [chatUser,        setChatUser]       = useState(null)   // { id, username }
   const [vsUser,          setVsUser]         = useState(null)   // { id, username } | null = no preselect
-  const [showMatchModal,  setShowMatchModal] = useState(false)
-  const [headerHidden,    setHeaderHidden]   = useState(false)
+  const [showMatchModal,    setShowMatchModal]    = useState(false)
+  const [showPackageCreate, setShowPackageCreate] = useState(false)
+  const [packageRefreshKey, setPackageRefreshKey] = useState(0)
+  const [headerHidden,      setHeaderHidden]      = useState(false)
   const lastScrollY = useRef(0)
 
   const handleScroll = (e) => {
@@ -91,17 +96,30 @@ function MainApp() {
     feed:     <FeedScreen     profile={profile} isStaff={isStaff} onViewProfile={handleViewProfile} />,
     ranks:    <RankingsScreen profile={profile} isStaff={isStaff} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} />,
     folder:   <FolderScreen   profile={profile} />,
-    tracking: <TrackingScreen profile={profile} isStaff={isStaff} />,
-  }), [profile, isStaff, handleViewProfile])
+    search:   <SearchScreen   onViewProfile={handleViewProfile} />,
+    tracking: <TrackingScreen profile={profile} isStaff={isStaff} onNewPackage={() => setShowPackageCreate(true)} refreshKey={packageRefreshKey} />,
+  }), [profile, isStaff, handleViewProfile, packageRefreshKey])
 
   return (
     <>
       {showNotifs && (
         <NotificationPanel profile={profile} notifications={notifications}
           onClose={() => setShowNotifs(false)} onMarkRead={markRead} onMarkAll={markAll}
+          onMarkResponded={markResponded}
           onNavigate={(tab) => { setActiveTab(tab); setShowNotifs(false) }} />
       )}
-      {showPost  && <CreatePostModal onClose={() => setShowPost(false)} />}
+      {showPost   && <CreatePostModal onClose={() => setShowPost(false)} />}
+      {showSearch && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 200, background: '#0A0A0A', display: 'flex', flexDirection: 'column', animation: 'slideDown 0.22s ease' }}>
+          <div style={{ padding: '52px 16px 0', display: 'flex', alignItems: 'center', gap: 10, background: '#111', borderBottom: '1px solid #1F1F1F', paddingBottom: 12 }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', flex: 1 }}>Buscar jugadores</span>
+            <button onClick={() => setShowSearch(false)} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: 20 }}>✕</button>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none' }}>
+            <SearchScreen onViewProfile={(id) => { setShowSearch(false); setViewingUserId(id) }} />
+          </div>
+        </div>
+      )}
       {showClaim      && <ClaimModal            onClose={() => setShowClaim(false)} isStaff={isStaff} />}
       {showTournament && <CreateTournamentModal onClose={() => setShowTournament(false)} />}
       {showAdmin && <AdminScreen     onClose={() => setShowAdmin(false)} />}
@@ -152,6 +170,18 @@ function MainApp() {
         />
       )}
 
+      {/* Create Package modal — app-level so it fills full screen without clipping */}
+      {showPackageCreate && (
+        <CreatePackageModal
+          currentUserId={profile?.id}
+          onClose={() => setShowPackageCreate(false)}
+          onCreated={() => {
+            setShowPackageCreate(false)
+            setPackageRefreshKey(k => k + 1)
+          }}
+        />
+      )}
+
       {/* App header — position:absolute so content never reflows when hidden */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: 56, zIndex: 20,
@@ -172,6 +202,11 @@ function MainApp() {
               display: 'flex', alignItems: 'center',
             }}><ShieldIcon size={20} /></button>
           )}
+          <button onClick={() => setShowSearch(true)} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#6B7280', padding: 4, lineHeight: 1,
+            display: 'flex', alignItems: 'center',
+          }}><SearchIcon size={20} /></button>
           <NotifBell count={unreadCount} onClick={() => setShowNotifs(true)} />
           <div onClick={handleOwnProfile} style={{
             width: 34, height: 34, borderRadius: '50%',

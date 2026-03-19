@@ -492,16 +492,14 @@ export async function adjustUserPoints(userId, delta) {
     .from('profiles').select('points').eq('id', userId).single()
   if (fetchErr) throw fetchErr
   const newPoints = Math.max(0, (prof?.points ?? 0) + delta)
-  const { error } = await supabase
-    .from('profiles').update({ points: newPoints }).eq('id', userId)
+  const { error } = await supabase.rpc('set_user_points', { target_id: userId, pts: newPoints })
   if (error) throw error
   return newPoints
 }
 
 export async function setUserPoints(userId, points) {
   const newPoints = Math.max(0, Math.round(Number(points) || 0))
-  const { error } = await supabase
-    .from('profiles').update({ points: newPoints }).eq('id', userId)
+  const { error } = await supabase.rpc('set_user_points', { target_id: userId, pts: newPoints })
   if (error) throw error
   return newPoints
 }
@@ -726,12 +724,16 @@ export async function uploadPackageImage(file) {
 }
 
 export async function searchUsers(query) {
-  if (!query || query.length < 2) return []
-  const { data, error } = await supabase
+  // Empty query loads all users (up to 50) for client-side filtering in the modal
+  let req = supabase
     .from('profiles')
     .select('id, username, avatar_url')
-    .ilike('username', `%${query}%`)
-    .limit(8)
+    .order('username', { ascending: true })
+    .limit(50)
+  if (query && query.length > 0) {
+    req = req.ilike('username', `%${query}%`)
+  }
+  const { data, error } = await req
   if (error) throw error
   return data ?? []
 }
@@ -743,20 +745,19 @@ export async function createNotification(userId, type, title, body, meta = {}) {
 }
 
 export async function createPackage({ originBranch, destinationBranch, recipientId, notes, items, imageUrl }) {
-  const { data: { session } } = await supabase.auth.getSession()
+  // Use SECURITY DEFINER RPC to bypass RLS on insert
+  const { data: newId, error: rpcErr } = await supabase.rpc('create_package_as_user', {
+    p_origin_branch: originBranch,
+    p_destination_branch: destinationBranch,
+    p_recipient_id: recipientId || null,
+    p_notes: notes,
+    p_image_url: imageUrl || null,
+  })
+  if (rpcErr) throw rpcErr
 
-  const { data: pkg, error } = await supabase
+  // Fetch the full package with joins
+  const { data: pkg, error: fetchErr } = await supabase
     .from('packages')
-    .insert({
-      status: 'pending_confirmation',
-      sender_id: session.user.id,
-      created_by: session.user.id,
-      recipient_id: recipientId || null,
-      origin_branch: originBranch,
-      destination_branch: destinationBranch,
-      notes,
-      image_url: imageUrl || null,
-    })
     .select(`
       id, tracking_code, status, origin_branch, destination_branch, created_at, notes,
       sender:sender_id ( id, username ),
@@ -764,8 +765,9 @@ export async function createPackage({ originBranch, destinationBranch, recipient
       package_items ( * ),
       package_events ( * )
     `)
+    .eq('id', newId)
     .single()
-  if (error) throw error
+  if (fetchErr) throw fetchErr
 
   await Promise.all([
     items?.length
@@ -967,6 +969,21 @@ export async function markAllNotificationsRead() {
     .eq('read', false)
 }
 
+/**
+ * Persist the responded status in the notification's meta so it
+ * survives a page refresh (prevents PENDIENTE buttons from reappearing).
+ */
+export async function markNotificationResponded(notifId, status) {
+  // Fetch current meta first to merge (can't do partial jsonb update in JS client easily)
+  const { data } = await supabase
+    .from('notifications').select('meta').eq('id', notifId).single()
+  const updatedMeta = { ...(data?.meta || {}), status }
+  await supabase
+    .from('notifications')
+    .update({ meta: updatedMeta, read: true })
+    .eq('id', notifId)
+}
+
 // ── CHAT ─────────────────────────────────────
 
 /** Returns existing conversation id or creates one (canonical ordering: smaller uuid first) */
@@ -1077,20 +1094,25 @@ export async function logMatch(opponentId, winnerId, game, notes = null, matchTy
 
   const [player_a, player_b] = [me, opponentId].sort()
 
-  const { data: match, error: mErr } = await supabase
+  // Both casual and final require opponent confirmation to keep results accurate
+  const initialStatus = 'pending'
+
+  // Generate UUID ourselves so matchId is always known even if RLS blocks the SELECT after insert
+  const matchId = crypto.randomUUID()
+
+  const { error: mErr } = await supabase
     .from('matches')
-    .insert({ player_a, player_b, winner_id: winnerId, game, notes, logged_by: me, match_type: matchType, status: 'pending' })
-    .select('id')
-    .single()
+    .insert({ id: matchId, player_a, player_b, winner_id: winnerId, game, notes, logged_by: me, match_type: matchType, status: initialStatus })
 
   if (mErr) {
     if (mErr.code === '42P01') throw new Error('Tabla "matches" no encontrada. Ejecuta el SQL en Supabase primero.')
     throw new Error(mErr.message || 'Error al registrar la partida')
   }
 
-  // Notify opponent to confirm — they'll see Accept/Reject buttons in their notif panel
   const iWon = winnerId === me
   const typeLabel = matchType === 'final' ? '🏆 Final' : '⚔️ Casual'
+
+  // Notify opponent to confirm — same flow for both casual and final
   createNotification(
     opponentId,
     'match_result',
@@ -1098,10 +1120,10 @@ export async function logMatch(opponentId, winnerId, game, notes = null, matchTy
       ? `⚔️ @${myProfile?.username} dice que te venció en ${game}`
       : `🏆 @${myProfile?.username} registró tu victoria en ${game}`,
     `${typeLabel}${notes ? ` · ${notes}` : ''} — ¿confirmás el resultado?`,
-    { matchId: match.id, status: 'pending', game, matchType, winnerName, loserName }
+    { matchId, status: 'pending', game, matchType, winnerName, loserName }
   )
 
-  return match
+  return { id: matchId }
 }
 
 /**
@@ -1114,27 +1136,22 @@ export async function respondToMatch(matchId, accept) {
   const me = session.user.id
   const newStatus = accept ? 'confirmed' : 'rejected'
 
-  // Fetch match details
+  // Fetch match details (also gets current status)
   const { data: match, error: fetchErr } = await supabase
     .from('matches')
-    .select('player_a, player_b, winner_id, game, match_type, notes, logged_by')
+    .select('player_a, player_b, winner_id, game, match_type, notes, logged_by, status')
     .eq('id', matchId)
     .single()
   if (fetchErr) throw new Error(fetchErr.message || 'No se encontró la partida')
 
-  // Update status (RLS only allows the opponent, not the logger)
-  // Use .select() so we can detect if 0 rows were updated (match already responded to)
-  const { data: updated, error: updErr } = await supabase
-    .from('matches')
-    .update({ status: newStatus })
-    .eq('id', matchId)
-    .eq('status', 'pending')
-    .select('id')
-  if (updErr) throw new Error(updErr.message || 'Error al responder')
-  if (!updated || updated.length === 0) {
-    // Match was already confirmed/rejected — nothing left to do
-    return { status: 'already_responded' }
-  }
+  if (match.status !== 'pending') return { status: 'already_responded' }
+
+  // Use RPC to bypass enum type issues in the direct UPDATE policy
+  const { error: rpcErr } = await supabase.rpc('respond_to_match', {
+    p_match_id: matchId,
+    p_accept: accept,
+  })
+  if (rpcErr) throw new Error(rpcErr.message || 'Error al responder')
 
   // Fetch responder's username for the notification back to logger
   const { data: respProf } = await supabase
@@ -1167,24 +1184,60 @@ export async function respondToMatch(matchId, accept) {
 
 /**
  * Get head-to-head record between the current user and another user.
- * Returns { wins, losses, total }.
+ * - Non-premium: only matches from the current calendar month (auto-resets on the 1st).
+ * - Premium / admin: all matches after the last manual reset (or all time if never reset).
+ * Returns { wins, losses, total, matches[], myId, cutoff }.
  */
-export async function getHeadToHead(opponentId) {
+export async function getHeadToHead(opponentId, isPremium = false) {
   const { data: { session } } = await supabase.auth.getSession()
   const me = session.user.id
   const [pa, pb] = [me, opponentId].sort()
 
-  const { data, error } = await supabase
+  // Determine the cutoff date
+  let cutoff = null
+  if (isPremium) {
+    // Premium/admin: use the latest manual reset between these two players (either side)
+    const { data: resets } = await supabase
+      .from('h2h_resets')
+      .select('reset_at')
+      .or(`and(initiator_id.eq.${me},opponent_id.eq.${opponentId}),and(initiator_id.eq.${opponentId},opponent_id.eq.${me})`)
+      .order('reset_at', { ascending: false })
+      .limit(1)
+    cutoff = resets?.[0]?.reset_at ?? null   // null = no manual reset, show all time
+  } else {
+    // Free users: only current calendar month
+    const now = new Date()
+    cutoff = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  }
+
+  let query = supabase
     .from('matches')
-    .select('winner_id')
+    .select('id, winner_id, game, match_type, notes, created_at')
     .eq('player_a', pa)
     .eq('player_b', pb)
     .eq('status', 'confirmed')
+    .order('created_at', { ascending: false })
 
+  if (cutoff) query = query.gte('created_at', cutoff)
+
+  const { data, error } = await query
   if (error) throw error
-  const wins   = (data ?? []).filter(m => m.winner_id === me).length
-  const losses = (data ?? []).filter(m => m.winner_id === opponentId).length
-  return { wins, losses, total: wins + losses }
+  const matches = data ?? []
+  const wins    = matches.filter(m => m.winner_id === me).length
+  const losses  = matches.filter(m => m.winner_id === opponentId).length
+  return { wins, losses, total: wins + losses, matches, myId: me, cutoff }
+}
+
+/**
+ * Manually reset the H2H counter against an opponent (premium / admin only).
+ * Inserts a reset record — future getHeadToHead calls will only count matches after this.
+ */
+export async function resetH2H(opponentId) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const { error } = await supabase
+    .from('h2h_resets')
+    .insert({ initiator_id: session.user.id, opponent_id: opponentId })
+  if (error) throw error
 }
 
 // ── REALTIME ─────────────────────────────────

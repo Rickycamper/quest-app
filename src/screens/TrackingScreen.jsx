@@ -367,21 +367,46 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, curren
   )
 }
 
+// ── Image compressor (client-side, canvas) ────
+function compressImage(file, { maxW = 1200, quality = 0.78 } = {}) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let w = img.naturalWidth, h = img.naturalHeight
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW }
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      canvas.toBlob(blob => {
+        if (blob) {
+          resolve(new File([blob], (file.name || 'package').replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }))
+        } else {
+          resolve(file)
+        }
+      }, 'image/jpeg', quality)
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+    img.src = url
+  })
+}
+
 // ── Create package modal ──────────────────────
-function CreatePackageModal({ onClose, onCreated, currentUserId }) {
-  const [origin,      setOrigin]     = useState('Panama')
-  const [dest,        setDest]       = useState('David')
-  const [recipQuery,  setRecipQuery] = useState('')
-  const [recipResult, setRecipResult]= useState([])
-  const [recipient,   setRecipient]  = useState(null)
-  const [notes,       setNotes]      = useState('')
-  const [items,       setItems]      = useState([{ name: '', qty: 1 }])
-  const [imageFile,   setImageFile]  = useState(null)
-  const [imagePreview,setImagePreview]= useState(null)
-  const [uploading,   setUploading]  = useState(false)
-  const [loading,     setLoading]    = useState(false)
-  const [searching,   setSearching]  = useState(false)
-  const [error,       setError]      = useState('')
+export function CreatePackageModal({ onClose, onCreated, currentUserId }) {
+  const [origin,       setOrigin]      = useState('Panama')
+  const [dest,         setDest]        = useState('David')
+  const [recipQuery,   setRecipQuery]  = useState('')
+  const [recipResult,  setRecipResult] = useState([])
+  const [recipient,    setRecipient]   = useState(null)
+  const [notes,        setNotes]       = useState('')
+  const [items,        setItems]       = useState([{ name: '', qty: 1 }])
+  const [imageFile,    setImageFile]   = useState(null)
+  const [imagePreview, setImagePreview]= useState(null)
+  const [uploading,    setUploading]   = useState(false)
+  const [loading,      setLoading]     = useState(false)
+  const [searching,    setSearching]   = useState(false)
+  const [error,        setError]       = useState('')
   const searchTimer = useRef(null)
   const fileRef     = useRef(null)
   useEffect(() => () => clearTimeout(searchTimer.current), [])
@@ -389,19 +414,21 @@ function CreatePackageModal({ onClose, onCreated, currentUserId }) {
   const handleImagePick = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setImageFile(file)
     setImagePreview(URL.createObjectURL(file))
+    setImageFile(file)
   }
 
   const handleRecipInput = (val) => {
     setRecipQuery(val)
     setRecipient(null)
     clearTimeout(searchTimer.current)
-    if (val.length < 2) { setRecipResult([]); return }
+    if (val.length < 2) { setRecipResult([]); setSearching(false); return }
     setSearching(true)
     searchTimer.current = setTimeout(async () => {
-      const results = await searchUsers(val.replace('@', ''))
-      setRecipResult(results.filter(u => u.id !== currentUserId))
+      try {
+        const results = await searchUsers(val.replace('@', ''))
+        setRecipResult((results ?? []).filter(u => u.id !== currentUserId))
+      } catch { setRecipResult([]) }
       setSearching(false)
     }, 350)
   }
@@ -413,7 +440,8 @@ function CreatePackageModal({ onClose, onCreated, currentUserId }) {
       let imageUrl = null
       if (imageFile) {
         setUploading(true)
-        imageUrl = await uploadPackageImage(imageFile)
+        const compressed = await compressImage(imageFile, { maxW: 1200, quality: 0.78 })
+        imageUrl = await uploadPackageImage(compressed)
         setUploading(false)
       }
       const pkg = await createPackage({
@@ -430,132 +458,166 @@ function CreatePackageModal({ onClose, onCreated, currentUserId }) {
     setLoading(false)
   }
 
-  const canCreate = recipient && items.some(i => i.name.trim())
+  const canCreate = recipient && notes.trim() && imageFile
 
   const inputStyle = {
-    width: '100%', padding: '9px 12px', background: '#111111',
-    border: '1px solid #222', borderRadius: 8, color: '#FFFFFF',
-    fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none',
+    width: '100%', padding: '11px 14px', background: '#111111',
+    border: '1.5px solid #2A2A2A', borderRadius: 10, color: '#FFFFFF',
+    fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none',
     boxSizing: 'border-box',
   }
   const labelStyle = {
-    fontSize: 9, fontWeight: 700, color: '#4B5563',
-    letterSpacing: '0.1em', marginBottom: 5, display: 'block',
+    fontSize: 11, fontWeight: 700, color: '#4B5563',
+    letterSpacing: '0.08em', marginBottom: 8, display: 'block',
   }
-  const sectionStyle = { marginBottom: 13 }
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: '#0A0A0A', zIndex: 200, display: 'flex', flexDirection: 'column', animation: 'slideUp 0.25s ease' }}>
-      {/* Top bar */}
-      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1A1A1A', flexShrink: 0 }}>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Cancelar</button>
-        <span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: 14, fontFamily: 'Inter, sans-serif' }}>Nuevo Paquete</span>
+    <div style={{
+      position: 'absolute', inset: 0, background: '#0A0A0A',
+      zIndex: 200, display: 'flex', flexDirection: 'column',
+      animation: 'slideUp 0.3s ease both',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '16px 20px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        borderBottom: '1px solid #1F1F1F', flexShrink: 0,
+      }}>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          Cancelar
+        </button>
+        <span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter, sans-serif' }}>📦 Nuevo Envío</span>
         <button onClick={handleCreate} disabled={loading || !canCreate} style={{
-          background: canCreate ? '#FFFFFF' : '#1A1A1A',
-          border: 'none', color: canCreate ? '#111111' : '#374151',
-          fontSize: 12, fontWeight: 700, cursor: canCreate ? 'pointer' : 'default',
+          background: canCreate ? '#FFFFFF' : '#1F1F1F',
+          border: 'none', color: canCreate ? '#111111' : '#4B5563',
+          fontSize: 13, fontWeight: 700, cursor: canCreate ? 'pointer' : 'default',
           padding: '6px 14px', borderRadius: 8, fontFamily: 'Inter, sans-serif',
           transition: 'all 0.15s',
         }}>
-          {uploading ? 'Subiendo...' : loading ? 'Creando...' : 'Crear'}
+          {uploading ? '...' : loading ? '...' : 'Crear'}
         </button>
       </div>
 
-      <div style={{ flex: 1, padding: '14px 16px', overflowY: 'auto', scrollbarWidth: 'none' }}>
-        {error && (
-          <div style={{ padding: '8px 12px', borderRadius: 8, marginBottom: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 12 }}>
-            {error}
-          </div>
-        )}
+      {error && (
+        <div style={{ margin: '12px 16px 0', padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13, flexShrink: 0 }}>
+          {error}
+        </div>
+      )}
 
-        {/* Branches — 2 cols */}
-        <div style={{ display: 'flex', gap: 8, ...sectionStyle }}>
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none' }}>
+
+        {/* ── FOTO (protagonista) ── */}
+        <div style={{ padding: '14px 16px 0' }}>
+          <div style={labelStyle}>
+            FOTO DEL CONTENIDO <span style={{ color: '#EF4444' }}>*</span>
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleImagePick} style={{ display: 'none' }} />
+          {imagePreview ? (
+            <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', aspectRatio: '16/9' }}>
+              <img src={imagePreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <button
+                onClick={() => { setImageFile(null); setImagePreview(null) }}
+                style={{
+                  position: 'absolute', top: 8, right: 8,
+                  background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: 6,
+                  color: '#FFFFFF', fontSize: 12, fontWeight: 700,
+                  padding: '4px 8px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}>✕ Quitar</button>
+            </div>
+          ) : (
+            <div
+              onClick={() => fileRef.current?.click()}
+              style={{
+                borderRadius: 10, border: '2px dashed rgba(239,68,68,0.35)',
+                aspectRatio: '16/9', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 10,
+                cursor: 'pointer', background: 'rgba(239,68,68,0.04)',
+              }}
+            >
+              <div style={{ color: '#EF4444' }}><CameraIcon size={28} /></div>
+              <div style={{ fontSize: 13, color: '#EF4444', fontFamily: 'Inter, sans-serif' }}>
+                Tocar para subir foto <span style={{ color: '#6B7280' }}>· Requerida</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── RUTA: origen → destino ── */}
+        <div style={{ padding: '14px 16px 0', display: 'flex', gap: 8 }}>
           {[{ label: 'ORIGEN', val: origin, set: setOrigin }, { label: 'DESTINO', val: dest, set: setDest }].map(f => (
             <div key={f.label} style={{ flex: 1 }}>
-              <span style={labelStyle}>{f.label}</span>
+              <div style={labelStyle}>{f.label}</div>
               <select value={f.val} onChange={e => f.set(e.target.value)}
-                style={{ ...inputStyle, padding: '9px 8px' }}>
+                style={{ ...inputStyle, padding: '11px 10px' }}>
                 {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
           ))}
         </div>
 
-        {/* Recipient search */}
-        <div style={sectionStyle}>
-          <span style={labelStyle}>DESTINATARIO</span>
+        {/* ── DESTINATARIO ── */}
+        <div style={{ padding: '14px 16px 0' }}>
+          <div style={labelStyle}>DESTINATARIO <span style={{ color: '#EF4444' }}>*</span></div>
           {recipient ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#111111', border: '1px solid #222', borderRadius: 8 }}>
-              <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0 }}>👤</div>
-              <span style={{ flex: 1, fontSize: 13, color: '#FFFFFF', fontWeight: 600 }}>@{recipient.username}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#111111', border: '1.5px solid #2A2A2A', borderRadius: 10 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>👤</div>
+              <span style={{ flex: 1, fontSize: 14, color: '#FFFFFF', fontWeight: 600 }}>@{recipient.username}</span>
               <button onClick={() => { setRecipient(null); setRecipQuery('') }}
-                style={{ background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', fontSize: 18, padding: 0, lineHeight: 1 }}>×</button>
+                style={{ background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', fontSize: 20, padding: 0, lineHeight: 1 }}>×</button>
             </div>
           ) : (
-            <div style={{ position: 'relative' }}>
-              <input
-                placeholder="Buscar @usuario..."
-                value={recipQuery}
-                onChange={e => handleRecipInput(e.target.value)}
-                style={inputStyle}
-              />
-              {searching && (
-                <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite' }} />
-                </div>
-              )}
+            <>
+              <div style={{ position: 'relative' }}>
+                <input
+                  autoFocus
+                  placeholder="Buscar @usuario..."
+                  value={recipQuery}
+                  onChange={e => handleRecipInput(e.target.value)}
+                  style={inputStyle}
+                />
+                {searching && (
+                  <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)' }}>
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite' }} />
+                  </div>
+                )}
+              </div>
               {recipResult.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#111111', border: '1px solid #222', borderRadius: 8, marginTop: 3, overflow: 'hidden', zIndex: 10 }}>
+                <div style={{ background: '#111111', border: '1.5px solid #2A2A2A', borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
                   {recipResult.map(u => (
-                    <button key={u.id} onClick={() => { setRecipient(u); setRecipQuery(''); setRecipResult([]) }}
-                      style={{ width: '100%', padding: '9px 12px', background: 'none', border: 'none', borderBottom: '1px solid #1A1A1A', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0 }}>👤</div>
-                      <span style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 600 }}>@{u.username}</span>
+                    <button key={u.id}
+                      onClick={() => { setRecipient(u); setRecipQuery(''); setRecipResult([]) }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid #1A1A1A', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>👤</div>
+                      <span style={{ fontSize: 14, color: '#FFFFFF', fontWeight: 600 }}>@{u.username}</span>
                     </button>
                   ))}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
 
-        {/* Notes + Photo — 2 cols */}
-        <div style={{ display: 'flex', gap: 8, ...sectionStyle }}>
-          <div style={{ flex: 1 }}>
-            <span style={labelStyle}>NOTAS</span>
-            <input placeholder="Observaciones..." value={notes} onChange={e => setNotes(e.target.value)}
-              style={{ ...inputStyle }} />
-          </div>
-          <div style={{ flexShrink: 0 }}>
-            <span style={labelStyle}>FOTO</span>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleImagePick} style={{ display: 'none' }} />
-            {imagePreview ? (
-              <div style={{ position: 'relative', width: 80, height: 36, borderRadius: 8, overflow: 'hidden' }}>
-                <img src={imagePreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                <button onClick={() => { setImageFile(null); setImagePreview(null) }} style={{
-                  position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', border: 'none',
-                  color: '#FFF', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>×</button>
-              </div>
-            ) : (
-              <button onClick={() => fileRef.current?.click()} style={{
-                width: 80, height: 36, borderRadius: 8,
-                border: '1px dashed #2A2A2A', background: 'transparent',
-                color: '#555', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-              }}>
-                <CameraIcon size={14} color="#555" />
-                <span style={{ fontSize: 10, fontFamily: 'Inter, sans-serif', color: '#555' }}>Foto</span>
-              </button>
-            )}
-          </div>
+        {/* ── OBSERVACIONES ── */}
+        <div style={{ padding: '14px 16px 0' }}>
+          <div style={labelStyle}>OBSERVACIONES <span style={{ color: '#EF4444' }}>*</span></div>
+          <textarea
+            placeholder="Descripción del contenido, condición, valor declarado..."
+            value={notes}
+            onChange={e => setNotes(e.target.value.slice(0, 400))}
+            style={{
+              ...inputStyle, resize: 'none', minHeight: 90,
+              lineHeight: 1.5, padding: '12px 14px',
+              borderColor: notes.trim() ? '#2A2A2A' : 'rgba(239,68,68,0.3)',
+            }}
+          />
         </div>
 
-        {/* Items */}
-        <div>
-          <span style={labelStyle}>CARTAS / ITEMS</span>
+        {/* ── CARTAS / ITEMS (opcional) ── */}
+        <div style={{ padding: '14px 16px 24px' }}>
+          <div style={labelStyle}>CARTAS / ITEMS <span style={{ color: '#374151', fontWeight: 400, fontSize: 10 }}>(opcional)</span></div>
           {items.map((item, i) => (
-            <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+            <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center' }}>
               <input
                 placeholder={`Carta o item ${i + 1}`}
                 value={item.name}
@@ -565,30 +627,30 @@ function CreatePackageModal({ onClose, onCreated, currentUserId }) {
               <input
                 type="number" min="1" value={item.qty}
                 onChange={e => setItems(p => p.map((x, j) => j === i ? { ...x, qty: parseInt(e.target.value) || 1 } : x))}
-                style={{ ...inputStyle, width: 46, padding: '9px 4px', textAlign: 'center' }}
+                style={{ ...inputStyle, width: 52, padding: '11px 6px', textAlign: 'center' }}
               />
               {items.length > 1 && (
                 <button onClick={() => setItems(p => p.filter((_, j) => j !== i))}
-                  style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: 18, padding: 0, lineHeight: 1, flexShrink: 0 }}>×</button>
+                  style={{ background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', fontSize: 20, padding: 0, lineHeight: 1, flexShrink: 0 }}>×</button>
               )}
             </div>
           ))}
           <button onClick={() => setItems(p => [...p, { name: '', qty: 1 }])}
-            style={{ width: '100%', background: 'none', border: '1px dashed #1F1F1F', borderRadius: 8, color: '#444', fontSize: 12, cursor: 'pointer', padding: '8px', fontFamily: 'Inter, sans-serif' }}>
+            style={{ width: '100%', background: 'none', border: '1.5px dashed #2A2A2A', borderRadius: 10, color: '#4B5563', fontSize: 13, cursor: 'pointer', padding: '10px', fontFamily: 'Inter, sans-serif' }}>
             + Agregar item
           </button>
         </div>
+
       </div>
     </div>
   )
 }
 
 // ── Main screen ───────────────────────────────
-export default function TrackingScreen({ profile, isStaff }) {
+export default function TrackingScreen({ profile, isStaff, onNewPackage, refreshKey }) {
   const [packages,    setPackages]    = useState([])
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState('')
-  const [showCreate,  setShowCreate]  = useState(false)
   const [activeTab,   setActiveTab]   = useState('mine') // mine | all (staff)
   const dismissedIds = useRef(new Set())
 
@@ -601,7 +663,7 @@ export default function TrackingScreen({ profile, isStaff }) {
       .finally(() => setLoading(false))
   }
 
-  useEffect(load, [isStaff, activeTab])
+  useEffect(load, [isStaff, activeTab, refreshKey])
 
   const handleStatusUpdate = async (pkgId, status, notes) => {
     await updatePackageStatus(pkgId, status, notes)
@@ -624,14 +686,6 @@ export default function TrackingScreen({ profile, isStaff }) {
 
   return (
     <div style={{ position: 'relative' }}>
-      {showCreate && (
-        <CreatePackageModal
-          currentUserId={profile?.id}
-          onClose={() => setShowCreate(false)}
-          onCreated={pkg => setPackages(prev => [pkg, ...prev])}
-        />
-      )}
-
       {/* Header */}
       <div style={{ padding: '12px 16px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Tabs (staff only) */}
@@ -653,7 +707,7 @@ export default function TrackingScreen({ profile, isStaff }) {
           </span>
         )}
 
-        <button onClick={() => setShowCreate(true)} style={{
+        <button onClick={() => onNewPackage?.()} style={{
           padding: '7px 14px', background: '#FFFFFF', border: 'none',
           borderRadius: 8, color: '#111111', fontSize: 12, fontWeight: 700,
           cursor: 'pointer', fontFamily: 'Inter, sans-serif',

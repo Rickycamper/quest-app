@@ -2,10 +2,13 @@
 // QUEST — ProfileScreen
 // ─────────────────────────────────────────────
 import { useState, useEffect } from 'react'
-import { getProfile, getUserPosts, getFollowCounts, toggleFollow, getFollowing, getHeadToHead } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+import { getProfile, getUserPosts, getFollowCounts, toggleFollow, getFollowing, getHeadToHead, resetH2H } from '../lib/supabase'
 import { GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import { PremiumBadge, OwnerBadge } from '../components/Icons'
+import GameIcon from '../components/GameIcon'
+import H2HModal from '../components/H2HModal'
 
 const POST_TYPE_COLORS = {
   quiero: '#F59E0B',
@@ -25,11 +28,14 @@ function EditIcon() {
 }
 
 export default function ProfileScreen({ userId, currentUserId, onBack, onEditProfile, onMessage, onVs }) {
+  const { profile: myProfile } = useAuth()
+  const isPremium = myProfile?.role === 'premium' || myProfile?.role === 'admin'
   const [profile,   setProfile]   = useState(null)
   const [posts,     setPosts]     = useState([])
   const [counts,    setCounts]    = useState({ followers: 0, following: 0 })
   const [isFollowing, setIsFollowing] = useState(false)
-  const [h2h,       setH2h]       = useState(null)  // { wins, losses, total }
+  const [h2h,       setH2h]       = useState(null)  // { wins, losses, total, matches }
+  const [showH2H,   setShowH2H]   = useState(false)
   const [loading,   setLoading]   = useState(true)
   const [loadError, setLoadError] = useState('')
   const [fBusy,     setFBusy]     = useState(false)
@@ -46,7 +52,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
       getUserPosts(userId),
       getFollowCounts(userId),
       !isOwn ? getFollowing() : Promise.resolve(new Set()),
-      !isOwn ? getHeadToHead(userId).catch(() => null) : Promise.resolve(null),
+      !isOwn ? getHeadToHead(userId, isPremium).catch(() => null) : Promise.resolve(null),
     ]).then(([prof, userPosts, cnt, followingSet, h2hData]) => {
       if (cancelled) return
       setProfile(prof)
@@ -250,20 +256,27 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
               ⚔️ Registrar duelo
             </button>
 
-            {/* H2H stats banner — only shown once there is at least 1 confirmed match */}
-            {h2h && h2h.total > 0 && (
-              <div style={{
+            {/* H2H stats banner — tappable to open detail modal */}
+            {h2h && (
+              <button onClick={() => setShowH2H(true)} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                 background: 'rgba(251,146,60,0.07)', border: '1px solid rgba(251,146,60,0.18)',
-                borderRadius: 8, padding: '8px 14px',
+                borderRadius: 8, padding: '8px 14px', cursor: 'pointer', width: '100%',
               }}>
-                <span style={{ fontSize: 11, color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>⚔️ Historial</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#4ADE80', fontFamily: 'Inter, sans-serif' }}>{h2h.wins}V</span>
-                <span style={{ fontSize: 11, color: '#444' }}>·</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#F87171', fontFamily: 'Inter, sans-serif' }}>{h2h.losses}D</span>
-                <span style={{ fontSize: 11, color: '#444' }}>·</span>
-                <span style={{ fontSize: 11, color: '#555', fontFamily: 'Inter, sans-serif' }}>{h2h.total} total</span>
-              </div>
+                <span style={{ fontSize: 11, color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>⚔️ H2H</span>
+                {h2h.total > 0 ? (
+                  <>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: '#4ADE80', fontFamily: 'Inter, sans-serif' }}>{h2h.wins}V</span>
+                    <span style={{ fontSize: 11, color: '#444' }}>·</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: '#F87171', fontFamily: 'Inter, sans-serif' }}>{h2h.losses}D</span>
+                    <span style={{ fontSize: 11, color: '#444' }}>·</span>
+                    <span style={{ fontSize: 11, color: '#555', fontFamily: 'Inter, sans-serif' }}>{h2h.total} total</span>
+                  </>
+                ) : (
+                  <span style={{ fontSize: 11, color: '#555', fontFamily: 'Inter, sans-serif' }}>Sin partidas aún</span>
+                )}
+                <span style={{ fontSize: 11, color: '#444', marginLeft: 'auto' }}>›</span>
+              </button>
             )}
           </div>
         )}
@@ -303,7 +316,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
                       padding: 8,
                       background: gs.bg,
                     }}>
-                      <div style={{ fontSize: 20, marginBottom: 4 }}>{gs.emoji}</div>
+                      <div style={{ marginBottom: 4 }}><GameIcon game={post.tag} size={22} /></div>
                       <div style={{ fontSize: 9, color: gs.color, fontWeight: 700, textAlign: 'center', lineHeight: 1.3 }}>
                         {post.caption?.slice(0, 40)}
                       </div>
@@ -331,6 +344,22 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
       {/* Post detail modal */}
       {selected && (
         <PostModal post={selected} onClose={() => setSelected(null)} profile={profile} />
+      )}
+
+      {/* H2H detail modal */}
+      {showH2H && h2h && (
+        <H2HModal
+          opponentName={profile?.username}
+          opponentId={userId}
+          h2h={h2h}
+          isPremium={isPremium}
+          onClose={() => setShowH2H(false)}
+          onReset={async () => {
+            await resetH2H(userId)
+            const fresh = await getHeadToHead(userId, isPremium)
+            setH2h(fresh)
+          }}
+        />
       )}
     </div>
   )
@@ -371,7 +400,7 @@ function PostModal({ post, profile, onClose }) {
             <div style={{ fontSize: 11, color: '#4B5563' }}>{timeAgo(post.created_at)}</div>
           </div>
           <div style={{ padding: '3px 10px', borderRadius: 8, background: gs.bg, border: `1px solid ${gs.border}`, color: gs.color, fontSize: 11, fontWeight: 600 }}>
-            {gs.emoji} {post.tag}
+            <GameIcon game={post.tag} size={11} /> {post.tag}
           </div>
         </div>
 
