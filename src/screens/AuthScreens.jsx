@@ -2,11 +2,11 @@
 // QUEST — Auth Screens
 // ─────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react'
-import { signInWithEmail, signUpWithEmail, signInWithGoogle, signInWithDiscord, signInWithFacebook, supabase } from '../lib/supabase'
-import { EyeIcon, GoogleIcon, DiscordIcon, FacebookIcon, MailIcon } from '../components/Icons'
-import monsters    from '../assets/Asset 3.png'
-import questLogo   from '../assets/quest-logo.png'
-import skull       from '../assets/skull.png'
+import { signInWithEmail, signUpWithEmail, signInWithDiscord, supabase } from '../lib/supabase'
+import { EyeIcon, DiscordIcon, MailIcon } from '../components/Icons'
+import monsters    from '../assets/Asset 3-sm.png'
+import questLogo   from '../assets/quest-logo-sm.png'
+import skull       from '../assets/skull-sm.png'
 import qLogo       from '../assets/q-logo.png'
 
 // ── OPENING ───────────────────────────────────
@@ -42,9 +42,6 @@ export function OpeningScreen({ onSignIn, onSignUp }) {
 
         {/* Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <button onClick={signInWithGoogle} style={socialBtn}>
-            <GoogleIcon /> Continue with Google
-          </button>
           <button onClick={signInWithDiscord} style={socialBtn}>
             <DiscordIcon size={20} /> Continue with Discord
           </button>
@@ -90,9 +87,6 @@ export function SignupScreen({ onEmail, onLogin }) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <button onClick={signInWithGoogle} style={socialBtnLight}>
-            <GoogleIcon /> Continue with Google
-          </button>
           <button onClick={signInWithDiscord} style={socialBtnLight}>
             <DiscordIcon size={20} color="#5865F2" /> Continue with Discord
           </button>
@@ -112,15 +106,18 @@ export function SignupScreen({ onEmail, onLogin }) {
 
 // ── EMAIL SIGNUP ─────────────────────────────
 export function EmailSignupScreen({ onBack, onDone }) {
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [confirm,  setConfirm]  = useState('')
-  const [showPw,   setShowPw]   = useState(false)
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
-  const [success,  setSuccess]  = useState(false)
+  const [email,         setEmail]         = useState('')
+  const [password,      setPassword]      = useState('')
+  const [confirm,       setConfirm]       = useState('')
+  const [showPw,        setShowPw]        = useState(false)
+  const [loading,       setLoading]       = useState(false)
+  const [error,         setError]         = useState('')
+  const [success,       setSuccess]       = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [showTerms,     setShowTerms]     = useState(false)
 
   const handleSignup = async () => {
+    if (!termsAccepted)       { setError('Debés aceptar los Términos y Condiciones'); return }
     if (password !== confirm) { setError('Las contraseñas no coinciden'); return }
     if (password.length < 6)  { setError('Mínimo 6 caracteres'); return }
     setLoading(true); setError('')
@@ -198,15 +195,35 @@ export function EmailSignupScreen({ onBack, onDone }) {
           <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
         </div>
 
-        <button onClick={handleSignup} disabled={loading || !email || !password || !confirm}
-          style={{ ...btnBlack, opacity: (!email || !password || !confirm) ? 0.4 : 1 }}>
+        {/* Terms checkbox */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20 }}>
+          <div
+            onClick={() => setTermsAccepted(v => !v)}
+            style={{
+              width: 20, height: 20, minWidth: 20, borderRadius: 6,
+              border: `2px solid ${termsAccepted ? '#A78BFA' : '#D1D5DB'}`,
+              background: termsAccepted ? '#A78BFA' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', marginTop: 1,
+            }}
+          >
+            {termsAccepted && <span style={{ color: '#fff', fontSize: 12, fontWeight: 800 }}>✓</span>}
+          </div>
+          <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
+            Acepto los{' '}
+            <button onClick={() => setShowTerms(true)} style={{ background: 'none', border: 'none', color: '#A78BFA', fontWeight: 700, fontSize: 12, cursor: 'pointer', padding: 0, textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>
+              Términos y Condiciones
+            </button>
+            {' '}de Quest, incluyendo recibir comunicaciones y promociones.
+          </div>
+        </div>
+
+        <button onClick={handleSignup} disabled={loading || !email || !password || !confirm || !termsAccepted}
+          style={{ ...btnBlack, opacity: (!email || !password || !confirm || !termsAccepted) ? 0.4 : 1 }}>
           {loading ? 'Creando cuenta...' : 'Create account'}
         </button>
 
-        <div style={{ textAlign: 'center', fontSize: 12, color: '#9CA3AF', marginTop: 16, lineHeight: 1.5 }}>
-          By creating an account or signing you agree to our{' '}
-          <span style={{ color: '#374151', fontWeight: 700, textDecoration: 'underline' }}>Terms and Conditions</span>
-        </div>
+        {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
 
         <button onClick={onBack} style={{ marginTop: 16, background: 'none', border: 'none', color: '#6B7280', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textAlign: 'center', width: '100%' }}>
           ← Volver
@@ -253,7 +270,7 @@ export function LoginScreen({ onBack, onSignUp, onForgot }) {
       }} />
 
       {/* Form */}
-      <div style={{ flex: 1, padding: '150px 24px 40px', overflowY: 'auto', scrollbarWidth: 'none', position: 'relative', zIndex: 1 }}>
+      <div style={{ flex: 1, padding: '110px 24px 24px', overflowY: 'auto', scrollbarWidth: 'none', position: 'relative', zIndex: 1 }}>
         <img src={qLogo} alt="Q" style={{ width: 52, objectFit: 'contain', marginBottom: 12 }} />
         <div style={{ fontSize: 28, fontWeight: 800, color: '#111111', letterSpacing: '-0.02em', marginBottom: 24 }}>
           Log in
@@ -316,8 +333,6 @@ export function LoginScreen({ onBack, onSignUp, onForgot }) {
         {/* Social icons row */}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 24 }}>
           {[
-            { icon: <FacebookIcon size={22} />, bg: '#1877F2', color: '#fff', onClick: signInWithFacebook },
-            { icon: <GoogleIcon />, bg: '#fff', border: '#E5E7EB', onClick: signInWithGoogle },
             { icon: <DiscordIcon size={22} color="#fff" />, bg: '#5865F2', onClick: signInWithDiscord },
           ].map((s, i) => (
             <button key={i} onClick={s.onClick}
@@ -368,7 +383,7 @@ export function ForgotPasswordScreen({ onBack, onDone }) {
     setLoading(true); setError('')
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin,
+        redirectTo: `${window.location.origin}/`,
       })
       if (error) throw error
       setStep('sent')
@@ -438,7 +453,7 @@ export function ForgotPasswordScreen({ onBack, onDone }) {
 }
 
 // ── RESET PASSWORD (shown after magic-link recovery) ──────────────────────
-export function ResetPasswordScreen({ onDone }) {
+export function ResetPasswordScreen({ onDone, recoverySession }) {
   const [newPw,     setNewPw]     = useState('')
   const [confirmPw, setConfirmPw] = useState('')
   const [showPw,    setShowPw]    = useState(false)
@@ -451,11 +466,29 @@ export function ResetPasswordScreen({ onDone }) {
     if (newPw !== confirmPw) { setError('Las contraseñas no coinciden'); return }
     setLoading(true); setError('')
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPw })
-      if (error) throw error
+      const token = recoverySession?.access_token
+      if (!token) throw new Error('Sesión expirada. Pedí un nuevo link de recuperación.')
+
+      // Call Supabase REST API directly with the recovery token —
+      // bypasses the JS client auth state so no re-mount side effects
+      const url    = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/user`
+      const res    = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password: newPw }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json?.msg || json?.message || 'Error al cambiar la contraseña')
       setDone(true)
-    } catch (e) { setError(e.message) }
-    setLoading(false)
+    } catch (e) {
+      setError(e.message || 'Error al cambiar la contraseña. Intentá de nuevo.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const wrapStyle = {
@@ -561,4 +594,106 @@ const errorBox = {
   padding: '10px 14px', borderRadius: 12, marginBottom: 14,
   background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
   color: '#EF4444', fontSize: 13,
+}
+
+// ── TERMS MODAL ───────────────────────────────
+export function TermsModal({ onAccept, onClose, acceptOnly = false }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(0,0,0,0.75)', display: 'flex',
+      alignItems: 'flex-end', justifyContent: 'center',
+    }}>
+      <div style={{
+        background: '#111111', borderRadius: '20px 20px 0 0',
+        width: '100%', maxWidth: 480, maxHeight: '90vh',
+        display: 'flex', flexDirection: 'column',
+        border: '1px solid #2A2A2A', borderBottom: 'none',
+      }}>
+        {/* Header */}
+        <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+              Términos y Condiciones
+            </div>
+            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>Quest Hobby Store — Panamá</div>
+          </div>
+          {!acceptOnly && (
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 22, cursor: 'pointer', padding: 4 }}>✕</button>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: '#1F1F1F', margin: '16px 0 0' }} />
+
+        {/* Content */}
+        <div style={{ overflowY: 'auto', padding: '16px 20px', flex: 1, fontSize: 13, color: '#9CA3AF', lineHeight: 1.7, scrollbarWidth: 'none' }}>
+
+          <Section title="1. Aceptación">
+            Al crear una cuenta en Quest, aceptás estos Términos y Condiciones en su totalidad. Si no estás de acuerdo, no podrás usar la plataforma.
+          </Section>
+
+          <Section title="2. Uso de la plataforma">
+            Quest es una plataforma comunitaria para jugadores de cartas coleccionables (TCG). Podés publicar contenido, registrar partidas, participar en torneos y comprar/vender cartas dentro de la comunidad.
+          </Section>
+
+          <Section title="3. Derecho de admisión">
+            Quest Hobby Store se reserva el derecho de suspender o eliminar cualquier cuenta que incumpla estas normas, genere contenido inapropiado, acose a otros usuarios o actúe de manera contraria al espíritu de la comunidad. Esta decisión es definitiva y no requiere justificación previa.
+          </Section>
+
+          <Section title="4. Contenido del usuario">
+            Sos responsable de todo el contenido que publiques. Queda prohibido publicar contenido ofensivo, discriminatorio, ilegal o que infrinja derechos de terceros. Quest puede eliminar contenido que viole estas normas sin previo aviso.
+          </Section>
+
+          <Section title="5. Comunicaciones y promociones">
+            Al registrarte, aceptás recibir comunicaciones de Quest Hobby Store, incluyendo novedades, promociones, torneos y actualizaciones de la plataforma. Podés darte de baja en cualquier momento contactándonos directamente.
+          </Section>
+
+          <Section title="6. Privacidad">
+            Recopilamos tu email y datos de perfil para operar la plataforma. No vendemos tu información a terceros. Tus datos se almacenan de forma segura en Supabase con cifrado en tránsito y en reposo.
+          </Section>
+
+          <Section title="7. Compraventa de cartas">
+            Quest facilita el encuentro entre compradores y vendedores pero no es parte de las transacciones. No nos hacemos responsables por disputas entre usuarios en operaciones de compraventa.
+          </Section>
+
+          <Section title="8. Propiedad intelectual">
+            Los nombres, imágenes y logos de los juegos de cartas (Pokémon, Magic, One Piece, etc.) pertenecen a sus respectivos dueños. Quest no tiene afiliación oficial con ninguna de estas marcas.
+          </Section>
+
+          <Section title="9. Modificaciones">
+            Quest puede actualizar estos términos en cualquier momento. Te notificaremos por email o dentro de la app. El uso continuado de la plataforma implica aceptación de los nuevos términos.
+          </Section>
+
+          <Section title="10. Ley aplicable">
+            Estos términos se rigen por las leyes de la República de Panamá. Cualquier disputa se resolverá en los tribunales competentes de la Ciudad de Panamá.
+          </Section>
+
+          <div style={{ height: 8 }} />
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '12px 20px 32px', borderTop: '1px solid #1F1F1F' }}>
+          {acceptOnly ? (
+            <button onClick={onAccept} style={{ ...btnBlack, background: '#A78BFA' }}>
+              Acepto los Términos y Condiciones
+            </button>
+          ) : (
+            <button onClick={onClose} style={btnBlack}>
+              Cerrar
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Section({ title, children }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', marginBottom: 4 }}>{title}</div>
+      <div>{children}</div>
+    </div>
+  )
 }

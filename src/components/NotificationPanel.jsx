@@ -82,7 +82,7 @@ function MatchActions({ notif, onResponded }) {
   )
 }
 
-function NotifCard({ notif, onRead, onNavigate, onMatchResponded }) {
+function NotifCard({ notif, onRead, onNavigate, onOpenChat, onMatchResponded, onViewProfile }) {
   const cfg   = NOTIF_CONFIG[notif.type] || NOTIF_CONFIG.new_package
   const emoji = notif.title.split(' ')[0]
   const title = notif.title.split(' ').slice(1).join(' ')
@@ -103,6 +103,18 @@ function NotifCard({ notif, onRead, onNavigate, onMatchResponded }) {
   const handleClick = () => {
     if (isPendingMatch) return   // don't navigate — user must respond first
     if (!notif.read) onRead(notif.id)
+    // Message notifications → open chat directly with the sender
+    if (notif.type === 'new_message' && meta.senderId) {
+      onOpenChat?.({ id: meta.senderId, username: meta.senderUsername ?? '' })
+      return
+    }
+    // Like/follow notifications → go to that user's profile
+    if (notif.type === 'like' && meta.userId) {
+      onViewProfile?.(meta.userId); return
+    }
+    if (notif.type === 'follow' && meta.userId) {
+      onViewProfile?.(meta.userId); return
+    }
     const tab = NOTIF_TAB[notif.type] ?? 'feed'
     onNavigate?.(tab)
   }
@@ -159,7 +171,7 @@ function NotifCard({ notif, onRead, onNavigate, onMatchResponded }) {
   )
 }
 
-export default function NotificationPanel({ profile, notifications, onClose, onMarkRead, onMarkAll, onMarkResponded, onNavigate }) {
+export default function NotificationPanel({ profile, notifications, onClose, onMarkRead, onMarkAll, onMarkResponded, onNavigate, onOpenChat, onViewProfile }) {
   // Track locally which pending match notifications have been responded to (to hide buttons immediately)
   const [respondedIds, setRespondedIds] = useState(new Set())
 
@@ -188,7 +200,7 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
       animation: 'slideDown 0.25s ease both',
     }}>
       <div style={{
-        padding: '52px 20px 16px',
+        padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 16px',
         background: '#111111', borderBottom: '1px solid #1F1F1F', flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -238,7 +250,9 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
             {unreadList.map(n => (
               <NotifCard key={n.id} notif={n} onRead={onMarkRead}
                 onNavigate={(tab) => { onNavigate?.(tab); onClose() }}
+                onOpenChat={(u) => { onOpenChat?.(u); onClose() }}
                 onMatchResponded={handleMatchResponded}
+                onViewProfile={(id) => { onViewProfile?.(id); onClose() }}
               />
             ))}
           </>
@@ -249,7 +263,9 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
             {readList.map(n => (
               <NotifCard key={n.id} notif={n} onRead={onMarkRead}
                 onNavigate={(tab) => { onNavigate?.(tab); onClose() }}
+                onOpenChat={(u) => { onOpenChat?.(u); onClose() }}
                 onMatchResponded={handleMatchResponded}
+                onViewProfile={(id) => { onViewProfile?.(id); onClose() }}
               />
             ))}
           </>

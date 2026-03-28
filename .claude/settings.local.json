@@ -27,7 +27,24 @@
       "Bash(curl -s \"https://qattyrdmlbolocnzczos.supabase.co/rest/v1/posts?select=id,post_likes\\(count\\),post_comments\\(count\\)&limit=2\" -H \"apikey: sb_publishable_HXqZnx4aN1oHHqil2xEMTQ_xs_MSCM-\" -H \"Authorization: Bearer sb_publishable_HXqZnx4aN1oHHqil2xEMTQ_xs_MSCM-\" -H \"Prefer: count=exact\")",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(vercel --version)",
+      "Bash(vercel --prod --yes)",
+      "Bash(npm run:*)",
+      "WebFetch(domain:www.questhobbystore.com)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" https://questhobbystore.com)",
+      "Bash(dig questhobbystore.com A +short)",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/ricardotroya/Downloads/quest-app/src/assets/q-logo.png)",
+      "Bash(node -e \"const {createCanvas, loadImage} = require\\(''canvas''\\); console.log\\(''ok''\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(npx --yes acorn --ecma2020 --module src/screens/AdminScreen.jsx)",
+      "Bash(npx vite:*)",
+      "Bash(grep -c \"touch-action\" /Users/ricardotroya/Downloads/quest-app/dist/assets/index-*.js)",
+      "Bash(grep -c \"likePop\" /Users/ricardotroya/Downloads/quest-app/dist/assets/index-*.js)",
+      "Bash(grep -c \"tabBounce\" /Users/ricardotroya/Downloads/quest-app/dist/assets/index-*.js)",
+      "Bash(npx vercel:*)",
+      "Bash(supabase status:*)",
+      "Bash(npx supabase:*)"
     ]
   }
 }

@@ -1,21 +1,201 @@
 // ─────────────────────────────────────────────
 // QUEST — FeedScreen
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef } from 'react'
-import { getFeed, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost } from '../lib/supabase'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import questLogo from '../assets/quest-logo-sm.png'
+import { supabase } from '../lib/supabase'
+import { getFeed, getUserLikedPosts, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
-import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, OwnerBadge } from '../components/Icons'
+import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, RoleBadge } from '../components/Icons'
 
-function HeartBottleIcon({ size = 18, filled = false }) {
+function HeartBottleIcon({ size = 18, filled = false, pop = false }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="currentColor"
-      style={{ display: 'inline-block', verticalAlign: 'middle', transition: 'transform 0.15s', transform: filled ? 'scale(1.15)' : 'scale(1)' }}>
+      style={{
+        display: 'inline-block', verticalAlign: 'middle',
+        animation: pop ? 'likePop 0.45s cubic-bezier(0.175,0.885,0.32,1.275) forwards' : 'none',
+        transform: pop ? undefined : (filled ? 'scale(1.15)' : 'scale(1)'),
+        transition: pop ? 'none' : 'transform 0.15s',
+      }}>
       <path d="M23.053 9.845l-1.75-0.469 0.727-2.714 2.254 0.604 1.019-3.804-9.938-2.663-1.019 3.804 2.195 0.588-0.727 2.714-1.71-0.458c-2.371-0.635-4.801 0.734-5.436 3.105l-3.112 11.614c-0.635 2.371 0.774 4.812 3.145 5.447l8.95 2.398c2.371 0.635 4.772-0.785 5.407-3.155l3.112-11.614c0.635-2.371-0.745-4.761-3.116-5.397zM22.503 18.877c-1.011 3.338-5.878 3.239-8.211 6.447-0.492-3.964-4.939-6.127-3.866-9.679 1.007-3.333 5.555-3.386 6.396 0.248 2.473-2.46 6.759-0.575 5.681 2.984z" />
     </svg>
   )
 }
 import GameIcon from '../components/GameIcon'
+
+const sk = (w, h, r = 6) => ({
+  width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
+  background: 'linear-gradient(90deg,#141414 25%,#222 50%,#141414 75%)',
+  backgroundSize: '400px 100%', animation: 'shimmer 1.4s infinite linear',
+})
+
+function ImageCarousel({ images }) {
+  const [slide, setSlide]       = useState(0)
+  const [dragX, setDragX]       = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const trackRef    = useRef(null)
+  const slideRef    = useRef(0)          // mirror of slide for use inside event closures
+  const startX      = useRef(0)
+  const startY      = useRef(0)
+  const isHoriz     = useRef(null)       // null = undecided, true/false once determined
+  const activeTouch = useRef(false)
+
+  // Keep slideRef in sync
+  useEffect(() => { slideRef.current = slide }, [slide])
+
+  // ── Non-passive touch listeners so we can preventDefault on horizontal drags ──
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el || images.length < 2) return
+
+    const onTouchStart = (e) => {
+      startX.current     = e.touches[0].clientX
+      startY.current     = e.touches[0].clientY
+      isHoriz.current    = null
+      activeTouch.current = true
+    }
+
+    const onTouchMove = (e) => {
+      if (!activeTouch.current) return
+      const dx = e.touches[0].clientX - startX.current
+      const dy = e.touches[0].clientY - startY.current
+
+      // Determine direction once we have at least 4px of movement
+      if (isHoriz.current === null && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+        isHoriz.current = Math.abs(dx) > Math.abs(dy)
+      }
+
+      if (!isHoriz.current) return   // vertical — let browser scroll normally
+
+      e.preventDefault()             // lock vertical scroll for the rest of this gesture
+      const cur     = slideRef.current
+      const atStart = cur === 0 && dx > 0
+      const atEnd   = cur === images.length - 1 && dx < 0
+      setDragging(true)
+      setDragX((atStart || atEnd) ? dx * 0.25 : dx)
+    }
+
+    const onTouchEnd = (e) => {
+      if (!activeTouch.current) return
+      activeTouch.current = false
+
+      if (!isHoriz.current) return   // was a vertical scroll — nothing to do
+
+      const dx  = e.changedTouches[0].clientX - startX.current
+      const w   = el.offsetWidth
+      const cur = slideRef.current
+      let next  = cur
+      if (dx < -w * 0.2 && next < images.length - 1) next++
+      else if (dx > w * 0.2 && next > 0) next--
+      setSlide(next)
+      setDragging(false)
+      setDragX(0)
+    }
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove',  onTouchMove,  { passive: false })  // ← must be non-passive
+    el.addEventListener('touchend',   onTouchEnd,   { passive: true })
+    el.addEventListener('touchcancel',onTouchEnd,   { passive: true })
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove',  onTouchMove)
+      el.removeEventListener('touchend',   onTouchEnd)
+      el.removeEventListener('touchcancel',onTouchEnd)
+    }
+  }, [images.length])
+
+  // ── Pointer events for desktop mouse drag ────────────────────────
+  const onPointerDown = (e) => {
+    if (images.length < 2 || e.pointerType === 'touch') return
+    e.currentTarget.setPointerCapture(e.pointerId)
+    startX.current     = e.clientX
+    slideRef.current   = slide
+    setDragging(true)
+    setDragX(0)
+  }
+  const onPointerMove = (e) => {
+    if (!dragging || e.pointerType === 'touch') return
+    const raw     = e.clientX - startX.current
+    const atStart = slideRef.current === 0 && raw > 0
+    const atEnd   = slideRef.current === images.length - 1 && raw < 0
+    setDragX((atStart || atEnd) ? raw * 0.25 : raw)
+  }
+  const onPointerUp = (e) => {
+    if (!dragging || e.pointerType === 'touch') return
+    setDragging(false)
+    const dx  = e.clientX - startX.current
+    const w   = trackRef.current?.offsetWidth || 1
+    let next  = slideRef.current
+    if (dx < -w * 0.2 && next < images.length - 1) next++
+    else if (dx > w * 0.2 && next > 0) next--
+    setSlide(next)
+    setDragX(0)
+  }
+
+  const translateX = -slide * 100
+  const stripStyle = {
+    display: 'flex', willChange: 'transform',
+    transform: dragging
+      ? `translateX(calc(${translateX}% + ${dragX}px))`
+      : `translateX(${translateX}%)`,
+    transition: dragging ? 'none' : 'transform 0.38s cubic-bezier(0.25, 1, 0.5, 1)',
+  }
+
+  return (
+    <div
+      ref={trackRef}
+      style={{
+        borderRadius: 10, overflow: 'hidden', marginBottom: 14,
+        background: '#111111', position: 'relative',
+        userSelect: 'none', touchAction: 'pan-y',
+        cursor: images.length > 1 ? (dragging ? 'grabbing' : 'grab') : 'default',
+      }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
+      {/* sliding strip */}
+      <div style={stripStyle}>
+        {images.map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt=""
+            draggable={false}
+            style={{ width: '100%', flexShrink: 0, height: 'auto', display: 'block', pointerEvents: 'none' }}
+          />
+        ))}
+      </div>
+
+      {/* indicator dots + counter */}
+      {images.length > 1 && (
+        <>
+          <div style={{
+            position: 'absolute', top: 10, right: 10,
+            background: 'rgba(0,0,0,0.55)', borderRadius: 20, padding: '3px 9px',
+            fontSize: 11, color: '#FFF', fontWeight: 700, pointerEvents: 'none',
+          }}>{slide + 1}/{images.length}</div>
+          <div style={{
+            position: 'absolute', bottom: 10, left: '50%',
+            transform: 'translateX(-50%)', display: 'flex', gap: 5,
+            pointerEvents: 'none',
+          }}>
+            {images.map((_, i) => (
+              <div key={i} style={{
+                width: i === slide ? 18 : 6, height: 6, borderRadius: 3,
+                background: i === slide ? '#FFF' : 'rgba(255,255,255,0.4)',
+                transition: 'all 0.25s',
+              }} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -27,8 +207,124 @@ function timeAgo(dateStr) {
   return `${Math.floor(h / 24)}d`
 }
 
+const IS_VIDEO_URL = /\.(mp4|mov|webm|avi|mkv)(\?|$)/i
+
+function VideoPlayer({ src }) {
+  const vidRef              = useRef(null)
+  const [playing, setPlaying]   = useState(false)
+  const [expanded, setExpanded] = useState(false)
+
+  // Auto-play when ≥50% visible, pause when scrolled away
+  useEffect(() => {
+    const el = vidRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        el.play().then(() => setPlaying(true)).catch(() => {})
+      } else {
+        el.pause()
+        setPlaying(false)
+      }
+    }, { threshold: 0.5 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  // Lock body scroll while expanded
+  useEffect(() => {
+    if (expanded) document.body.style.overflow = 'hidden'
+    else          document.body.style.overflow = ''
+    return () => { document.body.style.overflow = '' }
+  }, [expanded])
+
+  const openExpanded = () => {
+    vidRef.current?.pause()
+    setPlaying(false)
+    setExpanded(true)
+  }
+  const closeExpanded = () => setExpanded(false)
+
+  return (
+    <>
+      {/* ── Feed thumbnail — muted, auto-play, no controls ── */}
+      <div
+        onClick={openExpanded}
+        style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 14, background: '#000', cursor: 'pointer' }}
+      >
+        <video
+          ref={vidRef}
+          src={src}
+          muted loop playsInline preload="metadata"
+          style={{ width: '100%', maxHeight: 480, display: 'block', objectFit: 'cover' }}
+        />
+        {/* Play icon shown only when paused */}
+        {!playing && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.25)',
+          }}>
+            <div style={{
+              width: 46, height: 46, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.18)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ color: '#fff', fontSize: 17, marginLeft: 4 }}>▶</span>
+            </div>
+          </div>
+        )}
+        {/* Expand hint */}
+        {playing && (
+          <div style={{
+            position: 'absolute', bottom: 8, right: 8,
+            background: 'rgba(0,0,0,0.45)', borderRadius: 6, padding: '3px 8px',
+            fontSize: 10, color: 'rgba(255,255,255,0.7)', fontFamily: 'Inter, sans-serif',
+            pointerEvents: 'none',
+          }}>⤢</div>
+        )}
+      </div>
+
+      {/* ── Expanded fullscreen overlay ── */}
+      {expanded && (
+        <div
+          onClick={closeExpanded}
+          style={{
+            position: 'fixed', inset: 0, background: '#000', zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: 'fadeInFast 0.18s ease both',
+          }}
+        >
+          <video
+            src={src}
+            autoPlay loop playsInline
+            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            onClick={e => e.stopPropagation()}
+          />
+          {/* Close button */}
+          <button
+            onClick={closeExpanded}
+            style={{
+              position: 'absolute',
+              top: 'calc(env(safe-area-inset-top, 0px) + 14px)',
+              right: 16,
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(8px)',
+              border: 'none', borderRadius: '50%',
+              width: 36, height: 36,
+              color: '#FFF', fontSize: 17, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >✕</button>
+        </div>
+      )}
+    </>
+  )
+}
+
 function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onViewProfile, onDeleted }) {
-  const [liked,          setLiked]         = useState(false)
+  const [liked,          setLiked]         = useState(post.user_has_liked ?? false)
+  const [likeAnim,       setLikeAnim]      = useState(false)
   const [saved,          setSaved]         = useState(false)
   const [likes,          setLikes]         = useState(post.post_likes?.[0]?.count ?? 0)
   const [likeBusy,       setLikeBusy]      = useState(false)
@@ -43,8 +339,9 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   const [deleting,   setDeleting]  = useState(false)
   const [shared,     setShared]    = useState(false)
   const [showMenu,   setShowMenu]  = useState(false)
-  const menuRef    = useRef(null)
-  const sharedTimer = useRef(null)
+  const menuRef      = useRef(null)
+  const sharedTimer  = useRef(null)
+  const likeAnimTimer = useRef(null)
   useEffect(() => {
     if (!showMenu) return
     const close = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false) }
@@ -52,6 +349,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
     document.addEventListener('touchstart', close)
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('touchstart', close) }
   }, [showMenu])
+  useEffect(() => () => clearTimeout(likeAnimTimer.current), [])
   const [captionLocal,   setCaptionLocal]  = useState(post.caption)
   const [editing,        setEditing]       = useState(false)
   const [editCaption,    setEditCaption]   = useState('')
@@ -129,6 +427,12 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
     const nowLiked = !liked
     setLiked(nowLiked)
     setLikes(l => nowLiked ? l + 1 : Math.max(0, l - 1))
+    if (nowLiked) {
+      clearTimeout(likeAnimTimer.current)
+      setLikeAnim(true)
+      likeAnimTimer.current = setTimeout(() => setLikeAnim(false), 500)
+      navigator.vibrate?.(40)
+    }
     try { await toggleLike(post.id) } catch { setLiked(!nowLiked); setLikes(l => nowLiked ? l - 1 : l + 1) }
     setLikeBusy(false)
   }
@@ -170,7 +474,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
             </span>
             {post.profiles?.verified && <span style={{ fontSize: 11 }}>✓</span>}
             {post.profiles?.role === 'premium' && <PremiumBadge size={13} />}
-            {post.profiles?.is_owner && <OwnerBadge size={13} />}
+            <RoleBadge isOwner={post.profiles?.is_owner} role={post.profiles?.role} size={13} />
             {/* Follow / Unfollow button */}
             {!isOwnPost && authorId && (
               <button
@@ -234,16 +538,19 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
         </p>
       )}
 
-      {/* Image */}
-      {post.image_url && (
-        <div style={{
-          borderRadius: 10, overflow: 'hidden', marginBottom: 14,
-          background: '#111111', aspectRatio: '1',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <img src={post.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </div>
-      )}
+      {/* Image / Video / carousel */}
+      {(() => {
+        const imgs = post.images?.length > 0 ? post.images : post.image_url ? [post.image_url] : []
+        if (imgs.length === 0) return null
+        if (imgs.length === 1 && IS_VIDEO_URL.test(imgs[0])) return <VideoPlayer src={imgs[0]} />
+        if (imgs.length === 1) return (
+          <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, background: '#111111' }}>
+            <img src={imgs[0]} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} />
+          </div>
+        )
+        return <ImageCarousel images={imgs} />
+      })()}
+
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: showComments ? 12 : 0 }}>
@@ -253,7 +560,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           color: liked ? '#FFF' : '#4B5563', fontSize: 13, fontWeight: 600,
           fontFamily: 'Inter, sans-serif', padding: 0, transition: 'color 0.15s',
         }}>
-          <HeartBottleIcon filled={liked} size={18} /> {likes > 0 && likes}
+          <HeartBottleIcon filled={liked} size={18} pop={likeAnim} /> {likes > 0 && likes}
         </button>
         <button onClick={handleOpenComments} style={{
           display: 'flex', alignItems: 'center', gap: 5,
@@ -391,33 +698,131 @@ const menuIconBtn = {
   transition: 'background 0.15s, color 0.15s',
 }
 
-const PULL_THRESHOLD = 65  // px needed to trigger refresh
+const PULL_THRESHOLD = 65
+const PAGE_SIZE      = 8
+const cacheKey       = (g) => `q_feed_${g ?? 'all'}`
 
-export default function FeedScreen({ profile, isStaff, onViewProfile }) {
-  const [posts,      setPosts]      = useState([])
-  const [game,       setGame]       = useState(null)
-  const [loading,    setLoading]    = useState(true)
-  const [error,      setError]      = useState('')
-  const [following,  setFollowing]  = useState(new Set())
-  const [pullY,      setPullY]      = useState(0)   // 0‥PULL_THRESHOLD, drives indicator
-  const [refreshing, setRefreshing] = useState(false)
-  const touchStartY = useRef(0)
-  const pulling     = useRef(false)
+export default function FeedScreen({ profile, isStaff, onViewProfile, refreshKey = 0 }) {
+  const [posts,       setPosts]      = useState([])
+  const [game,        setGame]       = useState(null)
+  const [loading,     setLoading]    = useState(true)
+  const [bgRefresh,   setBgRefresh]  = useState(false)
+  const [error,       setError]      = useState('')
+  const [following,   setFollowing]  = useState(new Set())
+  const [offset,      setOffset]     = useState(0)
+  const [hasMore,     setHasMore]    = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [pullY,       setPullY]      = useState(0)
+  const [refreshing,  setRefreshing] = useState(false)
+  const touchStartY  = useRef(0)
+  const pulling      = useRef(false)
+  const sentinelRef  = useRef(null)
+  const gameRef      = useRef(game)
+  const allPostsRef    = useRef([])    // in-memory "All" feed for instant client filtering
+  const mountedRef     = useRef(false) // true after initial load fires
+  const hasPreviewRef  = useRef(false) // true when a client-side preview is already showing
+  useEffect(() => { gameRef.current = game }, [game])
 
-  useEffect(() => {
-    getFollowing().then(setFollowing).catch(() => {})
+  const loadFeed = useCallback((opts = {}) => {
+    const { withFollowing = false } = opts
+    const key = cacheKey(gameRef.current)
+
+    // Show sessionStorage cache instantly, then refresh in background
+    try {
+      const cached = sessionStorage.getItem(key)
+      if (cached) {
+        setPosts(JSON.parse(cached))
+        setLoading(false)
+        setBgRefresh(true)
+      } else if (hasPreviewRef.current) {
+        // Client preview already showing — don't flash a spinner, just refresh silently
+        hasPreviewRef.current = false
+        setBgRefresh(true)
+      } else {
+        setLoading(true)
+      }
+    } catch { setLoading(true) }
+
+    setError('')
+    setOffset(0)
+    setHasMore(false)  // block loadMore until this fetch completes
+
+    const feedP      = getFeed({ game: gameRef.current, limit: PAGE_SIZE, offset: 0 })
+    const followingP = withFollowing ? getFollowing().catch(() => new Set()) : null
+
+    feedP
+      .then(data => {
+        setPosts(data)
+        setHasMore(data.length === PAGE_SIZE)
+        if (!gameRef.current) allPostsRef.current = data
+        try { sessionStorage.setItem(key, JSON.stringify(data)) } catch {}
+        if (followingP) followingP.then(setFollowing)
+        // Load likes in background after posts are visible
+        if (data.length > 0) {
+          getUserLikedPosts(data.map(p => p.id)).then(likedSet => {
+            if (likedSet.size > 0) {
+              setPosts(prev => prev.map(p => ({ ...p, user_has_liked: likedSet.has(p.id) })))
+            }
+          }).catch(() => {})
+        }
+      })
+      .catch(e => setError(e.message || 'Error al cargar el feed'))
+      .finally(() => { setLoading(false); setBgRefresh(false) })
   }, [])
 
-  const loadFeed = () => {
-    setLoading(true)
-    setError('')
-    getFeed({ game, limit: 20 })
-      .then(setPosts)
-      .catch(e => setError(e.message || 'Error al cargar el feed'))
-      .finally(() => setLoading(false))
+  // Game filter switch — show a client-side preview instantly, server refreshes in bg
+  const handleGameSwitch = (g) => {
+    if (g === game) return
+    const pool = allPostsRef.current
+    if (pool.length > 0) {
+      const preview = g ? pool.filter(p => p.tag === g) : pool
+      hasPreviewRef.current = true  // signal loadFeed to skip spinner
+      setPosts(preview)
+      setLoading(false)
+      setHasMore(false)   // prevent sentinel from firing loadMore during transition
+      setBgRefresh(true)
+    }
+    setGame(g)
   }
 
-  useEffect(() => { loadFeed() }, [game])
+  const loadMore = useCallback(() => {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    const nextOffset = offset + PAGE_SIZE
+    getFeed({ game: gameRef.current, limit: PAGE_SIZE, offset: nextOffset })
+      .then(data => {
+        setPosts(prev => [...prev, ...data])
+        setHasMore(data.length === PAGE_SIZE)
+        setOffset(nextOffset)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false))
+  }, [loadingMore, hasMore, offset])
+
+  // Initial load
+  useEffect(() => {
+    loadFeed({ withFollowing: true })
+  }, [])
+
+  // Game filter change — skip on initial mount (handled above)
+  useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return }
+    loadFeed()
+  }, [game])
+
+  useEffect(() => { if (refreshKey > 0) loadFeed({ withFollowing: false }) }, [refreshKey])
+
+  // Infinite scroll — IntersectionObserver on sentinel div at bottom
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) loadMore() },
+      { rootMargin: '200px' }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [loadMore])
 
   // Pull-to-refresh — attach to the parent .screen-scroll container
   useEffect(() => {
@@ -461,6 +866,34 @@ export default function FeedScreen({ profile, isStaff, onViewProfile }) {
     }
   }, [game])
 
+  // Realtime: new posts appear automatically
+  useEffect(() => {
+    const channel = supabase
+      .channel('feed-posts')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'posts',
+      }, payload => {
+        const newPost = payload.new
+        // Only add if matches current game filter
+        if (gameRef.current && newPost.tag !== gameRef.current) return
+        // Fetch full post with profile
+        getFeed({ game: gameRef.current, limit: 1, offset: 0 })
+          .then(latest => {
+            if (latest[0]?.id === newPost.id) {
+              setPosts(prev => {
+                if (prev.find(p => p.id === newPost.id)) return prev
+                return [latest[0], ...prev]
+              })
+            }
+          }).catch(() => {})
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
   const handleFollowChange = (userId, nowFollowing) => {
     setFollowing(prev => {
       const next = new Set(prev)
@@ -478,7 +911,7 @@ export default function FeedScreen({ profile, isStaff, onViewProfile }) {
   const showIndicator = pullY > 8 || refreshing
 
   return (
-    <div>
+    <div style={{ minHeight: '100%', background: '#0A0A0A' }}>
       {/* Pull-to-refresh indicator */}
       {showIndicator && (
         <div style={{
@@ -505,7 +938,7 @@ export default function FeedScreen({ profile, isStaff, onViewProfile }) {
       )}
       {/* Game filter */}
       <div className="filter-scroll" style={{ padding: '12px 20px 4px' }}>
-        <button onClick={() => setGame(null)} style={{
+        <button onClick={() => handleGameSwitch(null)} style={{
           padding: '7px 16px', borderRadius: 8, flexShrink: 0,
           border: `1.5px solid ${!game ? 'rgba(255,255,255,0.3)' : '#2A2A2A'}`,
           background: !game ? 'rgba(255,255,255,0.08)' : 'transparent',
@@ -516,7 +949,7 @@ export default function FeedScreen({ profile, isStaff, onViewProfile }) {
           const gs = GAME_STYLES[g]
           const active = game === g
           return (
-            <button key={g} onClick={() => setGame(active ? null : g)} style={{
+            <button key={g} onClick={() => handleGameSwitch(active ? null : g)} style={{
               padding: '7px 16px', borderRadius: 8, flexShrink: 0,
               border: `1.5px solid ${active ? gs.border : '#2A2A2A'}`,
               background: active ? gs.bg : 'transparent',
@@ -528,8 +961,29 @@ export default function FeedScreen({ profile, isStaff, onViewProfile }) {
       </div>
 
       {loading && (
-        <div style={{ padding: 40, textAlign: 'center' }}>
-          <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+        <div>
+          {[...Array(3)].map((_, i) => (
+            <div key={i} style={{ padding: '14px 16px', borderBottom: '1px solid #111' }}>
+              {/* Avatar + name row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <span style={sk(36, 36, 18)} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={sk('38%', 12, 5)} />
+                  <span style={sk('22%', 10, 5)} />
+                </div>
+              </div>
+              {/* Caption lines */}
+              <span style={{ ...sk('90%', 12, 5), marginBottom: 6 }} />
+              <span style={{ ...sk('65%', 12, 5), marginBottom: 12 }} />
+              {/* Image area */}
+              <span style={{ ...sk('100%', undefined, 10), aspectRatio: '4/3', marginBottom: 12 }} />
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: 18 }}>
+                <span style={sk(36, 12, 5)} />
+                <span style={sk(36, 12, 5)} />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -537,6 +991,13 @@ export default function FeedScreen({ profile, isStaff, onViewProfile }) {
         <div style={{ margin: '16px 20px', textAlign: 'center' }}>
           <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13, marginBottom: 10 }}>{error}</div>
           <button onClick={loadFeed} style={{ padding: '8px 20px', borderRadius: 8, background: '#1A1A1A', border: '1px solid #333', color: '#FFF', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>🔄 Reintentar</button>
+        </div>
+      )}
+
+      {/* Background refresh indicator */}
+      {bgRefresh && !loading && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 0' }}>
+          <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#6B7280', animation: 'spin 0.8s linear infinite' }} />
         </div>
       )}
 
@@ -548,7 +1009,6 @@ export default function FeedScreen({ profile, isStaff, onViewProfile }) {
       )}
 
       {posts
-        // Hide private posts from other users (marked with [PRIVADO] in caption)
         .filter(post => {
           if (post.caption?.includes('[PRIVADO]')) {
             return post.profiles?.id === profile?.id || isStaff
@@ -567,6 +1027,21 @@ export default function FeedScreen({ profile, isStaff, onViewProfile }) {
             onDeleted={handleDeleted}
           />
         ))}
+
+      {/* Infinite scroll sentinel */}
+      <div ref={sentinelRef} style={{ height: 1 }} />
+
+      {/* Load more indicator */}
+      {loadingMore && (
+        <div style={{ padding: '16px 0', textAlign: 'center' }}>
+          <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+        </div>
+      )}
+      {!hasMore && posts.length > 0 && (
+        <div style={{ padding: '20px 0 80px', textAlign: 'center', fontSize: 12, color: '#374151' }}>
+          · · ·
+        </div>
+      )}
     </div>
   )
 }

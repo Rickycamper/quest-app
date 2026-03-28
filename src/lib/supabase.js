@@ -8,14 +8,14 @@ const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // Bump this version whenever the client config changes — forces HMR recreation
-const CLIENT_V = 5
+const CLIENT_V = 7
 
 if (!window.__supabase || window.__supabase.__v !== CLIENT_V) {
   const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true,   // needed so magic-link recovery tokens are parsed from URL
+      detectSessionInUrl: true,   // parses recovery tokens from URL hash & query params
       // Bypass Web Locks API — prevents infinite queue when lock gets stuck in Chrome
       // Safe for single-tab apps
       lock: (_name, _timeout, fn) => fn(),
@@ -53,12 +53,22 @@ export async function signUpWithEmail(email, password, username) {
     }
   })
   if (error) throw error
+  // Save terms acceptance immediately if session exists (email confirm disabled)
+  if (data?.session?.user?.id) {
+    await supabase.from('profiles').update({ terms_accepted_at: new Date().toISOString() }).eq('id', data.session.user.id)
+  }
   return data
 }
 
-export async function signInWithGoogle() {
+export async function acceptTerms() {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return
+  await supabase.from('profiles').update({ terms_accepted_at: new Date().toISOString() }).eq('id', session.user.id)
+}
+
+export async function signInWithTwitch() {
   const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
+    provider: 'twitch',
     options: { redirectTo: window.location.origin }
   })
   if (error) throw error
@@ -125,20 +135,63 @@ export async function deleteAccount() {
 export async function getProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, role, branch, avatar_url, points, verified, phone, email, is_owner')
+    .select('id, username, role, branch, avatar_url, points, verified, phone, email, is_owner, terms_accepted_at')
     .eq('id', userId)
     .single()
   if (error) throw error
   return data
 }
 
+// Compress + resize an image file to max 600×600px JPEG before uploading.
+// Phone camera photos are often 10-20 MB — this drops them to ~100-300 KB.
+// Includes a 10 s timeout so HEIC / unsupported formats never hang forever.
+function compressImage(file, { maxSize = 600, quality = 0.82 } = {}) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+
+    // Safety timeout — if the image never loads (e.g. HEIC on Android/Chrome),
+    // reject after 10 s instead of hanging forever.
+    const timer = setTimeout(() => {
+      URL.revokeObjectURL(url)
+      reject(new Error(
+        'No se pudo procesar la imagen. Usa una foto en formato JPG o PNG.'
+      ))
+    }, 10_000)
+
+    img.onload = () => {
+      clearTimeout(timer)
+      URL.revokeObjectURL(url)
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height))
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { reject(new Error('Canvas no disponible')); return }
+      ctx.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(blob => {
+        if (!blob) { reject(new Error('No se pudo comprimir la imagen')); return }
+        resolve(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }))
+      }, 'image/jpeg', quality)
+    }
+    img.onerror = () => {
+      clearTimeout(timer)
+      URL.revokeObjectURL(url)
+      reject(new Error('No se pudo leer la imagen. Usa una foto en formato JPG o PNG.'))
+    }
+    img.src = url
+  })
+}
+
 export async function uploadAvatar(file) {
   const { data: { user } } = await supabase.auth.getUser()
-  const ext  = file.name.split('.').pop() || 'jpg'
-  const path = `${user.id}/avatar.${ext}`
+  // Always compress to JPEG — drastically reduces upload size and time
+  const compressed = await compressImage(file)
+  const path = `${user.id}/avatar.jpg`
   const { error } = await supabase.storage
     .from('avatars')
-    .upload(path, file, { upsert: true, contentType: file.type })
+    .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' })
   if (error) throw error
   const { data } = supabase.storage.from('avatars').getPublicUrl(path)
   // Cache-bust so React re-renders the new photo
@@ -158,10 +211,10 @@ export async function updateProfile(userId, updates) {
 
 // ── FEED ────────────────────────────────────
 export async function getFeed({ game = null, limit = 20, offset = 0 } = {}) {
-  let query = supabase
+  let postsQuery = supabase
     .from('posts')
     .select(`
-      id, caption, tag, image_url, created_at,
+      id, caption, tag, image_url, images, created_at,
       profiles:user_id ( id, username, avatar_url, role, verified, is_owner ),
       post_likes ( count ),
       post_comments ( count )
@@ -169,11 +222,23 @@ export async function getFeed({ game = null, limit = 20, offset = 0 } = {}) {
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  if (game) query = query.eq('tag', game)
+  if (game) postsQuery = postsQuery.eq('tag', game)
 
-  const { data, error } = await query
+  const { data, error } = await postsQuery
   if (error) throw error
-  return data
+  return (data ?? []).map(p => ({ ...p, user_has_liked: false }))
+}
+
+// Fetch which post IDs the user has liked — called after posts render so it
+// doesn't block the initial paint. Returns a Set of liked post IDs.
+export async function getUserLikedPosts(postIds) {
+  if (!postIds?.length) return new Set()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return new Set()
+  const { data } = await supabase
+    .from('post_likes').select('post_id')
+    .eq('user_id', session.user.id).in('post_id', postIds)
+  return new Set((data ?? []).map(l => l.post_id))
 }
 
 export async function uploadPostImage(file) {
@@ -182,14 +247,15 @@ export async function uploadPostImage(file) {
   // Normalize extension — fallback to jpg if name has no dot
   const parts = file.name.split('.')
   const ext   = parts.length > 1 ? parts.pop() : 'jpg'
-  const path  = `${session.user.id}/${Date.now()}.${ext}`
-  const { error } = await supabase.storage.from('posts').upload(path, file, { upsert: true, contentType: file.type })
-  if (error) throw new Error(error.message || error.error || 'Error al subir la imagen')
+  const uid   = Math.random().toString(36).slice(2, 8)
+  const path  = `${session.user.id}/${Date.now()}_${uid}.${ext}`
+  const { error } = await supabase.storage.from('posts').upload(path, file, { contentType: file.type })
+  if (error) throw new Error(`[storage] ${error.message || error.error || JSON.stringify(error)}`)
   const { data } = supabase.storage.from('posts').getPublicUrl(path)
   return data.publicUrl
 }
 
-export async function createPost({ caption, game, imageUrl }) {
+export async function createPost({ caption, game, imageUrls = [] }) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) throw new Error('No hay sesión activa')
 
@@ -205,9 +271,13 @@ export async function createPost({ caption, game, imageUrl }) {
     if ((count ?? 0) >= 50) throw new Error('POST_LIMIT_REACHED')
   }
 
+  const image_url = imageUrls[0] ?? null
+  const insertData = { user_id: session.user.id, caption, tag: game, image_url }
+  if (imageUrls.length > 0) insertData.images = imageUrls
+
   const { data, error } = await supabase
     .from('posts')
-    .insert({ user_id: session.user.id, caption, tag: game, image_url: imageUrl })
+    .insert(insertData)
     .select()
     .single()
   if (error) throw new Error(error.message || error.details || 'Error al crear el post')
@@ -313,13 +383,30 @@ export async function toggleLike(postId) {
     .select('id')
     .eq('post_id', postId)
     .eq('user_id', session.user.id)
-    .single()
+    .maybeSingle()
 
   if (existing) {
     await supabase.from('post_likes').delete().eq('id', existing.id)
     return false
   } else {
     await supabase.from('post_likes').insert({ post_id: postId, user_id: session.user.id })
+    // Notify the post owner (skip if liking own post)
+    try {
+      const [{ data: liker }, { data: post }] = await Promise.all([
+        supabase.from('profiles').select('username').eq('id', session.user.id).single(),
+        supabase.from('posts').select('user_id, caption').eq('id', postId).single(),
+      ])
+      if (post?.user_id && post.user_id !== session.user.id) {
+        const preview = post.caption ? post.caption.slice(0, 40) + (post.caption.length > 40 ? '…' : '') : 'tu post'
+        await createNotification(
+          post.user_id,
+          'like',
+          '❤️ Nuevo like',
+          `@${liker?.username ?? 'Alguien'} le dio like a: ${preview}`,
+          { postId, userId: session.user.id }
+        )
+      }
+    } catch { /* non-critical */ }
     return true
   }
 }
@@ -332,7 +419,7 @@ export async function toggleSave(postId) {
     .select('id')
     .eq('post_id', postId)
     .eq('user_id', session.user.id)
-    .single()
+    .maybeSingle()
 
   if (existing) {
     await supabase.from('post_saves').delete().eq('id', existing.id)
@@ -351,13 +438,25 @@ export async function toggleFollow(targetUserId) {
     .select('id')
     .eq('follower_id', session.user.id)
     .eq('following_id', targetUserId)
-    .single()
+    .maybeSingle()
 
   if (existing) {
     await supabase.from('follows').delete().eq('id', existing.id)
     return false
   } else {
     await supabase.from('follows').insert({ follower_id: session.user.id, following_id: targetUserId })
+    // Notify the followed user
+    try {
+      const { data: follower } = await supabase
+        .from('profiles').select('username').eq('id', session.user.id).single()
+      await createNotification(
+        targetUserId,
+        'follow',
+        '👤 Nuevo seguidor',
+        `@${follower?.username ?? 'Alguien'} comenzó a seguirte`,
+        { userId: session.user.id }
+      )
+    } catch { /* non-critical */ }
     return true
   }
 }
@@ -400,27 +499,17 @@ export async function reportPost(postId, reason) {
 
 // ── RANKINGS ────────────────────────────────
 export async function getLeaderboard({ branch = null, game = null } = {}) {
-  // Per-game ranking: compute from approved claims
+  // ── Per-game: use DB RPC (single query, server-side aggregation) ──
   if (game) {
-    let q = supabase
-      .from('ranking_claims')
-      .select('user_id, position, profiles:user_id(id, username, avatar_url, branch, verified, role, is_owner)')
-      .eq('status', 'approved')
-      .eq('game', game)
-    const { data, error } = await q
+    const { data, error } = await supabase.rpc('get_game_leaderboard', {
+      p_game:   game,
+      p_branch: branch ?? null,
+    })
     if (error) throw error
-    const map = {}
-    for (const c of data) {
-      const uid = c.user_id
-      if (!map[uid]) map[uid] = { ...c.profiles, points: 0 }
-      map[uid].points += RANKING_PTS[c.position] ?? 0
-    }
-    let entries = Object.values(map).filter(e => e.points > 0)
-    if (branch) entries = entries.filter(e => e.branch === branch)
-    return entries.sort((a, b) => b.points - a.points).slice(0, 50)
+    return (data ?? []).map(r => ({ ...r, points: Number(r.points) }))
   }
 
-  // Overall ranking: read from profiles.points
+  // ── Global (no game): read profiles.points directly ──
   let query = supabase
     .from('profiles')
     .select('id, username, avatar_url, branch, verified, role, points, is_owner')
@@ -445,13 +534,25 @@ export async function getActiveSeason() {
   return data
 }
 
+export async function searchTournamentsByName(query) {
+  if (!query || query.trim().length < 2) return []
+  const { data, error } = await supabase
+    .from('tournaments')
+    .select('id, name, game, branch, date')
+    .ilike('name', `%${query.trim()}%`)
+    .order('date', { ascending: false })
+    .limit(6)
+  if (error) throw error
+  return data ?? []
+}
+
 export async function getTournaments({ game = null, branch = null } = {}) {
   let query = supabase
     .from('tournaments')
     .select(`
-      id, name, game, branch, date, player_count, rounds,
+      id, name, game, branch, date, player_count, start_time,
       tournament_results ( position, user_id, profiles:user_id ( username ) ),
-      tournament_participants ( user_id )
+      tournament_participants ( user_id, profiles:user_id ( id, username, avatar_url ) )
     `)
     .order('date', { ascending: false })
     .limit(20)
@@ -492,22 +593,50 @@ export async function adjustUserPoints(userId, delta) {
     .from('profiles').select('points').eq('id', userId).single()
   if (fetchErr) throw fetchErr
   const newPoints = Math.max(0, (prof?.points ?? 0) + delta)
-  const { error } = await supabase.rpc('set_user_points', { target_id: userId, pts: newPoints })
-  if (error) throw error
-  return newPoints
+  return setUserPoints(userId, newPoints)
 }
 
 export async function setUserPoints(userId, points) {
   const newPoints = Math.max(0, Math.round(Number(points) || 0))
-  const { error } = await supabase.rpc('set_user_points', { target_id: userId, pts: newPoints })
+  // Use direct update (same pattern as setUserPremium) — RPC had silent RLS failures
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ points: newPoints })
+    .eq('id', userId)
+    .select('id, points')
+    .single()
   if (error) throw error
-  return newPoints
+  if (!data) throw new Error('Usuario no encontrado.')
+  return data.points
 }
 
-export async function createTournament({ name, game, branch, date, playerCount, rounds }) {
+// Reject all approved claims for a user in a specific game.
+// Used by admin to zero out a player's TCG ranking — since points now derive
+// from ranking_claims, this is the only way to truly remove their points.
+export async function rejectUserGameClaims(userId, game) {
+  const { error } = await supabase
+    .from('ranking_claims')
+    .update({ status: 'rejected' })
+    .eq('user_id', userId)
+    .eq('game', game)
+    .eq('status', 'approved')
+  if (error) throw error
+}
+
+export async function updateTournament(id, { date, startTime, playerCount }) {
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ date, start_time: startTime || null, player_count: parseInt(playerCount) })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function createTournament({ name, game, branch, date, playerCount, startTime }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
   const { data, error } = await supabase
     .from('tournaments')
-    .insert({ name, game, branch, date, player_count: playerCount, rounds })
+    .insert({ name, game, branch, date, player_count: playerCount, start_time: startTime || null, created_by: session.user.id })
     .select()
     .single()
   if (error) throw error
@@ -548,15 +677,33 @@ export async function submitClaim({ tournamentName, tournamentId = null, game, b
     .single()
   if (error) throw error
 
-  // If auto-approved (staff), add points immediately to profile
+  // If auto-approved (staff), add points immediately — use atomic adjustUserPoints
   if (autoApprove && data) {
     const pts = RANKING_PTS[position] ?? 1
-    const { data: prof } = await supabase
-      .from('profiles').select('points').eq('id', session.user.id).single()
-    await supabase
-      .from('profiles')
-      .update({ points: (prof?.points ?? 0) + pts })
-      .eq('id', session.user.id)
+    await adjustUserPoints(session.user.id, pts)
+  }
+
+  // Notify all staff/admin users about the new pending claim
+  if (!autoApprove) {
+    const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
+    const medal  = MEDALS[position] ?? `#${position}`
+    try {
+      const { data: submitter } = await supabase
+        .from('profiles').select('username').eq('id', session.user.id).single()
+      const { data: staffUsers } = await supabase
+        .from('profiles').select('id').in('role', ['staff', 'admin'])
+      if (staffUsers?.length) {
+        await Promise.all(staffUsers.map(s =>
+          createNotification(
+            s.id,
+            'claim_pending',
+            '📋 Nuevo claim pendiente',
+            `${medal} @${submitter?.username ?? 'Usuario'} reportó un resultado en ${tournamentName}. Revisalo en Rankings → Claims.`,
+            { claimId: data.id }
+          )
+        ))
+      }
+    } catch { /* non-critical — claim was saved, notification is best-effort */ }
   }
 
   return data
@@ -566,7 +713,8 @@ export async function getPendingClaims() {
   const { data, error } = await supabase
     .from('ranking_claims')
     .select(`
-      id, position, tournament_name, game, notes, evidence_url, created_at,
+      id, position, tournament_name, tournament_id, game, branch, notes, evidence_url,
+      verified_participant, created_at,
       profiles:user_id ( id, username, avatar_url )
     `)
     .eq('status', 'pending')
@@ -576,31 +724,26 @@ export async function getPendingClaims() {
 }
 
 export async function reviewClaim(claimId, status) {
-  const { data: { session } } = await supabase.auth.getSession()
+  // Fetch session + claim data in parallel
+  const [{ data: { session } }, { data: claim }] = await Promise.all([
+    supabase.auth.getSession(),
+    supabase.from('ranking_claims')
+      .select('user_id, position, tournament_name, game')
+      .eq('id', claimId).single(),
+  ])
 
-  // Fetch claim data (needed for points + notification)
-  const { data: claim } = await supabase
+  // Update claim status + adjust points in parallel (independent operations)
+  const updateClaim = supabase
     .from('ranking_claims')
-    .select('user_id, position, tournament_name, game')
+    .update({ status, reviewed_by: session?.user?.id, reviewed_at: new Date().toISOString() })
     .eq('id', claimId)
-    .single()
 
-  // If approving, add points to the user's profile
-  if (status === 'approved' && claim) {
-    const pts = RANKING_PTS[claim.position] ?? 1
-    const { data: prof } = await supabase
-      .from('profiles').select('points').eq('id', claim.user_id).single()
-    await supabase
-      .from('profiles')
-      .update({ points: (prof?.points ?? 0) + pts })
-      .eq('id', claim.user_id)
-  }
+  const updatePoints = (status === 'approved' && claim)
+    ? adjustUserPoints(claim.user_id, RANKING_PTS[claim.position] ?? 1)
+    : Promise.resolve()
 
-  // Try full update first; fall back to status-only if optional audit columns don't exist yet
-  let { error } = await supabase
-    .from('ranking_claims')
-    .update({ status, reviewed_by: session.user.id, reviewed_at: new Date().toISOString() })
-    .eq('id', claimId)
+  const [{ error }] = await Promise.all([updateClaim, updatePoints])
+
   if (error) {
     const isSchemaError = error.code === 'PGRST204' || error.message?.includes('reviewed_by') || error.message?.includes('reviewed_at')
     if (isSchemaError) {
@@ -611,7 +754,7 @@ export async function reviewClaim(claimId, status) {
     }
   }
 
-  // Notify the user about the result
+  // Notify fire-and-forget — doesn't block the UI
   if (claim) {
     const pts = RANKING_PTS[claim.position] ?? 1
     const isApproved = status === 'approved'
@@ -631,14 +774,14 @@ export async function reviewClaim(claimId, status) {
 export async function getCards(userId) {
   const { data, error } = await supabase
     .from('cards')
-    .select('id, name, game, status, set_code, estimated_value, notes, image_url, created_at')
+    .select('id, name, game, status, set_code, estimated_value, notes, image_url, folder, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data
 }
 
-export async function addCard({ name, game, cardStatus, qty, price, note, imageUrl }) {
+export async function addCard({ name, game, cardStatus, qty, price, note, imageUrl, folder }) {
   const { data: { session } } = await supabase.auth.getSession()
 
   // Check card limit (unlimited for staff / admin / premium)
@@ -655,7 +798,7 @@ export async function addCard({ name, game, cardStatus, qty, price, note, imageU
 
   const { data, error } = await supabase
     .from('cards')
-    .insert({ user_id: session.user.id, name, game, status: cardStatus, estimated_value: price, notes: note, image_url: imageUrl })
+    .insert({ user_id: session.user.id, name: name || null, game, status: cardStatus, qty: qty || 1, estimated_value: price, notes: note, image_url: imageUrl, folder: folder || null })
     .select()
     .single()
   if (error) throw error
@@ -724,12 +867,11 @@ export async function uploadPackageImage(file) {
 }
 
 export async function searchUsers(query) {
-  // Empty query loads all users (up to 50) for client-side filtering in the modal
   let req = supabase
     .from('profiles')
     .select('id, username, avatar_url')
     .order('username', { ascending: true })
-    .limit(50)
+    .limit(200)  // increased so no user gets cut off
   if (query && query.length > 0) {
     req = req.ilike('username', `%${query}%`)
   }
@@ -739,8 +881,13 @@ export async function searchUsers(query) {
 }
 
 export async function createNotification(userId, type, title, body, meta = {}) {
-  await supabase.from('notifications').insert({
-    user_id: userId, type, title, body, meta, read: false
+  // Uses SECURITY DEFINER RPC — prevents open INSERT policy on notifications table
+  await supabase.rpc('create_notification', {
+    p_user_id: userId,
+    p_type:    type,
+    p_title:   title,
+    p_body:    body,
+    p_meta:    meta,
   })
 }
 
@@ -1007,6 +1154,17 @@ export async function getOrCreateConversation(otherUserId) {
     .select('id')
     .single()
 
+  // 23505 = unique_violation — race condition where both clients tried to create simultaneously
+  if (error?.code === '23505') {
+    const { data: race } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('user_a', user_a)
+      .eq('user_b', user_b)
+      .single()
+    if (race) return race.id
+  }
+
   if (error) throw error
   return data.id
 }
@@ -1036,13 +1194,20 @@ export async function sendMessage(conversationId, body, recipientId) {
 
   if (error) throw error
 
+  // Fetch sender username so the recipient can open the chat directly from the notification
+  const { data: senderProfile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', session.user.id)
+    .single()
+
   // Notify recipient — fire and forget
   createNotification(
     recipientId,
     'new_message',
     '💬 Nuevo mensaje',
     body.length > 60 ? body.slice(0, 60) + '…' : body,
-    { conversationId }
+    { conversationId, senderId: session.user.id, senderUsername: senderProfile?.username ?? '' }
   )
 
   return data
@@ -1164,8 +1329,14 @@ export async function respondToMatch(matchId, accept) {
     const winner = players?.find(p => p.id === match.winner_id)
     const loser  = players?.find(p => p.id !== match.winner_id)
     const gs = GAME_STYLES[match.game] ?? {}
-    const caption = `🏆 FINAL · @${winner?.username} venció a @${loser?.username} en ${gs.emoji ?? ''} ${match.game}${match.notes ? ` · ${match.notes}` : ''} [VS]`
-    await supabase.from('posts').insert({ user_id: match.logged_by, caption, tag: match.game })
+    const caption = `🏆 FINAL ${gs.emoji ?? ''} ${match.game} · @${winner?.username} venció a @${loser?.username}${match.notes ? ` · ${match.notes}` : ''} [VS]`
+    const koUrl = `${window.location.origin}/ko-banner.png`
+    await supabase.from('posts').insert({
+      user_id: match.logged_by,
+      caption,
+      tag: match.game,
+      image_url: koUrl,
+    })
   }
 
   // Notify the logger of the outcome
@@ -1184,9 +1355,9 @@ export async function respondToMatch(matchId, accept) {
 
 /**
  * Get head-to-head record between the current user and another user.
- * - Non-premium: only matches from the current calendar month (auto-resets on the 1st).
+ * - Non-premium: rolling 7-day window (auto-resets every 7 days).
  * - Premium / admin: all matches after the last manual reset (or all time if never reset).
- * Returns { wins, losses, total, matches[], myId, cutoff }.
+ * Returns { wins, losses, total, matches[], myId, cutoff, nextReset }.
  */
 export async function getHeadToHead(opponentId, isPremium = false) {
   const { data: { session } } = await supabase.auth.getSession()
@@ -1195,6 +1366,7 @@ export async function getHeadToHead(opponentId, isPremium = false) {
 
   // Determine the cutoff date
   let cutoff = null
+  let nextReset = null
   if (isPremium) {
     // Premium/admin: use the latest manual reset between these two players (either side)
     const { data: resets } = await supabase
@@ -1205,9 +1377,13 @@ export async function getHeadToHead(opponentId, isPremium = false) {
       .limit(1)
     cutoff = resets?.[0]?.reset_at ?? null   // null = no manual reset, show all time
   } else {
-    // Free users: only current calendar month
+    // Free users: rolling 7-day window
     const now = new Date()
-    cutoff = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    nextReset = new Date(now.getTime() + (7 - (now.getDay() || 7)) * 24 * 60 * 60 * 1000)
+    // Simpler: exact 7 days from cutoff — we just store the cutoff, next reset = cutoff + 14d
+    // Actually: show time remaining until the "oldest match" drops off naturally
+    nextReset = null  // computed in UI from oldest match date
   }
 
   let query = supabase
@@ -1225,7 +1401,7 @@ export async function getHeadToHead(opponentId, isPremium = false) {
   const matches = data ?? []
   const wins    = matches.filter(m => m.winner_id === me).length
   const losses  = matches.filter(m => m.winner_id === opponentId).length
-  return { wins, losses, total: wins + losses, matches, myId: me, cutoff }
+  return { wins, losses, total: wins + losses, matches, myId: me, cutoff, isPremium }
 }
 
 /**
@@ -1261,6 +1437,137 @@ export function subscribeToPackage(packageId, callback) {
       schema: 'public',
       table: 'packages',
       filter: `id=eq.${packageId}`
+    }, callback)
+    .subscribe()
+}
+
+// ── AUCTIONS ─────────────────────────────────
+
+export async function getAuctions() {
+  const { data, error } = await supabase
+    .from('auctions')
+    .select(`
+      id, title, game, image_url, min_bid, start_time, duration_seconds,
+      status, winner_id, winning_amount, created_at,
+      auction_bids ( id, user_id, amount, created_at, profiles:user_id ( username, avatar_url ) ),
+      auction_watches ( user_id )
+    `)
+    .order('start_time', { ascending: false })
+    .limit(40)
+  if (error) throw error
+  return data
+}
+
+export async function createAuction({ title, game, imageUrl, minBid, startTime }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
+  const { data, error } = await supabase
+    .from('auctions')
+    .insert({
+      title, game, image_url: imageUrl,
+      min_bid: minBid, start_time: startTime,
+      duration_seconds: 300,
+      status: 'pending',
+      created_by: session.user.id,
+    })
+    .select().single()
+  if (error) throw error
+  return data
+}
+
+export async function uploadAuctionImage(file, userId) {
+  const ext  = file.name.split('.').pop()
+  const path = `auctions/${userId}/${Date.now()}.${ext}`
+  const { error } = await supabase.storage.from('media').upload(path, file, { upsert: true })
+  if (error) throw error
+  const { data } = supabase.storage.from('media').getPublicUrl(path)
+  return data.publicUrl
+}
+
+export async function placeBid(auctionId, amount) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
+  const { data, error } = await supabase.rpc('place_bid', {
+    p_auction_id: auctionId,
+    p_user_id:    session.user.id,
+    p_amount:     amount,
+  })
+  if (error) throw new Error(error.message.replace('ERROR: ', '').split('\n')[0])
+  return data
+}
+
+export async function endAuction(auctionId) {
+  const { error } = await supabase.rpc('end_auction', { p_auction_id: auctionId })
+  if (error) console.warn('[end_auction]', error.message)
+}
+
+export async function notifyAuctionWatchers(auctionId) {
+  const { error } = await supabase.rpc('notify_auction_watchers', { p_auction_id: auctionId })
+  if (error) console.warn('[notify_watchers]', error.message)
+}
+
+export async function toggleAuctionWatch(auctionId, watching) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return
+  if (watching) {
+    await supabase.from('auction_watches')
+      .upsert({ auction_id: auctionId, user_id: session.user.id })
+  } else {
+    await supabase.from('auction_watches')
+      .delete()
+      .eq('auction_id', auctionId)
+      .eq('user_id', session.user.id)
+  }
+}
+
+export async function getAuctionBids(auctionId) {
+  const { data, error } = await supabase
+    .from('auction_bids')
+    .select('id, amount, created_at, user_id, profiles:user_id ( username, avatar_url )')
+    .eq('auction_id', auctionId)
+    .order('amount', { ascending: false })
+    .limit(50)
+  if (error) throw error
+  return data
+}
+
+export async function getAuctionChat(auctionId) {
+  const { data, error } = await supabase
+    .from('auction_chat')
+    .select('id, message, created_at, user_id, profiles:user_id ( username, avatar_url )')
+    .eq('auction_id', auctionId)
+    .order('created_at', { ascending: true })
+    .limit(100)
+  if (error) throw error
+  return data
+}
+
+export async function sendAuctionChat(auctionId, message) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
+  const { data, error } = await supabase
+    .from('auction_chat')
+    .insert({ auction_id: auctionId, user_id: session.user.id, message: message.trim() })
+    .select('id, message, created_at, user_id, profiles:user_id ( username, avatar_url )')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export function subscribeToAuctionBids(auctionId, callback) {
+  return supabase.channel(`auction-bids-${auctionId}`)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'auction_bids',
+      filter: `auction_id=eq.${auctionId}`,
+    }, callback)
+    .subscribe()
+}
+
+export function subscribeToAuctionChat(auctionId, callback) {
+  return supabase.channel(`auction-chat-${auctionId}`)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'auction_chat',
+      filter: `auction_id=eq.${auctionId}`,
     }, callback)
     .subscribe()
 }

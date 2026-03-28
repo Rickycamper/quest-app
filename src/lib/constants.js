@@ -22,9 +22,15 @@ export const GAME_STYLES = {
 
 export const BRANCHES = ['Panama', 'David', 'Chitre']
 
+export const BRANCH_STYLES = {
+  'Panama': { color: '#38BDF8', bg: 'rgba(56,189,248,0.10)', border: 'rgba(56,189,248,0.25)', dot: '#38BDF8' },
+  'David':  { color: '#FB923C', bg: 'rgba(251,146,60,0.10)',  border: 'rgba(251,146,60,0.25)',  dot: '#FB923C' },
+  'Chitre': { color: '#A78BFA', bg: 'rgba(167,139,250,0.10)', border: 'rgba(167,139,250,0.25)', dot: '#A78BFA' },
+}
+
 export const CARD_STATUS = {
   have:  { label: 'Tengo',  color: '#4ADE80', bg: 'rgba(74,222,128,0.12)',  border: 'rgba(74,222,128,0.25)'  },
-  want:  { label: 'Quiero', color: '#FCD34D', bg: 'rgba(252,211,77,0.12)',  border: 'rgba(252,211,77,0.25)'  },
+  want:  { label: 'Compro', color: '#FCD34D', bg: 'rgba(252,211,77,0.12)',  border: 'rgba(252,211,77,0.25)'  },
   trade: { label: 'Tradeo', color: '#60A5FA', bg: 'rgba(96,165,250,0.12)',  border: 'rgba(96,165,250,0.25)'  },
   sell:  { label: 'Vendo',  color: '#F97316', bg: 'rgba(249,115,22,0.12)',  border: 'rgba(249,115,22,0.25)'  },
 }
@@ -64,4 +70,7 @@ export const NOTIF_CONFIG = {
   claim_approved:     { color: '#4ADE80', bg: 'rgba(74,222,128,0.1)',  border: 'rgba(74,222,128,0.2)'  },
   claim_rejected:     { color: '#F87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)' },
   match_result:       { color: '#FB923C', bg: 'rgba(251,146,60,0.1)',  border: 'rgba(251,146,60,0.2)'  },
+  auction_won:        { color: '#FCD34D', bg: 'rgba(252,211,77,0.1)',  border: 'rgba(252,211,77,0.2)'  },
+  auction_ended:      { color: '#FCD34D', bg: 'rgba(252,211,77,0.1)',  border: 'rgba(252,211,77,0.2)'  },
+  auction_live:       { color: '#F87171', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.2)'   },
 }

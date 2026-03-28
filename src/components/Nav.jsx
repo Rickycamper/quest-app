@@ -1,9 +1,23 @@
 // ─────────────────────────────────────────────
 // QUEST — BottomNav + NotifBell
 // ─────────────────────────────────────────────
+import { useState, useRef, useEffect } from 'react'
 import { HomeIcon, RanksIcon, FolderIcon, TruckIcon, PlusIcon, BellIcon } from './Icons'
 
-export function BottomNav({ active, onTab, onPost }) {
+export function BottomNav({ active, hidden, onTab, onPost }) {
+  const [tapped,       setTapped]       = useState(null)
+  const [postPressed,  setPostPressed]  = useState(false)
+  const tapTimer  = useRef(null)
+  const postTimer = useRef(null)
+  useEffect(() => () => { clearTimeout(tapTimer.current); clearTimeout(postTimer.current) }, [])
+
+  const handleTab = (id) => {
+    clearTimeout(tapTimer.current)
+    setTapped(id)
+    tapTimer.current = setTimeout(() => setTapped(null), 420)
+    onTab(id)
+  }
+
   const tabs = [
     { id: 'feed',     label: 'Feed',     icon: (a) => <HomeIcon active={a}   /> },
     { id: 'ranks',    label: 'Ranks',    icon: (a) => <RanksIcon active={a}  /> },
@@ -14,33 +28,56 @@ export function BottomNav({ active, onTab, onPost }) {
 
   return (
     <div style={{
-      position: 'absolute', bottom: 0, left: 0, right: 0, height: 46,
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
       background: 'rgba(10,10,10,0.97)', backdropFilter: 'blur(20px)',
       borderTop: '1px solid #1F1F1F',
-      display: 'flex', alignItems: 'center', paddingTop: 0, zIndex: 100,
+      display: 'flex', alignItems: 'flex-end',
+      paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex: 100,
+      overflow: 'visible',
+      transform: hidden ? 'translateY(100%)' : 'translateY(0)',
+      transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)',
+      willChange: 'transform',
     }}>
       {tabs.map(tab => {
         if (tab.isPost) return (
-          <button key="post" onClick={onPost} style={{
-            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', paddingTop: 0, background: 'none', border: 'none', cursor: 'pointer',
-          }}>
+          <button key="post"
+            onTouchStart={() => { clearTimeout(postTimer.current); setPostPressed(true) }}
+            onTouchEnd={() => { postTimer.current = setTimeout(() => setPostPressed(false), 180) }}
+            onClick={onPost}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'flex-end', background: 'none', border: 'none', cursor: 'pointer',
+              position: 'relative', height: '100%',
+            }}>
+            {/* Circle that sticks out above the nav */}
             <div style={{
-              width: 38, height: 38, borderRadius: 12,
-              background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 16px rgba(255,255,255,0.15)', color: '#111111',
-            }}><PlusIcon /></div>
-            <span style={{ fontSize: 10, fontWeight: 600, color: '#6B7280', marginTop: 3, fontFamily: 'Inter, sans-serif' }}>Post</span>
+              position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)',
+              width: 48, height: 48, borderRadius: 16,
+            }}>
+              <div style={{
+                width: '100%', height: '100%', borderRadius: 16,
+                background: '#FFFFFF',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
+                color: '#111111',
+                transform: postPressed ? 'scale(0.87)' : 'scale(1)',
+                transition: 'transform 0.12s cubic-bezier(0.34,1.56,0.64,1)',
+              }}><PlusIcon /></div>
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 600, color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>Post</span>
           </button>
         )
         const isActive = active === tab.id
         return (
-          <button key={tab.id} onClick={() => onTab(tab.id)} style={{
+          <button key={tab.id} onClick={() => handleTab(tab.id)} style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: 3, cursor: 'pointer', paddingTop: 0,
+            gap: 3, cursor: 'pointer',
             background: 'none', border: 'none', transition: 'all 0.15s',
           }}>
-            {tab.icon(isActive)}
+            <div style={{ animation: tapped === tab.id ? 'tabBounce 0.42s cubic-bezier(0.34,1.56,0.64,1)' : 'none' }}>
+              {tab.icon(isActive)}
+            </div>
             <span style={{ fontSize: 9, fontWeight: 600, color: isActive ? '#FFFFFF' : '#4B5563', fontFamily: 'Inter, sans-serif' }}>
               {tab.label}
             </span>

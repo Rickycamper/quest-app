@@ -20,12 +20,18 @@ function timeAgo(dateStr) {
   return `${mo}mo`
 }
 
-function monthName() {
-  return new Date().toLocaleString('es', { month: 'long', year: 'numeric' })
+function daysUntilReset(matches) {
+  // The window resets 7 days after the oldest visible match
+  if (!matches || matches.length === 0) return null
+  const oldest = new Date(matches[matches.length - 1].created_at)
+  const expiry = new Date(oldest.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const diff   = Math.ceil((expiry - Date.now()) / (1000 * 60 * 60 * 24))
+  return diff > 0 ? diff : null
 }
 
 export default function H2HModal({ opponentName, h2h, isPremium = false, onClose, onReset }) {
   const { wins, losses, total, matches = [], myId } = h2h
+  const daysLeft = !isPremium ? daysUntilReset(matches) : null
   const [resetting,   setResetting]   = useState(false)
   const [resetDone,   setResetDone]   = useState(false)
   const [resetError,  setResetError]  = useState('')
@@ -69,7 +75,7 @@ export default function H2HModal({ opponentName, h2h, isPremium = false, onClose
         width: '100%', background: '#111111',
         borderRadius: '20px 20px 0 0',
         border: '1px solid #222',
-        padding: '20px 20px 40px',
+        padding: '20px 20px 80px',
         display: 'flex', flexDirection: 'column', gap: 20,
         maxHeight: '82vh', overflowY: 'auto', scrollbarWidth: 'none',
         animation: 'slideUp 0.22s ease',
@@ -85,11 +91,11 @@ export default function H2HModal({ opponentName, h2h, isPremium = false, onClose
           </div>
           <div style={{ fontSize: 11, color: '#555', marginTop: 3, fontFamily: 'Inter, sans-serif' }}>
             {total} partida{total !== 1 ? 's' : ''} confirmada{total !== 1 ? 's' : ''}
-            {!isPremium && <span style={{ color: '#374151' }}> · {monthName()}</span>}
+            {!isPremium && daysLeft && <span style={{ color: '#374151' }}> · reset en {daysLeft}d</span>}
           </div>
         </div>
 
-        {/* Free user monthly reset notice */}
+        {/* Free user 7-day reset notice */}
         {!isPremium && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
@@ -99,10 +105,11 @@ export default function H2HModal({ opponentName, h2h, isPremium = false, onClose
             <span style={{ fontSize: 14 }}>🔒</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#A78BFA', fontFamily: 'Inter, sans-serif' }}>
-                Historial mensual
+                Ventana de 7 días
+                {daysLeft && <span style={{ fontWeight: 400, color: '#6B7280' }}> · se resetea en {daysLeft}d</span>}
               </div>
               <div style={{ fontSize: 10, color: '#6B7280', fontFamily: 'Inter, sans-serif', marginTop: 1 }}>
-                El contador se reinicia el 1° de cada mes. Premium conserva el historial completo y puede resetear cuando quiera.
+                Solo ves las partidas de los últimos 7 días. Premium conserva el historial completo y puede resetear cuando quiera.
               </div>
             </div>
           </div>

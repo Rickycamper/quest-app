@@ -3,8 +3,9 @@
 // Staff/Admin panel: review & approve claims
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getPendingClaims, reviewClaim, getAdminUsers, setUserPremium, getPendingArrivalPackages, confirmPackageArrival, rejectPackageArrival, updatePackageStatus, getTournaments, deleteTournament, setUserPoints, getPackageStats } from '../lib/supabase'
+import { getPendingClaims, reviewClaim, getAdminUsers, setUserPremium, getPendingArrivalPackages, confirmPackageArrival, rejectPackageArrival, updatePackageStatus, getTournaments, deleteTournament, getPackageStats } from '../lib/supabase'
 import { GAME_STYLES } from '../lib/constants'
+import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
 
@@ -12,18 +13,24 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
 const PTS    = { 1: 3, 2: 2, 3: 1 }
 
 function ClaimCard({ claim, onReviewed }) {
-  const [busy, setBusy] = useState(false)
-  const [done, setDone] = useState(null) // 'approved' | 'rejected'
+  const [busy,  setBusy]  = useState(false)
+  const [done,  setDone]  = useState(null) // 'approved' | 'rejected'
+  const [err,   setErr]   = useState('')
+  const timerRef = useRef(null)
   const gs = GAME_STYLES[claim.game] ?? GAME_STYLES['MTG']
+
+  // Clean up pending dismiss timer if card unmounts before it fires
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const handle = async (status) => {
     setBusy(true)
+    setErr('')
     try {
       await reviewClaim(claim.id, status)
       setDone(status)
-      setTimeout(() => onReviewed(claim.id), 800)
+      timerRef.current = setTimeout(() => onReviewed(claim.id), 800)
     } catch (e) {
-      alert('Error: ' + e.message)
+      setErr(e.message || 'Error al procesar el claim')
     }
     setBusy(false)
   }
@@ -120,6 +127,13 @@ function ClaimCard({ claim, onReviewed }) {
         </div>
       )}
 
+      {/* Inline error */}
+      {err && (
+        <div style={{ fontSize: 12, color: '#F87171', marginBottom: 8, padding: '6px 10px', background: 'rgba(239,68,68,0.08)', borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)' }}>
+          {err}
+        </div>
+      )}
+
       {/* Action buttons */}
       {!done && (
         <div style={{ display: 'flex', gap: 8 }}>
@@ -147,44 +161,33 @@ function ClaimCard({ claim, onReviewed }) {
 }
 
 // ── User card for the Usuarios tab ─────────────
-function UserCard({ user, onToggle, onPointsChange }) {
-  const [busy,      setBusy]      = useState(false)
-  const [editPts,   setEditPts]   = useState(false)
-  const [ptsVal,    setPtsVal]    = useState(String(user.points ?? 0))
-  const [ptsBusy,   setPtsBusy]   = useState(false)
-  const isPremium = user.role === 'premium'
-  const isStaff   = user.role === 'staff' || user.role === 'admin'
+function UserCard({ user, onToggle, currentIsOwner }) {
+  const [busy, setBusy] = useState(false)
+  const [err,  setErr]  = useState('')
+  const isPremium  = user.role === 'premium'
+  const isStaff    = user.role === 'staff' || user.role === 'admin'
+  const isOwnerAcc = user.is_owner === true
+  // Admins cannot modify the owner account — only the owner can touch themselves
+  const canModify  = currentIsOwner || !isOwnerAcc
 
   const handleToggle = async () => {
-    if (isStaff) return
+    if (isStaff || !canModify) return
     setBusy(true)
+    setErr('')
     try {
       await setUserPremium(user.id, !isPremium)
       onToggle(user.id, !isPremium)
-    } catch (e) { alert('Error: ' + e.message) }
+    } catch (e) {
+      setErr(e.message || 'Error al actualizar')
+    }
     setBusy(false)
   }
 
-  const openEdit = () => {
-    setPtsVal(String(user.points ?? 0))
-    setEditPts(true)
-  }
-
-  const savePts = async () => {
-    const n = Math.max(0, Math.round(Number(ptsVal) || 0))
-    if (n === (user.points ?? 0)) { setEditPts(false); return }
-    setPtsBusy(true)
-    try {
-      await setUserPoints(user.id, n)
-      onPointsChange(user.id, n)
-      setEditPts(false)
-    } catch (e) { alert('Error: ' + e.message) }
-    setPtsBusy(false)
-  }
+  const roleLabel = isOwnerAcc ? '👑 Owner' : isStaff ? 'Admin' : isPremium ? 'Premium' : 'Free'
+  const roleColor = isOwnerAcc ? '#F59E0B' : isStaff ? '#3B82F6' : isPremium ? '#A78BFA' : '#4B5563'
 
   return (
     <div style={{ padding: '10px 0', borderBottom: '1px solid #1A1A1A' }}>
-      {/* Main row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Avatar url={user.avatar_url} size={36} />
@@ -193,18 +196,11 @@ function UserCard({ user, onToggle, onPointsChange }) {
           <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user.username}
           </div>
-          <div style={{ fontSize: 11, color: '#4B5563', marginTop: 1 }}>
-            {isStaff ? 'Staff' : isPremium ? 'Premium' : 'Free'} · <span style={{ color: '#A78BFA' }}>{user.points ?? 0} pts</span>
+          <div style={{ fontSize: 11, color: roleColor, marginTop: 1, fontWeight: 600 }}>
+            {roleLabel}
           </div>
         </div>
-        {/* Points edit button */}
-        <button onClick={openEdit} style={{
-          padding: '5px 9px', borderRadius: 7,
-          border: '1px solid #2A2A2A', background: 'rgba(167,139,250,0.08)',
-          color: '#A78BFA', fontSize: 11, fontWeight: 700,
-          cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0,
-        }}>✏️ pts</button>
-        {!isStaff && (
+        {!isStaff && !isOwnerAcc && canModify && (
           <button onClick={handleToggle} disabled={busy} style={{
             padding: '6px 12px', borderRadius: 8,
             border: `1px solid ${isPremium ? 'rgba(167,139,250,0.3)' : '#2A2A2A'}`,
@@ -216,41 +212,17 @@ function UserCard({ user, onToggle, onPointsChange }) {
             {busy ? '...' : isPremium ? '★ Premium' : 'Activar'}
           </button>
         )}
+        {isOwnerAcc && !currentIsOwner && (
+          <span style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700 }}>🔒</span>
+        )}
       </div>
-      {/* Inline points editor */}
-      {editPts && (
-        <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center' }}>
-          <input
-            type="number" min="0"
-            value={ptsVal}
-            onChange={e => setPtsVal(e.target.value)}
-            onFocus={e => e.target.select()}
-            style={{
-              flex: 1, padding: '7px 10px', borderRadius: 8,
-              background: '#1A1A1F', border: '1px solid #A78BFA44',
-              color: '#FFF', fontSize: 13, outline: 'none',
-              fontFamily: 'Inter, sans-serif',
-            }}
-          />
-          <button onClick={savePts} disabled={ptsBusy} style={{
-            padding: '7px 14px', borderRadius: 8, border: 'none',
-            background: ptsBusy ? '#2A2A2A' : '#A78BFA',
-            color: '#111', fontSize: 12, fontWeight: 800,
-            cursor: ptsBusy ? 'default' : 'pointer', flexShrink: 0,
-          }}>{ptsBusy ? '…' : '✓'}</button>
-          <button onClick={() => setEditPts(false)} style={{
-            padding: '7px 10px', borderRadius: 8,
-            border: '1px solid #2A2A2A', background: 'none',
-            color: '#6B7280', fontSize: 12, cursor: 'pointer', flexShrink: 0,
-          }}>✕</button>
-        </div>
-      )}
+      {err && <div style={{ fontSize: 11, color: '#F87171', marginTop: 4 }}>{err}</div>}
     </div>
   )
 }
 
 // ── Users tab ────────────────────────────────
-function UsersTab() {
+function UsersTab({ currentIsOwner }) {
   const [users,   setUsers]   = useState([])
   const [query,   setQuery]   = useState('')
   const [loading, setLoading] = useState(true)
@@ -279,10 +251,6 @@ function UsersTab() {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: nowPremium ? 'premium' : 'client' } : u))
   }
 
-  const handlePointsChange = (userId, newPoints) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, points: newPoints } : u))
-  }
-
   return (
     <div>
       <input
@@ -302,7 +270,7 @@ function UsersTab() {
       )}
       {error && <div style={{ color: '#F87171', fontSize: 13 }}>{error}</div>}
       {!loading && users.map(u => (
-        <UserCard key={u.id} user={u} onToggle={handleToggle} onPointsChange={handlePointsChange} />
+        <UserCard key={u.id} user={u} onToggle={handleToggle} currentIsOwner={currentIsOwner} />
       ))}
       {!loading && users.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 0', color: '#4B5563', fontSize: 13 }}>Sin resultados</div>
@@ -317,24 +285,34 @@ function ArrivalCard({ pkg, onConfirmed, onRejected }) {
   const [done,      setDone]      = useState(null) // 'confirmed' | 'rejected'
   const [notes,     setNotes]     = useState('')
   const [showNotes, setShowNotes] = useState(false)
+  const [err,       setErr]       = useState('')
+  const timerRef = useRef(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const handleConfirm = async () => {
     setBusy(true)
+    setErr('')
     try {
       await confirmPackageArrival(pkg.id, notes.trim() || '')
       setDone('confirmed')
-      setTimeout(() => onConfirmed(pkg.id), 800)
-    } catch (e) { alert('Error: ' + e.message) }
+      timerRef.current = setTimeout(() => onConfirmed(pkg.id), 800)
+    } catch (e) {
+      setErr(e.message || 'Error al confirmar')
+    }
     setBusy(false)
   }
 
   const handleReject = async () => {
     setBusy(true)
+    setErr('')
     try {
       await rejectPackageArrival(pkg.id, notes.trim() || '')
       setDone('rejected')
-      setTimeout(() => onRejected(pkg.id), 800)
-    } catch (e) { alert('Error: ' + e.message) }
+      timerRef.current = setTimeout(() => onRejected(pkg.id), 800)
+    } catch (e) {
+      setErr(e.message || 'Error al rechazar')
+    }
     setBusy(false)
   }
 
@@ -387,6 +365,13 @@ function ArrivalCard({ pkg, onConfirmed, onRejected }) {
           <div style={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>@{pkg.recipient?.username ?? '—'}</div>
         </div>
       </div>
+
+      {/* Inline error */}
+      {err && (
+        <div style={{ fontSize: 12, color: '#F87171', padding: '6px 10px', background: 'rgba(239,68,68,0.08)', borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)', marginBottom: 8 }}>
+          {err}
+        </div>
+      )}
 
       {/* Actions */}
       {!done && (
@@ -493,21 +478,25 @@ function TournamentsAdminTab() {
   const [items,   setItems]   = useState([])
   const [loading, setLoading] = useState(true)
   const [confirm, setConfirm] = useState(null) // id to confirm delete
+  const [error,   setError]   = useState('')
 
   useEffect(() => {
     getTournaments()
       .then(setItems)
-      .catch(e => alert(e.message))
+      .catch(e => setError(e.message || 'Error al cargar torneos'))
       .finally(() => setLoading(false))
   }, [])
 
   const handleDelete = async (id) => {
     if (confirm !== id) { setConfirm(id); return }
     setConfirm(null)
+    setError('')
     try {
       await deleteTournament(id)
       setItems(prev => prev.filter(t => t.id !== id))
-    } catch (e) { alert('Error: ' + e.message) }
+    } catch (e) {
+      setError(e.message || 'Error al borrar torneo')
+    }
   }
 
   if (loading) return (
@@ -515,7 +504,7 @@ function TournamentsAdminTab() {
       <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
     </div>
   )
-  if (!items.length) return (
+  if (!items.length && !error) return (
     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
       <div style={{ fontSize: 32, marginBottom: 10 }}>🎮</div>
       <div style={{ fontSize: 14, color: '#4B5563' }}>No hay torneos</div>
@@ -524,6 +513,11 @@ function TournamentsAdminTab() {
 
   return (
     <div>
+      {error && (
+        <div style={{ margin: '8px 0 12px', padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13 }}>
+          {error}
+        </div>
+      )}
       {items.map(t => {
         const dateStr  = new Date(t.date).toLocaleDateString('es', { day: '2-digit', month: 'short', year: '2-digit' })
         const isDel    = confirm === t.id
@@ -658,6 +652,7 @@ function StatsTab() {
 }
 
 export default function AdminScreen({ onClose }) {
+  const { isOwner: currentIsOwner } = useAuth()
   const [tab,     setTab]     = useState('claims')
   const [claims,  setClaims]  = useState([])
   const [loading, setLoading] = useState(true)
@@ -691,6 +686,7 @@ export default function AdminScreen({ onClose }) {
       position: 'absolute', inset: 0, zIndex: 100,
       background: '#0A0A0A',
       display: 'flex', flexDirection: 'column',
+      paddingTop: 'env(safe-area-inset-top, 0px)',
       animation: 'slideUp 0.22s ease',
     }}>
       {/* Header */}
@@ -787,7 +783,7 @@ export default function AdminScreen({ onClose }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
               MEMBRESÍAS Y PUNTOS
             </div>
-            <UsersTab />
+            <UsersTab currentIsOwner={currentIsOwner} />
           </>
         )}
 

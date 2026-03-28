@@ -6,6 +6,12 @@ import { getMyPackages, getAllPackages, createPackage, updatePackageStatus, dele
 import { PKG_STATUS, PKG_STEPS, BRANCHES } from '../lib/constants'
 import { CameraIcon } from '../components/Icons'
 
+const sk = (w, h, r = 6) => ({
+  width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
+  background: 'linear-gradient(90deg,#141414 25%,#222 50%,#141414 75%)',
+  backgroundSize: '400px 100%', animation: 'shimmer 1.4s infinite linear',
+})
+
 // ── Minimalist SVG icons ───────────────────────
 function PkgIcon({ status, size = 16, color = 'currentColor' }) {
   const p = { width: size, height: size, viewBox: '0 0 16 16', fill: 'none', stroke: color, strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' }
@@ -112,14 +118,18 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, curren
   const [showNotes,  setShowNotes]  = useState(false)
   const [deleting,   setDeleting]   = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
+  const [cardErr,    setCardErr]    = useState('')
 
   const handleAdminDelete = async () => {
     if (!confirmDel) { setConfirmDel(true); return }
     setDeleting(true)
+    setCardErr('')
     try {
       await deletePackage(pkg.id)
       onDelete?.(pkg.id)
-    } catch (e) { alert('Error al borrar: ' + e.message) }
+    } catch (e) {
+      setCardErr('Error al borrar: ' + (e.message || 'error desconocido'))
+    }
     setDeleting(false)
     setConfirmDel(false)
   }
@@ -134,11 +144,14 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, curren
   const handleAdvance = async () => {
     if (!nextKey || advancing) return
     setAdvancing(true)
+    setCardErr('')
     try {
       await onStatusUpdate(pkg.id, nextKey, notes)
       setNotes('')
       setShowNotes(false)
-    } catch (e) { alert(e.message || 'Error al actualizar el estado') }
+    } catch (e) {
+      setCardErr(e.message || 'Error al actualizar el estado')
+    }
     setAdvancing(false)
   }
 
@@ -318,6 +331,13 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, curren
             </div>
           )}
 
+          {/* Inline error */}
+          {cardErr && (
+            <div style={{ fontSize: 12, color: '#F87171', padding: '7px 10px', background: 'rgba(239,68,68,0.08)', borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)', marginBottom: 8 }}>
+              {cardErr}
+            </div>
+          )}
+
           {/* Admin action */}
           {isStaff && nextKey && nextCs && (
             <div>
@@ -475,6 +495,7 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId }) {
     <div style={{
       position: 'absolute', inset: 0, background: '#0A0A0A',
       zIndex: 200, display: 'flex', flexDirection: 'column',
+      paddingTop: 'env(safe-area-inset-top, 0px)',
       animation: 'slideUp 0.3s ease both',
     }}>
       {/* Header */}
@@ -737,8 +758,22 @@ export default function TrackingScreen({ profile, isStaff, onNewPackage, refresh
       </div>
 
       {loading && (
-        <div style={{ padding: 40, textAlign: 'center' }}>
-          <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[...Array(3)].map((_, i) => (
+            <div key={i} style={{ borderRadius: 14, background: '#111', border: '1px solid #1A1A1A', padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <span style={sk(38, 38, 10)} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <span style={sk('65%', 13, 5)} />
+                  <span style={sk('80%', 11, 5)} />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                    <span style={sk(68, 22, 5)} />
+                    <span style={sk(90, 22, 5)} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

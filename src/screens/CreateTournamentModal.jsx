@@ -12,7 +12,7 @@ export default function CreateTournamentModal({ onClose }) {
   const [branch,      setBranch]      = useState('')
   const [date,        setDate]        = useState(new Date().toISOString().slice(0, 10))
   const [playerCount, setPlayerCount] = useState('')
-  const [rounds,      setRounds]      = useState('')
+  const [startTime,   setStartTime]   = useState('')
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState('')
   const [done,        setDone]        = useState(false)
@@ -21,14 +21,13 @@ export default function CreateTournamentModal({ onClose }) {
     if (!name.trim())   { setError('Ingresa el nombre del torneo'); return }
     if (!branch)        { setError('Selecciona la sucursal'); return }
     if (!playerCount || isNaN(playerCount) || +playerCount < 2) { setError('Ingresa el número de jugadores'); return }
-    if (!rounds || isNaN(rounds) || +rounds < 1) { setError('Ingresa el número de rondas'); return }
 
     setSaving(true); setError('')
     try {
       await createTournament({
         name: name.trim(), game, branch, date,
         playerCount: parseInt(playerCount),
-        rounds: parseInt(rounds),
+        startTime: startTime || null,
       })
       setDone(true)
     } catch (e) { setError(e.message) }
@@ -60,6 +59,7 @@ export default function CreateTournamentModal({ onClose }) {
       position: 'absolute', inset: 0, zIndex: 100,
       background: '#0A0A0A',
       display: 'flex', flexDirection: 'column',
+      paddingTop: 'env(safe-area-inset-top, 0px)',
       animation: 'slideUp 0.22s ease',
     }}>
       {/* Header */}
@@ -147,7 +147,7 @@ export default function CreateTournamentModal({ onClose }) {
               </div>
             </div>
 
-            {/* Jugadores + Rondas */}
+            {/* Jugadores + Hora */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
               <div style={{ flex: 1 }}>
                 <span style={labelStyle}>JUGADORES</span>
@@ -155,9 +155,9 @@ export default function CreateTournamentModal({ onClose }) {
                   placeholder="12" style={inputStyle} />
               </div>
               <div style={{ flex: 1 }}>
-                <span style={labelStyle}>RONDAS</span>
-                <input type="number" min="1" value={rounds} onChange={e => setRounds(e.target.value)}
-                  placeholder="4" style={inputStyle} />
+                <span style={labelStyle}>HORA DE INICIO</span>
+                <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
+                  style={{ ...inputStyle, colorScheme: 'dark' }} />
               </div>
             </div>
 

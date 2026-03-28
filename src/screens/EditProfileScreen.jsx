@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react'
 import { getProfile, updateProfile, uploadAvatar, signOut, deleteAccount } from '../lib/supabase'
+import { useToast } from '../components/Toast'
 import { BRANCHES } from '../lib/constants'
 import { CameraIcon, MailIcon as MailIconShared } from '../components/Icons'
 
@@ -38,6 +39,7 @@ function UserIcon() {
 }
 
 export default function EditProfileScreen({ userId, onBack, onSaved }) {
+  const toast = useToast()
   const [username,      setUsername]      = useState('')
   const [phone,         setPhone]         = useState('')
   const [email,         setEmail]         = useState('')
@@ -70,6 +72,19 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
   const handleAvatarPick = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+    // Block HEIC/HEIF — browsers can't convert them to JPEG via canvas
+    const isHeic = /heic|heif/i.test(file.type) || /\.heic$|\.heif$/i.test(file.name)
+    if (isHeic) {
+      setError('Formato no compatible. Abre la foto en tu galería y compártela como JPG.')
+      e.target.value = ''
+      return
+    }
+    if (file.size > 30 * 1024 * 1024) {
+      setError('La imagen es demasiado grande. Máximo 30 MB.')
+      e.target.value = ''
+      return
+    }
+    setError('')
     setAvatarFile(file)
     setAvatarPreview(URL.createObjectURL(file))
   }
@@ -94,11 +109,14 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
         avatar_url: newAvatarUrl,
       })
       onSaved?.(updated)
+      toast('Perfil actualizado', { type: 'success' })
     } catch (e) {
-      setError(e.message)
+      setError(e.message || 'Error al guardar. Intenta de nuevo.')
+      toast(e.message || 'Error al guardar', { type: 'error' })
       setUploadingImg(false)
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   const handleSignOut = async () => {

@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { getProfile, getUserPosts, getFollowCounts, toggleFollow, getFollowing, getHeadToHead, resetH2H } from '../lib/supabase'
 import { GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
-import { PremiumBadge, OwnerBadge } from '../components/Icons'
+import { PremiumBadge, RoleBadge } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 import H2HModal from '../components/H2HModal'
 
@@ -65,7 +65,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
     })
     .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [userId])
+  }, [userId, isPremium])
 
   const handleFollow = async () => {
     if (fBusy) return
@@ -107,7 +107,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
         <span style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
           @{profile?.username ?? '...'}
           {profile?.role === 'premium' && <PremiumBadge size={14} />}
-          {profile?.is_owner && <OwnerBadge size={14} />}
+          <RoleBadge isOwner={profile?.is_owner} role={profile?.role} size={14} />
         </span>
         {isOwn && (
           <button onClick={onEditProfile} style={{
@@ -155,7 +155,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
             {profile?.username}
             {profile?.verified && <span style={{ fontSize: 13, color: '#60A5FA' }}>✓</span>}
             {profile?.role === 'premium' && <PremiumBadge size={14} />}
-            {profile?.is_owner && <OwnerBadge size={14} />}
+            <RoleBadge isOwner={profile?.is_owner} role={profile?.role} size={14} />
           </div>
           {profile?.branch && (
             <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>📍 {profile.branch}</div>
