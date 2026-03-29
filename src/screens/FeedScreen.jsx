@@ -7,21 +7,7 @@ import { supabase } from '../lib/supabase'
 import { getFeed, getUserLikedPosts, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
-import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, RoleBadge } from '../components/Icons'
-
-function HeartBottleIcon({ size = 18, filled = false, pop = false }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="currentColor"
-      style={{
-        display: 'inline-block', verticalAlign: 'middle',
-        animation: pop ? 'likePop 0.45s cubic-bezier(0.175,0.885,0.32,1.275) forwards' : 'none',
-        transform: pop ? undefined : (filled ? 'scale(1.15)' : 'scale(1)'),
-        transition: pop ? 'none' : 'transform 0.15s',
-      }}>
-      <path d="M23.053 9.845l-1.75-0.469 0.727-2.714 2.254 0.604 1.019-3.804-9.938-2.663-1.019 3.804 2.195 0.588-0.727 2.714-1.71-0.458c-2.371-0.635-4.801 0.734-5.436 3.105l-3.112 11.614c-0.635 2.371 0.774 4.812 3.145 5.447l8.95 2.398c2.371 0.635 4.772-0.785 5.407-3.155l3.112-11.614c0.635-2.371-0.745-4.761-3.116-5.397zM22.503 18.877c-1.011 3.338-5.878 3.239-8.211 6.447-0.492-3.964-4.939-6.127-3.866-9.679 1.007-3.333 5.555-3.386 6.396 0.248 2.473-2.46 6.759-0.575 5.681 2.984z" />
-    </svg>
-  )
-}
+import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, RoleBadge, BoltIcon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 
 const sk = (w, h, r = 6) => ({
@@ -611,7 +597,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           color: liked ? '#FFF' : '#4B5563', fontSize: 13, fontWeight: 600,
           fontFamily: 'Inter, sans-serif', padding: 0, transition: 'color 0.15s',
         }}>
-          <HeartBottleIcon filled={liked} size={18} pop={likeAnim} /> {likes > 0 && likes}
+          <BoltIcon filled={liked} size={18} pop={likeAnim} color={liked ? '#FFFFFF' : '#4B5563'} /> {likes > 0 && likes}
         </button>
         <button onClick={handleOpenComments} style={{
           display: 'flex', alignItems: 'center', gap: 5,
