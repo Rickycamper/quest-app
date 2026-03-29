@@ -468,96 +468,90 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
         }}><Avatar url={post.profiles?.avatar_url} size={36} /></div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Row 1: username + badges + follow inline */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'nowrap' }}>
-            <span onClick={() => authorId && onViewProfile?.(authorId)}
-              style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', cursor: authorId ? 'pointer' : 'default', flexShrink: 0 }}>
-              @{post.profiles?.username ?? 'user'}
-            </span>
-            {post.profiles?.verified && <span style={{ fontSize: 11, flexShrink: 0 }}>✓</span>}
-            {post.profiles?.role === 'premium' && <PremiumBadge size={13} />}
-            <RoleBadge isOwner={post.profiles?.is_owner} role={post.profiles?.role} size={13} />
-            {!isOwnPost && authorId && (
-              <button
-                onClick={handleFollow}
-                disabled={fBusy}
-                style={{
+          {/* Row 1: username+badges left · follow+··· right */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+              <span onClick={() => authorId && onViewProfile?.(authorId)}
+                style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', cursor: authorId ? 'pointer' : 'default', flexShrink: 0 }}>
+                @{post.profiles?.username ?? 'user'}
+              </span>
+              {post.profiles?.verified && <span style={{ fontSize: 11, flexShrink: 0 }}>✓</span>}
+              {post.profiles?.role === 'premium' && <PremiumBadge size={13} />}
+              <RoleBadge isOwner={post.profiles?.is_owner} role={post.profiles?.role} size={13} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginLeft: 8 }}>
+              {!isOwnPost && authorId && (
+                <button onClick={handleFollow} disabled={fBusy} style={{
                   padding: '2px 9px', borderRadius: 6,
                   border: `1.5px solid ${isFollowed ? '#2A2A2A' : '#3A3A3A'}`,
                   background: 'transparent',
                   color: isFollowed ? '#4B5563' : '#6B7280',
                   fontSize: 11, fontWeight: 700,
                   cursor: 'pointer', transition: 'all 0.15s',
-                  fontFamily: 'Inter, sans-serif', flexShrink: 0,
-                }}
-              >
-                {isFollowed ? 'Siguiendo' : 'Seguir'}
-              </button>
-            )}
+                  fontFamily: 'Inter, sans-serif',
+                }}>
+                  {isFollowed ? 'Siguiendo' : 'Seguir'}
+                </button>
+              )}
+              {!editing && (
+                <div ref={menuRef} style={{ position: 'relative' }}>
+                  <button onClick={() => setShowMenu(m => !m)} style={{
+                    background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px',
+                    color: '#4B5563', fontSize: 18, lineHeight: 1, letterSpacing: 1,
+                  }}>···</button>
+                  {showMenu && (
+                    <div style={{
+                      position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 120,
+                      background: '#1C1C1C', border: '1px solid #2A2A2A',
+                      borderRadius: 12, padding: '6px 4px',
+                      display: 'flex', gap: 2,
+                      animation: 'fadeUp 0.15s ease',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      <button onClick={() => { handleSave(); setShowMenu(false) }} style={menuIconBtn}>
+                        <BookmarkIcon filled={saved} size={18} />
+                      </button>
+                      {isOwnPost && (
+                        <button onClick={() => { setShowMenu(false); handleEditStart() }} style={menuIconBtn}>
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button onClick={handleDelete} disabled={deleting} style={{ ...menuIconBtn, color: '#F87171' }}>
+                          {deleting
+                            ? <span style={{ fontSize: 13 }}>···</span>
+                            : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                <path d="M10 11v6M14 11v6"/>
+                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                              </svg>
+                          }
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          {/* Row 2: timestamp + TCG */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+          {/* Row 2: timestamp left · TCG right */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 3 }}>
             <span style={{ fontSize: 11, color: '#4B5563' }}>{timeAgo(post.created_at)}</span>
             {post.tag && (
               <span style={{
                 padding: '2px 7px', borderRadius: 6,
                 background: gs.bg, border: `1px solid ${gs.border}`,
                 color: gs.color, fontSize: 10, fontWeight: 600,
-                display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0,
+                display: 'inline-flex', alignItems: 'center', gap: 3,
               }}><GameIcon game={post.tag} size={11} />{post.tag}</span>
             )}
           </div>
         </div>
-
-        {/* ··· menu alone on the right */}
-        {!editing && (
-            <div ref={menuRef} style={{ position: 'relative' }}>
-              <button
-                onClick={() => setShowMenu(m => !m)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px',
-                  color: '#4B5563', fontSize: 18, lineHeight: 1, letterSpacing: 1,
-                  transition: 'color 0.15s',
-                }}
-              >···</button>
-              {showMenu && (
-                <div style={{
-                  position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 120,
-                  background: '#1C1C1C', border: '1px solid #2A2A2A',
-                  borderRadius: 12, padding: '6px 4px',
-                  display: 'flex', gap: 2,
-                  animation: 'fadeUp 0.15s ease',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                  whiteSpace: 'nowrap',
-                }}>
-                  <button onClick={() => { handleSave(); setShowMenu(false) }} style={menuIconBtn}>
-                    <BookmarkIcon filled={saved} size={18} />
-                  </button>
-                  {isOwnPost && (
-                    <button onClick={() => { setShowMenu(false); handleEditStart() }} style={menuIconBtn}>
-                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                    </button>
-                  )}
-                  {canDelete && (
-                    <button onClick={handleDelete} disabled={deleting} style={{ ...menuIconBtn, color: '#F87171' }}>
-                      {deleting
-                        ? <span style={{ fontSize: 13 }}>···</span>
-                        : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                            <path d="M10 11v6M14 11v6"/>
-                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                          </svg>
-                      }
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
       </div>
 
       {/* Image / Video / carousel */}
