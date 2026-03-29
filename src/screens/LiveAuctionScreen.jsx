@@ -211,52 +211,108 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
       {/* ── Scrollable body ── */}
       <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none' }}>
 
-        {/* Card image + lock */}
-        <div style={{ position: 'relative', padding: '16px 16px 0' }}>
-          <div
-            onClick={() => setViewImg(true)}
-            style={{
-              borderRadius: 14, overflow: 'hidden', position: 'relative',
-              background: '#111', cursor: 'pointer',
-              // natural aspect ratio once loaded, fallback 3:4 portrait
-              aspectRatio: imgRatio ? String(imgRatio) : '3/4',
-              maxHeight: imgRatio && imgRatio > 1 ? 220 : 320,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <img
-              src={auction.image_url}
-              alt={auction.title}
-              onLoad={e => setImgRatio(e.target.naturalWidth / e.target.naturalHeight)}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
-            {/* Lock overlay */}
-            {!isUnlocked && (
-              <div style={{
-                position: 'absolute', inset: 0,
-                background: 'rgba(10,10,10,0.72)',
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center', gap: 8,
-                backdropFilter: 'blur(3px)',
-              }}>
-                <div style={{ fontSize: 38 }}>🔒</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', textAlign: 'center', lineHeight: 1.4 }}>
-                  Bid mínimo para<br />desbloquear: {fmtAmt(auction.min_bid)}
-                </div>
-                <div style={{ fontSize: 10, color: '#4B5563', marginTop: 2 }}>Toca para ver la carta</div>
+        {/* ── Hero image (full-bleed, protagonist) ── */}
+        <div
+          onClick={() => setViewImg(true)}
+          style={{
+            position: 'relative', cursor: 'pointer', overflow: 'hidden',
+            background: '#0A0A0A',
+            aspectRatio: imgRatio ? String(imgRatio) : '4/3',
+            maxHeight: imgRatio && imgRatio < 1 ? 380 : 260,
+          }}
+        >
+          <img
+            src={auction.image_url}
+            alt={auction.title}
+            onLoad={e => setImgRatio(e.target.naturalWidth / e.target.naturalHeight)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+
+          {/* Lock overlay (active, no qualifying bid yet) */}
+          {!isUnlocked && !ended && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'rgba(0,0,0,0.68)', backdropFilter: 'blur(4px)',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              <div style={{ fontSize: 44 }}>🔒</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF' }}>
+                Mín {fmtAmt(auction.min_bid)} para desbloquear
               </div>
-            )}
-            {/* Unlocked badge */}
-            {isUnlocked && (
-              <div style={{
-                position: 'absolute', top: 10, right: 10,
-                background: 'rgba(74,222,128,0.15)',
-                border: '1px solid rgba(74,222,128,0.35)',
-                borderRadius: 8, padding: '4px 10px',
-                fontSize: 11, fontWeight: 800, color: '#4ADE80',
-              }}>🔓 DESBLOQUEADO</div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Ended overlay — winner */}
+          {ended && topBid && topBid.amount >= auction.min_bid && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'rgba(0,0,0,0.55)',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 6, textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 40 }}>🏆</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#4ADE80' }}>{fmtAmt(topBid.amount)}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>@{topBid.profiles?.username ?? '…'} ganó</div>
+              <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Admin te contactará para coordinar</div>
+            </div>
+          )}
+
+          {/* Ended overlay — no sale */}
+          {ended && !(topBid && topBid.amount >= auction.min_bid) && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(2px)',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 6, textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 40 }}>🔒</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#F87171' }}>Item no vendido</div>
+              <div style={{ fontSize: 12, color: '#9CA3AF' }}>No se alcanzó el precio mínimo</div>
+            </div>
+          )}
+
+          {/* Unlocked badge */}
+          {isUnlocked && !ended && (
+            <div style={{
+              position: 'absolute', top: 10, right: 10,
+              background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.35)',
+              borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 800, color: '#4ADE80',
+            }}>🔓 DESBLOQUEADO</div>
+          )}
+
+          {/* Bid info bar at bottom of image */}
+          {!ended && (
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              background: 'linear-gradient(transparent, rgba(0,0,0,0.88))',
+              padding: '32px 14px 12px',
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+            }}>
+              {topBid ? (
+                <>
+                  <div>
+                    <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 700, letterSpacing: '0.08em' }}>BID ACTUAL</div>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: '#FFF', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
+                      {fmtAmt(topBid.amount)}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
+                      <Avatar url={topBid.profiles?.avatar_url} size={24} />
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>
+                      @{topBid.profiles?.username ?? '…'}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: 12, color: '#9CA3AF' }}>
+                  Sin bids · mín {fmtAmt(auction.min_bid)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Full-screen image viewer */}
@@ -276,7 +332,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
               style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12, objectFit: 'contain' }}
             />
             <button
-              onClick={() => setViewImg(false)}
+              onClick={e => { e.stopPropagation(); setViewImg(false) }}
               style={{
                 position: 'absolute', top: 20, right: 20,
                 width: 36, height: 36, borderRadius: '50%',
@@ -288,72 +344,9 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
           </div>
         )}
 
-        {/* Current top bid */}
-        <div style={{ padding: '14px 16px 0' }}>
-          <div style={{
-            background: '#111', borderRadius: 12,
-            border: '1px solid #1F1F1F', padding: '14px 16px',
-          }}>
-            {topBid ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: 11, color: '#4B5563', fontWeight: 700, marginBottom: 3 }}>BID ACTUAL</div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
-                    {fmtAmt(topBid.amount)}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 11, color: '#4B5563', marginBottom: 4 }}>Lider</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
-                      <Avatar url={topBid.profiles?.avatar_url} size={26} />
-                    </div>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#D1D5DB' }}>
-                      @{topBid.profiles?.username ?? '…'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '6px 0' }}>
-                <div style={{ fontSize: 13, color: '#4B5563' }}>Sin bids todavía</div>
-                <div style={{ fontSize: 11, color: '#374151', marginTop: 3 }}>Bid mínimo: {fmtAmt(auction.min_bid)}</div>
-              </div>
-            )}
-          </div>
-
-          {/* Ended result */}
-          {ended && (
-            <div style={{
-              marginTop: 10, padding: '12px 16px', borderRadius: 12,
-              background: topBid && topBid.amount >= auction.min_bid
-                ? 'rgba(74,222,128,0.08)' : 'rgba(239,68,68,0.08)',
-              border: `1px solid ${topBid && topBid.amount >= auction.min_bid
-                ? 'rgba(74,222,128,0.25)' : 'rgba(239,68,68,0.25)'}`,
-              textAlign: 'center',
-            }}>
-              {topBid && topBid.amount >= auction.min_bid ? (
-                <>
-                  <div style={{ fontSize: 20, marginBottom: 4 }}>🏆</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#4ADE80' }}>
-                    @{topBid.profiles?.username} ganó por {fmtAmt(topBid.amount)}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3 }}>El admin te contactará para coordinar el pago</div>
-                </>
-              ) : (
-                <>
-                  <div style={{ fontSize: 20, marginBottom: 4 }}>🔒</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#F87171' }}>Item no vendido</div>
-                  <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3 }}>No se alcanzó el precio mínimo</div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
         {/* Bid history */}
         {sortedBids.length > 0 && (
-          <div style={{ padding: '14px 16px 0' }}>
+          <div style={{ padding: '12px 16px 0' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.1em', marginBottom: 8 }}>
               HISTORIAL DE BIDS ({sortedBids.length})
             </div>
@@ -433,7 +426,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
         </div>
 
         {/* Bottom padding so content isn't hidden behind fixed controls */}
-        <div style={{ height: 170 }} />
+        <div style={{ height: 150 }} />
       </div>
 
       {/* ── Fixed bid + chat controls ── */}
