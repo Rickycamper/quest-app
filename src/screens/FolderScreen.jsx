@@ -360,7 +360,7 @@ function ImageViewer({ cards, initialIndex, onClose }) {
 }
 
 // ── Card item ─────────────────────────────────
-function CardItem({ card, onDelete, onUpdated, onViewImage }) {
+function GridCardItem({ card, onDelete, onUpdated, onViewImage }) {
   const gs = GAME_STYLES[card.game] ?? GAME_STYLES['MTG']
   const [confirm,    setConfirm]    = useState(false)
   const [editing,    setEditing]    = useState(false)
@@ -373,8 +373,7 @@ function CardItem({ card, onDelete, onUpdated, onViewImage }) {
 
   const cs     = CARD_STATUS[editStatus] ?? CARD_STATUS.have
   const isSell = editStatus === 'sell'
-  const condMatch   = card.notes ? CONDITIONS.find(c => card.notes.startsWith(c.id)) : null
-  const noteDisplay = condMatch ? card.notes.slice(condMatch.id.length).replace(/^ — /, '').trim() : card.notes
+  const condMatch = card.notes ? CONDITIONS.find(c => card.notes.startsWith(c.id)) : null
 
   const handleDelete = () => {
     if (!confirm) { setConfirm(true); timerRef.current = setTimeout(() => setConfirm(false), 3000); return }
@@ -391,60 +390,79 @@ function CardItem({ card, onDelete, onUpdated, onViewImage }) {
   }
 
   return (
-    <div style={{ padding: '12px 20px', borderBottom: '1px solid #111111', animation: 'fadeUp 0.25s ease both' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {card.image_url ? (
-          <div onClick={() => onViewImage?.()} style={{ width: 44, borderRadius: 6, overflow: 'hidden', flexShrink: 0, border: '1px solid #2A2A2A', cursor: 'pointer' }}>
-            <img src={card.image_url} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} />
-          </div>
-        ) : (
-          <div style={{ width: 44, height: 55, borderRadius: 6, flexShrink: 0, background: gs.bg, border: `1px solid ${gs.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <GameIcon game={card.game} size={22} />
-          </div>
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{card.name}</div>
-          <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ padding: '2px 7px', borderRadius: 5, background: cs.bg, border: `1px solid ${cs.border}`, color: cs.color, fontSize: 10, fontWeight: 700 }}>{cs.label}</span>
-            {condMatch && <span style={{ padding: '2px 7px', borderRadius: 5, background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)', color: '#60A5FA', fontSize: 10, fontWeight: 700 }}>{condMatch.id}</span>}
-            {(parseInt(editQty) || 1) > 1 && <span style={{ fontSize: 11, color: '#4B5563' }}>x{parseInt(editQty)}</span>}
-            {editPrice ? <span style={{ fontSize: 11, color: '#4ADE80', fontWeight: 700 }}>${parseFloat(editPrice).toFixed(2)}</span> : null}
-            {noteDisplay && <span style={{ fontSize: 11, color: '#4B5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 80 }}>{noteDisplay}</span>}
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', animation: 'fadeUp 0.25s ease both' }}>
+      {/* Card visual — same style as AuctionCard */}
+      <div style={{ background: '#111', borderRadius: 14, border: '1px solid #1F1F1F', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {/* Image */}
+        <div
+          onClick={() => onViewImage?.()}
+          style={{ position: 'relative', background: '#0A0A0A', cursor: card.image_url ? 'pointer' : 'default' }}
+        >
+          {card.image_url ? (
+            <img src={card.image_url} alt={card.name} style={{ display: 'block', width: '100%', aspectRatio: '3/4', objectFit: 'cover', objectPosition: 'center' }} />
+          ) : (
+            <div style={{ width: '100%', aspectRatio: '3/4', background: gs.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <GameIcon game={card.game} size={32} />
+            </div>
+          )}
+          {/* Status badge — bottom left */}
+          <div style={{ position: 'absolute', bottom: 6, left: 6, padding: '2px 7px', borderRadius: 6, background: cs.bg, border: `1px solid ${cs.border}`, color: cs.color, fontSize: 9, fontWeight: 700 }}>{cs.label}</div>
+          {/* Qty badge — top right */}
+          {(parseInt(editQty) || 1) > 1 && (
+            <div style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.72)', borderRadius: 6, padding: '2px 7px', fontSize: 9, color: '#FFF', fontWeight: 700 }}>x{parseInt(editQty)}</div>
+          )}
+          {/* Condition badge — top left */}
+          {condMatch && (
+            <div style={{ position: 'absolute', top: 6, left: 6, padding: '2px 6px', borderRadius: 5, background: 'rgba(96,165,250,0.2)', border: '1px solid rgba(96,165,250,0.3)', color: '#60A5FA', fontSize: 9, fontWeight: 700 }}>{condMatch.id}</div>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-          {!editing && <button onClick={() => setEditing(true)} style={{ background: 'none', border: 'none', color: '#374151', cursor: 'pointer', fontSize: 15, padding: 4 }}>✏</button>}
-          <button onClick={handleDelete} style={{ background: 'none', border: 'none', color: confirm ? '#F87171' : '#374151', cursor: 'pointer', fontSize: confirm ? 12 : 16, fontWeight: confirm ? 700 : 400, fontFamily: 'Inter, sans-serif', padding: 4 }}>{confirm ? 'Borrar?' : '✕'}</button>
+
+        {/* Info strip */}
+        <div style={{ padding: '7px 9px 9px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#FFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+            {editPrice && isSell
+              ? <span style={{ fontSize: 10, color: '#4ADE80', fontWeight: 700 }}>${parseFloat(editPrice).toFixed(2)}</span>
+              : <span style={{ fontSize: 9, fontWeight: 700, color: gs.color, background: gs.bg, border: `1px solid ${gs.border}`, borderRadius: 4, padding: '1px 5px' }}>{card.game}</span>
+            }
+            <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              {!editing && (
+                <button onClick={() => setEditing(true)} style={{ background: 'none', border: 'none', color: '#374151', cursor: 'pointer', fontSize: 12, padding: '2px 3px', lineHeight: 1 }}>✏</button>
+              )}
+              <button onClick={handleDelete} style={{ background: 'none', border: 'none', color: confirm ? '#F87171' : '#374151', cursor: 'pointer', fontSize: confirm ? 9 : 13, fontWeight: confirm ? 700 : 400, fontFamily: 'Inter, sans-serif', padding: '2px 3px', lineHeight: 1 }}>{confirm ? '?' : '✕'}</button>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Edit panel — expands below card */}
       {editing && (
-        <div style={{ marginTop: 12, animation: 'fadeUp 0.15s ease' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        <div style={{ marginTop: 6, background: '#111', borderRadius: 12, border: '1px solid #1F1F1F', padding: 10, animation: 'fadeUp 0.15s ease' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
             {Object.entries(CARD_STATUS).map(([key, s]) => (
-              <button key={key} onClick={() => setEditStatus(key)} style={{ padding: '5px 10px', borderRadius: 7, border: `1px solid ${editStatus === key ? s.border : '#2A2A2A'}`, background: editStatus === key ? s.bg : 'transparent', color: editStatus === key ? s.color : '#4B5563', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{s.label}</button>
+              <button key={key} onClick={() => setEditStatus(key)} style={{ padding: '4px 8px', borderRadius: 6, border: `1px solid ${editStatus === key ? s.border : '#2A2A2A'}`, background: editStatus === key ? s.bg : 'transparent', color: editStatus === key ? s.color : '#4B5563', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{s.label}</button>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 4 }}>CANTIDAD</div>
-              <div style={{ display: 'flex', alignItems: 'center', background: '#111', border: '1px solid #2A2A2A', borderRadius: 8, overflow: 'hidden', height: 38 }}>
-                <button onClick={() => setEditQty(q => Math.max(1, parseInt(q) - 1))} style={{ width: 38, height: '100%', background: 'none', border: 'none', color: '#9CA3AF', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                <span style={{ flex: 1, textAlign: 'center', color: '#FFF', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>{parseInt(editQty) || 1}</span>
-                <button onClick={() => setEditQty(q => parseInt(q) + 1)} style={{ width: 38, height: '100%', background: 'none', border: 'none', color: '#9CA3AF', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 3 }}>CANT.</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: '#0A0A0A', border: '1px solid #2A2A2A', borderRadius: 7, overflow: 'hidden', height: 32 }}>
+                <button onClick={() => setEditQty(q => Math.max(1, parseInt(q) - 1))} style={{ width: 30, height: '100%', background: 'none', border: 'none', color: '#9CA3AF', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                <span style={{ flex: 1, textAlign: 'center', color: '#FFF', fontSize: 13, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>{parseInt(editQty) || 1}</span>
+                <button onClick={() => setEditQty(q => parseInt(q) + 1)} style={{ width: 30, height: '100%', background: 'none', border: 'none', color: '#9CA3AF', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
               </div>
             </div>
             {isSell && (
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#4ADE80', letterSpacing: '0.08em', marginBottom: 4 }}>PRECIO (USD)</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: '#4ADE80', letterSpacing: '0.08em', marginBottom: 3 }}>PRECIO</div>
                 <input type="number" min="0" step="0.01" placeholder="0.00" value={editPrice} onChange={e => setEditPrice(e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px', background: '#111', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 8, color: '#FFF', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '7px 8px', background: '#0A0A0A', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 7, color: '#FFF', fontSize: 12, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => setEditing(false)} style={{ flex: 1, padding: '9px', borderRadius: 8, background: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9CA3AF', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Cancelar</button>
-            <button onClick={handleEditSave} disabled={saving} style={{ flex: 2, padding: '9px', borderRadius: 8, background: '#FFF', border: 'none', color: '#111', fontSize: 13, fontWeight: 700, cursor: saving ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>{saving ? 'Guardando...' : 'Guardar'}</button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => setEditing(false)} style={{ flex: 1, padding: '7px', borderRadius: 7, background: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Cancelar</button>
+            <button onClick={handleEditSave} disabled={saving} style={{ flex: 2, padding: '7px', borderRadius: 7, background: '#FFF', border: 'none', color: '#111', fontSize: 11, fontWeight: 700, cursor: saving ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>{saving ? '...' : 'Guardar'}</button>
           </div>
         </div>
       )}
@@ -593,9 +611,13 @@ export default function FolderScreen({ profile }) {
       )}
 
       {viewImgIdx !== null && <ImageViewer cards={filtered} initialIndex={viewImgIdx} onClose={() => setViewImgIdx(null)} />}
-      {filtered.map((card, i) => (
-        <CardItem key={card.id} card={card} onDelete={handleDelete} onUpdated={handleUpdated} onViewImage={() => setViewImgIdx(i)} />
-      ))}
+      {!loading && !error && filtered.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '4px 14px 16px' }}>
+          {filtered.map((card, i) => (
+            <GridCardItem key={card.id} card={card} onDelete={handleDelete} onUpdated={handleUpdated} onViewImage={() => setViewImgIdx(i)} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
