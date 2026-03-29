@@ -487,16 +487,17 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           {!isOwnPost && authorId && (
             <button onClick={handleFollow} disabled={fBusy} style={{
               alignSelf: 'stretch',
-              width: 28, borderRadius: 6,
+              padding: '0 10px', borderRadius: 6,
               border: `1.5px solid ${isFollowed ? '#2A2A2A' : '#3A3A3A'}`,
               background: 'transparent',
-              color: isFollowed ? '#374151' : '#6B7280',
-              fontSize: 16, fontWeight: 700, lineHeight: 1,
+              color: isFollowed ? '#4B5563' : '#9CA3AF',
+              fontSize: 11, fontWeight: 700,
               cursor: 'pointer', transition: 'all 0.15s',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
+              flexShrink: 0, fontFamily: 'Inter, sans-serif',
+              whiteSpace: 'nowrap',
             }}>
-              {isFollowed ? '−' : '+'}
+              {isFollowed ? 'Siguiendo' : 'Seguir'}
             </button>
           )}
 
