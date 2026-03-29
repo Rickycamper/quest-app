@@ -560,6 +560,19 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           )}
       </div>
 
+      {/* Image / Video / carousel */}
+      {(() => {
+        const imgs = post.images?.length > 0 ? post.images : post.image_url ? [post.image_url] : []
+        if (imgs.length === 0) return null
+        if (imgs.length === 1 && IS_VIDEO_URL.test(imgs[0])) return <VideoPlayer src={imgs[0]} />
+        if (imgs.length === 1) return (
+          <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 12, background: '#111111' }}>
+            <img src={imgs[0]} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} />
+          </div>
+        )
+        return <ImageCarousel images={imgs} />
+      })()}
+
       {/* Caption */}
       {editing ? (
         <div style={{ marginBottom: 14 }}>
@@ -585,23 +598,10 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           </div>
         </div>
       ) : (
-        <p style={{ fontSize: 14, color: '#D1D5DB', lineHeight: 1.6, marginBottom: post.image_url ? 12 : 14 }}>
+        <p style={{ fontSize: 14, color: '#D1D5DB', lineHeight: 1.6, marginBottom: 14 }}>
           {captionLocal}
         </p>
       )}
-
-      {/* Image / Video / carousel */}
-      {(() => {
-        const imgs = post.images?.length > 0 ? post.images : post.image_url ? [post.image_url] : []
-        if (imgs.length === 0) return null
-        if (imgs.length === 1 && IS_VIDEO_URL.test(imgs[0])) return <VideoPlayer src={imgs[0]} />
-        if (imgs.length === 1) return (
-          <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, background: '#111111' }}>
-            <img src={imgs[0]} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} />
-          </div>
-        )
-        return <ImageCarousel images={imgs} />
-      })()}
 
 
       {/* Actions */}
