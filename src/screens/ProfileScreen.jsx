@@ -4,9 +4,9 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getProfile, getUserPosts, getFollowCounts, toggleFollow, getFollowing, getHeadToHead, resetH2H } from '../lib/supabase'
-import { GAME_STYLES } from '../lib/constants'
+import { GAME_STYLES, BRANCH_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
-import { PremiumBadge, RoleBadge } from '../components/Icons'
+import { PremiumBadge, RoleBadge, MapPinIcon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 import H2HModal from '../components/H2HModal'
 
@@ -158,7 +158,10 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
             <RoleBadge isOwner={profile?.is_owner} role={profile?.role} size={14} />
           </div>
           {profile?.branch && (
-            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>📍 {profile.branch}</div>
+            <div style={{ fontSize: 12, color: BRANCH_STYLES[profile.branch]?.color ?? '#6B7280', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <MapPinIcon size={11} color={BRANCH_STYLES[profile.branch]?.color ?? '#6B7280'} />
+              {profile.branch}
+            </div>
           )}
           {/* Contact info — only visible on own profile */}
           {isOwn && (profile?.phone || profile?.email) && (

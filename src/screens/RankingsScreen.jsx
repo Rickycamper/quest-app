@@ -8,7 +8,7 @@ import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
-import { PremiumBadge, RoleBadge } from '../components/Icons'
+import { PremiumBadge, RoleBadge, MapPinIcon } from '../components/Icons'
 
 const PTS = { 1: 3, 2: 2, 3: 1 }
 
@@ -182,7 +182,10 @@ function LeaderboardTab({ branch, game, isAdmin }) {
                   <RoleBadge isOwner={entry.is_owner} role={entry.role} size={12} />
                 </div>
                 {entry.branch && (
-                  <div style={{ fontSize: 11, color: '#4B5563' }}>📍 {entry.branch}</div>
+                  <div style={{ fontSize: 11, color: BRANCH_STYLES[entry.branch]?.color ?? '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <MapPinIcon size={10} color={BRANCH_STYLES[entry.branch]?.color ?? '#4B5563'} />
+                    {entry.branch}
+                  </div>
                 )}
               </div>
               <div
