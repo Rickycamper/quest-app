@@ -52,6 +52,8 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
   const [bidErr,      setBidErr]      = useState('')
   const [bidSuccess,  setBidSuccess]  = useState(false)
   const [ended,       setEnded]       = useState(false)
+  const [imgRatio,    setImgRatio]    = useState(null)  // natural w/h ratio
+  const [viewImg,     setViewImg]     = useState(false) // full-screen image viewer
   const lastBidTime   = useRef(0)
   const chatEndRef    = useRef(null)
   const endedRef      = useRef(false)
@@ -211,15 +213,22 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
 
         {/* Card image + lock */}
         <div style={{ position: 'relative', padding: '16px 16px 0' }}>
-          <div style={{
-            borderRadius: 14, overflow: 'hidden', position: 'relative',
-            background: '#111', maxHeight: 260,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
+          <div
+            onClick={() => setViewImg(true)}
+            style={{
+              borderRadius: 14, overflow: 'hidden', position: 'relative',
+              background: '#111', cursor: 'pointer',
+              // natural aspect ratio once loaded, fallback 3:4 portrait
+              aspectRatio: imgRatio ? String(imgRatio) : '3/4',
+              maxHeight: imgRatio && imgRatio > 1 ? 220 : 320,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
             <img
               src={auction.image_url}
               alt={auction.title}
-              style={{ width: '100%', maxHeight: 260, objectFit: 'cover', display: 'block' }}
+              onLoad={e => setImgRatio(e.target.naturalWidth / e.target.naturalHeight)}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
             {/* Lock overlay */}
             {!isUnlocked && (
@@ -234,6 +243,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', textAlign: 'center', lineHeight: 1.4 }}>
                   Bid mínimo para<br />desbloquear: {fmtAmt(auction.min_bid)}
                 </div>
+                <div style={{ fontSize: 10, color: '#4B5563', marginTop: 2 }}>Toca para ver la carta</div>
               </div>
             )}
             {/* Unlocked badge */}
@@ -248,6 +258,35 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
             )}
           </div>
         </div>
+
+        {/* Full-screen image viewer */}
+        {viewImg && (
+          <div
+            onClick={() => setViewImg(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 500,
+              background: 'rgba(0,0,0,0.95)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: 20,
+            }}
+          >
+            <img
+              src={auction.image_url}
+              alt={auction.title}
+              style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12, objectFit: 'contain' }}
+            />
+            <button
+              onClick={() => setViewImg(false)}
+              style={{
+                position: 'absolute', top: 20, right: 20,
+                width: 36, height: 36, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                color: '#FFF', fontSize: 16, cursor: 'pointer', display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+              }}
+            >✕</button>
+          </div>
+        )}
 
         {/* Current top bid */}
         <div style={{ padding: '14px 16px 0' }}>
@@ -349,28 +388,45 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
 
         {/* Live chat */}
         <div style={{ padding: '14px 16px 0' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.1em', marginBottom: 8 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.1em', marginBottom: 10 }}>
             💬 CHAT EN VIVO
           </div>
-          <div style={{ minHeight: 80 }}>
+          <div style={{ minHeight: 60 }}>
             {chat.length === 0 ? (
-              <div style={{ fontSize: 12, color: '#374151', padding: '8px 0' }}>Sin mensajes aún…</div>
+              <div style={{ fontSize: 12, color: '#374151', padding: '4px 0' }}>Sin mensajes aún…</div>
             ) : (
-              chat.map((m) => (
-                <div key={m.id} style={{
-                  display: 'flex', gap: 8, marginBottom: 10, alignItems: 'flex-start',
-                }}>
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
-                    <Avatar url={m.profiles?.avatar_url} size={24} />
+              chat.map((m) => {
+                const isMe = m.user_id === profile?.id
+                return (
+                  <div key={m.id} style={{
+                    display: 'flex',
+                    flexDirection: isMe ? 'row-reverse' : 'row',
+                    gap: 8, marginBottom: 10, alignItems: 'flex-end',
+                  }}>
+                    {!isMe && (
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
+                        <Avatar url={m.profiles?.avatar_url} size={24} />
+                      </div>
+                    )}
+                    <div style={{ maxWidth: '72%' }}>
+                      {!isMe && (
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#6B7280', marginBottom: 3 }}>
+                          @{m.profiles?.username ?? '…'}
+                        </div>
+                      )}
+                      <div style={{
+                        padding: '8px 12px',
+                        borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                        background: isMe ? '#FFFFFF' : '#1A1A1F',
+                        color: isMe ? '#111' : '#E5E5E5',
+                        fontSize: 13, lineHeight: 1.4,
+                      }}>
+                        {m.message}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF' }}>
-                      @{m.profiles?.username ?? '…'}{' '}
-                    </span>
-                    <span style={{ fontSize: 12, color: '#D1D5DB' }}>{m.message}</span>
-                  </div>
-                </div>
-              ))
+                )
+              })
             )}
             <div ref={chatEndRef} />
           </div>

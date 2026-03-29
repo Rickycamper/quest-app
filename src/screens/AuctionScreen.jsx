@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getAuctions, toggleAuctionWatch } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { GAME_STYLES } from '../lib/constants'
+import { GAME_STYLES, GAMES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
 import LiveAuctionScreen from './LiveAuctionScreen'
 import CreateAuctionModal from './CreateAuctionModal'
@@ -229,6 +229,7 @@ export default function AuctionScreen({ isStaff, onClose }) {
   const [liveAuction, setLiveAuction] = useState(null)
   const [showCreate,  setShowCreate]  = useState(false)
   const [tab,         setTab]         = useState('upcoming')
+  const [gameFilter,  setGameFilter]  = useState(null) // null = all
   const [error,       setError]       = useState('')
 
   const load = useCallback(async () => {
@@ -273,7 +274,11 @@ export default function AuctionScreen({ isStaff, onClose }) {
     .filter(a => { const s = auctionStatus(a); return s === 'ended' || s === 'cancelled' })
     .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))
 
-  const list = tab === 'upcoming' ? upcoming : history
+  const filteredUpcoming = gameFilter
+    ? upcoming.filter(a => a.game === gameFilter)
+    : upcoming
+
+  const list = tab === 'upcoming' ? filteredUpcoming : history
   const hasLive = upcoming.some(a => auctionStatus(a) === 'active')
 
   const sk = (w, h, r = 8) => ({
@@ -324,7 +329,7 @@ export default function AuctionScreen({ isStaff, onClose }) {
           { id: 'upcoming', label: `Próximas${upcoming.length ? ` (${upcoming.length})` : ''}` },
           { id: 'history',  label: `Historial${history.length  ? ` (${history.length})`  : ''}` },
         ].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
+          <button key={t.id} onClick={() => { setTab(t.id); setGameFilter(null) }} style={{
             padding: '6px 14px', borderRadius: 8,
             border: `1px solid ${tab === t.id ? 'rgba(255,255,255,0.3)' : '#222'}`,
             background: tab === t.id ? 'rgba(255,255,255,0.07)' : 'transparent',
@@ -334,6 +339,43 @@ export default function AuctionScreen({ isStaff, onClose }) {
           }}>{t.label}</button>
         ))}
       </div>
+
+      {/* TCG filter chips — shown only on Próximas tab */}
+      {tab === 'upcoming' && (
+        <div style={{
+          display: 'flex', gap: 6, padding: '8px 16px 0',
+          overflowX: 'auto', scrollbarWidth: 'none', flexShrink: 0,
+        }}>
+          <button
+            onClick={() => setGameFilter(null)}
+            style={{
+              flexShrink: 0, padding: '4px 12px', borderRadius: 20,
+              border: `1px solid ${!gameFilter ? 'rgba(255,255,255,0.3)' : '#222'}`,
+              background: !gameFilter ? 'rgba(255,255,255,0.07)' : 'transparent',
+              color: !gameFilter ? '#FFF' : '#4B5563',
+              fontSize: 11, fontWeight: 600, cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+            }}
+          >Todos</button>
+          {GAMES.map(g => {
+            const gs = GAME_STYLES[g]
+            const active = gameFilter === g
+            return (
+              <button key={g} onClick={() => setGameFilter(active ? null : g)} style={{
+                flexShrink: 0, padding: '4px 12px', borderRadius: 20,
+                border: `1px solid ${active ? gs.border : '#222'}`,
+                background: active ? gs.bg : 'transparent',
+                color: active ? gs.color : '#4B5563',
+                fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif',
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+              }}>
+                <GameIcon game={g} size={10} />{g}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', padding: '12px 16px 32px' }}>
