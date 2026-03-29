@@ -459,7 +459,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
         )}
 
         {/* Bottom padding so content isn't hidden behind fixed controls */}
-        <div style={{ height: 150 }} />
+        <div style={{ height: 120 }} />
       </div>
 
       {/* ── Fixed bid + chat controls ── */}
@@ -480,42 +480,40 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
               <div style={{ fontSize: 11, color: '#4ADE80', marginBottom: 6, textAlign: 'center', fontWeight: 700 }}>✓ ¡Bid registrado!</div>
             )}
 
-            {/* Primary one-tap bid button */}
-            <button
-              onClick={() => handleBid(customAmt || minNext)}
-              disabled={bidding}
-              style={{
-                width: '100%', padding: '13px', borderRadius: 12, border: 'none',
-                background: bidding ? '#1A1A1A' : '#FFFFFF',
-                color: bidding ? '#555' : '#111',
-                fontSize: 15, fontWeight: 800, cursor: bidding ? 'default' : 'pointer',
-                fontFamily: 'Inter, sans-serif', marginBottom: 8,
-              }}>
-              {bidding ? '…' : `🔨 Pujar ${fmtAmt(customAmt && +customAmt >= minNext ? +customAmt : minNext)}`}
-            </button>
-
-            {/* Custom amount — secondary */}
+            {/* Single bid block: input + button */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
               <div style={{ flex: 1, position: 'relative' }}>
                 <span style={{
-                  position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-                  color: '#4B5563', fontSize: 13, fontWeight: 700,
+                  position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)',
+                  color: '#4B5563', fontSize: 14, fontWeight: 700, pointerEvents: 'none',
                 }}>$</span>
                 <input
                   type="number" min={minNext} step="1"
                   value={customAmt}
                   onChange={e => { setCustomAmt(e.target.value); setBidErr('') }}
-                  placeholder={`Otro monto (mín ${fmtAmt(minNext)})`}
-                  onKeyDown={e => e.key === 'Enter' && handleBid(customAmt)}
+                  placeholder={String(Math.ceil(minNext))}
+                  onKeyDown={e => e.key === 'Enter' && handleBid(customAmt || minNext)}
                   style={{
-                    width: '100%', padding: '8px 10px 8px 24px',
-                    background: '#111', border: '1px solid #1A1A1A',
-                    borderRadius: 10, color: '#9CA3AF', fontSize: 13,
+                    width: '100%', padding: '13px 10px 13px 26px',
+                    background: '#111', border: '1px solid #2A2A2A',
+                    borderRadius: 12, color: '#FFF', fontSize: 15,
                     outline: 'none', fontFamily: 'Inter, sans-serif',
                     boxSizing: 'border-box',
                   }}
                 />
               </div>
+              <button
+                onClick={() => handleBid(customAmt || minNext)}
+                disabled={bidding}
+                style={{
+                  flexShrink: 0, padding: '13px 18px', borderRadius: 12, border: 'none',
+                  background: bidding ? '#1A1A1A' : '#FFFFFF',
+                  color: bidding ? '#555' : '#111',
+                  fontSize: 14, fontWeight: 800, cursor: bidding ? 'default' : 'pointer',
+                  fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
+                }}>
+                {bidding ? '…' : `🔨 ${fmtAmt(customAmt && +customAmt >= minNext ? +customAmt : minNext)}`}
+              </button>
             </div>
 
             {/* Chat input */}
