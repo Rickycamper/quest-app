@@ -54,6 +54,7 @@ function Countdown({ targetMs }) {
 // ── Auction Card ──────────────────────────────
 function AuctionCard({ auction, onOpen, onWatchToggle }) {
   const { profile } = useAuth()
+  const [imgRatio, setImgRatio] = useState(null)
   const status     = auctionStatus(auction)
   const gs         = auction.game ? (GAME_STYLES[auction.game] ?? GAME_STYLES['MTG']) : null
   const bids       = auction.auction_bids ?? []
@@ -76,11 +77,17 @@ function AuctionCard({ auction, onOpen, onWatchToggle }) {
       {/* Image + status badge */}
       <div
         onClick={() => !isPast && onOpen(auction)}
-        style={{ position: 'relative', cursor: isPast ? 'default' : 'pointer' }}
+        style={{
+          position: 'relative', cursor: isPast ? 'default' : 'pointer',
+          aspectRatio: imgRatio ? String(imgRatio) : '4/3',
+          maxHeight: imgRatio && imgRatio < 1 ? 320 : 220,
+          overflow: 'hidden', background: '#0A0A0A',
+        }}
       >
         <img
           src={auction.image_url} alt={auction.title}
-          style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }}
+          onLoad={e => setImgRatio(e.target.naturalWidth / e.target.naturalHeight)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
 
         {/* Lock / unlock overlay */}
