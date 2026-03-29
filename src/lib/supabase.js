@@ -1477,10 +1477,10 @@ export async function createAuction({ title, game, imageUrl, minBid, startTime }
 
 export async function uploadAuctionImage(file, userId) {
   const ext  = file.name.split('.').pop()
-  const path = `auctions/${userId}/${Date.now()}.${ext}`
-  const { error } = await supabase.storage.from('media').upload(path, file, { upsert: true })
+  const path = `${userId}/${Date.now()}.${ext}`
+  const { error } = await supabase.storage.from('auctions').upload(path, file, { upsert: true })
   if (error) throw error
-  const { data } = supabase.storage.from('media').getPublicUrl(path)
+  const { data } = supabase.storage.from('auctions').getPublicUrl(path)
   return data.publicUrl
 }
 
