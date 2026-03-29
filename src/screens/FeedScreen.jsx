@@ -468,15 +468,34 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
         }}><Avatar url={post.profiles?.avatar_url} size={36} /></div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          {/* Row 1: username + badges + follow inline */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'nowrap' }}>
             <span onClick={() => authorId && onViewProfile?.(authorId)}
-              style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', cursor: authorId ? 'pointer' : 'default' }}>
+              style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', cursor: authorId ? 'pointer' : 'default', flexShrink: 0 }}>
               @{post.profiles?.username ?? 'user'}
             </span>
-            {post.profiles?.verified && <span style={{ fontSize: 11 }}>✓</span>}
+            {post.profiles?.verified && <span style={{ fontSize: 11, flexShrink: 0 }}>✓</span>}
             {post.profiles?.role === 'premium' && <PremiumBadge size={13} />}
             <RoleBadge isOwner={post.profiles?.is_owner} role={post.profiles?.role} size={13} />
+            {!isOwnPost && authorId && (
+              <button
+                onClick={handleFollow}
+                disabled={fBusy}
+                style={{
+                  padding: '2px 9px', borderRadius: 6,
+                  border: `1.5px solid ${isFollowed ? '#2A2A2A' : '#3A3A3A'}`,
+                  background: 'transparent',
+                  color: isFollowed ? '#4B5563' : '#6B7280',
+                  fontSize: 11, fontWeight: 700,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                  fontFamily: 'Inter, sans-serif', flexShrink: 0,
+                }}
+              >
+                {isFollowed ? 'Siguiendo' : 'Seguir'}
+              </button>
+            )}
           </div>
+          {/* Row 2: timestamp + TCG */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
             <span style={{ fontSize: 11, color: '#4B5563' }}>{timeAgo(post.created_at)}</span>
             {post.tag && (
@@ -490,26 +509,8 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           </div>
         </div>
 
-        {/* Right side: Follow + menu */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {!isOwnPost && authorId && (
-            <button
-              onClick={handleFollow}
-              disabled={fBusy}
-              style={{
-                padding: '4px 12px', borderRadius: 8,
-                border: `1.5px solid ${isFollowed ? '#2A2A2A' : '#3A3A3A'}`,
-                background: isFollowed ? 'transparent' : '#1F1F1F',
-                color: isFollowed ? '#4B5563' : '#9CA3AF',
-                fontSize: 11, fontWeight: 700,
-                cursor: 'pointer', transition: 'all 0.15s',
-                fontFamily: 'Inter, sans-serif',
-              }}
-            >
-              {isFollowed ? 'Siguiendo' : 'Seguir'}
-            </button>
-          )}
-          {!editing && (
+        {/* ··· menu alone on the right */}
+        {!editing && (
             <div ref={menuRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowMenu(m => !m)}
@@ -557,7 +558,6 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
               )}
             </div>
           )}
-        </div>
       </div>
 
       {/* Caption */}
