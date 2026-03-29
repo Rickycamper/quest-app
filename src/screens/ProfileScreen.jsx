@@ -222,7 +222,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
                 {isFollowing ? 'Siguiendo' : '+ Seguir'}
               </button>
               <button
-                onClick={() => onMessage?.({ id: profile.id, username: profile.username })}
+                onClick={() => onMessage?.({ id: profile.id, username: profile.username, avatar_url: profile.avatar_url })}
                 style={{
                   flex: 1, padding: '9px 0',
                   borderRadius: 8, background: 'transparent',

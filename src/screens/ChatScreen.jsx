@@ -38,7 +38,7 @@ export default function ChatScreen({ otherUser, onBack }) {
         await markMessagesRead(cid)
 
         channel = subscribeToMessages(cid, (msg) => {
-          setMessages(prev => [...prev, msg])
+          setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
           markMessagesRead(cid)
         })
       } catch (e) {
@@ -81,7 +81,7 @@ export default function ChatScreen({ otherUser, onBack }) {
       {/* ── Header ── */}
       <div style={s.header}>
         <button onClick={onBack} style={s.backBtn}>←</button>
-        <Avatar userId={otherUser.id} size={32} />
+        <Avatar url={otherUser.avatar_url} size={32} />
         <span style={s.username}>@{otherUser.username}</span>
       </div>
 
