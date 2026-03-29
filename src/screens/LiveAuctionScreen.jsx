@@ -90,7 +90,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
       setBids(fresh)
     })
     const chatCh = subscribeToAuctionChat(auction.id, (payload) => {
-      setChat(prev => [...prev, payload.new])
+      setChat(prev => prev.some(m => m.id === payload.new.id) ? prev : [...prev, payload.new])
     })
     return () => {
       bidCh.unsubscribe()
@@ -219,18 +219,17 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
         {/* ── Hero image (full-bleed, protagonist) ── */}
         <div
           onClick={() => setViewImg(true)}
-          style={{
-            position: 'relative', cursor: 'pointer', overflow: 'hidden',
-            background: '#0A0A0A',
-            aspectRatio: imgRatio ? String(imgRatio) : '4/3',
-            maxHeight: imgRatio && imgRatio < 1 ? 380 : 260,
-          }}
+          style={{ position: 'relative', cursor: 'pointer', overflow: 'hidden', background: '#0A0A0A' }}
         >
           <img
             src={auction.image_url}
             alt={auction.title}
             onLoad={e => setImgRatio(e.target.naturalWidth / e.target.naturalHeight)}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+            style={{
+              display: 'block', width: '100%',
+              maxHeight: imgRatio && imgRatio < 1 ? 420 : 280,
+              objectFit: 'cover', objectPosition: 'center',
+            }}
           />
 
           {/* Lock overlay (active, no qualifying bid yet) */}
@@ -352,17 +351,21 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
                 return (
                   <div key={m.id} style={{
                     alignSelf: isMe ? 'flex-end' : 'flex-start',
-                    background: isMe ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.55)',
-                    backdropFilter: 'blur(4px)',
-                    borderRadius: 20, padding: '5px 11px',
-                    maxWidth: '80%', display: 'flex', gap: 5, alignItems: 'baseline',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: isMe ? 'flex-end' : 'flex-start',
+                    gap: 2, maxWidth: '80%',
                   }}>
-                    {!isMe && (
-                      <span style={{ fontSize: 11, fontWeight: 800, color: '#A78BFA', flexShrink: 0 }}>
-                        @{m.profiles?.username ?? '…'}
-                      </span>
-                    )}
-                    <span style={{ fontSize: 12, color: '#FFF', lineHeight: 1.4 }}>{m.message}</span>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: isMe ? 'rgba(255,255,255,0.6)' : '#A78BFA', paddingLeft: 4, paddingRight: 4 }}>
+                      @{m.profiles?.username ?? '…'}
+                    </span>
+                    <div style={{
+                      background: isMe ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.6)',
+                      backdropFilter: 'blur(6px)',
+                      borderRadius: isMe ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                      padding: '5px 11px', fontSize: 12, color: '#FFF', lineHeight: 1.4,
+                    }}>
+                      {m.message}
+                    </div>
                   </div>
                 )
               })}
