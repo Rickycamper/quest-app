@@ -11,9 +11,26 @@ import GameIcon from '../components/GameIcon'
 import { PremiumBadge, RoleBadge } from '../components/Icons'
 
 const PTS = { 1: 3, 2: 2, 3: 1 }
-const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
-function medal(rank) { return MEDALS[rank] ?? null }
+const HAND_MIDDLE_PATH = "M8 0.16c-0.6769464285714285 0 -1.2252392857142855 0.5482964285714286 -1.2252392857142855 1.2252392857142855v5.0296071428571425c-0.26036428571428566 -0.23279642857142857 -0.6034321428571429 -0.37369642857142854 -0.9801928571428571 -0.37369642857142854 -0.8117214285714286 0 -1.4702857142857142 0.6585642857142857 -1.4702857142857142 1.4702857142857142v2.450478571428571c0 0.26955357142857145 -0.22054285714285715 0.49009642857142854 -0.49009642857142854 0.49009642857142854s-0.49009642857142854 -0.22054285714285715 -0.49009642857142854 -0.49009642857142854v-1.7061464285714285c-0.061260714285714286 0.042885714285714284 -0.11946071428571428 0.09189285714285714 -0.17765714285714285 0.13783928571428572l-0.5881178571428571 0.49009642857142854c-0.4472107142857143 0.3737 -0.7045107142857142 0.9250571428571428 -0.7045107142857142 1.5070464285714285v1.1639749999999998c0 1.1639785714285713 0.5176642857142857 2.266692857142857 1.4120892857142857 3.011025l0.16540714285714286 0.13783928571428572c0.8821714285714286 0.7351464285714285 1.9910142857142854 1.1364107142857143 3.1366107142857143 1.1364107142857143h3.617521428571428c2.1656071428571426 0 3.9207642857142857 -1.7551535714285713 3.9207642857142857 -3.9207642857142857v-2.9375142857142853c0 -0.8117178571428572 -0.6585678571428571 -1.4702857142857142 -1.4702857142857142 -1.4702857142857142 -0.37982499999999997 0 -0.7228928571428571 0.14396428571428568 -0.9832571428571427 0.3767607142857143 -0.058196428571428566 -0.7596464285714285 -0.6922607142857142 -1.3569535714285714 -1.4672214285714285 -1.3569535714285714 -0.3767642857142857 0 -0.7198285714285714 0.14090357142857143 -0.9801928571428571 0.3737V1.3852392857142857C9.225239285714284 0.7082964285714285 8.676942857142857 0.16 8 0.16Z"
+const HAND_PEACE_PATH = "M7.509965625 0.16c0.5420625 0 0.98 0.4379375 0.98 0.98v6.37h-1.96V1.14c0 -0.5420625 0.4379375 -0.98 0.98 -0.98Zm2.94 4.9c0.5420625 0 0.98 0.4379375 0.98 0.98V8c0 0.5420625 -0.4379375 0.98 -0.98 0.98s-0.98 -0.4379375 -0.98 -0.98v-1.96c0 -0.5420625 0.4379375 -0.98 0.98 -0.98Zm1.96 1.96c0 -0.5420625 0.4379375 -0.98 0.98 -0.98s0.98 0.4379375 0.98 0.98v1.96c0 0.5420625 -0.4379375 0.98 -0.98 0.98s-0.98 -0.4379375 -0.98 -0.98v-1.96ZM3.507278125 1.728l2.529625 5.782h-2.137625L1.712653125 2.512c-0.2174375 -0.496125 0.0091875 -1.071875 0.5053125 -1.2893125s1.0749375 0.0091875 1.2893125 0.5053125Zm0.826875 6.7773125 -0.006125 -0.0153125h2.9369375c0.6768125 0 1.225 0.5481875 1.225 1.225s-0.5481875 1.225 -1.225 1.225h-1.715c-0.2695 0 -0.49 0.2205 -0.49 0.49s0.2205 0.49 0.49 0.49h1.715c1.218875 0 2.205 -0.986125 2.205 -2.205v-0.018375c0.287875 0.165375 0.6216875 0.263375 0.98 0.263375 0.40425 0 0.777875 -0.1225 1.09025 -0.33075 0.2664375 0.7625625 0.9953125 1.31075 1.84975 1.31075 0.3583125 0 0.692125 -0.0949375 0.98 -0.263375v0.263375c0 2.70725 -2.19275 4.9 -4.9 4.9h-1.8895625c-1.2985 0 -2.5449375 -0.5175625 -3.4636875 -1.4363125l-0.35525 -0.35525c-0.7380625 -0.735 -1.1515 -1.733375 -1.1515 -2.7715625V10.45c0 -1.0014375 0.753375 -1.8283125 1.7241875 -1.9446875Z"
+
+function RankIcon({ rank, size = 18 }) {
+  if (rank === 1) return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
+      <path d={HAND_MIDDLE_PATH} />
+    </svg>
+  )
+  if (rank === 2) return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="#9CA3AF" strokeWidth="0">
+      <path d={HAND_PEACE_PATH} />
+    </svg>
+  )
+  if (rank === 3) return <span style={{ fontSize: size }}>🥉</span>
+  return null
+}
+
+function medal(rank) { return rank <= 3 }
 
 // ── Skeleton shimmer helper ───────────────────
 const sk = (w, h, r = 6) => ({
@@ -128,9 +145,9 @@ function LeaderboardTab({ branch, game, isAdmin }) {
             animationDelay: `${i * 0.03}s`,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 28, textAlign: 'center', flexShrink: 0 }}>
+              <div style={{ width: 28, textAlign: 'center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {m
-                  ? <span style={{ fontSize: 18 }}>{m}</span>
+                  ? <RankIcon rank={rank} size={18} />
                   : <span style={{ fontSize: 13, fontWeight: 700, color: '#4B5563' }}>#{rank}</span>
                 }
               </div>
@@ -444,7 +461,9 @@ function TournamentCard({ t, index, onViewProfile, isAdmin }) {
                     onMouseEnter={e => { if (onViewProfile) e.currentTarget.style.borderColor = '#2A2A2A' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = '#1A1A1A' }}
                   >
-                    <div style={{ fontSize: 16, marginBottom: 3 }}>{medal(r.position) || `#${r.position}`}</div>
+                    <div style={{ fontSize: 16, marginBottom: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {r.position <= 3 ? <RankIcon rank={r.position} size={16} /> : `#${r.position}`}
+                    </div>
                     <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       @{r.profiles?.username}
                     </div>
@@ -649,7 +668,7 @@ function ClaimsTab({ isStaff }) {
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: 18 }}>{MEDALS[c.position]}</div>
+                <div style={{ fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}><RankIcon rank={c.position} size={18} /></div>
                 <div style={{ fontSize: 10, color: '#A78BFA', fontWeight: 700 }}>+{pts}pts</div>
               </div>
             </div>
