@@ -15,8 +15,8 @@ export const RanksIcon = ({ active }) => (
 )
 
 export const FolderIcon = ({ active }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={active ? '#fff' : '#4B5563'} strokeWidth="2">
-    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+  <svg width="24" height="24" viewBox="0 0 16 16" fill={active ? '#fff' : '#4B5563'} strokeWidth="0">
+    <path d="M2 15h12c1.103125 0 2 -0.896875 2 -2V5c0 -1.103125 -0.896875 -2 -2 -2H9c-0.315625 0 -0.6125 -0.146875 -0.8 -0.4l-0.6 -0.8C7.221875 1.296875 6.628125 1 6 1H2C0.896875 1 0 1.896875 0 3v10c0 1.103125 0.896875 2 2 2z" />
   </svg>
 )
 
