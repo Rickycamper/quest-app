@@ -42,7 +42,6 @@ export default function CreateAuctionModal({ onClose, onCreated }) {
       const imageUrl = await uploadAuctionImage(imageFile, profile.id)
       await createAuction({ title: title.trim(), game, imageUrl, minBid: parseFloat(minBid), startTime: startISO })
       setDone(true)
-      onCreated?.()
     } catch (e) {
       setError(e.message || 'Error al crear la subasta')
     }
@@ -87,8 +86,8 @@ export default function CreateAuctionModal({ onClose, onCreated }) {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, textAlign: 'center' }}>
             <div style={{ fontSize: 52 }}>🔨</div>
             <div style={{ fontSize: 17, fontWeight: 800, color: '#4ADE80' }}>Subasta creada</div>
-            <div style={{ fontSize: 13, color: '#4B5563' }}>Aparecerá en la galería cuando llegue la hora de inicio</div>
-            <button onClick={onClose} style={{
+            <div style={{ fontSize: 13, color: '#4B5563' }}>Aparecerá en la lista de subastas</div>
+            <button onClick={() => { onCreated?.(); onClose() }} style={{
               marginTop: 8, padding: '11px 32px', borderRadius: 10, border: 'none',
               background: '#FFFFFF', color: '#111', fontSize: 14, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'Inter, sans-serif',
