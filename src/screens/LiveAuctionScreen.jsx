@@ -55,6 +55,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
   const [imgRatio,    setImgRatio]    = useState(null)  // natural w/h ratio
   const [viewImg,     setViewImg]     = useState(false) // full-screen image viewer
   const [lockTip,     setLockTip]     = useState(() => !localStorage.getItem('quest_lock_seen'))
+  const [showBids,    setShowBids]    = useState(false)
   const lastBidTime   = useRef(0)
   const chatEndRef    = useRef(null)
   const endedRef      = useRef(false)
@@ -336,6 +337,37 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
               )}
             </div>
           )}
+
+          {/* ── Floating chat overlay (last 4 messages) ── */}
+          {chat.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              bottom: (isUnlocked || topBid) && !ended ? 56 : 10,
+              left: 10, right: 10,
+              display: 'flex', flexDirection: 'column', gap: 4,
+              pointerEvents: 'none',
+            }}>
+              {chat.slice(-4).map(m => {
+                const isMe = m.user_id === profile?.id
+                return (
+                  <div key={m.id} style={{
+                    alignSelf: isMe ? 'flex-end' : 'flex-start',
+                    background: isMe ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.55)',
+                    backdropFilter: 'blur(4px)',
+                    borderRadius: 20, padding: '5px 11px',
+                    maxWidth: '80%', display: 'flex', gap: 5, alignItems: 'baseline',
+                  }}>
+                    {!isMe && (
+                      <span style={{ fontSize: 11, fontWeight: 800, color: '#A78BFA', flexShrink: 0 }}>
+                        @{m.profiles?.username ?? '…'}
+                      </span>
+                    )}
+                    <span style={{ fontSize: 12, color: '#FFF', lineHeight: 1.4 }}>{m.message}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Full-screen image viewer */}
@@ -367,86 +399,61 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
           </div>
         )}
 
-        {/* Bid history */}
+        {/* ── Collapsible bid history ── */}
         {sortedBids.length > 0 && (
-          <div style={{ padding: '12px 16px 0' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.1em', marginBottom: 8 }}>
-              HISTORIAL DE BIDS ({sortedBids.length})
+          <div style={{ padding: '10px 16px 0' }}>
+            {/* Top bid row — always visible, tap to expand */}
+            <div
+              onClick={() => setShowBids(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: '#111', borderRadius: showBids ? '12px 12px 0 0' : 12,
+                border: '1px solid #1A1A1A', borderBottom: showBids ? 'none' : '1px solid #1A1A1A',
+                padding: '10px 14px', cursor: 'pointer',
+              }}
+            >
+              <span style={{ fontSize: 14 }}>👑</span>
+              <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
+                <Avatar url={topBid.profiles?.avatar_url} size={26} />
+              </div>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#FFF' }}>
+                @{topBid.profiles?.username ?? '…'}
+              </span>
+              <span style={{ fontSize: 15, fontWeight: 800, color: '#4ADE80', fontVariantNumeric: 'tabular-nums' }}>
+                {fmtAmt(topBid.amount)}
+              </span>
+              <span style={{ fontSize: 11, color: '#4B5563', marginLeft: 4 }}>
+                {sortedBids.length} bid{sortedBids.length !== 1 ? 's' : ''} {showBids ? '▲' : '▼'}
+              </span>
             </div>
-            <div style={{
-              background: '#111', borderRadius: 12,
-              border: '1px solid #1A1A1A', overflow: 'hidden',
-            }}>
-              {sortedBids.slice(0, 20).map((bid, i) => (
-                <div key={bid.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '10px 14px',
-                  borderBottom: i < Math.min(sortedBids.length, 20) - 1 ? '1px solid #161616' : 'none',
-                  background: i === 0 ? 'rgba(74,222,128,0.04)' : 'transparent',
-                }}>
-                  {i === 0 && <span style={{ fontSize: 14 }}>👑</span>}
-                  <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
-                    <Avatar url={bid.profiles?.avatar_url} size={26} />
+
+            {/* Expanded list */}
+            {showBids && (
+              <div style={{
+                background: '#111', borderRadius: '0 0 12px 12px',
+                border: '1px solid #1A1A1A', borderTop: '1px solid #161616', overflow: 'hidden',
+              }}>
+                {sortedBids.slice(1, 20).map((bid, i) => (
+                  <div key={bid.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '9px 14px',
+                    borderBottom: i < sortedBids.length - 2 ? '1px solid #161616' : 'none',
+                  }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
+                      <Avatar url={bid.profiles?.avatar_url} size={24} />
+                    </div>
+                    <span style={{ flex: 1, fontSize: 12, color: '#9CA3AF' }}>
+                      @{bid.profiles?.username ?? '…'}
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtAmt(bid.amount)}
+                    </span>
                   </div>
-                  <span style={{ flex: 1, fontSize: 12, color: '#D1D5DB', fontWeight: 600 }}>
-                    @{bid.profiles?.username ?? '…'}
-                  </span>
-                  <span style={{
-                    fontSize: 13, fontWeight: 800,
-                    color: i === 0 ? '#4ADE80' : '#6B7280',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>{fmtAmt(bid.amount)}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
-
-        {/* Live chat */}
-        <div style={{ padding: '14px 16px 0' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.1em', marginBottom: 10 }}>
-            💬 CHAT EN VIVO
-          </div>
-          <div style={{ minHeight: 60 }}>
-            {chat.length === 0 ? (
-              <div style={{ fontSize: 12, color: '#374151', padding: '4px 0' }}>Sin mensajes aún…</div>
-            ) : (
-              chat.map((m) => {
-                const isMe = m.user_id === profile?.id
-                return (
-                  <div key={m.id} style={{
-                    display: 'flex',
-                    flexDirection: isMe ? 'row-reverse' : 'row',
-                    gap: 8, marginBottom: 10, alignItems: 'flex-end',
-                  }}>
-                    {!isMe && (
-                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
-                        <Avatar url={m.profiles?.avatar_url} size={24} />
-                      </div>
-                    )}
-                    <div style={{ maxWidth: '72%' }}>
-                      {!isMe && (
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#6B7280', marginBottom: 3 }}>
-                          @{m.profiles?.username ?? '…'}
-                        </div>
-                      )}
-                      <div style={{
-                        padding: '8px 12px',
-                        borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                        background: isMe ? '#FFFFFF' : '#1A1A1F',
-                        color: isMe ? '#111' : '#E5E5E5',
-                        fontSize: 13, lineHeight: 1.4,
-                      }}>
-                        {m.message}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-            <div ref={chatEndRef} />
-          </div>
-        </div>
 
         {/* Bottom padding so content isn't hidden behind fixed controls */}
         <div style={{ height: 150 }} />
