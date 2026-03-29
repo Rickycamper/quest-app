@@ -51,10 +51,9 @@ function Countdown({ targetMs }) {
   return <span>{label}</span>
 }
 
-// ── Auction Card ──────────────────────────────
+// ── Compact Auction Card (2-col grid) ─────────
 function AuctionCard({ auction, onOpen, onWatchToggle }) {
   const { profile } = useAuth()
-  const [imgRatio, setImgRatio] = useState(null)
   const status     = auctionStatus(auction)
   const gs         = auction.game ? (GAME_STYLES[auction.game] ?? GAME_STYLES['MTG']) : null
   const bids       = auction.auction_bids ?? []
@@ -67,162 +66,114 @@ function AuctionCard({ auction, onOpen, onWatchToggle }) {
   const isPast     = status === 'ended' || status === 'cancelled'
 
   return (
-    <div style={{
-      background: '#111', borderRadius: 16,
-      border: `1px solid ${isActive ? 'rgba(239,68,68,0.35)' : '#1F1F1F'}`,
-      marginBottom: 12, overflow: 'hidden',
-      boxShadow: isActive ? '0 0 20px rgba(239,68,68,0.1)' : 'none',
-      animation: 'fadeUp 0.3s ease both',
-    }}>
-      {/* Image + status badge */}
-      <div
-        onClick={() => !isPast && onOpen(auction)}
-        style={{
-          position: 'relative', cursor: isPast ? 'default' : 'pointer',
-          aspectRatio: imgRatio ? String(imgRatio) : '4/3',
-          maxHeight: imgRatio && imgRatio < 1 ? 320 : 220,
-          overflow: 'hidden', background: '#0A0A0A',
-        }}
-      >
+    <div
+      onClick={() => !isPast && onOpen(auction)}
+      style={{
+        background: '#111', borderRadius: 14,
+        border: `1px solid ${isActive ? 'rgba(239,68,68,0.4)' : '#1F1F1F'}`,
+        overflow: 'hidden', cursor: isPast ? 'default' : 'pointer',
+        boxShadow: isActive ? '0 0 14px rgba(239,68,68,0.12)' : 'none',
+        animation: 'fadeUp 0.3s ease both',
+        display: 'flex', flexDirection: 'column',
+      }}
+    >
+      {/* Image */}
+      <div style={{ position: 'relative', overflow: 'hidden', background: '#0A0A0A' }}>
         <img
-          src={auction.image_url} alt={auction.title}
-          onLoad={e => setImgRatio(e.target.naturalWidth / e.target.naturalHeight)}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          src={auction.image_url}
+          alt={auction.title}
+          style={{
+            display: 'block', width: '100%',
+            aspectRatio: '3/4', objectFit: 'cover', objectPosition: 'center',
+          }}
         />
 
-        {/* Lock / unlock overlay */}
-        {!isUnlocked && !isPast && (
-          <div style={{
-            position: 'absolute', bottom: 10, left: 10,
-            background: 'rgba(0,0,0,0.75)', borderRadius: 10,
-            padding: '4px 10px', fontSize: 12, color: '#9CA3AF', fontWeight: 700,
-          }}>🔒 Mín {fmtAmt(auction.min_bid)}</div>
-        )}
-        {isUnlocked && !isPast && (
-          <div style={{
-            position: 'absolute', bottom: 10, left: 10,
-            background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.35)',
-            borderRadius: 10, padding: '4px 10px', fontSize: 12, color: '#4ADE80', fontWeight: 800,
-          }}>🔓 {fmtAmt(topBid.amount)}</div>
-        )}
-
-        {/* Status badge */}
+        {/* EN VIVO badge */}
         {isActive && (
           <div style={{
-            position: 'absolute', top: 10, right: 10,
-            background: 'rgba(239,68,68,0.9)', borderRadius: 8,
-            padding: '4px 10px', fontSize: 11, color: '#FFF', fontWeight: 800,
-            display: 'flex', alignItems: 'center', gap: 5,
+            position: 'absolute', top: 6, left: 6,
+            background: 'rgba(239,68,68,0.9)', borderRadius: 6,
+            padding: '3px 7px', fontSize: 9, color: '#FFF', fontWeight: 800,
+            display: 'flex', alignItems: 'center', gap: 4,
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFF', display: 'inline-block', animation: 'pulse 1s infinite' }} />
-            EN VIVO · <Countdown targetMs={endMs} />
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#FFF', display: 'inline-block', animation: 'pulse 1s infinite' }} />
+            LIVE
           </div>
         )}
+
+        {/* Price / lock badge */}
+        {!isPast && (
+          <div style={{
+            position: 'absolute', bottom: 6, left: 6,
+            background: isUnlocked ? 'rgba(74,222,128,0.2)' : 'rgba(0,0,0,0.72)',
+            border: isUnlocked ? '1px solid rgba(74,222,128,0.4)' : 'none',
+            borderRadius: 8, padding: '3px 8px',
+            fontSize: 11, fontWeight: 800,
+            color: isUnlocked ? '#4ADE80' : '#9CA3AF',
+          }}>
+            {isUnlocked ? fmtAmt(topBid.amount) : `🔒 ${fmtAmt(auction.min_bid)}`}
+          </div>
+        )}
+
+        {/* Watch bell — pending only */}
+        {!isActive && !isPast && (
+          <button
+            onClick={e => { e.stopPropagation(); onWatchToggle(auction, !isWatching) }}
+            style={{
+              position: 'absolute', top: 6, right: 6,
+              width: 28, height: 28, borderRadius: '50%', border: 'none',
+              background: isWatching ? 'rgba(167,139,250,0.3)' : 'rgba(0,0,0,0.6)',
+              color: isWatching ? '#A78BFA' : '#9CA3AF',
+              fontSize: 13, cursor: 'pointer', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+            }}
+          >{isWatching ? '🔔' : '🔕'}</button>
+        )}
+
+        {/* Past overlay */}
         {isPast && (
           <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 4,
           }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#6B7280' }}>
-              {status === 'cancelled' ? '🔒 No vendida' : '✓ Finalizada'}
-            </span>
+            {topBid && status === 'ended' ? (
+              <>
+                <div style={{ fontSize: 18 }}>🏆</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#4ADE80' }}>{fmtAmt(topBid.amount)}</div>
+              </>
+            ) : (
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#6B7280' }}>No vendida</div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Info */}
-      <div style={{ padding: '14px 14px 12px' }}>
-        {/* Title + game */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#FFF', marginBottom: 4 }}>
-              {auction.title}
-            </div>
-            {gs && (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                fontSize: 10, fontWeight: 700, color: gs.color,
-                background: gs.bg, border: `1px solid ${gs.border}`,
-                borderRadius: 6, padding: '2px 8px',
-              }}>
-                <GameIcon game={auction.game} size={10} />{auction.game}
-              </span>
-            )}
-          </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: 10, color: '#4B5563', marginBottom: 2 }}>
-              {topBid ? 'Bid actual' : 'Bid mínimo'}
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#FFF' }}>
-              {topBid ? fmtAmt(topBid.amount) : fmtAmt(auction.min_bid)}
-            </div>
-            {bids.length > 0 && (
-              <div style={{ fontSize: 10, color: '#4B5563' }}>{bids.length} bid{bids.length !== 1 ? 's' : ''}</div>
-            )}
-          </div>
-        </div>
-
-        {/* Schedule row */}
+      {/* Compact info strip */}
+      <div style={{ padding: '8px 10px 10px', flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          padding: '8px 10px', borderRadius: 10,
-          background: isActive ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.03)',
-          border: `1px solid ${isActive ? 'rgba(239,68,68,0.15)' : '#1A1A1A'}`,
-          marginBottom: 10,
-        }}>
-          <span style={{ fontSize: 13 }}>{isActive ? '🔴' : isPast ? '✅' : '🕐'}</span>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: isActive ? '#F87171' : '#9CA3AF' }}>
-              {isActive ? 'EN VIVO ahora' : isPast ? 'Finalizada' : `Empieza ${fmtDateTime(auction.start_time)}`}
-            </div>
-            {isActive && (
-              <div style={{ fontSize: 10, color: '#4B5563' }}>Termina en <Countdown targetMs={endMs} /></div>
-            )}
-            {!isActive && !isPast && (
-              <div style={{ fontSize: 10, color: '#4B5563' }}>En <Countdown targetMs={startMs} /></div>
-            )}
-          </div>
+          fontSize: 12, fontWeight: 800, color: '#FFF',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{auction.title}</div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+          {gs && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              fontSize: 9, fontWeight: 700, color: gs.color,
+              background: gs.bg, border: `1px solid ${gs.border}`,
+              borderRadius: 5, padding: '2px 6px',
+            }}>
+              <GameIcon game={auction.game} size={9} />{auction.game}
+            </span>
+          )}
+          <span style={{ fontSize: 10, color: isActive ? '#F87171' : '#6B7280', fontWeight: 600, flexShrink: 0 }}>
+            {isActive
+              ? <Countdown targetMs={endMs} />
+              : isPast ? (status === 'cancelled' ? 'Cancelada' : 'Finalizada')
+              : <Countdown targetMs={startMs} />}
+          </span>
         </div>
-
-        {/* Actions */}
-        {isActive && (
-          <button
-            onClick={() => onOpen(auction)}
-            style={{
-              width: '100%', padding: '11px', borderRadius: 10, border: 'none',
-              background: '#FFF', color: '#111',
-              fontSize: 13, fontWeight: 800, cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
-            }}>
-            🔨 Ver subasta en vivo
-          </button>
-        )}
-
-        {!isActive && !isPast && (
-          <button
-            onClick={() => onWatchToggle(auction, !isWatching)}
-            style={{
-              width: '100%', padding: '10px', borderRadius: 10,
-              border: `1px solid ${isWatching ? 'rgba(167,139,250,0.4)' : '#222'}`,
-              background: isWatching ? 'rgba(167,139,250,0.08)' : 'transparent',
-              color: isWatching ? '#A78BFA' : '#4B5563',
-              fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
-            }}>
-            {isWatching ? '🔔 Notificación activa' : '🔕 Notificarme cuando empiece'}
-          </button>
-        )}
-
-        {isPast && topBid && status === 'ended' && (
-          <div style={{
-            padding: '8px 12px', borderRadius: 10,
-            background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)',
-            fontSize: 12, color: '#4ADE80', fontWeight: 700, textAlign: 'center',
-          }}>
-            🏆 Vendida por {fmtAmt(topBid.amount)}
-          </div>
-        )}
       </div>
     </div>
   )
@@ -414,14 +365,16 @@ export default function AuctionScreen({ isStaff, onClose }) {
             )}
           </div>
         ) : (
-          list.map(a => (
-            <AuctionCard
-              key={a.id}
-              auction={a}
-              onOpen={setLiveAuction}
-              onWatchToggle={handleWatchToggle}
-            />
-          ))
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {list.map(a => (
+              <AuctionCard
+                key={a.id}
+                auction={a}
+                onOpen={setLiveAuction}
+                onWatchToggle={handleWatchToggle}
+              />
+            ))}
+          </div>
         )}
       </div>
 
