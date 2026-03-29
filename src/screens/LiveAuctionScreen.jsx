@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────
 // QUEST — LiveAuctionScreen (full screen overlay)
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import {
   getAuctionBids, getAuctionChat, placeBid,
   endAuction, sendAuctionChat,
@@ -18,27 +18,39 @@ function fmtAmt(n) {
   return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function useCountdown(endTime) {
-  const [remaining, setRemaining] = useState(0)
+// Isolated timer component — only THIS re-renders every 250ms, not the whole screen
+const LiveTimer = memo(function LiveTimer({ endTimeMs, isActive }) {
+  const [display, setDisplay] = useState('--:--')
+  const [color,   setColor]   = useState('#4ADE80')
+
   useEffect(() => {
+    if (!isActive) { setDisplay('FIN'); setColor('#F87171'); return }
     const tick = () => {
-      const diff = Math.max(0, endTime - Date.now())
-      setRemaining(diff)
+      const diff = Math.max(0, endTimeMs - Date.now())
+      const secs = Math.ceil(diff / 1000)
+      const m = Math.floor(secs / 60)
+      const s = secs % 60
+      setDisplay(`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`)
+      setColor(diff < 30000 ? '#F87171' : diff < 60000 ? '#FB923C' : '#4ADE80')
     }
     tick()
     const id = setInterval(tick, 250)
     return () => clearInterval(id)
-  }, [endTime])
-  return remaining
-}
+  }, [endTimeMs, isActive])
 
-function formatTimer(ms) {
-  if (ms <= 0) return '00:00'
-  const totalSecs = Math.ceil(ms / 1000)
-  const m = Math.floor(totalSecs / 60)
-  const s = totalSecs % 60
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
+  return (
+    <div style={{
+      padding: '6px 12px', borderRadius: 10, textAlign: 'center', flexShrink: 0,
+      background: isActive ? 'rgba(0,0,0,0.4)' : 'rgba(239,68,68,0.1)',
+      border: `1.5px solid ${isActive ? color + '55' : 'rgba(239,68,68,0.3)'}`,
+    }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+        {display}
+      </div>
+      {isActive && <div style={{ fontSize: 9, color: '#4B5563', fontWeight: 700, marginTop: 2 }}>EN VIVO</div>}
+    </div>
+  )
+})
 
 // ── Main Component ────────────────────────────
 export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) {
@@ -60,16 +72,24 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
   const chatEndRef    = useRef(null)
   const endedRef      = useRef(false)
 
-  const endTimeMs = new Date(auction.start_time).getTime() + auction.duration_seconds * 1000
-  const remaining = useCountdown(endTimeMs)
-  const isActive  = remaining > 0
-  const gs        = auction.game ? (GAME_STYLES[auction.game] ?? GAME_STYLES['MTG']) : null
+  // endTimeMs is stable — compute once
+  const endTimeMs  = useRef(new Date(auction.start_time).getTime() + auction.duration_seconds * 1000).current
+  const [isActive, setIsActive] = useState(() => Date.now() < endTimeMs)
+  const gs = auction.game ? (GAME_STYLES[auction.game] ?? GAME_STYLES['MTG']) : null
 
-  // Derived bid stats
-  const sortedBids = [...bids].sort((a, b) => b.amount - a.amount)
-  const topBid     = sortedBids[0]
-  const isUnlocked = topBid && topBid.amount >= auction.min_bid
-  const minNext    = topBid ? Number(topBid.amount) + 1 : Number(auction.min_bid)
+  // One-shot timeout flips isActive — no polling in parent
+  useEffect(() => {
+    const ms = endTimeMs - Date.now()
+    if (ms <= 0) { setIsActive(false); return }
+    const id = setTimeout(() => setIsActive(false), ms)
+    return () => clearTimeout(id)
+  }, [endTimeMs])
+
+  // Derived bid stats — only recompute when bids change
+  const sortedBids = useMemo(() => [...bids].sort((a, b) => b.amount - a.amount), [bids])
+  const topBid     = sortedBids[0] ?? null
+  const isUnlocked = useMemo(() => !!(topBid && Number(topBid.amount) >= Number(auction.min_bid)), [topBid, auction.min_bid])
+  const minNext    = useMemo(() => topBid ? Number(topBid.amount) + 1 : Number(auction.min_bid), [topBid, auction.min_bid])
 
   // ── Load initial data ─────────────────────
   useEffect(() => {
@@ -85,29 +105,34 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
 
   // ── Realtime subscriptions ────────────────
   useEffect(() => {
-    const bidCh = subscribeToAuctionBids(auction.id, async () => {
-      const fresh = await getAuctionBids(auction.id).catch(() => [])
-      setBids(fresh)
+    let bidDebounce = null
+    const bidCh = subscribeToAuctionBids(auction.id, () => {
+      clearTimeout(bidDebounce)
+      bidDebounce = setTimeout(async () => {
+        const fresh = await getAuctionBids(auction.id).catch(() => [])
+        setBids(fresh)
+      }, 300)
     })
     const chatCh = subscribeToAuctionChat(auction.id, (payload) => {
       setChat(prev => prev.some(m => m.id === payload.new.id) ? prev : [...prev, payload.new])
     })
     return () => {
+      clearTimeout(bidDebounce)
       bidCh.unsubscribe()
       chatCh.unsubscribe()
     }
   }, [auction.id])
 
-  // ── End auction when timer hits 0 ─────────
+  // ── End auction when isActive flips false ─
   useEffect(() => {
-    if (remaining === 0 && !endedRef.current) {
+    if (!isActive && !endedRef.current) {
       endedRef.current = true
       endAuction(auction.id)
         .then(() => getAuctionBids(auction.id))
         .then(fresh => { setBids(fresh); setEnded(true); onAuctionEnded?.() })
         .catch(() => { setEnded(true); onAuctionEnded?.() })
     }
-  }, [remaining, auction.id, onAuctionEnded])
+  }, [isActive, auction.id, onAuctionEnded])
 
   // ── Auto-scroll chat ──────────────────────
   useEffect(() => {
@@ -159,8 +184,6 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
     setSendingChat(false)
   }
 
-  const timerColor = remaining < 30000 ? '#F87171' : remaining < 60000 ? '#FB923C' : '#4ADE80'
-
   return (
     <div style={{
       position: 'absolute', inset: 0, zIndex: 300,
@@ -193,24 +216,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
           )}
         </div>
 
-        {/* Timer */}
-        <div style={{
-          padding: '6px 12px', borderRadius: 10,
-          background: isActive ? 'rgba(0,0,0,0.4)' : 'rgba(239,68,68,0.1)',
-          border: `1.5px solid ${isActive ? timerColor + '55' : 'rgba(239,68,68,0.3)'}`,
-          textAlign: 'center', flexShrink: 0,
-        }}>
-          {isActive ? (
-            <>
-              <div style={{ fontSize: 18, fontWeight: 800, color: timerColor, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-                {formatTimer(remaining)}
-              </div>
-              <div style={{ fontSize: 9, color: '#4B5563', fontWeight: 700, marginTop: 2 }}>EN VIVO</div>
-            </>
-          ) : (
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#F87171' }}>FIN</div>
-          )}
-        </div>
+        <LiveTimer endTimeMs={endTimeMs} isActive={isActive} />
       </div>
 
       {/* ── Scrollable body ── */}
