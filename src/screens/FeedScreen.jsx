@@ -327,6 +327,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   const [likeAnim,       setLikeAnim]      = useState(false)
   const [saved,          setSaved]         = useState(false)
   const [likes,          setLikes]         = useState(post.post_likes?.[0]?.count ?? 0)
+  useEffect(() => { setLiked(post.user_has_liked ?? false) }, [post.id, post.user_has_liked])
   const [likeBusy,       setLikeBusy]      = useState(false)
   const [saveBusy,       setSaveBusy]      = useState(false)
   const [fBusy,          setFBusy]         = useState(false)
@@ -760,9 +761,7 @@ export default function FeedScreen({ profile, isStaff, onViewProfile, refreshKey
         // Load likes in background after posts are visible
         if (data.length > 0) {
           getUserLikedPosts(data.map(p => p.id)).then(likedSet => {
-            if (likedSet.size > 0) {
-              setPosts(prev => prev.map(p => ({ ...p, user_has_liked: likedSet.has(p.id) })))
-            }
+            setPosts(prev => prev.map(p => ({ ...p, user_has_liked: likedSet.has(p.id) })))
           }).catch(() => {})
         }
       })

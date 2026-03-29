@@ -386,10 +386,12 @@ export async function toggleLike(postId) {
     .maybeSingle()
 
   if (existing) {
-    await supabase.from('post_likes').delete().eq('id', existing.id)
+    const { error: delErr } = await supabase.from('post_likes').delete().eq('id', existing.id)
+    if (delErr) throw delErr
     return false
   } else {
-    await supabase.from('post_likes').insert({ post_id: postId, user_id: session.user.id })
+    const { error: insErr } = await supabase.from('post_likes').insert({ post_id: postId, user_id: session.user.id })
+    if (insErr) throw insErr
     // Notify the post owner (skip if liking own post)
     try {
       const [{ data: liker }, { data: post }] = await Promise.all([
@@ -441,10 +443,12 @@ export async function toggleFollow(targetUserId) {
     .maybeSingle()
 
   if (existing) {
-    await supabase.from('follows').delete().eq('id', existing.id)
+    const { error: delErr } = await supabase.from('follows').delete().eq('id', existing.id)
+    if (delErr) throw delErr
     return false
   } else {
-    await supabase.from('follows').insert({ follower_id: session.user.id, following_id: targetUserId })
+    const { error: insErr } = await supabase.from('follows').insert({ follower_id: session.user.id, following_id: targetUserId })
+    if (insErr) throw insErr
     // Notify the followed user
     try {
       const { data: follower } = await supabase

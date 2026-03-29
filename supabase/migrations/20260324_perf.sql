@@ -61,7 +61,7 @@ BEGIN
   JOIN profiles pr ON pr.id = rc.user_id
   WHERE rc.status = 'approved'
     AND rc.game   = p_game
-    AND (p_branch IS NULL OR pr.branch = p_branch)
+    AND (p_branch IS NULL OR rc.branch = p_branch)
   GROUP BY pr.id, pr.username, pr.avatar_url, pr.branch, pr.verified, pr.role, pr.is_owner
   ORDER BY points DESC
   LIMIT 50;
