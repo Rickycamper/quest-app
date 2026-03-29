@@ -54,6 +54,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
   const [ended,       setEnded]       = useState(false)
   const [imgRatio,    setImgRatio]    = useState(null)  // natural w/h ratio
   const [viewImg,     setViewImg]     = useState(false) // full-screen image viewer
+  const [lockTip,     setLockTip]     = useState(() => !localStorage.getItem('quest_lock_seen'))
   const lastBidTime   = useRef(0)
   const chatEndRef    = useRef(null)
   const endedRef      = useRef(false)
@@ -67,7 +68,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
   const sortedBids = [...bids].sort((a, b) => b.amount - a.amount)
   const topBid     = sortedBids[0]
   const isUnlocked = topBid && topBid.amount >= auction.min_bid
-  const minNext    = topBid ? topBid.amount + 1 : auction.min_bid
+  const minNext    = topBid ? Number(topBid.amount) + 1 : Number(auction.min_bid)
 
   // ── Load initial data ─────────────────────
   useEffect(() => {
@@ -148,9 +149,12 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
     try {
       const newMsg = await sendAuctionChat(auction.id, msg)
       setChatMsg('')
-      // Optimistic — realtime will also fire but dedup by id is fine
-      setChat(prev => prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg])
-    } catch { /* silent */ }
+      // Enrich with local profile so it renders immediately
+      const enriched = { ...newMsg, profiles: { username: profile?.username, avatar_url: profile?.avatar_url } }
+      setChat(prev => prev.some(m => m.id === newMsg.id) ? prev : [...prev, enriched])
+    } catch (e) {
+      console.error('chat error', e)
+    }
     setSendingChat(false)
   }
 
@@ -225,7 +229,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
             src={auction.image_url}
             alt={auction.title}
             onLoad={e => setImgRatio(e.target.naturalWidth / e.target.naturalHeight)}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
           />
 
           {/* Lock overlay (active, no qualifying bid yet) */}
@@ -240,6 +244,25 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
               <div style={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF' }}>
                 Mín {fmtAmt(auction.min_bid)} para desbloquear
               </div>
+              <div style={{ fontSize: 11, color: '#4B5563' }}>Toca para ver la carta</div>
+
+              {/* First-time tip */}
+              {lockTip && (
+                <div
+                  onClick={e => { e.stopPropagation(); localStorage.setItem('quest_lock_seen','1'); setLockTip(false) }}
+                  style={{
+                    position: 'absolute', bottom: 14, left: 14, right: 14,
+                    background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)',
+                    borderRadius: 10, padding: '10px 14px', cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#A78BFA', marginBottom: 3 }}>¿Qué es el candado?</div>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>
+                    La carta se desbloquea cuando alguien puje el mínimo. Hasta entonces está oculta, pero puedes verla tocando la imagen.
+                  </div>
+                  <div style={{ fontSize: 10, color: '#6B7280', marginTop: 6 }}>Toca para cerrar</div>
+                </div>
+              )}
             </div>
           )}
 
@@ -281,8 +304,8 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
             }}>🔓 DESBLOQUEADO</div>
           )}
 
-          {/* Bid info bar at bottom of image */}
-          {!ended && (
+          {/* Bid info bar at bottom of image — only when there's a qualifying bid */}
+          {!ended && (isUnlocked || topBid) && (
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0,
               background: 'linear-gradient(transparent, rgba(0,0,0,0.88))',

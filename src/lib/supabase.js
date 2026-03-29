@@ -1520,26 +1520,38 @@ export async function toggleAuctionWatch(auctionId, watching) {
   }
 }
 
+// helper: fetch profiles map for a list of user ids
+async function fetchProfilesMap(userIds) {
+  if (!userIds.length) return {}
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url')
+    .in('id', userIds)
+  return Object.fromEntries((data || []).map(p => [p.id, p]))
+}
+
 export async function getAuctionBids(auctionId) {
   const { data, error } = await supabase
     .from('auction_bids')
-    .select('id, amount, created_at, user_id, profiles:user_id ( username, avatar_url )')
+    .select('id, amount, created_at, user_id')
     .eq('auction_id', auctionId)
     .order('amount', { ascending: false })
     .limit(50)
   if (error) throw error
-  return data
+  const pMap = await fetchProfilesMap([...new Set((data || []).map(b => b.user_id))])
+  return (data || []).map(b => ({ ...b, profiles: pMap[b.user_id] ?? null }))
 }
 
 export async function getAuctionChat(auctionId) {
   const { data, error } = await supabase
     .from('auction_chat')
-    .select('id, message, created_at, user_id, profiles:user_id ( username, avatar_url )')
+    .select('id, message, created_at, user_id')
     .eq('auction_id', auctionId)
     .order('created_at', { ascending: true })
     .limit(100)
   if (error) throw error
-  return data
+  const pMap = await fetchProfilesMap([...new Set((data || []).map(m => m.user_id))])
+  return (data || []).map(m => ({ ...m, profiles: pMap[m.user_id] ?? null }))
 }
 
 export async function sendAuctionChat(auctionId, message) {
@@ -1548,10 +1560,10 @@ export async function sendAuctionChat(auctionId, message) {
   const { data, error } = await supabase
     .from('auction_chat')
     .insert({ auction_id: auctionId, user_id: session.user.id, message: message.trim() })
-    .select('id, message, created_at, user_id, profiles:user_id ( username, avatar_url )')
+    .select('id, message, created_at, user_id')
     .single()
   if (error) throw error
-  return data
+  return data  // caller adds profiles from context
 }
 
 export function subscribeToAuctionBids(auctionId, callback) {
