@@ -498,15 +498,18 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
               </button>
             )}
           </div>
-          <div style={{ fontSize: 11, color: '#4B5563' }}>{timeAgo(post.created_at)}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+            <span style={{ fontSize: 11, color: '#4B5563' }}>{timeAgo(post.created_at)}</span>
+            {post.tag && (
+              <span style={{
+                padding: '2px 7px', borderRadius: 6,
+                background: gs.bg, border: `1px solid ${gs.border}`,
+                color: gs.color, fontSize: 10, fontWeight: 600,
+                display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0,
+              }}><GameIcon game={post.tag} size={11} />{post.tag}</span>
+            )}
+          </div>
         </div>
-
-        <div style={{
-          padding: '3px 10px', borderRadius: 8,
-          background: gs.bg, border: `1px solid ${gs.border}`,
-          color: gs.color, fontSize: 11, fontWeight: 600,
-          display: 'flex', alignItems: 'center', gap: 4,
-        }}><GameIcon game={post.tag} size={13} />{post.tag}</div>
       </div>
 
       {/* Caption */}
