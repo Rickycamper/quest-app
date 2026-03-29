@@ -1449,7 +1449,7 @@ export async function getAuctions() {
     .select(`
       id, title, game, image_url, min_bid, start_time, duration_seconds,
       status, winner_id, winning_amount, created_at,
-      auction_bids ( id, user_id, amount, created_at, profiles:user_id ( username, avatar_url ) ),
+      auction_bids ( id, user_id, amount ),
       auction_watches ( user_id )
     `)
     .order('start_time', { ascending: false })

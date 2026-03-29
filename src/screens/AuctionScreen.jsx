@@ -229,13 +229,17 @@ export default function AuctionScreen({ isStaff, onClose }) {
   const [liveAuction, setLiveAuction] = useState(null)
   const [showCreate,  setShowCreate]  = useState(false)
   const [tab,         setTab]         = useState('upcoming')
+  const [error,       setError]       = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
       const data = await getAuctions()
       setAuctions(data || [])
-    } catch { /* silent */ }
+    } catch (e) {
+      setError(e.message || 'Error cargando subastas')
+    }
     setLoading(false)
   }, [])
 
@@ -333,7 +337,9 @@ export default function AuctionScreen({ isStaff, onClose }) {
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', padding: '12px 16px 32px' }}>
-        {loading ? (
+        {error ? (
+          <div style={{ margin: '16px 0', padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13 }}>{error}</div>
+        ) : loading ? (
           [...Array(2)].map((_, i) => (
             <div key={i} style={{ borderRadius: 16, background: '#111', border: '1px solid #1A1A1A', marginBottom: 12, overflow: 'hidden' }}>
               <span style={{ ...sk('100%', 200, 0), display: 'block' }} />
