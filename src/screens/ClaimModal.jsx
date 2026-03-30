@@ -30,9 +30,12 @@ export default function ClaimModal({ onClose, isStaff = false }) {
       .then(data => {
         const now = new Date()
         const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
-        // Only past tournaments + not yet fully claimed (< 3 approved results)
+        const cutoff = new Date(now.getTime() - 72 * 60 * 60 * 1000)
+        const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}-${String(cutoff.getDate()).padStart(2,'0')}`
+        // Only past tournaments within 72h window + not yet fully claimed (< 3 approved results)
         const available = data.filter(t =>
           t.date <= todayStr &&
+          t.date >= cutoffStr &&
           (t.tournament_results ?? []).length < 3
         )
         setTournaments(available)
