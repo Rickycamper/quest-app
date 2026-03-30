@@ -756,7 +756,6 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
   const tabs = [
     { id: 'leaderboard', label: 'Rankings' },
     { id: 'tournaments', label: 'Torneos' },
-    ...(isStaff ? [{ id: 'claims', label: 'Claims' }] : []),
   ]
 
   return (
@@ -774,7 +773,7 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
             }}>{t.label}</button>
           ))}
         </div>
-        {tab !== 'claims' && (tab !== 'tournaments' || isStaff) && (
+        {(tab === 'leaderboard' && !isStaff) || (tab === 'tournaments' && isStaff) ? (
           <button
             onClick={handlePlusClick}
             title={tab === 'tournaments' ? 'Crear torneo' : 'Reportar resultado'}
@@ -790,11 +789,11 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
               animation: pulsing ? 'ringPulse 1.4s ease-out infinite' : 'none',
               transition: 'border-color 0.3s, background 0.3s, color 0.3s',
             }}>+</button>
-        )}
+        ) : null}
       </div>
 
-      {/* Filters — game + branch (shown on leaderboard & tournaments) */}
-      {tab !== 'claims' && (
+      {/* Filters — game + branch */}
+      {true && (
         <>
           <div className="filter-scroll" style={{ padding: '8px 20px 0' }}>
             {GAMES.map(g => {
@@ -834,11 +833,10 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
         </>
       )}
 
-      {['leaderboard', 'tournaments', 'claims'].map(t => (
+      {['leaderboard', 'tournaments'].map(t => (
         <div key={t} style={{ display: t === tab ? 'block' : 'none' }}>
           {t === 'leaderboard' && <LeaderboardTab branch={branch} game={game} isAdmin={profile?.role === 'admin'} />}
           {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={profile?.role === 'admin'} />}
-          {t === 'claims'      && <ClaimsTab isStaff={isStaff} />}
         </div>
       ))}
     </div>
