@@ -90,7 +90,7 @@ function AuthFlow() {
 }
 
 function MainApp() {
-  const { profile, isStaff, refreshProfile } = useAuth()
+  const { profile, isStaff, isOwner, refreshProfile } = useAuth()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
   const [activeTab,      setActiveTab]     = useState('feed')
   const [showNotifs,      setShowNotifs]     = useState(false)
@@ -187,7 +187,7 @@ function MainApp() {
         </div>
       )}
       {showClaim      && <ClaimModal            onClose={() => setShowClaim(false)} isStaff={isStaff} />}
-      {showTournament && <CreateTournamentModal onClose={() => setShowTournament(false)} />}
+      {showTournament && <CreateTournamentModal onClose={() => setShowTournament(false)} defaultBranch={isOwner ? null : (profile?.branch ?? null)} />}
       {showAdmin && <AdminScreen     onClose={() => setShowAdmin(false)} />}
       {showAuction && <AuctionScreen isStaff={isStaff} onClose={() => setShowAuction(false)} />}
       {showHub && (

@@ -222,7 +222,7 @@ function UserCard({ user, onToggle, currentIsOwner }) {
 }
 
 // ── Users tab ────────────────────────────────
-function UsersTab({ currentIsOwner }) {
+function UsersTab({ currentIsOwner, adminBranch }) {
   const [users,   setUsers]   = useState([])
   const [query,   setQuery]   = useState('')
   const [loading, setLoading] = useState(true)
@@ -232,7 +232,7 @@ function UsersTab({ currentIsOwner }) {
 
   const load = useCallback((q = query) => {
     setLoading(true); setError('')
-    getAdminUsers(q)
+    getAdminUsers(q, adminBranch)
       .then(setUsers)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -433,14 +433,14 @@ function ArrivalCard({ pkg, onConfirmed, onRejected }) {
 }
 
 // ── Packages tab ──────────────────────────────
-function PackagesTab() {
+function PackagesTab({ adminBranch }) {
   const [packages, setPackages] = useState([])
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState('')
 
   const load = () => {
     setLoading(true); setError('')
-    getPendingArrivalPackages()
+    getPendingArrivalPackages(adminBranch)
       .then(setPackages)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -474,14 +474,14 @@ function PackagesTab() {
 }
 
 // ── Tournaments admin tab ──────────────────────
-function TournamentsAdminTab() {
+function TournamentsAdminTab({ adminBranch }) {
   const [items,   setItems]   = useState([])
   const [loading, setLoading] = useState(true)
   const [confirm, setConfirm] = useState(null) // id to confirm delete
   const [error,   setError]   = useState('')
 
   useEffect(() => {
-    getTournaments()
+    getTournaments({ branch: adminBranch })
       .then(setItems)
       .catch(e => setError(e.message || 'Error al cargar torneos'))
       .finally(() => setLoading(false))
@@ -652,7 +652,9 @@ function StatsTab() {
 }
 
 export default function AdminScreen({ onClose }) {
-  const { isOwner: currentIsOwner } = useAuth()
+  const { isOwner: currentIsOwner, profile } = useAuth()
+  // Branch admins (admin role but not owner) only see their own branch
+  const adminBranch = currentIsOwner ? null : (profile?.branch ?? null)
   const [tab,     setTab]     = useState('claims')
   const [claims,  setClaims]  = useState([])
   const [loading, setLoading] = useState(true)
@@ -661,7 +663,7 @@ export default function AdminScreen({ onClose }) {
   const load = () => {
     setLoading(true)
     setError('')
-    getPendingClaims()
+    getPendingClaims(adminBranch)
       .then(setClaims)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -700,7 +702,10 @@ export default function AdminScreen({ onClose }) {
           background: 'none', border: 'none', cursor: 'pointer',
           color: '#6B7280', fontSize: 20, padding: '0 4px 0 0', lineHeight: 1,
         }}>←</button>
-        <span style={{ fontSize: 16, fontWeight: 800, color: '#FFF' }}>Panel Admin</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: '#FFF' }}>Panel Admin</span>
+          {adminBranch && <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 600 }}>{adminBranch}</span>}
+        </div>
         {tab === 'claims' && claims.length > 0 && (
           <div style={{
             marginLeft: 'auto', background: '#EF4444', color: '#FFF',
@@ -773,7 +778,7 @@ export default function AdminScreen({ onClose }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
               LLEGADAS PENDIENTES DE CONFIRMACIÓN
             </div>
-            <PackagesTab />
+            <PackagesTab adminBranch={adminBranch} />
           </>
         )}
 
@@ -783,7 +788,7 @@ export default function AdminScreen({ onClose }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
               MEMBRESÍAS Y PUNTOS
             </div>
-            <UsersTab currentIsOwner={currentIsOwner} />
+            <UsersTab currentIsOwner={currentIsOwner} adminBranch={adminBranch} />
           </>
         )}
 
@@ -793,17 +798,20 @@ export default function AdminScreen({ onClose }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
               TORNEOS
             </div>
-            <TournamentsAdminTab />
+            <TournamentsAdminTab adminBranch={adminBranch} />
           </>
         )}
 
-        {/* ── Stats tab ── */}
+        {/* ── Stats tab — owner only ── */}
         {tab === 'stats' && (
           <>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
               ESTADÍSTICAS DE ENVÍOS
             </div>
-            <StatsTab />
+            {adminBranch
+              ? <div style={{ textAlign: 'center', padding: '40px 20px', color: '#4B5563', fontSize: 13 }}>Solo disponible para administradores globales</div>
+              : <StatsTab />
+            }
           </>
         )}
 

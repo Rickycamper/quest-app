@@ -6,10 +6,10 @@ import { createTournament } from '../lib/supabase'
 import { GAMES, GAME_STYLES, BRANCHES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
 
-export default function CreateTournamentModal({ onClose }) {
+export default function CreateTournamentModal({ onClose, defaultBranch }) {
   const [name,        setName]        = useState('')
   const [game,        setGame]        = useState(GAMES[0])
-  const [branch,      setBranch]      = useState('')
+  const [branch,      setBranch]      = useState(defaultBranch ?? '')
   const [date,        setDate]        = useState(new Date().toISOString().slice(0, 10))
   const [playerCount, setPlayerCount] = useState('')
   const [startTime,   setStartTime]   = useState('')
@@ -135,7 +135,7 @@ export default function CreateTournamentModal({ onClose }) {
             <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
               <div style={{ flex: 1 }}>
                 <span style={labelStyle}>SUCURSAL</span>
-                <select value={branch} onChange={e => setBranch(e.target.value)} style={selectStyle}>
+                <select value={branch} onChange={e => setBranch(e.target.value)} disabled={!!defaultBranch} style={{ ...selectStyle, opacity: defaultBranch ? 0.6 : 1 }}>
                   <option value="" disabled>Seleccionar...</option>
                   {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>

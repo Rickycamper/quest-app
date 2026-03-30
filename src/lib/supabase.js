@@ -285,12 +285,13 @@ export async function createPost({ caption, game, imageUrls = [] }) {
 }
 
 // ── ADMIN — user management ──────────────────
-export async function getAdminUsers(query = '') {
+export async function getAdminUsers(query = '', branch = null) {
   let q = supabase
     .from('profiles')
     .select('id, username, avatar_url, role, points')
     .order('username', { ascending: true })
     .limit(40)
+  if (branch) q = q.eq('branch', branch)
   if (query.trim()) q = q.ilike('username', `%${query.trim()}%`)
   const { data, error } = await q
   if (error) throw error
@@ -713,8 +714,8 @@ export async function submitClaim({ tournamentName, tournamentId = null, game, b
   return data
 }
 
-export async function getPendingClaims() {
-  const { data, error } = await supabase
+export async function getPendingClaims(branch = null) {
+  let q = supabase
     .from('ranking_claims')
     .select(`
       id, position, tournament_name, tournament_id, game, branch, notes, evidence_url,
@@ -722,7 +723,8 @@ export async function getPendingClaims() {
       profiles:user_id ( id, username, avatar_url )
     `)
     .eq('status', 'pending')
-    .order('created_at', { ascending: false })
+  if (branch) q = q.eq('branch', branch)
+  const { data, error } = await q.order('created_at', { ascending: false })
   if (error) throw error
   return data
 }
@@ -1021,8 +1023,8 @@ export async function deletePackage(packageId) {
   if (error) throw error
 }
 
-export async function getPendingArrivalPackages() {
-  const { data, error } = await supabase
+export async function getPendingArrivalPackages(branch = null) {
+  let q = supabase
     .from('packages')
     .select(`
       id, tracking_code, status, origin_branch, destination_branch, created_at, notes,
@@ -1030,7 +1032,8 @@ export async function getPendingArrivalPackages() {
       recipient:recipient_id ( id, username )
     `)
     .eq('status', 'pending_arrival')
-    .order('created_at', { ascending: false })
+  if (branch) q = q.eq('destination_branch', branch)
+  const { data, error } = await q.order('created_at', { ascending: false })
   if (error) throw error
   return data ?? []
 }
