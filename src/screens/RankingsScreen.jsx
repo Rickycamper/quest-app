@@ -773,7 +773,7 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
             }}>{t.label}</button>
           ))}
         </div>
-        {(tab === 'leaderboard' && !isStaff) || (tab === 'tournaments' && isStaff) ? (
+        {tab === 'leaderboard' || (tab === 'tournaments' && isStaff) ? (
           <button
             onClick={handlePlusClick}
             title={tab === 'tournaments' ? 'Crear torneo' : 'Reportar resultado'}
