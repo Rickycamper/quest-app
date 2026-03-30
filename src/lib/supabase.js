@@ -1513,6 +1513,11 @@ export async function notifyAuctionWatchers(auctionId) {
   if (error) console.warn('[notify_watchers]', error.message)
 }
 
+export async function deleteAuction(auctionId) {
+  const { error } = await supabase.from('auctions').delete().eq('id', auctionId)
+  if (error) throw error
+}
+
 export async function toggleAuctionWatch(auctionId, watching) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) return

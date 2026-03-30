@@ -2,7 +2,7 @@
 // QUEST — AuctionScreen
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback } from 'react'
-import { getAuctions, toggleAuctionWatch } from '../lib/supabase'
+import { getAuctions, toggleAuctionWatch, deleteAuction } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAME_STYLES, GAMES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
@@ -52,7 +52,7 @@ function Countdown({ targetMs }) {
 }
 
 // ── Compact Auction Card (2-col grid) ─────────
-function AuctionCard({ auction, onOpen, onWatchToggle }) {
+function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
   const { profile } = useAuth()
   const status     = auctionStatus(auction)
   const gs         = auction.game ? (GAME_STYLES[auction.game] ?? GAME_STYLES['MTG']) : null
@@ -62,6 +62,8 @@ function AuctionCard({ auction, onOpen, onWatchToggle }) {
   const startMs    = new Date(auction.start_time).getTime()
   const endMs      = startMs + auction.duration_seconds * 1000
   const isUnlocked = topBid && topBid.amount >= auction.min_bid
+  const [confirmDel, setConfirmDel] = useState(false)
+  const canDelete = isStaff && (status === 'pending' || status === 'ended' || status === 'cancelled')
   const isActive   = status === 'active'
   const isPast     = status === 'ended' || status === 'cancelled'
 
@@ -178,6 +180,24 @@ function AuctionCard({ auction, onOpen, onWatchToggle }) {
               : <Countdown targetMs={startMs} />}
           </span>
         </div>
+
+        {/* Delete button — staff only, pending or history */}
+        {canDelete && (
+          <button
+            onClick={e => {
+              e.stopPropagation()
+              if (!confirmDel) { setConfirmDel(true); setTimeout(() => setConfirmDel(false), 3000); return }
+              onDelete(auction.id)
+            }}
+            style={{
+              marginTop: 2, width: '100%', padding: '5px 0', borderRadius: 7, border: 'none',
+              background: confirmDel ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.04)',
+              color: confirmDel ? '#F87171' : '#4B5563',
+              fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
+            }}
+          >{confirmDel ? 'Confirmar eliminar' : '✕ Eliminar'}</button>
+        )}
       </div>
     </div>
   )
@@ -207,6 +227,15 @@ export default function AuctionScreen({ isStaff, onClose }) {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  const handleDelete = async (auctionId) => {
+    try {
+      await deleteAuction(auctionId)
+      setAuctions(prev => prev.filter(a => a.id !== auctionId))
+    } catch (e) {
+      setError(e.message || 'Error al eliminar')
+    }
+  }
 
   const handleWatchToggle = async (auction, watching) => {
     setAuctions(prev => prev.map(a => {
@@ -376,6 +405,8 @@ export default function AuctionScreen({ isStaff, onClose }) {
                 auction={a}
                 onOpen={setLiveAuction}
                 onWatchToggle={handleWatchToggle}
+                onDelete={handleDelete}
+                isStaff={isStaff}
               />
             ))}
           </div>
