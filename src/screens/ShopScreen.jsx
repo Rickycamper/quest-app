@@ -133,15 +133,22 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
 
   const handleSave = async () => {
     setSaving(true)
-    await onSave?.(product.id, {
-      qty_david:  parseInt(david)  || 0,
-      qty_panama: parseInt(panama) || 0,
-      qty_chitre: parseInt(chitre) || 0,
-      price: askPrice ? 0 : (parseFloat(price) || 0),
-      coming_soon: comingSoon,
-    })
-    setSaving(false); setSaved(true)
-    setTimeout(() => setSaved(false), 1800)
+    try {
+      await onSave?.(product.id, {
+        qty_david:  parseInt(david)  || 0,
+        qty_panama: parseInt(panama) || 0,
+        qty_chitre: parseInt(chitre) || 0,
+        price: askPrice ? 0 : (parseFloat(price) || 0),
+        coming_soon: comingSoon,
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1800)
+    } catch (e) {
+      console.error('Error guardando producto:', e)
+      alert('Error al guardar: ' + (e?.message || 'intentá de nuevo'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleDelete = async () => {
@@ -701,8 +708,19 @@ export default function ShopScreen({ isOwner }) {
   })
 
   const handleSave = useCallback(async (id, fields) => {
-    const updated = await updateShopProduct(id, fields)
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p))
+    // coming_soon may not exist yet in DB — try with it, fallback without
+    try {
+      const updated = await updateShopProduct(id, fields)
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p))
+    } catch (e) {
+      if (e?.message?.includes('coming_soon')) {
+        const { coming_soon, ...rest } = fields
+        const updated = await updateShopProduct(id, rest)
+        setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p))
+      } else {
+        throw e
+      }
+    }
   }, [])
 
   const handleDelete = useCallback(async (id) => {
