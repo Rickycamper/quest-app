@@ -1,0 +1,829 @@
+// ─────────────────────────────────────────────
+// QUEST — ShopScreen
+// 3 sections: Sealed · Singles · Accesorios
+// Sub-filters: by TCG (Sealed/Singles) or type (Accesorios)
+// Search bar across all sections
+// ─────────────────────────────────────────────
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct } from '../lib/supabase'
+import { GAMES, GAME_STYLES } from '../lib/constants'
+import GameIcon from '../components/GameIcon'
+
+const STORE_WHATSAPP = '50766130548'
+
+const BRANCHES = [
+  { key: 'qty_david',  label: 'David'  },
+  { key: 'qty_panama', label: 'Panamá' },
+  { key: 'qty_chitre', label: 'Chitré' },
+]
+
+const CATEGORIES = [
+  { id: 'sealed',    label: 'Sealed'      },
+  { id: 'single',    label: 'Singles'     },
+  { id: 'accessory', label: 'Accesorios'  },
+]
+
+const ACCESSORY_SUBS = [
+  { id: null,       label: 'Todos'    },
+  { id: 'sleeve',   label: 'Sleeves'  },
+  { id: 'playmat',  label: 'Playmats' },
+  { id: 'dado',     label: 'Dados'    },
+  { id: 'deckbox',  label: 'Deck Box' },
+  { id: 'other',    label: 'Otros'    },
+]
+
+function fmtPrice(n) {
+  return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+function totalStock(p) {
+  return (p.qty_david ?? 0) + (p.qty_panama ?? 0) + (p.qty_chitre ?? 0)
+}
+function gameTheme(game) {
+  const gs = GAME_STYLES[game]
+  if (gs) return { color: gs.color, bg: gs.color + '18', border: gs.color + '30' }
+  return { color: '#9CA3AF', bg: 'rgba(156,163,175,0.1)', border: 'rgba(156,163,175,0.2)' }
+}
+
+// ── Product image ─────────────────────────────
+// ── Product image — contain so full box is visible ───
+function ProductImage({ src, game, ratio = '1/1', detail = false }) {
+  const [loaded, setLoaded] = useState(false)
+  const [err,    setErr]    = useState(false)
+  const theme = gameTheme(game)
+
+  const wrap = {
+    width: '100%', aspectRatio: ratio,
+    background: '#0A0A0A', position: 'relative',
+    borderRadius: detail ? 12 : '10px 10px 0 0',
+    overflow: 'hidden',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  }
+
+  if (!src || err) return (
+    <div style={wrap}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <GameIcon game={game} size={detail ? 40 : 28} />
+        <span style={{ fontSize: 8, color: theme.color, fontWeight: 700, letterSpacing: '0.06em' }}>
+          {game?.toUpperCase()}
+        </span>
+      </div>
+    </div>
+  )
+  return (
+    <div style={wrap}>
+      {!loaded && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <GameIcon game={game} size={24} />
+        </div>
+      )}
+      <img src={src} alt="" onLoad={() => setLoaded(true)} onError={() => setErr(true)}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', display: loaded ? 'block' : 'none' }} />
+    </div>
+  )
+}
+
+function stockLabel(p) {
+  if (p.coming_soon) return { text: 'Próximamente', color: '#FBBF24', dot: '#FBBF24' }
+  if (totalStock(p) > 0) return { text: 'En stock',      color: '#4ADE80', dot: '#4ADE80' }
+  return                        { text: 'Sin stock',     color: '#6B7280', dot: '#374151' }
+}
+
+function fmtPriceOrAsk(n) {
+  if (!n || Number(n) === 0) return 'Preguntar precio'
+  return fmtPrice(n)
+}
+
+// ── WA icon ──────────────────────────────────
+function WAIcon({ size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+    </svg>
+  )
+}
+
+// ── Product detail sheet (customers read / owners edit inline) ──
+function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelete }) {
+  const [david,      setDavid]      = useState(String(product.qty_david  ?? 0))
+  const [panama,     setPanama]     = useState(String(product.qty_panama ?? 0))
+  const [chitre,     setChitre]     = useState(String(product.qty_chitre ?? 0))
+  const [price,      setPrice]      = useState(String(product.price ?? 0))
+  const [askPrice,   setAskPrice]   = useState(!product.price || Number(product.price) === 0)
+  const [comingSoon, setComingSoon] = useState(!!product.coming_soon)
+  const [saving,     setSaving]     = useState(false)
+  const [saved,      setSaved]      = useState(false)
+  const [delConfirm, setDelConfirm] = useState(false)
+
+  const theme = gameTheme(product.game)
+
+  // Live computed values for owner mode
+  const liveQty = (parseInt(david) || 0) + (parseInt(panama) || 0) + (parseInt(chitre) || 0)
+  const liveProduct = isOwner
+    ? { ...product, qty_david: parseInt(david)||0, qty_panama: parseInt(panama)||0, qty_chitre: parseInt(chitre)||0, price: askPrice ? 0 : (parseFloat(price)||0), coming_soon: comingSoon }
+    : product
+  const sl = stockLabel(liveProduct)
+
+  const isDirty = isOwner && (
+    david      !== String(product.qty_david  ?? 0) ||
+    panama     !== String(product.qty_panama ?? 0) ||
+    chitre     !== String(product.qty_chitre ?? 0) ||
+    (askPrice ? 0 : parseFloat(price)||0) !== Number(product.price ?? 0) ||
+    comingSoon !== !!product.coming_soon
+  )
+
+  const handleSave = async () => {
+    setSaving(true)
+    await onSave?.(product.id, {
+      qty_david:  parseInt(david)  || 0,
+      qty_panama: parseInt(panama) || 0,
+      qty_chitre: parseInt(chitre) || 0,
+      price: askPrice ? 0 : (parseFloat(price) || 0),
+      coming_soon: comingSoon,
+    })
+    setSaving(false); setSaved(true)
+    setTimeout(() => setSaved(false), 1800)
+  }
+
+  const handleDelete = async () => {
+    if (!delConfirm) { setDelConfirm(true); setTimeout(() => setDelConfirm(false), 3000); return }
+    await onDelete?.(product.id)
+    onClose()
+  }
+
+  const handleAsk = (e) => {
+    e.stopPropagation()
+    const priceStr = (!product.price || Number(product.price) === 0) ? '' : ` (${fmtPrice(product.price)})`
+    const text = `Hola! Me interesa: *${product.name}*${priceStr}. ¿Está disponible?`
+    window.open(`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(text)}`, '_blank')
+  }
+
+  const step = (setter, delta) => setter(v => String(Math.max(0, (parseInt(v) || 0) + delta)))
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 300,
+      background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: '100%', maxWidth: 390,
+        background: '#0F0F0F', borderRadius: '20px 20px 0 0',
+        paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
+        animation: 'slideUp 0.25s ease',
+        maxHeight: '92vh', overflowY: 'auto',
+      }}>
+        {/* Drag handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px' }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: '#2A2A2A' }} />
+        </div>
+
+        {/* Image */}
+        <div style={{ margin: '0 16px', borderRadius: 14, overflow: 'hidden', background: '#0A0A0A' }}>
+          <ProductImage src={product.image_url} game={product.game} ratio="4/3" detail />
+        </div>
+
+        <div style={{ padding: '16px 16px 0' }}>
+          {/* Game badge */}
+          {product.game && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: theme.bg, border: `1px solid ${theme.border}`,
+              borderRadius: 6, padding: '3px 8px', marginBottom: 8,
+            }}>
+              <GameIcon game={product.game} size={10} />
+              <span style={{ fontSize: 9, fontWeight: 800, color: theme.color, letterSpacing: '0.06em' }}>{product.game}</span>
+            </div>
+          )}
+
+          <div style={{ fontSize: 17, fontWeight: 800, color: '#FFF', lineHeight: 1.35, marginBottom: 12 }}>
+            {product.name}
+          </div>
+
+          {/* ── Price ── */}
+          {isOwner ? (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em' }}>PRECIO (USD)</div>
+                <button onClick={() => setAskPrice(v => !v)} style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  fontSize: 10, fontWeight: 700, color: askPrice ? '#A78BFA' : '#4B5563',
+                }}>{askPrice ? '✓ Preguntar por precio' : 'Preguntar por precio'}</button>
+              </div>
+              {!askPrice ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#111', border: '1px solid #2A2A2A', borderRadius: 10, padding: '0 12px' }}>
+                  <span style={{ color: '#4B5563', fontSize: 16 }}>$</span>
+                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00"
+                    style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#FFF', fontSize: 18, fontWeight: 800, padding: '11px 4px', fontFamily: 'Inter, sans-serif' }} />
+                </div>
+              ) : (
+                <div style={{ padding: '10px 12px', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 10, fontSize: 12, color: '#A78BFA', fontWeight: 700 }}>
+                  Se mostrará "Preguntar precio"
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div style={{ fontSize: 28, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
+                {fmtPriceOrAsk(product.price)}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: sl.dot }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: sl.color }}>{sl.text}</span>
+              </div>
+            </div>
+          )}
+
+          {/* ── Coming Soon toggle (owner only) ── */}
+          {isOwner && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#111', border: '1px solid #2A2A2A', borderRadius: 10, marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>Próximamente</div>
+                <div style={{ fontSize: 10, color: '#6B7280' }}>Oculta disponibilidad hasta que llegue</div>
+              </div>
+              <button onClick={() => setComingSoon(v => !v)} style={{
+                width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: comingSoon ? '#FBBF24' : '#2A2A2A', position: 'relative', transition: 'background 0.2s',
+              }}>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#FFF', position: 'absolute', top: 3, transition: 'left 0.2s', left: comingSoon ? 21 : 3 }} />
+              </button>
+            </div>
+          )}
+
+          {/* ── Branch rows ── */}
+          {!comingSoon && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 10 }}>
+                {isOwner ? 'INVENTARIO POR SUCURSAL' : 'DISPONIBILIDAD'}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[['qty_david','David',david,setDavid],['qty_panama','Panamá',panama,setPanama],['qty_chitre','Chitré',chitre,setChitre]].map(([key, label, val, set]) => {
+                  const qty = isOwner ? (parseInt(val)||0) : (product[key] ?? 0)
+                  const ok  = qty > 0
+                  return isOwner ? (
+                    <div key={key} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 14px', borderRadius: 10,
+                      background: ok ? 'rgba(74,222,128,0.06)' : '#111',
+                      border: `1px solid ${ok ? 'rgba(74,222,128,0.18)' : '#1A1A1A'}`,
+                    }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: ok ? '#FFF' : '#4B5563' }}>{label}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button onClick={() => step(set, -1)} style={{
+                          width: 30, height: 30, borderRadius: 8, background: '#1A1A1A', border: '1px solid #2A2A2A',
+                          color: '#9CA3AF', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>−</button>
+                        <input type="number" min="0" value={val} onChange={e => set(e.target.value)}
+                          style={{ width: 44, textAlign: 'center', background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 8, color: '#FFF', fontSize: 15, fontWeight: 800, padding: '5px 0', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
+                        <button onClick={() => step(set, +1)} style={{
+                          width: 30, height: 30, borderRadius: 8, background: '#1A1A1A', border: '1px solid #2A2A2A',
+                          color: '#9CA3AF', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>+</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={key} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 14px', borderRadius: 10,
+                      background: ok ? 'rgba(74,222,128,0.06)' : '#111',
+                      border: `1px solid ${ok ? 'rgba(74,222,128,0.18)' : '#1A1A1A'}`,
+                    }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: ok ? '#FFF' : '#4B5563' }}>{label}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: ok ? '#4ADE80' : '#374151' }} />
+                        <span style={{ fontSize: 13, fontWeight: 800, color: ok ? '#4ADE80' : '#4B5563' }}>
+                          {ok ? `${qty} en stock` : 'Sin stock'}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Owner: live status + total ── */}
+          {isOwner && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, padding: '8px 12px', background: '#111', borderRadius: 8 }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: sl.dot }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: sl.color }}>{sl.text}</span>
+              {!comingSoon && (
+                <span style={{ fontSize: 12, color: '#4B5563', marginLeft: 4 }}>· Total: {liveQty} uds</span>
+              )}
+            </div>
+          )}
+
+          {/* ── Owner: save + delete ── */}
+          {isOwner && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <button onClick={handleSave} disabled={!isDirty || saving} style={{
+                flex: 1, padding: '13px 0', borderRadius: 11, border: 'none',
+                background: saved ? '#4ADE80' : isDirty ? '#FFFFFF' : '#1A1A1A',
+                color: saved ? '#000' : isDirty ? '#111' : '#374151',
+                fontSize: 14, fontWeight: 800, cursor: isDirty ? 'pointer' : 'default',
+                fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
+              }}>{saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar cambios'}</button>
+              <button onClick={handleDelete} style={{
+                padding: '13px 16px', borderRadius: 11,
+                background: delConfirm ? 'rgba(127,29,29,0.4)' : 'transparent',
+                border: `1.5px solid ${delConfirm ? '#EF4444' : '#2A2A2A'}`,
+                color: '#EF4444', fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
+              }}>{delConfirm ? '¿Eliminar?' : '🗑'}</button>
+            </div>
+          )}
+
+          {/* ── Customer WA CTA ── */}
+          {!isOwner && (
+            <button onClick={handleAsk} disabled={comingSoon} style={{
+              width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
+              background: !comingSoon ? '#25D366' : '#1A1A1A',
+              color: !comingSoon ? '#FFF' : '#374151',
+              fontSize: 14, fontWeight: 800, cursor: !comingSoon ? 'pointer' : 'default',
+              fontFamily: 'Inter, sans-serif',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>
+              <WAIcon size={15} /> Preguntar por WhatsApp
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Product card ─────────────────────────────
+function ProductCard({ product, isOwner, onSave, onDelete }) {
+  const [showDetail, setShowDetail] = useState(false)
+  const sl = stockLabel(product)
+
+  return (
+    <>
+      <div onClick={() => setShowDetail(true)} style={{
+        background: '#111', borderRadius: 12, overflow: 'hidden',
+        border: '1px solid #1F1F1F', display: 'flex', flexDirection: 'column', cursor: 'pointer',
+      }}>
+        <ProductImage src={product.image_url} game={product.game} ratio="1/1" />
+        <div style={{ padding: '10px 10px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#FFF', lineHeight: 1.35, flex: 1 }}>
+            {product.name}
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
+            {fmtPriceOrAsk(product.price)}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+            <div style={{ width: 5, height: 5, borderRadius: '50%', background: sl.dot, flexShrink: 0 }} />
+            <span style={{ fontSize: 9, fontWeight: 700, color: sl.color }}>{sl.text}</span>
+          </div>
+        </div>
+      </div>
+      {showDetail && (
+        <ProductDetailSheet
+          product={product}
+          onClose={() => setShowDetail(false)}
+          isOwner={isOwner}
+          onSave={onSave}
+          onDelete={onDelete}
+        />
+      )}
+    </>
+  )
+}
+
+// ── Add Product Modal ─────────────────────────
+function AddProductModal({ onClose, onAdded, defaultCategory }) {
+  const [sku,      setSku]      = useState('')
+  const [name,     setName]     = useState('')
+  const [category, setCategory] = useState(defaultCategory ?? 'sealed')
+  const [game,     setGame]     = useState('MTG')
+  const [subcat,   setSubcat]   = useState('sleeve')
+  const [price,       setPrice]       = useState('')
+  const [askPrice,    setAskPrice]    = useState(false)
+  const [comingSoon,  setComingSoon]  = useState(false)
+  const [david,       setDavid]       = useState('0')
+  const [panama,      setPanama]      = useState('0')
+  const [chitre,      setChitre]      = useState('0')
+  const [imageUrl,    setImageUrl]    = useState('')
+  const [fetching,    setFetching]    = useState(false)
+  const [saving,      setSaving]      = useState(false)
+  const [err,         setErr]         = useState('')
+
+  const handleFetch = async () => {
+    if (!sku.trim()) return
+    setFetching(true)
+    try {
+      const res = await fetch(`https://api.coquihobby.com/api/Product/GetProduct?id=${encodeURIComponent(sku.trim())}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data?.name && !name) setName(data.name)
+        const img = data?.images?.[0]?.small ?? data?.images?.[0]?.medium
+        if (img) setImageUrl(img)
+      }
+    } catch {}
+    setFetching(false)
+  }
+
+  const handleAdd = async () => {
+    if (!name.trim()) { setErr('Completa el nombre'); return }
+    setSaving(true); setErr('')
+    try {
+      const prod = await upsertShopProduct({
+        sku: sku.trim() || `MANUAL-${Date.now()}`,
+        name: name.trim(), category,
+        game: category !== 'accessory' ? game : null,
+        subcategory: category === 'accessory' ? subcat : null,
+        price: askPrice ? 0 : (parseFloat(price) || 0),
+        coming_soon: comingSoon,
+        image_url: imageUrl || null,
+        qty_david:  parseInt(david)  || 0,
+        qty_panama: parseInt(panama) || 0,
+        qty_chitre: parseInt(chitre) || 0,
+        active: true, sort_order: 99,
+      })
+      onAdded(prod); onClose()
+    } catch (e) { setErr(e.message || 'Error al guardar') }
+    setSaving(false)
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-end' }}>
+      <div style={{
+        width: '100%', background: '#0D0D0D', borderRadius: '20px 20px 0 0',
+        border: '1px solid #1F1F1F', padding: '20px 20px calc(env(safe-area-inset-bottom,0px) + 20px)',
+        display: 'flex', flexDirection: 'column', gap: 12,
+        maxHeight: '92vh', overflowY: 'auto', animation: 'slideUp 0.22s ease',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#FFF' }}>Agregar Producto</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 20, cursor: 'pointer' }}>✕</button>
+        </div>
+
+        {/* Category */}
+        <div>
+          <FL>Categoría</FL>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {CATEGORIES.map(c => (
+              <button key={c.id} onClick={() => setCategory(c.id)} style={{
+                flex: 1, padding: '8px 0', borderRadius: 8,
+                background: category === c.id ? '#FFF' : '#1A1A1A',
+                border: `1px solid ${category === c.id ? '#FFF' : '#2A2A2A'}`,
+                color: category === c.id ? '#111' : '#9CA3AF',
+                fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              }}>{c.label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Game (sealed/single) or subcategory (accessory) */}
+        {category !== 'accessory' ? (
+          <div>
+            <FL>Juego</FL>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {GAMES.map(g => (
+                <button key={g} onClick={() => setGame(g)} style={{
+                  padding: '6px 10px', borderRadius: 7,
+                  background: game === g ? '#FFF' : '#1A1A1A',
+                  border: `1px solid ${game === g ? '#FFF' : '#2A2A2A'}`,
+                  color: game === g ? '#111' : '#9CA3AF',
+                  fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  display: 'flex', alignItems: 'center', gap: 5,
+                }}>
+                  <GameIcon game={g} size={12} />{g}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <FL>Tipo de accesorio</FL>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {ACCESSORY_SUBS.filter(s => s.id).map(s => (
+                <button key={s.id} onClick={() => setSubcat(s.id)} style={{
+                  padding: '6px 12px', borderRadius: 7,
+                  background: subcat === s.id ? '#A78BFA' : '#1A1A1A',
+                  border: `1px solid ${subcat === s.id ? '#A78BFA' : '#2A2A2A'}`,
+                  color: subcat === s.id ? '#FFF' : '#9CA3AF',
+                  fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}>{s.label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SKU — optional */}
+        <div>
+          <FL>SKU Coqui (opcional — para auto-buscar imagen y nombre)</FL>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input value={sku} onChange={e => setSku(e.target.value.toUpperCase())}
+              placeholder="ej: WOCD5168SP" style={inp} />
+            <button onClick={handleFetch} disabled={!sku.trim() || fetching} style={{
+              padding: '10px 12px', borderRadius: 10, border: '1px solid #2A2A2A',
+              background: '#1A1A1A', color: '#A78BFA', fontSize: 11, fontWeight: 700,
+              cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
+            }}>{fetching ? '…' : '🔍 Buscar'}</button>
+          </div>
+        </div>
+
+        <div>
+          <FL>Nombre *</FL>
+          <input value={name} onChange={e => setName(e.target.value)}
+            placeholder="Nombre del producto" style={inp} />
+        </div>
+
+        {/* Price or ask */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+            <FL>Precio (USD)</FL>
+            <button onClick={() => setAskPrice(v => !v)} style={{
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              fontSize: 10, fontWeight: 700, color: askPrice ? '#A78BFA' : '#4B5563',
+            }}>
+              {askPrice ? '✓ Preguntar por precio' : 'Preguntar por precio'}
+            </button>
+          </div>
+          {!askPrice && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#111', border: '1px solid #2A2A2A', borderRadius: 10, padding: '0 10px' }}>
+              <span style={{ color: '#4B5563', fontSize: 14 }}>$</span>
+              <input type="number" value={price} onChange={e => setPrice(e.target.value)}
+                placeholder="0.00" style={{ ...inp, border: 'none', background: 'none', padding: '10px 4px' }} />
+            </div>
+          )}
+          {askPrice && (
+            <div style={{ padding: '10px 12px', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 10, fontSize: 12, color: '#A78BFA', fontWeight: 700 }}>
+              Se mostrará "Preguntar precio"
+            </div>
+          )}
+        </div>
+
+        {/* Coming soon toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#111', border: '1px solid #2A2A2A', borderRadius: 10 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>Próximamente</div>
+            <div style={{ fontSize: 10, color: '#6B7280' }}>Muestra el badge "Coming Soon"</div>
+          </div>
+          <button onClick={() => setComingSoon(v => !v)} style={{
+            width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+            background: comingSoon ? '#FBBF24' : '#2A2A2A', position: 'relative', transition: 'background 0.2s',
+          }}>
+            <div style={{
+              width: 18, height: 18, borderRadius: '50%', background: '#FFF',
+              position: 'absolute', top: 3, transition: 'left 0.2s',
+              left: comingSoon ? 21 : 3,
+            }} />
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          {[['David', david, setDavid], ['Panamá', panama, setPanama], ['Chitré', chitre, setChitre]].map(([l, v, s]) => (
+            <div key={l} style={{ flex: 1 }}>
+              <FL>{l}</FL>
+              <input type="number" min="0" value={v} onChange={e => s(e.target.value)} style={inp} />
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <FL>URL imagen (opcional)</FL>
+          <input value={imageUrl} onChange={e => setImageUrl(e.target.value)}
+            placeholder="https://..." style={inp} />
+        </div>
+
+        {err && <div style={{ fontSize: 12, color: '#F87171', textAlign: 'center' }}>{err}</div>}
+
+        <button onClick={handleAdd} disabled={saving} style={{
+          padding: '14px 0', borderRadius: 12, border: 'none',
+          background: saving ? '#1A1A1A' : '#FFF',
+          color: saving ? '#555' : '#111',
+          fontSize: 14, fontWeight: 800, cursor: 'pointer',
+          fontFamily: 'Inter, sans-serif', marginTop: 4,
+        }}>{saving ? 'Guardando…' : '+ Agregar producto'}</button>
+      </div>
+    </div>
+  )
+}
+
+const inp = {
+  width: '100%', padding: '10px 12px', background: '#111',
+  border: '1px solid #2A2A2A', borderRadius: 10, color: '#FFF',
+  fontSize: 13, outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box',
+}
+function FL({ children }) {
+  return <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 5 }}>{children}</div>
+}
+
+// ── Game filter strip (same as Feed) ──────────
+function GameFilter({ value, onChange }) {
+  return (
+    <div style={{ background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12, display: 'flex', alignItems: 'center', padding: '8px 10px', gap: 6 }}>
+      <button onClick={() => onChange(null)} style={{
+        flex: 1, height: 34, borderRadius: 8,
+        border: !value ? '1.5px solid rgba(255,255,255,0.35)' : '1.5px solid transparent',
+        background: !value ? 'rgba(255,255,255,0.1)' : 'transparent',
+        color: !value ? '#FFF' : '#4B5563',
+        fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'background 0.18s, border-color 0.18s',
+        animation: !value ? 'iconPop 0.28s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+      }}>ALL</button>
+      <div style={{ width: 1, height: 20, background: '#2A2A2A', flexShrink: 0 }} />
+      {GAMES.map(g => {
+        const gs = GAME_STYLES[g]
+        const active = value === g
+        return (
+          <button key={g} onClick={() => onChange(active ? null : g)} title={g} style={{
+            flex: 1, height: 34, borderRadius: 8,
+            border: `1.5px solid ${active ? gs.border : 'transparent'}`,
+            background: active ? gs.bg : 'transparent',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.18s, border-color 0.18s, box-shadow 0.18s',
+            boxShadow: active ? `0 0 10px ${gs.border}55` : 'none',
+            animation: active ? 'iconPop 0.28s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+          }}>
+            <GameIcon game={g} size={18} />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Accessory sub-filter chips ────────────────
+function AccessoryFilter({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+      {ACCESSORY_SUBS.map(s => {
+        const active = value === s.id
+        return (
+          <button key={String(s.id)} onClick={() => onChange(s.id)} style={{
+            flexShrink: 0, padding: '7px 14px', borderRadius: 20,
+            border: `1.5px solid ${active ? '#A78BFA' : '#2A2A2A'}`,
+            background: active ? 'rgba(167,139,250,0.12)' : 'transparent',
+            color: active ? '#A78BFA' : '#6B7280',
+            fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            transition: 'all 0.15s',
+          }}>{s.label}</button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Main screen ───────────────────────────────
+export default function ShopScreen({ isOwner }) {
+  const [products,   setProducts]   = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [showAdd,    setShowAdd]    = useState(false)
+  const [category,   setCategory]   = useState('sealed')
+  const [gameFilter, setGameFilter] = useState(null)
+  const [subFilter,  setSubFilter]  = useState(null)
+  const [search,     setSearch]     = useState('')
+  const searchRef = useRef(null)
+
+  useEffect(() => {
+    setLoading(true)
+    getShopProducts()
+      .then(setProducts).catch(() => {}).finally(() => setLoading(false))
+  }, [])
+
+  // Reset sub-filters when switching category
+  const handleCategory = (c) => {
+    setCategory(c); setGameFilter(null); setSubFilter(null); setSearch('')
+  }
+
+  const filtered = products.filter(p => {
+    const pCat = p.category || 'sealed'
+    if (pCat !== category) return false
+    if (search) {
+      const q = search.toLowerCase()
+      return p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.game?.toLowerCase().includes(q)
+    }
+    if (category === 'accessory') return subFilter ? p.subcategory === subFilter : true
+    return gameFilter ? p.game === gameFilter : true
+  })
+
+  const handleSave = useCallback(async (id, fields) => {
+    const updated = await updateShopProduct(id, fields)
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p))
+  }, [])
+
+  const handleDelete = useCallback(async (id) => {
+    await deleteShopProduct(id)
+    setProducts(prev => prev.filter(p => p.id !== id))
+  }, [])
+
+  const handleAdded = useCallback((prod) => setProducts(prev => [...prev, prod]), [])
+
+  const catCounts = {
+    sealed:    products.filter(p => (p.category || 'sealed') === 'sealed').length,
+    single:    products.filter(p => (p.category || 'sealed') === 'single').length,
+    accessory: products.filter(p => (p.category || 'sealed') === 'accessory').length,
+  }
+
+  return (
+    <div style={{ fontFamily: 'Inter, sans-serif', paddingBottom: 100 }}>
+
+      {/* ── Search + owner controls ── */}
+      <div style={{ padding: '10px 16px 0', marginBottom: 12 }}>
+        {isOwner && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 8 }}>
+            <button onClick={() => setShowAdd(true)} style={{
+              padding: '7px 14px', borderRadius: 10, background: '#A78BFA',
+              border: 'none', color: '#FFF', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            }}>+ Agregar producto</button>
+          </div>
+        )}
+        {/* Search bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: '#111', border: '1px solid #1E1E1E', borderRadius: 12,
+          padding: '11px 14px',
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            ref={searchRef}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar carta o producto..."
+            style={{
+              flex: 1, background: 'none', border: 'none', outline: 'none',
+              color: '#FFF', fontSize: 14, fontFamily: 'Inter, sans-serif',
+            }}
+          />
+          {search && (
+            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: 15, lineHeight: 1 }}>✕</button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Category tabs ── */}
+      <div style={{ padding: '0 16px', marginBottom: 12 }}>
+        <div style={{ display: 'flex', background: '#111', border: '1px solid #1E1E1E', borderRadius: 12, padding: 4, gap: 4 }}>
+          {CATEGORIES.map(c => {
+            const active = category === c.id
+            return (
+              <button key={c.id} onClick={() => handleCategory(c.id)} style={{
+                flex: 1, padding: '9px 0', borderRadius: 9, border: 'none',
+                background: active ? '#FFF' : 'transparent',
+                color: active ? '#111' : '#6B7280',
+                fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif',
+                transition: 'all 0.15s',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
+              }}>
+                {c.label}
+                <span style={{ fontSize: 8, fontWeight: 600, opacity: 0.6 }}>{catCounts[c.id]}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Sub-filter ── */}
+      {!search && (
+        <div style={{ padding: '0 16px', marginBottom: 14 }}>
+          {category !== 'accessory'
+            ? <GameFilter value={gameFilter} onChange={setGameFilter} />
+            : <AccessoryFilter value={subFilter} onChange={setSubFilter} />
+          }
+        </div>
+      )}
+
+      {/* ── Grid ── */}
+      <div style={{ padding: '0 16px' }}>
+        {loading && (
+          <div style={{ textAlign: 'center', padding: 48, color: '#4B5563', fontSize: 13 }}>
+            Cargando productos…
+          </div>
+        )}
+
+        {!loading && filtered.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 48, color: '#374151' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>
+              {search ? '🔍' : category === 'accessory' ? '🎲' : '📦'}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#6B7280' }}>
+              {search ? `Sin resultados para "${search}"` : 'Sin productos aquí todavía'}
+            </div>
+          </div>
+        )}
+
+        {!loading && filtered.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {filtered.map(p => (
+              <ProductCard key={p.id} product={p} isOwner={isOwner} onSave={handleSave} onDelete={handleDelete} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showAdd && (
+        <AddProductModal
+          onClose={() => setShowAdd(false)}
+          onAdded={handleAdded}
+          defaultCategory={category}
+        />
+      )}
+    </div>
+  )
+}

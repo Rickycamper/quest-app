@@ -10,7 +10,7 @@ import skull       from '../assets/skull-sm.png'
 import qLogo       from '../assets/q-logo.png'
 
 // ── OPENING ───────────────────────────────────
-export function OpeningScreen({ onSignIn, onSignUp }) {
+export function OpeningScreen({ onSignIn, onSignUp, onGuest }) {
   return (
     <div style={{
       flex: 1, background: '#111111', display: 'flex',
@@ -47,6 +47,16 @@ export function OpeningScreen({ onSignIn, onSignUp }) {
           </button>
           <button onClick={onSignUp} style={socialBtn}>
             <MailIcon size={18} /> Continue with Email
+          </button>
+          <button onClick={onGuest} style={{
+            ...socialBtn,
+            background: 'transparent',
+            border: '1px solid #2A2A2A',
+            color: '#9CA3AF',
+            gap: 8,
+          }}>
+            <span style={{ fontSize: 16 }}>⚔️</span>
+            Explorar sin cuenta
           </button>
         </div>
 

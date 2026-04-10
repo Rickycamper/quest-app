@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────
 // QUEST — CreatePostModal
 // ─────────────────────────────────────────────
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { createPost, uploadPostImage, addCard } from '../lib/supabase'
 import { useToast } from '../components/Toast'
 import { GAMES, GAME_STYLES } from '../lib/constants'
@@ -9,6 +9,55 @@ import { CameraIcon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 
 const TARGET_RATIO = 4 / 5  // width / height — portrait, great for TCG cards
+
+// ── Simple math CAPTCHA to deter Q-coin farming bots ──────────
+function genChallenge() {
+  const a = Math.floor(Math.random() * 9) + 1
+  const b = Math.floor(Math.random() * 9) + 1
+  const add = Math.random() > 0.4
+  const x = add ? a : (a >= b ? a : b)
+  const y = add ? b : (a >= b ? b : a)
+  return { q: add ? `${x} + ${y}` : `${x} − ${y}`, answer: add ? x + y : x - y }
+}
+
+function MathCaptcha({ value, onChange, ok }) {
+  const ch = useMemo(genChallenge, [])  // stable per modal mount
+  return (
+    <div style={{
+      margin: '0 16px 14px',
+      padding: '12px 14px',
+      background: '#0D0D0D',
+      border: `1px solid ${ok ? 'rgba(74,222,128,0.3)' : '#1F1F1F'}`,
+      borderRadius: 12,
+      display: 'flex', alignItems: 'center', gap: 12,
+      transition: 'border-color 0.2s',
+    }}>
+      <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 700, letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+        VERIFICACIÓN
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: '#9CA3AF', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+        {ch.q} =
+      </div>
+      <input
+        type="number"
+        inputMode="numeric"
+        placeholder="?"
+        value={value}
+        onChange={e => {
+          onChange(e.target.value, ch.answer)
+        }}
+        style={{
+          width: 56, padding: '6px 8px', borderRadius: 8,
+          background: '#1A1A1A', border: `1px solid ${ok ? 'rgba(74,222,128,0.4)' : '#2A2A2A'}`,
+          color: ok ? '#4ADE80' : '#FFF', fontSize: 15, fontWeight: 800,
+          outline: 'none', fontFamily: 'Inter, sans-serif', textAlign: 'center',
+          transition: 'border-color 0.2s, color 0.2s',
+        }}
+      />
+      {ok && <span style={{ fontSize: 16 }}>✓</span>}
+    </div>
+  )
+}
 
 // Crop to 4:5 at the given position (0-100%) then compress
 // fitMode=true → letterbox (full image + black bg). fitMode=false → crop to fill.
@@ -127,6 +176,8 @@ export default function CreatePostModal({ onClose }) {
   const [showHint,     setShowHint]     = useState(false)
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
+  const [captchaInput, setCaptchaInput] = useState('')
+  const [captchaOk,    setCaptchaOk]    = useState(false)
   const [limitReached, setLimitReached] = useState(false)
   const [alsoSave,     setAlsoSave]     = useState(false)
   const [cardName,     setCardName]     = useState('')
@@ -168,7 +219,18 @@ export default function CreatePostModal({ onClose }) {
     }
     setError('')
     setImages([])   // videos y fotos son mutuamente exclusivos
-    setVideo({ file, preview: URL.createObjectURL(file) })
+    // Capture duration via temporary video element
+    const objectUrl = URL.createObjectURL(file)
+    const tmp = document.createElement('video')
+    tmp.preload = 'metadata'
+    tmp.src = objectUrl
+    tmp.onloadedmetadata = () => {
+      setVideo({ file, preview: objectUrl, duration: tmp.duration })
+      URL.revokeObjectURL(tmp.src)
+    }
+    tmp.onerror = () => {
+      setVideo({ file, preview: objectUrl, duration: null })
+    }
     e.target.value = ''
   }
 
@@ -233,10 +295,12 @@ export default function CreatePostModal({ onClose }) {
     if (!caption.trim()) return
     setLoading(true); setError('')
 
+    // Videos need more time: compression runs in real-time + upload
+    const safetyMs = video ? 180_000 : 30_000
     const safetyTimer = setTimeout(() => {
       setLoading(false)
       setError('La publicación tardó demasiado. Revisá tu conexión e intentá de nuevo.')
-    }, 30000)
+    }, safetyMs)
 
     try {
       const pt = POST_TYPES.find(p => p.id === postType)
@@ -246,7 +310,7 @@ export default function CreatePostModal({ onClose }) {
 
       let imageUrls = []
       if (video) {
-        // Upload video directly — no compression
+        // Compress + upload video (canvas re-encode, runs in real-time)
         imageUrls = [await uploadPostImage(video.file)]
       } else if (images.length > 0) {
         const croppedFiles = await Promise.all(
@@ -301,10 +365,10 @@ export default function CreatePostModal({ onClose }) {
           Cancelar
         </button>
         <span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter, sans-serif' }}>Nuevo Post</span>
-        <button onClick={handleShare} disabled={!caption.trim() || loading} style={{
-          background: caption.trim() ? '#FFFFFF' : '#1F1F1F',
-          border: 'none', color: caption.trim() ? '#111111' : '#4B5563',
-          fontSize: 13, fontWeight: 700, cursor: 'pointer',
+        <button onClick={handleShare} disabled={!caption.trim() || !captchaOk || loading} style={{
+          background: caption.trim() && captchaOk ? '#FFFFFF' : '#1F1F1F',
+          border: 'none', color: caption.trim() && captchaOk ? '#111111' : '#4B5563',
+          fontSize: 13, fontWeight: 700, cursor: caption.trim() && captchaOk ? 'pointer' : 'default',
           padding: '6px 14px', borderRadius: 8, fontFamily: 'Inter, sans-serif',
         }}>
           {loading ? '...' : 'Publicar'}
@@ -432,12 +496,20 @@ export default function CreatePostModal({ onClose }) {
             {!video && images.length === 0 && (
               <div style={{ display: 'flex', gap: 6 }}>
                 <button onClick={() => fileRef.current?.click()} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: '1px solid #2A2A2A', background: 'transparent', color: '#9CA3AF', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>📷 Foto</button>
-                <button onClick={() => videoRef.current?.click()} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: '1px solid #2A2A2A', background: 'transparent', color: '#9CA3AF', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>🎬 Video</button>
+                <button
+                  onClick={() => videoRef.current?.click()}
+                  title="Máx 100 MB · Se comprime automáticamente al publicar"
+                  style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: '1px solid #2A2A2A', background: 'transparent', color: '#9CA3AF', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>🎬 Video</button>
               </div>
             )}
           </div>
           <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleImageSelect} style={{ display: 'none' }} />
           <input ref={videoRef} type="file" accept="video/*" onChange={handleVideoSelect} style={{ display: 'none' }} />
+          {!video && images.length === 0 && (
+            <div style={{ fontSize: 10, color: '#374151', marginTop: 4, fontFamily: 'Inter, sans-serif' }}>
+              🎬 Videos hasta <strong style={{ color: '#4B5563' }}>100 MB</strong> · se comprimen automáticamente al publicar
+            </div>
+          )}
 
           {video ? (
             /* ── Video preview ── */
@@ -458,10 +530,17 @@ export default function CreatePostModal({ onClose }) {
                 }}>✕</button>
               <div style={{
                 position: 'absolute', bottom: 8, left: 8,
-                background: 'rgba(0,0,0,0.6)', borderRadius: 20, padding: '3px 10px',
-                fontSize: 11, color: '#9CA3AF', fontFamily: 'Inter, sans-serif',
+                display: 'flex', gap: 6, alignItems: 'center',
               }}>
-                {(video.file.size / (1024 * 1024)).toFixed(1)} MB
+                <div style={{ background: 'rgba(0,0,0,0.65)', borderRadius: 20, padding: '3px 10px', fontSize: 11, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>
+                  {(video.file.size / (1024 * 1024)).toFixed(1)} MB
+                  {video.duration != null && ` · ${Math.floor(video.duration / 60)}:${String(Math.round(video.duration % 60)).padStart(2, '0')}`}
+                </div>
+                {video.file.size >= 5 * 1024 * 1024 && (
+                  <div style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#FBBF24', fontFamily: 'Inter, sans-serif' }}>
+                    ⚡ se comprimirá al publicar
+                  </div>
+                )}
               </div>
             </div>
           ) : images.length > 0 ? (
@@ -613,6 +692,16 @@ export default function CreatePostModal({ onClose }) {
             <span style={{ fontSize: 11, fontFamily: 'Inter, sans-serif', color: caption.length >= 490 ? '#F87171' : caption.length >= 450 ? '#F59E0B' : '#374151' }}>{caption.length}/500</span>
           </div>
         </div>
+
+        {/* Human check — deters Q-coin farming bots */}
+        <MathCaptcha
+          value={captchaInput}
+          ok={captchaOk}
+          onChange={(val, expected) => {
+            setCaptchaInput(val)
+            setCaptchaOk(parseInt(val) === expected)
+          }}
+        />
 
       </div>
     </div>

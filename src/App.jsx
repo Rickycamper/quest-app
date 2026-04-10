@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────
 // QUEST — App.jsx  (main router)
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } from 'react'
 import questLogo from './assets/quest-logo-sm.png'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './components/Toast'
@@ -20,13 +20,15 @@ import CreateTournamentModal  from './screens/CreateTournamentModal'
 import AdminScreen            from './screens/AdminScreen'
 import AuctionScreen          from './screens/AuctionScreen'
 import QuestHubScreen         from './screens/QuestHubScreen'
+import LifeCounterScreen      from './screens/LifeCounterScreen'
 import ChatScreen             from './screens/ChatScreen'
 import LogMatchModal          from './screens/LogMatchModal'
 import SearchScreen           from './screens/SearchScreen'
+import ShopScreen             from './screens/ShopScreen'
 
-import { acceptTerms } from './lib/supabase'
+import { acceptTerms, subscribeToPush } from './lib/supabase'
 import { BottomNav, NotifBell } from './components/Nav'
-import { ShieldIcon, SearchIcon } from './components/Icons'
+import { ShieldIcon, SearchIcon, DiamondIcon } from './components/Icons'
 import NotificationPanel from './components/NotificationPanel'
 import OnboardingModal   from './components/OnboardingModal'
 import Avatar from './components/Avatar'
@@ -68,6 +70,7 @@ const globalCSS = `
   @keyframes fadeInOut{ 0%{opacity:0;transform:translateX(-50%) translateY(-6px)} 20%,80%{opacity:1;transform:translateX(-50%) translateY(0)} 100%{opacity:0;transform:translateX(-50%) translateY(-6px)} }
   @keyframes likePop  { 0%{transform:scale(1)} 20%{transform:scale(1.55)} 45%{transform:scale(0.88)} 70%{transform:scale(1.22)} 100%{transform:scale(1.15)} }
   @keyframes tabBounce{ 0%{transform:scale(1) translateY(0)} 30%{transform:scale(1.32) translateY(-4px)} 65%{transform:scale(0.91) translateY(0)} 100%{transform:scale(1) translateY(0)} }
+  @keyframes iconPop  { 0%{transform:scale(1)} 35%{transform:scale(1.22)} 65%{transform:scale(0.92)} 100%{transform:scale(1)} }
   @keyframes ringPulse { 0%{box-shadow:0 0 0 0 rgba(167,139,250,0.55)} 65%{box-shadow:0 0 0 11px rgba(167,139,250,0)} 100%{box-shadow:0 0 0 0 rgba(167,139,250,0)} }
   @keyframes fadeInFast  { 0%{opacity:0} 100%{opacity:1} }
   @keyframes fadeOutFast { 0%{opacity:1} 100%{opacity:0} }
@@ -79,18 +82,61 @@ const globalCSS = `
   button:not([disabled]):active { opacity: 0.72; }
 `
 
-function AuthFlow() {
-  const [screen, setScreen] = useState('opening')
-  if (screen === 'opening')        return <OpeningScreen        onSignIn={() => setScreen('login')}   onSignUp={() => setScreen('signup')} />
+// ── Guest Context ────────────────────────────────────────────────────────────
+export const GuestContext = createContext({ isGuest: false, requireAuth: (fn) => fn?.() })
+export const useGuest = () => useContext(GuestContext)
+
+function GuestGateModal({ onLogin, onSignup, onClose }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9000,
+      background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: '100%', maxWidth: 390,
+        background: '#111', borderRadius: '24px 24px 0 0',
+        padding: '28px 24px calc(28px + env(safe-area-inset-bottom, 0px))',
+        animation: 'slideUp 0.25s ease',
+      }}>
+        <div style={{ fontSize: 28, textAlign: 'center', marginBottom: 10 }}>⚔️</div>
+        <div style={{ fontSize: 19, fontWeight: 900, color: '#FFF', textAlign: 'center', marginBottom: 6 }}>
+          Únete a la batalla
+        </div>
+        <div style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', lineHeight: 1.5, marginBottom: 24 }}>
+          Crea tu cuenta para dar likes, interactuar con jugadores y mucho más.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button onClick={onSignup} style={{
+            width: '100%', padding: '14px', borderRadius: 12,
+            background: '#FFF', border: 'none', color: '#111',
+            fontSize: 14, fontWeight: 800, cursor: 'pointer',
+          }}>Crear cuenta</button>
+          <button onClick={onLogin} style={{
+            width: '100%', padding: '14px', borderRadius: 12,
+            background: 'transparent', border: '1px solid #2A2A2A', color: '#9CA3AF',
+            fontSize: 14, fontWeight: 700, cursor: 'pointer',
+          }}>Ya tengo cuenta — Log in</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AuthFlow({ onGuest, initialScreen, onDone }) {
+  const [screen, setScreen] = useState(initialScreen ?? 'opening')
+  const back = onDone ? onDone : () => setScreen('opening')
+  if (screen === 'opening')        return <OpeningScreen        onSignIn={() => setScreen('login')}   onSignUp={() => setScreen('signup')} onGuest={onGuest} />
   if (screen === 'signup')         return <SignupScreen         onEmail={() => setScreen('email-signup')} onLogin={() => setScreen('login')} />
   if (screen === 'email-signup')   return <EmailSignupScreen    onBack={() => setScreen('signup')}   onDone={() => setScreen('login')} />
-  if (screen === 'login')          return <LoginScreen          onBack={() => setScreen('opening')}  onSignUp={() => setScreen('signup')} onForgot={() => setScreen('forgot')} />
+  if (screen === 'login')          return <LoginScreen          onBack={back}  onSignUp={() => setScreen('signup')} onForgot={() => setScreen('forgot')} />
   if (screen === 'forgot')         return <ForgotPasswordScreen onBack={() => setScreen('login')}    onDone={() => setScreen('login')} />
   return null
 }
 
 function MainApp() {
   const { profile, isStaff, isOwner, refreshProfile } = useAuth()
+  const { isGuest, requireAuth } = useGuest()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
   const [activeTab,      setActiveTab]     = useState('feed')
   const [showNotifs,      setShowNotifs]     = useState(false)
@@ -105,9 +151,12 @@ function MainApp() {
   const [vsUser,          setVsUser]         = useState(null)   // { id, username } | null = no preselect
   const [showMatchModal,    setShowMatchModal]    = useState(false)
   const [showPackageCreate, setShowPackageCreate] = useState(false)
+  const [showTracking,      setShowTracking]      = useState(false)
+  const [packageRefreshKey, setPackageRefreshKey] = useState(0)
   const [showAuction,       setShowAuction]       = useState(false)
   const [showHub,           setShowHub]           = useState(false)
-  const [packageRefreshKey, setPackageRefreshKey] = useState(0)
+  const [hubInitialView,    setHubInitialView]    = useState(null)
+  const [showLifeCounter,   setShowLifeCounter]   = useState(false)
   const [feedRefreshKey,    setFeedRefreshKey]    = useState(0)
   const [showOnboarding,    setShowOnboarding]    = useState(false)
   const [headerHidden, setHeaderHidden] = useState(false)
@@ -122,6 +171,18 @@ function MainApp() {
     else if (delta < -12)     { setHeaderHidden(false); setNavHidden(false) }
     lastScrollY.current = y
   }
+
+  // Register push notifications once per user session
+  useEffect(() => {
+    if (!profile?.id) return
+    subscribeToPush(profile.id)
+  }, [profile?.id])
+
+  // Expose openSearch globally so QuestHub can trigger it after closing
+  useEffect(() => {
+    window.__questOpenSearch = () => setShowSearch(true)
+    return () => { delete window.__questOpenSearch }
+  }, [])
 
   // Show onboarding once per user (tracked in localStorage).
   // Small delay so auth + profile are fully settled before we check.
@@ -142,13 +203,17 @@ function MainApp() {
   const handleViewProfile = useCallback((userId) => setViewingUserId(userId), [])
   const handleOwnProfile  = useCallback(() => { if (profile?.id) setViewingUserId(profile.id) }, [profile?.id])
 
-  const screens = useMemo(() => ({
-    feed:     <FeedScreen     profile={profile} isStaff={isStaff} onViewProfile={handleViewProfile} refreshKey={feedRefreshKey} />,
+  // Lazy mount: only render a screen after it has been visited for the first time.
+  // FeedScreen is pre-visited so it loads immediately; all others wait until tapped.
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set(['feed']))
+
+  const screenMap = useMemo(() => ({
+    feed:     <FeedScreen     profile={profile} isStaff={isStaff} isOwner={isOwner} onViewProfile={(id) => requireAuth(() => handleViewProfile(id))} onPost={() => requireAuth(() => setShowPost(true))} refreshKey={feedRefreshKey} />,
+    ...(isOwner ? { shop: <ShopScreen isOwner={isOwner} /> } : {}),
     ranks:    <RankingsScreen profile={profile} isStaff={isStaff} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onViewProfile={handleViewProfile} />,
     folder:   <FolderScreen   profile={profile} />,
     search:   <SearchScreen   onViewProfile={handleViewProfile} />,
-    tracking: <TrackingScreen profile={profile} isStaff={isStaff} onNewPackage={() => setShowPackageCreate(true)} refreshKey={packageRefreshKey} />,
-  }), [profile, isStaff, handleViewProfile, packageRefreshKey, feedRefreshKey])
+  }), [profile, isStaff, isOwner, handleViewProfile, feedRefreshKey])
 
   const needsTerms = profile && !profile.terms_accepted_at
 
@@ -192,8 +257,32 @@ function MainApp() {
       {showAuction && <AuctionScreen isStaff={isStaff} onClose={() => setShowAuction(false)} />}
       {showHub && (
         <QuestHubScreen
-          onClose={() => setShowHub(false)}
+          onClose={() => { setShowHub(false); setHubInitialView(null) }}
           onOpenAuction={() => { setShowHub(false); setShowAuction(true) }}
+          onOpenLifeCounter={() => { setShowHub(false); setShowLifeCounter(true) }}
+          onOpenTracking={() => { setShowHub(false); setShowTracking(true) }}
+          onOpenFolder={() => { setShowHub(false); setActiveTab('folder'); setVisitedTabs(prev => { const n = new Set(prev); n.add('folder'); return n }) }}
+          onOpenProfile={() => { setShowHub(false); handleOwnProfile() }}
+          onOpenShop={() => { setShowHub(false); setActiveTab('shop'); setVisitedTabs(prev => { const n = new Set(prev); n.add('shop'); return n }) }}
+          profile={profile}
+          initialView={hubInitialView}
+        />
+      )}
+      {showTracking && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 200, background: '#0A0A0A', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)', animation: 'slideUp 0.22s ease' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px 12px', background: '#0D0D0D', borderBottom: '1px solid #1A1A1A', flexShrink: 0 }}>
+            <button onClick={() => setShowTracking(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, padding: '0 2px' }}>←</button>
+            <span style={{ fontSize: 17, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>Tracking</span>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <TrackingScreen profile={profile} isStaff={isStaff} onNewPackage={() => setShowPackageCreate(true)} refreshKey={packageRefreshKey} />
+          </div>
+        </div>
+      )}
+      {showLifeCounter && (
+        <LifeCounterScreen
+          onClose={() => setShowLifeCounter(false)}
+          onViewProfile={(id) => { setShowLifeCounter(false); setViewingUserId(id) }}
         />
       )}
 
@@ -281,52 +370,89 @@ function MainApp() {
             onClick={() => setShowHub(true)}
             style={{ width: 80, height: 'auto', cursor: 'pointer' }}
           />
+          {/* ── Header right side ── */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            {isStaff && (
+            {activeTab === 'shop' && (
+              <span style={{ fontSize: 20, fontWeight: 900, color: '#FFF', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.02em' }}>Shop</span>
+            )}
+            {isStaff && activeTab !== 'shop' && (
               <button onClick={() => setShowAdmin(true)} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                color: '#9CA3AF', padding: 2, lineHeight: 1, position: 'relative',
+                color: '#9CA3AF', padding: 2, lineHeight: 1,
                 display: 'flex', alignItems: 'center',
               }}><ShieldIcon size={20} /></button>
             )}
-            <button onClick={() => setShowSearch(true)} style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#6B7280', padding: 4, lineHeight: 1,
-              display: 'flex', alignItems: 'center',
-            }}><SearchIcon size={20} /></button>
-            <NotifBell count={unreadCount} onClick={() => setShowNotifs(true)} />
-            <div onClick={handleOwnProfile} style={{
-              width: 34, height: 34, borderRadius: '50%',
-              background: '#1F1F1F', border: '1.5px solid #2A2A2A',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-              cursor: 'pointer', overflow: 'hidden',
-            }}><Avatar url={profile?.avatar_url} size={34} /></div>
+            {activeTab !== 'shop' && (
+              isGuest ? (
+                <button onClick={() => requireAuth(null)} style={{
+                  padding: '6px 12px', borderRadius: 8,
+                  background: '#111111', border: '1px solid #2A2A2A',
+                  color: '#9CA3AF', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}>Crear cuenta</button>
+              ) : (
+                <button
+                  onClick={() => { setHubInitialView('qpoints'); setShowHub(true) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '6px 12px 6px 10px', borderRadius: 8,
+                    background: '#111111', border: '1px solid #1E1E1E',
+                    cursor: 'pointer', minWidth: 76,
+                  }}
+                >
+                  <DiamondIcon size={16} color={profile?.role === 'premium' ? '#A78BFA' : '#FFFFFF'} />
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#FBBF24', fontFamily: 'Inter, sans-serif', letterSpacing: '0.01em' }}>
+                    {(profile?.q_points ?? 0).toLocaleString()}
+                  </span>
+                </button>
+              )
+            )}
+            {activeTab !== 'shop' && (
+              <button
+                onClick={() => requireAuth(() => setShowPost(true))}
+                style={{
+                  width: 32, height: 32, borderRadius: 10,
+                  background: '#FFFFFF', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1v12M1 7h12" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* All screens stay mounted — only visibility toggles. No re-fetch on tab switch. */}
+      {/* Lazy-mount: screens render on first visit, then stay mounted (no re-fetch on tab switch). */}
       <div ref={scrollRef} className="screen-scroll" onScroll={handleScroll}>
-        {Object.keys(screens).map(tab => (
-          <div key={tab} style={{ display: tab === activeTab ? 'block' : 'none', minHeight: '100%' }}>
-            {screens[tab]}
-          </div>
+        {Object.keys(screenMap).map(tab => (
+          visitedTabs.has(tab) ? (
+            <div key={tab} style={{ display: tab === activeTab ? 'block' : 'none', minHeight: '100%' }}>
+              {screenMap[tab]}
+            </div>
+          ) : null
         ))}
       </div>
       <BottomNav
         active={activeTab}
         hidden={navHidden}
+        isOwner={isOwner}
+        onNotifs={() => setShowNotifs(true)}
+        unreadCount={unreadCount}
         onTab={(tab) => {
           if (tab === 'feed' && activeTab === 'feed') {
             scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
             setFeedRefreshKey(k => k + 1)
             return
           }
+          setVisitedTabs(prev => { if (prev.has(tab)) return prev; const next = new Set(prev); next.add(tab); return next })
           setActiveTab(tab); setViewingUserId(null); setShowEditProfile(false)
-          // Reset scroll to top for the new tab
           requestAnimationFrame(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0 })
         }}
-        onPost={() => setShowPost(true)}
+        onPost={() => requireAuth(() => setShowPost(true))}
+        onLifeCounter={() => setShowLifeCounter(true)}
       />
     </>
   )
@@ -336,6 +462,9 @@ function AppInner() {
   const { user, loading, authEvent, recoverySession } = useAuth()
   const [showReset,     setShowReset]     = useState(false)
   const [showConfirmed, setShowConfirmed] = useState(false)
+  const [isGuest,       setIsGuest]       = useState(false)
+  const [gateScreen,    setGateScreen]    = useState(null) // null | 'login' | 'signup'
+  const [showGateModal, setShowGateModal] = useState(false)
 
   // Detect recovery from URL hash on first load (implicit flow: #type=recovery)
   useEffect(() => {
@@ -357,6 +486,11 @@ function AppInner() {
       }
     }
   }, [authEvent])
+
+  const requireAuth = useCallback((fn) => {
+    if (!isGuest) { fn?.(); return }
+    setShowGateModal(true)
+  }, [isGuest])
 
   if (loading) return (
     <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', background:'#0A0A0A' }}>
@@ -403,9 +537,30 @@ function AppInner() {
     </div>
   )
 
-  return user ? <MainApp /> : (
+  if (user || isGuest) {
+    const guestValue = { isGuest, requireAuth }
+    return (
+      <GuestContext.Provider value={guestValue}>
+        <MainApp />
+        {showGateModal && (
+          <GuestGateModal
+            onClose={() => setShowGateModal(false)}
+            onLogin={() => { setShowGateModal(false); setIsGuest(false); setGateScreen('login') }}
+            onSignup={() => { setShowGateModal(false); setIsGuest(false); setGateScreen('signup') }}
+          />
+        )}
+        {gateScreen && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9100, display: 'flex', flexDirection: 'column', background: '#111' }}>
+            <AuthFlow onGuest={null} initialScreen={gateScreen} onDone={() => setGateScreen(null)} />
+          </div>
+        )}
+      </GuestContext.Provider>
+    )
+  }
+
+  return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-      <AuthFlow />
+      <AuthFlow onGuest={() => setIsGuest(true)} />
     </div>
   )
 }
