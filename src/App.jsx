@@ -164,28 +164,39 @@ function MainApp() {
   const lastScrollY  = useRef(0)
   const scrollRef    = useRef(null)
   const swipeOrigin  = useRef(null)
+  const screenMapRef = useRef(screenMap)
+  useEffect(() => { screenMapRef.current = screenMap }, [screenMap])
 
-  const handleTouchStart = useCallback((e) => {
-    const t = e.touches[0]
-    swipeOrigin.current = { x: t.clientX, y: t.clientY }
-  }, [])
-
-  const handleTouchEnd = useCallback((e) => {
-    if (!swipeOrigin.current) return
-    const t = e.changedTouches[0]
-    const dx = t.clientX - swipeOrigin.current.x
-    const dy = t.clientY - swipeOrigin.current.y
-    swipeOrigin.current = null
-    // Needs to be clearly horizontal (not a vertical scroll attempt)
-    if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.4) return
-    setActiveTab(prev => {
-      const tabs = Object.keys(screenMap)
-      const idx  = tabs.indexOf(prev)
-      if (dx < 0 && idx < tabs.length - 1) return tabs[idx + 1]   // swipe left  → next tab
-      if (dx > 0 && idx > 0)               return tabs[idx - 1]   // swipe right → prev tab
-      return prev
-    })
-  }, [screenMap])
+  // Swipe navigation — use native window listeners so iOS Safari doesn't
+  // swallow the touch inside the scrollable screen-scroll container.
+  useEffect(() => {
+    const onStart = (e) => {
+      const t = e.touches[0]
+      swipeOrigin.current = { x: t.clientX, y: t.clientY }
+    }
+    const onEnd = (e) => {
+      if (!swipeOrigin.current) return
+      const t  = e.changedTouches[0]
+      const dx = t.clientX - swipeOrigin.current.x
+      const dy = t.clientY - swipeOrigin.current.y
+      swipeOrigin.current = null
+      // Must be clearly horizontal, not a scroll attempt
+      if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.4) return
+      setActiveTab(prev => {
+        const tabs = Object.keys(screenMapRef.current)
+        const idx  = tabs.indexOf(prev)
+        if (dx < 0 && idx < tabs.length - 1) return tabs[idx + 1]
+        if (dx > 0 && idx > 0)               return tabs[idx - 1]
+        return prev
+      })
+    }
+    window.addEventListener('touchstart', onStart, { passive: true })
+    window.addEventListener('touchend',   onEnd,   { passive: true })
+    return () => {
+      window.removeEventListener('touchstart', onStart)
+      window.removeEventListener('touchend',   onEnd)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleScroll = (e) => {
     const y = e.currentTarget.scrollTop
@@ -449,8 +460,7 @@ function MainApp() {
       </div>
 
       {/* Lazy-mount: screens render on first visit, then stay mounted (no re-fetch on tab switch). */}
-      <div ref={scrollRef} className="screen-scroll" onScroll={handleScroll}
-        onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <div ref={scrollRef} className="screen-scroll" onScroll={handleScroll}>
         {Object.keys(screenMap).map(tab => (
           visitedTabs.has(tab) ? (
             <div key={tab} style={{ display: tab === activeTab ? 'block' : 'none', minHeight: '100%' }}>
