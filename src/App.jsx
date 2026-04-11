@@ -1,7 +1,26 @@
 // ─────────────────────────────────────────────
 // QUEST — App.jsx  (main router)
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext, Component } from 'react'
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(e) { return { error: e } }
+  render() {
+    if (this.state.error) return (
+      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#0A0A0A', padding:24, gap:16 }}>
+        <div style={{ fontSize:32 }}>⚠️</div>
+        <div style={{ color:'#EF4444', fontSize:13, fontFamily:'monospace', textAlign:'center', maxWidth:340, wordBreak:'break-all', lineHeight:1.6 }}>
+          {this.state.error?.message || String(this.state.error)}
+        </div>
+        <button onClick={() => window.location.reload()} style={{ marginTop:8, padding:'12px 28px', background:'#FFF', border:'none', borderRadius:10, fontWeight:700, fontSize:14, cursor:'pointer' }}>
+          Recargar
+        </button>
+      </div>
+    )
+    return this.props.children
+  }
+}
 import questLogo from './assets/quest-logo-sm.png'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './components/Toast'
@@ -633,15 +652,19 @@ function AppInner() {
 export default function App() {
 
   return (
-    <ToastProvider>
-      <style>{globalCSS}</style>
-      <div className="phone-wrap">
-        <div className="phone">
-          <AuthProvider>
-            <AppInner />
-          </AuthProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <style>{globalCSS}</style>
+        <div className="phone-wrap">
+          <div className="phone">
+            <ErrorBoundary>
+              <AuthProvider>
+                <AppInner />
+              </AuthProvider>
+            </ErrorBoundary>
+          </div>
         </div>
-      </div>
-    </ToastProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   )
 }
