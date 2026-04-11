@@ -104,6 +104,7 @@ function WAIcon({ size = 13 }) {
 
 // ── Product detail sheet (customers read / owners edit inline) ──
 function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelete }) {
+  const [name,       setName]       = useState(product.name ?? '')
   const [david,      setDavid]      = useState(String(product.qty_david  ?? 0))
   const [panama,     setPanama]     = useState(String(product.qty_panama ?? 0))
   const [chitre,     setChitre]     = useState(String(product.qty_chitre ?? 0))
@@ -124,17 +125,19 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   const sl = stockLabel(liveProduct)
 
   const isDirty = isOwner && (
-    david      !== String(product.qty_david  ?? 0) ||
-    panama     !== String(product.qty_panama ?? 0) ||
-    chitre     !== String(product.qty_chitre ?? 0) ||
+    name.trim() !== (product.name ?? '') ||
+    david       !== String(product.qty_david  ?? 0) ||
+    panama      !== String(product.qty_panama ?? 0) ||
+    chitre      !== String(product.qty_chitre ?? 0) ||
     (askPrice ? 0 : parseFloat(price)||0) !== Number(product.price ?? 0) ||
-    comingSoon !== !!product.coming_soon
+    comingSoon  !== !!product.coming_soon
   )
 
   const handleSave = async () => {
     setSaving(true)
     try {
       await onSave?.(product.id, {
+        name: name.trim() || product.name,
         qty_david:  parseInt(david)  || 0,
         qty_panama: parseInt(panama) || 0,
         qty_chitre: parseInt(chitre) || 0,
@@ -202,9 +205,26 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
             </div>
           )}
 
-          <div style={{ fontSize: 17, fontWeight: 800, color: '#FFF', lineHeight: 1.35, marginBottom: 12 }}>
-            {product.name}
-          </div>
+          {isOwner ? (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>NOMBRE</div>
+              <textarea
+                value={name}
+                onChange={e => setName(e.target.value)}
+                rows={2}
+                style={{
+                  width: '100%', background: '#111', border: '1px solid #2A2A2A',
+                  borderRadius: 10, color: '#FFF', fontSize: 15, fontWeight: 800,
+                  lineHeight: 1.35, padding: '10px 12px', outline: 'none',
+                  fontFamily: 'Inter, sans-serif', resize: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          ) : (
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#FFF', lineHeight: 1.35, marginBottom: 12 }}>
+              {product.name}
+            </div>
+          )}
 
           {/* ── Price ── */}
           {isOwner ? (
