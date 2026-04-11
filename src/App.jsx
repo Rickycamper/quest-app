@@ -2,7 +2,29 @@
 // QUEST — App.jsx  (main router)
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback, useMemo, Component } from 'react'
+import questLogo from './assets/quest-logo-sm.png'
 import { GuestContext, useGuest } from './context/GuestContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { ToastProvider } from './components/Toast'
+import { useNotifications } from './hooks/useNotifications'
+import { OpeningScreen, SignupScreen, EmailSignupScreen, LoginScreen, ForgotPasswordScreen, ResetPasswordScreen, TermsModal } from './screens/AuthScreens'
+import FeedScreen            from './screens/FeedScreen'
+import ProfileScreen         from './screens/ProfileScreen'
+import EditProfileScreen     from './screens/EditProfileScreen'
+import RankingsScreen        from './screens/RankingsScreen'
+import FolderScreen          from './screens/FolderScreen'
+import TrackingScreen, { CreatePackageModal } from './screens/TrackingScreen'
+import CreatePostModal       from './screens/CreatePostModal'
+import ClaimModal            from './screens/ClaimModal'
+import CreateTournamentModal from './screens/CreateTournamentModal'
+import AdminScreen           from './screens/AdminScreen'
+import AuctionScreen         from './screens/AuctionScreen'
+import QuestHubScreen        from './screens/QuestHubScreen'
+import LifeCounterScreen     from './screens/LifeCounterScreen'
+import ChatScreen            from './screens/ChatScreen'
+import LogMatchModal         from './screens/LogMatchModal'
+import SearchScreen          from './screens/SearchScreen'
+import ShopScreen            from './screens/ShopScreen'
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null } }
@@ -22,29 +44,6 @@ class ErrorBoundary extends Component {
     return this.props.children
   }
 }
-import questLogo from './assets/quest-logo-sm.png'
-import { AuthProvider, useAuth } from './context/AuthContext'
-import { ToastProvider } from './components/Toast'
-import { useNotifications } from './hooks/useNotifications'
-
-import { OpeningScreen, SignupScreen, EmailSignupScreen, LoginScreen, ForgotPasswordScreen, ResetPasswordScreen, TermsModal } from './screens/AuthScreens'
-import FeedScreen      from './screens/FeedScreen'
-import ProfileScreen     from './screens/ProfileScreen'
-import EditProfileScreen from './screens/EditProfileScreen'
-import RankingsScreen  from './screens/RankingsScreen'
-import FolderScreen    from './screens/FolderScreen'
-import TrackingScreen, { CreatePackageModal } from './screens/TrackingScreen'
-import CreatePostModal        from './screens/CreatePostModal'
-import ClaimModal             from './screens/ClaimModal'
-import CreateTournamentModal  from './screens/CreateTournamentModal'
-import AdminScreen            from './screens/AdminScreen'
-import AuctionScreen          from './screens/AuctionScreen'
-import QuestHubScreen         from './screens/QuestHubScreen'
-import LifeCounterScreen      from './screens/LifeCounterScreen'
-import ChatScreen             from './screens/ChatScreen'
-import LogMatchModal          from './screens/LogMatchModal'
-import SearchScreen           from './screens/SearchScreen'
-import ShopScreen             from './screens/ShopScreen'
 
 import { acceptTerms, subscribeToPush } from './lib/supabase'
 import { BottomNav, NotifBell } from './components/Nav'
