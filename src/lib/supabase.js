@@ -1894,37 +1894,60 @@ export async function deleteShopProduct(id) {
 
 // ── Shop Reservations ─────────────────────────
 
+const BRANCH_QTY_COL = { david: 'qty_david', panama: 'qty_panama', chitre: 'qty_chitre' }
+const BRANCH_LABEL   = { david: 'David',     panama: 'Panamá',     chitre: 'Chitré'   }
+
 export async function getProductReservations(productId) {
   const { data, error } = await supabase
     .from('shop_reservations')
-    .select('id, qty, paid_pct, notes, created_at, user_id, profiles:user_id(id, username, avatar_url)')
+    .select('id, qty, paid_pct, branch, notes, created_at, user_id, product_id, profiles:user_id(id, username, avatar_url)')
     .eq('product_id', productId)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data ?? []
 }
 
-export async function createReservation({ productId, userId, qty, paidPct, notes, productName }) {
+export async function createReservation({ productId, userId, qty, paidPct, branch, notes, productName }) {
   const { data: { session } } = await supabase.auth.getSession()
   const { data, error } = await supabase
     .from('shop_reservations')
-    .insert({ product_id: productId, user_id: userId, qty, paid_pct: paidPct, notes: notes || null, created_by: session?.user?.id })
-    .select('id, qty, paid_pct, notes, created_at, user_id, profiles:user_id(id, username, avatar_url)')
+    .insert({ product_id: productId, user_id: userId, qty, paid_pct: paidPct, branch, notes: notes || null, created_by: session?.user?.id })
+    .select('id, qty, paid_pct, branch, notes, created_at, user_id, product_id, profiles:user_id(id, username, avatar_url)')
     .single()
   if (error) throw error
-  // Notify the customer
+
+  // Decrement branch inventory
+  const qtyCol = BRANCH_QTY_COL[branch]
+  let qtyUpdate = {}
+  if (qtyCol) {
+    const { data: cur } = await supabase.from('shop_products').select(`id, ${qtyCol}`).eq('id', productId).single()
+    const newQty = Math.max(0, (cur?.[qtyCol] ?? 0) - qty)
+    await supabase.from('shop_products').update({ [qtyCol]: newQty }).eq('id', productId)
+    qtyUpdate = { [qtyCol]: newQty }
+  }
+
+  // Notify customer
   const paidLabel = paidPct === 100 ? '100% pagado ✅' : '50% de depósito recibido'
   createNotification(
-    userId,
-    'shop_reservation',
-    '📦 Pre-order confirmado',
-    `Tu reserva de ${qty > 1 ? `${qty}x ` : ''}*${productName}* está registrada — ${paidLabel}. Te avisamos cuando esté listo.`,
+    userId, 'shop_reservation', '📦 Pre-order confirmado',
+    `Tu reserva de ${qty > 1 ? `${qty}x ` : ''}*${productName}* en ${BRANCH_LABEL[branch] ?? branch} está registrada — ${paidLabel}. Te avisamos cuando esté listo.`,
     { productId }
   )
-  return data
+  return { reservation: data, qtyUpdate }
 }
 
-export async function deleteReservation(id) {
-  const { error } = await supabase.from('shop_reservations').delete().eq('id', id)
+export async function deleteReservation(reservation) {
+  const { error } = await supabase.from('shop_reservations').delete().eq('id', reservation.id)
   if (error) throw error
+
+  // Restore branch inventory
+  const qtyCol = BRANCH_QTY_COL[reservation.branch]
+  let qtyUpdate = {}
+  if (qtyCol && reservation.product_id) {
+    const { data: cur } = await supabase.from('shop_products').select(`id, ${qtyCol}`).eq('id', reservation.product_id).single()
+    const newQty = (cur?.[qtyCol] ?? 0) + reservation.qty
+    await supabase.from('shop_products').update({ [qtyCol]: newQty }).eq('id', reservation.product_id)
+    qtyUpdate = { [qtyCol]: newQty }
+  }
+  return { qtyUpdate }
 }

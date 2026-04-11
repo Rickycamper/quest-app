@@ -103,8 +103,14 @@ function WAIcon({ size = 13 }) {
   )
 }
 
+const BRANCHES_RES = [
+  { key: 'david',  label: 'David',  color: '#60A5FA', bg: 'rgba(96,165,250,0.12)',  border: 'rgba(96,165,250,0.25)'  },
+  { key: 'panama', label: 'Panamá', color: '#34D399', bg: 'rgba(52,211,153,0.12)',  border: 'rgba(52,211,153,0.25)'  },
+  { key: 'chitre', label: 'Chitré', color: '#FB923C', bg: 'rgba(251,146,60,0.12)',  border: 'rgba(251,146,60,0.25)'  },
+]
+
 // ── Reservations section (owner only) ────────
-function ReservationsSection({ product }) {
+function ReservationsSection({ product, onQtyChange }) {
   const [reservations, setReservations] = useState([])
   const [loading,      setLoading]      = useState(true)
   const [showForm,     setShowForm]     = useState(false)
@@ -113,6 +119,7 @@ function ReservationsSection({ product }) {
   const [selected,     setSelected]     = useState(null)
   const [qty,          setQty]          = useState('1')
   const [paidPct,      setPaidPct]      = useState(50)
+  const [branch,       setBranch]       = useState('david')
   const [notes,        setNotes]        = useState('')
   const [saving,       setSaving]       = useState(false)
   const searchRef = useRef(null)
@@ -134,23 +141,24 @@ function ReservationsSection({ product }) {
     if (!selected) return
     setSaving(true)
     try {
-      const r = await createReservation({
-        productId: product.id,
-        userId: selected.id,
-        qty: parseInt(qty) || 1,
-        paidPct,
-        notes,
+      const { reservation, qtyUpdate } = await createReservation({
+        productId: product.id, userId: selected.id,
+        qty: parseInt(qty) || 1, paidPct, branch, notes,
         productName: product.name,
       })
-      setReservations(prev => [r, ...prev])
-      setShowForm(false); setQuery(''); setSelected(null); setQty('1'); setNotes(''); setPaidPct(50)
+      setReservations(prev => [reservation, ...prev])
+      onQtyChange?.(qtyUpdate)
+      setShowForm(false); setQuery(''); setSelected(null); setQty('1'); setNotes(''); setPaidPct(50); setBranch('david')
     } catch (e) { alert('Error: ' + (e?.message || 'intentá de nuevo')) }
     setSaving(false)
   }
 
-  const handleDelete = async (id) => {
-    await deleteReservation(id).catch(() => {})
-    setReservations(prev => prev.filter(r => r.id !== id))
+  const handleDelete = async (r) => {
+    try {
+      const { qtyUpdate } = await deleteReservation(r)
+      setReservations(prev => prev.filter(x => x.id !== r.id))
+      onQtyChange?.(qtyUpdate)
+    } catch (e) { alert('Error al eliminar') }
   }
 
   const totalReserved = reservations.reduce((s, r) => s + (r.qty || 0), 0)
@@ -178,6 +186,7 @@ function ReservationsSection({ product }) {
       {/* Add form */}
       {showForm && (
         <div style={{ background: '#111', border: '1px solid #2A2A2A', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+
           {/* User search */}
           <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>CLIENTE</div>
           {selected ? (
@@ -191,21 +200,16 @@ function ReservationsSection({ product }) {
             </div>
           ) : (
             <div style={{ position: 'relative', marginBottom: 10 }}>
-              <input
-                ref={searchRef}
-                value={query}
-                onChange={e => setQuery(e.target.value)}
+              <input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)}
                 placeholder="Buscar usuario..."
-                style={{ width: '100%', padding: '9px 12px', background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 9, color: '#FFF', fontSize: 13, outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }}
-              />
+                style={{ width: '100%', padding: '9px 12px', background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 9, color: '#FFF', fontSize: 13, outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }} />
               {results.length > 0 && (
                 <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 9, zIndex: 10, overflow: 'hidden', marginTop: 3 }}>
                   {results.map(u => (
-                    <div key={u.id} onClick={() => { setSelected(u); setQuery(''); setResults([]) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', cursor: 'pointer', borderBottom: '1px solid #222' }}>
-                      {u.avatar_url
-                        ? <img src={u.avatar_url} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
-                        : <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2A2A2A' }} />
-                      }
+                    <div key={u.id} onClick={() => { setSelected(u); setQuery(''); setResults([]) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', cursor: 'pointer', borderBottom: '1px solid #222' }}>
+                      {u.avatar_url ? <img src={u.avatar_url} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
+                        : <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2A2A2A' }} />}
                       <span style={{ fontSize: 13, color: '#FFF', fontWeight: 600 }}>@{u.username}</span>
                     </div>
                   ))}
@@ -214,7 +218,22 @@ function ReservationsSection({ product }) {
             </div>
           )}
 
-          {/* Qty */}
+          {/* Sucursal */}
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>SUCURSAL</div>
+            <div style={{ display: 'flex', gap: 5 }}>
+              {BRANCHES_RES.map(b => (
+                <button key={b.key} onClick={() => setBranch(b.key)} style={{
+                  flex: 1, padding: '8px 0', borderRadius: 8, border: `1.5px solid ${branch === b.key ? b.border : '#2A2A2A'}`,
+                  background: branch === b.key ? b.bg : 'transparent',
+                  color: branch === b.key ? b.color : '#6B7280',
+                  fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}>{b.label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Qty + Pago */}
           <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>CANTIDAD</div>
@@ -229,7 +248,7 @@ function ReservationsSection({ product }) {
               <div style={{ display: 'flex', gap: 5 }}>
                 {[50, 100].map(p => (
                   <button key={p} onClick={() => setPaidPct(p)} style={{
-                    flex: 1, padding: '7px 0', borderRadius: 7, border: 'none',
+                    flex: 1, padding: '8px 0', borderRadius: 7, border: 'none',
                     background: paidPct === p ? (p === 100 ? '#4ADE80' : '#FBBF24') : '#1A1A1A',
                     color: paidPct === p ? '#111' : '#6B7280',
                     fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
@@ -242,7 +261,9 @@ function ReservationsSection({ product }) {
           {/* Notes */}
           <div style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>NOTAS (opcional)</div>
-            <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="ej: pagó en efectivo, busca el viernes..." style={{ width: '100%', padding: '9px 12px', background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 9, color: '#FFF', fontSize: 12, outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }} />
+            <input value={notes} onChange={e => setNotes(e.target.value)}
+              placeholder="ej: pagó en efectivo, busca el viernes..."
+              style={{ width: '100%', padding: '9px 12px', background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 9, color: '#FFF', fontSize: 12, outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }} />
           </div>
 
           <button onClick={handleCreate} disabled={!selected || saving} style={{
@@ -263,6 +284,7 @@ function ReservationsSection({ product }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
           {reservations.map(r => {
             const u = r.profiles
+            const br = BRANCHES_RES.find(b => b.key === r.branch)
             return (
               <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 11px', background: '#111', border: '1px solid #1A1A1A', borderRadius: 10 }}>
                 {u?.avatar_url
@@ -271,12 +293,20 @@ function ReservationsSection({ product }) {
                 }
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>@{u?.username ?? '—'}</div>
-                  {r.notes && <div style={{ fontSize: 10, color: '#6B7280', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.notes}</div>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2, flexWrap: 'wrap' }}>
+                    {br && (
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 5, background: br.bg, color: br.color, border: `1px solid ${br.border}` }}>{br.label}</span>
+                    )}
+                    {r.notes && <span style={{ fontSize: 10, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>{r.notes}</span>}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: '#FFF' }}>{r.qty} ud{r.qty > 1 ? 's' : ''}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: r.paid_pct === 100 ? 'rgba(74,222,128,0.12)' : 'rgba(251,191,36,0.12)', color: r.paid_pct === 100 ? '#4ADE80' : '#FBBF24', border: `1px solid ${r.paid_pct === 100 ? 'rgba(74,222,128,0.25)' : 'rgba(251,191,36,0.25)'}` }}>{r.paid_pct}%</span>
-                  <button onClick={() => handleDelete(r.id)} style={{ background: 'none', border: 'none', color: '#374151', cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>🗑</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#FFF' }}>{r.qty}u</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
+                    background: r.paid_pct === 100 ? 'rgba(74,222,128,0.12)' : 'rgba(251,191,36,0.12)',
+                    color: r.paid_pct === 100 ? '#4ADE80' : '#FBBF24',
+                    border: `1px solid ${r.paid_pct === 100 ? 'rgba(74,222,128,0.25)' : 'rgba(251,191,36,0.25)'}` }}>{r.paid_pct}%</span>
+                  <button onClick={() => handleDelete(r)} style={{ background: 'none', border: 'none', color: '#374151', cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>🗑</button>
                 </div>
               </div>
             )
@@ -531,7 +561,19 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
           )}
 
           {/* ── Reservations ── */}
-          {isOwner && <ReservationsSection product={product} />}
+          {isOwner && (
+            <ReservationsSection
+              product={product}
+              onQtyChange={(fields) => {
+                // Update owner's live qty display
+                if (fields.qty_david  !== undefined) setDavid(String(fields.qty_david))
+                if (fields.qty_panama !== undefined) setPanama(String(fields.qty_panama))
+                if (fields.qty_chitre !== undefined) setChitre(String(fields.qty_chitre))
+                // Propagate to parent ShopScreen state
+                onSave?.(product.id, fields)
+              }}
+            />
+          )}
 
           {/* ── Owner: save + delete ── */}
           {isOwner && (

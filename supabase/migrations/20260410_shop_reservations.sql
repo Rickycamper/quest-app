@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.shop_reservations (
   user_id     uuid        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   qty         integer     NOT NULL DEFAULT 1,
   paid_pct    integer     NOT NULL DEFAULT 50 CHECK (paid_pct IN (50, 100)),
+  branch      text        NOT NULL DEFAULT 'david' CHECK (branch IN ('david', 'panama', 'chitre')),
   notes       text,
   created_by  uuid        REFERENCES public.profiles(id),
   created_at  timestamptz DEFAULT now()
