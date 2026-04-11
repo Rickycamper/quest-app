@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, searchUsers } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
 
@@ -288,6 +289,7 @@ function ReservationsSection({ product }) {
 
 // ── Product detail sheet (customers read / owners edit inline) ──
 function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelete }) {
+  const { profile } = useAuth()
   const [name,       setName]       = useState(product.name ?? '')
   const [david,      setDavid]      = useState(String(product.qty_david  ?? 0))
   const [panama,     setPanama]     = useState(String(product.qty_panama ?? 0))
@@ -347,10 +349,12 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
     onClose()
   }
 
+  const userTag = profile?.username ? ` — soy @${profile.username} en Quest` : ''
+
   const handleAsk = (e) => {
     e.stopPropagation()
     const priceStr = (!product.price || Number(product.price) === 0) ? '' : ` (${fmtPrice(product.price)})`
-    const text = `Hola! Me interesa: *${product.name}*${priceStr}. ¿Está disponible?`
+    const text = `Hola! Me interesa: *${product.name}*${priceStr}. ¿Está disponible?${userTag}`
     window.open(`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(text)}`, '_blank')
   }
 
@@ -556,7 +560,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
               {comingSoon && (
                 <button onClick={(e) => {
                   e.stopPropagation()
-                  const text = `Hola! Quiero reservar: *${product.name}*. ¿Cuándo llega y cómo aparto uno?`
+                  const text = `Hola! Quiero reservar: *${product.name}*. ¿Cuándo llega y cómo aparto uno?${userTag}`
                   window.open(`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(text)}`, '_blank')
                 }} style={{
                   width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
