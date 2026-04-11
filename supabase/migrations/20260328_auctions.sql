@@ -153,9 +153,14 @@ CREATE OR REPLACE FUNCTION public.end_auction(p_auction_id uuid)
 RETURNS void
   LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_auction  public.auctions;
-  v_top_bid  public.auction_bids;
-  v_end_time timestamptz;
+  v_auction        public.auctions;
+  v_top_bid        public.auction_bids;
+  v_end_time       timestamptz;
+  v_winner_username text;
+  v_admin_id       uuid;
+  v_admin_username text;
+  v_conv_id        uuid;
+  v_existing_conv  uuid;
 BEGIN
   SELECT * INTO v_auction FROM public.auctions
   WHERE id = p_auction_id FOR UPDATE;
@@ -183,34 +188,72 @@ BEGIN
       winning_amount = v_top_bid.amount
     WHERE id = p_auction_id;
 
-    -- Notify winner
+    -- Fetch winner username
+    SELECT username INTO v_winner_username
+    FROM public.profiles WHERE id = v_top_bid.user_id;
+
+    -- Fetch first admin (for DM + meta)
+    SELECT id, username INTO v_admin_id, v_admin_username
+    FROM public.profiles WHERE role = 'admin' ORDER BY created_at LIMIT 1;
+
+    -- ── Auto-DM from admin to winner ─────────────────────────────────────────
+    -- Get or create conversation (canonical ordering: smaller UUID first)
+    SELECT id INTO v_existing_conv
+    FROM public.conversations
+    WHERE (user_a = LEAST(v_admin_id, v_top_bid.user_id)
+       AND user_b = GREATEST(v_admin_id, v_top_bid.user_id))
+    LIMIT 1;
+
+    IF v_existing_conv IS NULL THEN
+      v_conv_id := gen_random_uuid();
+      INSERT INTO public.conversations (id, user_a, user_b)
+      VALUES (
+        v_conv_id,
+        LEAST(v_admin_id, v_top_bid.user_id),
+        GREATEST(v_admin_id, v_top_bid.user_id)
+      );
+    ELSE
+      v_conv_id := v_existing_conv;
+    END IF;
+
+    INSERT INTO public.messages (conversation_id, sender_id, body)
+    VALUES (
+      v_conv_id,
+      v_admin_id,
+      '🏆 ¡Felicidades! Ganaste "' || v_auction.title || '" por $' || v_top_bid.amount::text || E'.\n\nCoordinaremos contigo el pago y la logística de entrega. ¡Gracias por participar en Quest!'
+    );
+
+    -- Notify winner — includes adminId so clicking the notification opens the DM
     INSERT INTO public.notifications (user_id, type, title, body, meta)
     VALUES (
       v_top_bid.user_id,
       'auction_won',
       '🏆 ¡Ganaste la subasta!',
-      'Ganaste "' || v_auction.title || '" por $' || v_top_bid.amount::text,
+      'Ganaste "' || v_auction.title || '" por $' || v_top_bid.amount::text || ' — te escribimos para coordinar el pago 💬',
       jsonb_build_object(
-        'auctionId',  p_auction_id,
-        'amount',     v_top_bid.amount,
-        'title',      v_auction.title,
-        'imageUrl',   v_auction.image_url
+        'auctionId',      p_auction_id,
+        'amount',         v_top_bid.amount,
+        'title',          v_auction.title,
+        'imageUrl',       v_auction.image_url,
+        'adminId',        v_admin_id,
+        'adminUsername',  v_admin_username
       )
     );
 
-    -- Notify all admins
+    -- Notify all admins — includes winnerId + winnerUsername so clicking opens the DM
     INSERT INTO public.notifications (user_id, type, title, body, meta)
     SELECT
       p.id,
       'auction_ended',
       '🔨 Subasta finalizada',
-      '"' || v_auction.title || '" vendida por $' || v_top_bid.amount::text,
+      '"' || v_auction.title || '" vendida a @' || v_winner_username || ' por $' || v_top_bid.amount::text || ' — toca para escribirle 💬',
       jsonb_build_object(
-        'auctionId',  p_auction_id,
-        'amount',     v_top_bid.amount,
-        'winnerId',   v_top_bid.user_id,
-        'title',      v_auction.title,
-        'imageUrl',   v_auction.image_url
+        'auctionId',       p_auction_id,
+        'amount',          v_top_bid.amount,
+        'winnerId',        v_top_bid.user_id,
+        'winnerUsername',  v_winner_username,
+        'title',           v_auction.title,
+        'imageUrl',        v_auction.image_url
       )
     FROM public.profiles p
     WHERE p.role = 'admin';
