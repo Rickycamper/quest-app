@@ -180,8 +180,8 @@ function MainApp() {
       const dx = t.clientX - swipeOrigin.current.x
       const dy = t.clientY - swipeOrigin.current.y
       swipeOrigin.current = null
-      // Must be clearly horizontal, not a scroll attempt
-      if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.4) return
+      // Must be horizontal — lower threshold so it's easy to trigger
+      if (Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(dy) * 1.0) return
       setActiveTab(prev => {
         const tabs = Object.keys(screenMapRef.current)
         const idx  = tabs.indexOf(prev)
