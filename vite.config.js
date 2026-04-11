@@ -7,7 +7,18 @@ export default defineConfig({
     react(),
   ],
   build: {
-    target: 'es2020', // native optional chaining — prevents esbuild _t temp var collisions
+    target: 'es2020',
+    minify: 'esbuild',
+    // Keep identifiers readable to prevent minified-name TDZ collisions
+    // (esbuild reuses short names like _t, Xe across scopes in single-file bundles)
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
+  esbuild: {
+    minifyIdentifiers: false,
   },
   server: { host: true },
 })
