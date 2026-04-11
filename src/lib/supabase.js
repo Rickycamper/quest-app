@@ -7,24 +7,20 @@ import { RANKING_PTS, GAME_STYLES } from './constants'
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Bump this version whenever the client config changes — forces HMR recreation
-const CLIENT_V = 7
+const _CLIENT_V = 7
 
-if (!window.__supabase || window.__supabase.__v !== CLIENT_V) {
+if (!window.__supabase || window.__supabase.__v !== _CLIENT_V) {
   const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true,   // parses recovery tokens from URL hash & query params
-      // Bypass Web Locks API — prevents infinite queue when lock gets stuck in Chrome
-      // Safe for single-tab apps
+      detectSessionInUrl: true,
       lock: (_name, _timeout, fn) => fn(),
     },
     global: {
-      // Hard timeout on every fetch — storage uploads get more time than API calls
       fetch: (url, options) => {
         const isStorage = typeof url === 'string' && url.includes('/storage/v1/')
-        const ms = isStorage ? 60000 : 30000   // 60 s for uploads, 30 s for API
+        const ms = isStorage ? 60000 : 30000
         const ctrl = new AbortController()
         const id = setTimeout(() => ctrl.abort(), ms)
         return fetch(url, { ...options, signal: ctrl.signal })
@@ -32,9 +28,10 @@ if (!window.__supabase || window.__supabase.__v !== CLIENT_V) {
       }
     }
   })
-  client.__v = CLIENT_V
+  client.__v = _CLIENT_V
   window.__supabase = client
 }
+
 export const supabase = window.__supabase
 
 // ── AUTH ────────────────────────────────────
