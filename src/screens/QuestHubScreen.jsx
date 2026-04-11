@@ -496,16 +496,6 @@ const TILES = [
     enabled: true,
   },
   {
-    id:      'shop',
-    icon:    'shop',
-    label:   'Shop',
-    desc:    'Sealed · Singles · Accesorios',
-    color:   '#F472B6',
-    bg:      'rgba(244,114,182,0.08)',
-    border:  'rgba(244,114,182,0.2)',
-    enabled: true,
-  },
-  {
     id:      'tracking',
     icon:    'package',
     label:   'Tracking',
