@@ -62,7 +62,7 @@ function OwnerBottomNav({ active, hidden, tabs }) {
 export function BottomNav({ active, hidden, onTab, onLifeCounter, onNotifs, unreadCount, isOwner }) {
   const tabs = [
     { id: 'feed',  label: 'Feed',    icon: (a) => <HomeIcon active={a} />,    action: () => onTab('feed') },
-    ...(isOwner ? [{ id: 'shop', label: 'Shop', icon: (a) => <ShopIcon active={a} />, action: () => onTab('shop') }] : []),
+    { id: 'shop',  label: 'Shop',    icon: (a) => <ShopIcon active={a} />,    action: () => onTab('shop') },
     { id: 'ranks', label: 'Rank',    icon: (a) => <RanksIcon active={a} />,   action: () => onTab('ranks') },
     { id: 'life',  label: 'Counter', icon: (a) => <CounterIcon active={a} />, action: onLifeCounter },
     { id: 'notif', label: 'Notifs',  icon: (a) => <BellIcon active={a} />,    action: onNotifs, badge: unreadCount },
