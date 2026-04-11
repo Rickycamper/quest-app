@@ -6,5 +6,8 @@ export default defineConfig({
   plugins: [
     react(),
   ],
+  build: {
+    target: 'es2020', // native optional chaining — prevents esbuild _t temp var collisions
+  },
   server: { host: true },
 })
