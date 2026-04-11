@@ -24,7 +24,7 @@ if (!window.__supabase || window.__supabase.__v !== CLIENT_V) {
       // Hard timeout on every fetch — storage uploads get more time than API calls
       fetch: (url, options) => {
         const isStorage = typeof url === 'string' && url.includes('/storage/v1/')
-        const ms = isStorage ? 60000 : 12000   // 60 s for uploads, 12 s for API
+        const ms = isStorage ? 60000 : 30000   // 60 s for uploads, 30 s for API
         const ctrl = new AbortController()
         const id = setTimeout(() => ctrl.abort(), ms)
         return fetch(url, { ...options, signal: ctrl.signal })
@@ -135,7 +135,7 @@ export async function deleteAccount() {
 export async function getProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, role, branch, avatar_url, points, verified, phone, email, is_owner, terms_accepted_at')
+    .select('id, username, role, branch, avatar_url, points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, social_links')
     .eq('id', userId)
     .single()
   if (error) throw error
@@ -181,6 +181,64 @@ function compressImage(file, { maxSize = 600, quality = 0.82 } = {}) {
       reject(new Error('No se pudo leer la imagen. Usa una foto en formato JPG o PNG.'))
     }
     img.src = url
+  })
+}
+
+// Re-encode a video at lower resolution + bitrate using canvas + MediaRecorder.
+// Falls back to original file if the browser doesn't support the APIs.
+// Note: encoding runs in real-time (a 30-s clip takes ~30 s to compress).
+function compressVideo(file, { maxWidth = 1280, bitrate = 2_500_000 } = {}) {
+  return new Promise((resolve) => {
+    if (file.size < 5 * 1024 * 1024) { resolve(file); return } // < 5 MB — skip
+
+    const src = URL.createObjectURL(file)
+    const video = document.createElement('video')
+    video.muted = true; video.playsInline = true; video.src = src
+
+    const fallback = () => { URL.revokeObjectURL(src); resolve(file) }
+    video.onerror = fallback
+
+    video.onloadedmetadata = () => {
+      // Scale down to maxWidth if needed
+      let w = video.videoWidth, h = video.videoHeight
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      const ctx = canvas.getContext('2d')
+
+      if (!canvas.captureStream || !window.MediaRecorder) { fallback(); return }
+
+      // Pick the best supported MIME type
+      const mimeType = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm']
+        .find(t => MediaRecorder.isTypeSupported(t))
+      if (!mimeType) { fallback(); return }
+
+      let recorder
+      try {
+        recorder = new MediaRecorder(canvas.captureStream(30), {
+          mimeType, videoBitsPerSecond: bitrate,
+        })
+      } catch { fallback(); return }
+
+      const chunks = []
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
+      recorder.onstop = () => {
+        URL.revokeObjectURL(src)
+        const blob = new Blob(chunks, { type: mimeType })
+        resolve(blob.size < file.size ? blob : file) // only use if actually smaller
+      }
+      recorder.onerror = fallback
+
+      const draw = () => {
+        if (video.ended || video.paused) return
+        ctx.drawImage(video, 0, 0, w, h)
+        requestAnimationFrame(draw)
+      }
+      video.onended = () => { if (recorder.state === 'recording') recorder.stop() }
+      recorder.start(100)
+      video.play().then(draw).catch(fallback)
+    }
   })
 }
 
@@ -244,13 +302,33 @@ export async function getUserLikedPosts(postIds) {
 export async function uploadPostImage(file) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) throw new Error('No hay sesión activa')
-  // Normalize extension — fallback to jpg if name has no dot
-  const parts = file.name.split('.')
-  const ext   = parts.length > 1 ? parts.pop() : 'jpg'
-  const uid   = Math.random().toString(36).slice(2, 8)
-  const path  = `${session.user.id}/${Date.now()}_${uid}.${ext}`
-  const { error } = await supabase.storage.from('posts').upload(path, file, { contentType: file.type })
-  if (error) throw new Error(`[storage] ${error.message || error.error || JSON.stringify(error)}`)
+
+  const isVideo = file.type?.startsWith('video/')
+  const uid = Math.random().toString(36).slice(2, 8)
+
+  let uploadFile, contentType, ext
+  if (isVideo) {
+    // Compress video (canvas re-encode) then upload
+    const compressed = await compressVideo(file, { maxWidth: 1280, bitrate: 2_500_000 })
+    uploadFile = compressed
+    // MediaRecorder output is webm or mp4 (a Blob, not a File)
+    contentType = compressed.type || file.type || 'video/mp4'
+    ext = contentType.includes('webm') ? 'webm' : (file.name?.match(/\.(\w+)$/)?.[1] ?? 'mp4')
+  } else {
+    // Compress images before upload (max 1200px wide, 0.85 quality)
+    uploadFile = await compressImage(file, { maxSize: 1200, quality: 0.85 })
+    contentType = 'image/jpeg'
+    ext = 'jpg'
+  }
+
+  const path = `${session.user.id}/${Date.now()}_${uid}.${ext}`
+  const { error } = await supabase.storage.from('posts').upload(path, uploadFile, { contentType })
+  if (error) {
+    const msg = error.message || error.error || ''
+    if (msg.toLowerCase().includes('load failed') || msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network'))
+      throw new Error('Error de red al subir el archivo. Revisá tu conexión e intentá de nuevo.')
+    throw new Error(`Error al subir archivo: ${msg || JSON.stringify(error)}`)
+  }
   const { data } = supabase.storage.from('posts').getPublicUrl(path)
   return data.publicUrl
 }
@@ -271,6 +349,16 @@ export async function createPost({ caption, game, imageUrls = [] }) {
     if ((count ?? 0) >= 50) throw new Error('POST_LIMIT_REACHED')
   }
 
+  // Duplicate guard: same caption posted in the last 3 minutes
+  const { data: recent } = await supabase
+    .from('posts')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .eq('caption', caption)
+    .gte('created_at', new Date(Date.now() - 3 * 60 * 1000).toISOString())
+    .limit(1)
+  if (recent?.length > 0) throw new Error('Ya publicaste este contenido hace menos de 3 minutos')
+
   const image_url = imageUrls[0] ?? null
   const insertData = { user_id: session.user.id, caption, tag: game, image_url }
   if (imageUrls.length > 0) insertData.images = imageUrls
@@ -281,6 +369,7 @@ export async function createPost({ caption, game, imageUrls = [] }) {
     .select()
     .single()
   if (error) throw new Error(error.message || error.details || 'Error al crear el post')
+  awardPoints(session.user.id, 10, 'post_created') // +10 pts, max 5 posts/day
   return data
 }
 
@@ -315,16 +404,19 @@ export async function setUserPremium(userId, premium) {
 }
 
 export async function deletePost(postId) {
-  // Fetch image_url first so we can clean up storage too
+  // Fetch image_url + user_id first so we can clean up storage and deduct points
   const { data: post } = await supabase
     .from('posts')
-    .select('image_url')
+    .select('image_url, user_id')
     .eq('id', postId)
     .single()
 
   // Delete the DB row (cascades likes/comments)
   const { error } = await supabase.from('posts').delete().eq('id', postId)
   if (error) throw error
+
+  // Deduct Q Coins for deleted post
+  if (post?.user_id) awardPoints(post.user_id, -10, 'post_deleted')
 
   // Delete image from Storage if present
   if (post?.image_url) {
@@ -389,6 +481,13 @@ export async function toggleLike(postId) {
   if (existing) {
     const { error: delErr } = await supabase.from('post_likes').delete().eq('id', existing.id)
     if (delErr) throw delErr
+    // Deduct 1 Q Coin from post owner when like is removed
+    try {
+      const { data: post } = await supabase.from('posts').select('user_id').eq('id', postId).single()
+      if (post?.user_id && post.user_id !== session.user.id) {
+        awardPoints(post.user_id, -1, 'like_removed')
+      }
+    } catch { /* non-critical */ }
     return false
   } else {
     const { error: insErr } = await supabase.from('post_likes').insert({ post_id: postId, user_id: session.user.id })
@@ -408,6 +507,7 @@ export async function toggleLike(postId) {
           `@${liker?.username ?? 'Alguien'} le dio like a: ${preview}`,
           { postId, userId: session.user.id }
         )
+        awardPoints(post.user_id, 1, 'like_received') // +1 pt to post owner
       }
     } catch { /* non-critical */ }
     return true
@@ -461,6 +561,7 @@ export async function toggleFollow(targetUserId) {
         `@${follower?.username ?? 'Alguien'} comenzó a seguirte`,
         { userId: session.user.id }
       )
+      // no points for following
     } catch { /* non-critical */ }
     return true
   }
@@ -646,6 +747,17 @@ export async function createTournament({ name, game, branch, date, playerCount, 
     .single()
   if (error) throw error
   return data
+}
+
+/** Invite a user to a tournament — sends them a one-click join notification */
+export async function inviteTournament(tournamentId, tournamentName, userId) {
+  await createNotification(
+    userId,
+    'tournament_invite',
+    '🏆 ¡Te invitaron a un torneo!',
+    `Fuiste invitado a "${tournamentName}". Un click para inscribirte.`,
+    { tournamentId, tournamentName }
+  )
 }
 
 export async function submitClaim({ tournamentName, tournamentId = null, game, branch, position, notes, autoApprove = false }) {
@@ -895,6 +1007,43 @@ export async function createNotification(userId, type, title, body, meta = {}) {
     p_body:    body,
     p_meta:    meta,
   })
+  // Fire-and-forget Web Push to all registered devices for this user
+  supabase.functions.invoke('send-push', {
+    body: { userId, title, body, data: { type, ...meta } },
+  }).catch(() => {})
+}
+
+// ── PUSH SUBSCRIPTIONS ────────────────────────
+
+function urlBase64ToUint8Array(base64) {
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4)
+  const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(b64)
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)))
+}
+
+/** Request permission + register device + save to DB. Call once on login. */
+export async function subscribeToPush(userId) {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') return
+    const reg = await navigator.serviceWorker.ready
+    let sub = await reg.pushManager.getSubscription()
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
+      })
+    }
+    const { endpoint, keys } = sub.toJSON()
+    await supabase.from('push_subscriptions').upsert(
+      { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
+      { onConflict: 'user_id,endpoint' }
+    )
+  } catch (e) {
+    console.warn('Push subscription failed:', e)
+  }
 }
 
 export async function createPackage({ originBranch, destinationBranch, recipientId, notes, items, imageUrl }) {
@@ -1068,6 +1217,8 @@ export async function confirmPackageArrival(packageId, notes = '') {
         { packageId }
       )
     ),
+    // +5 Q Points to recipient when shipment confirmed by admin
+    pkg.recipient_id ? supabase.rpc('award_points', { p_user_id: pkg.recipient_id, p_amount: 10, p_reason: 'shipment_confirmed' }).catch(() => {}) : Promise.resolve(),
   ])
 }
 
@@ -1177,16 +1328,20 @@ export async function getOrCreateConversation(otherUserId) {
 }
 
 /** Fetch last N messages for a conversation, oldest first */
-export async function getMessages(conversationId, limit = 50) {
-  const { data, error } = await supabase
+export async function getMessages(conversationId, limit = 300, before = null) {
+  let q = supabase
     .from('messages')
     .select('id, sender_id, body, read, created_at')
     .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false }) // newest first so LIMIT grabs the right end
     .limit(limit)
 
+  if (before) q = q.lt('created_at', before) // pagination: load older messages
+
+  const { data, error } = await q
   if (error) throw error
-  return data ?? []
+  // Reverse so they render oldest → newest in UI
+  return (data ?? []).reverse()
 }
 
 /** Send a message and fire a notification to the recipient */
@@ -1346,6 +1501,9 @@ export async function respondToMatch(matchId, accept) {
     })
   }
 
+  // Award 1 Q point to match winner when confirmed
+  if (accept) awardPoints(match.winner_id, 1, 'match_won')
+
   // Notify the logger of the outcome
   createNotification(
     match.logged_by,
@@ -1421,6 +1579,91 @@ export async function resetH2H(opponentId) {
     .from('h2h_resets')
     .insert({ initiator_id: session.user.id, opponent_id: opponentId })
   if (error) throw error
+}
+
+// ── Q POINTS ─────────────────────────────────
+
+/** Fire-and-forget: award Q points to a user */
+function awardPoints(userId, amount, reason) {
+  supabase.rpc('award_points', { p_user_id: userId, p_amount: amount, p_reason: reason })
+    .then(() => {}).catch(() => {})
+}
+
+/** Request to redeem points for store credit (min 1000 = $1) */
+export async function redeemPoints(points) {
+  const { data, error } = await supabase.rpc('redeem_points', { p_points: points })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+/** Admin: fetch all pending redemptions */
+export async function getPendingRedemptions() {
+  const { data, error } = await supabase
+    .from('q_redemptions')
+    .select('id, points, created_at, status, user_id, profiles(username, avatar_url)')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+/** Admin: approve a redemption */
+export async function approveRedemption(id) {
+  const { error } = await supabase.rpc('approve_redemption', { p_id: id })
+  if (error) throw error
+}
+
+/** User's full Q Points history (newest first) */
+// ── TCG Articles ─────────────────────────────
+export async function getArticles(game = null, limit = 12) {
+  let q = supabase
+    .from('tcg_articles')
+    .select('id, game, source_name, title, url, image_url, published_at')
+    .order('published_at', { ascending: false })
+    .limit(limit)
+  if (game) q = q.eq('game', game)
+  const { data, error } = await q
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getPointsHistory(limit = 80) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const { data, error } = await supabase
+    .from('q_points_log')
+    .select('amount, reason, created_at')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data ?? []
+}
+
+/** Admin: reject a redemption and refund points */
+export async function rejectRedemption(id, note = '') {
+  const { error } = await supabase.rpc('reject_redemption', { p_id: id, p_note: note })
+  if (error) throw error
+}
+
+/** Returns W/L record grouped by game for the current user (confirmed matches only) */
+export async function getMyStats() {
+  const { data: { session } } = await supabase.auth.getSession()
+  const me = session.user.id
+  const { data, error } = await supabase
+    .from('matches')
+    .select('game, winner_id')
+    .or(`player_a.eq.${me},player_b.eq.${me}`)
+    .eq('status', 'confirmed')
+  if (error) throw error
+  const map = {}
+  for (const m of data ?? []) {
+    if (!map[m.game]) map[m.game] = { wins: 0, losses: 0 }
+    if (m.winner_id === me) map[m.game].wins++
+    else map[m.game].losses++
+  }
+  return Object.entries(map)
+    .map(([game, { wins, losses }]) => ({ game, wins, losses, total: wins + losses }))
+    .sort((a, b) => b.total - a.total)
 }
 
 // ── REALTIME ─────────────────────────────────
@@ -1594,4 +1837,57 @@ export function subscribeToAuctionChat(auctionId, callback) {
       filter: `auction_id=eq.${auctionId}`,
     }, callback)
     .subscribe()
+}
+
+// ─────────────────────────────────────────────
+// SHOP — Product catalog
+// ─────────────────────────────────────────────
+
+// Fetch image URL from Coqui Hobby API by SKU
+export async function fetchCoquiImage(sku) {
+  try {
+    const res = await fetch(`https://api.coquihobby.com/api/Product/GetProduct?id=${encodeURIComponent(sku)}`)
+    if (!res.ok) return null
+    const data = await res.json()
+    return data?.images?.[0]?.small ?? data?.images?.[0]?.medium ?? null
+  } catch { return null }
+}
+
+export async function getShopProducts() {
+  const { data, error } = await supabase
+    .from('shop_products')
+    .select('*')
+    .eq('active', true)
+    .order('sort_order', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function upsertShopProduct(product) {
+  const { data, error } = await supabase
+    .from('shop_products')
+    .upsert(product, { onConflict: 'sku' })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateShopProduct(id, fields) {
+  const { data, error } = await supabase
+    .from('shop_products')
+    .update(fields)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteShopProduct(id) {
+  const { error } = await supabase
+    .from('shop_products')
+    .update({ active: false })
+    .eq('id', id)
+  if (error) throw error
 }

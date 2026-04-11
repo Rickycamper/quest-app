@@ -148,7 +148,10 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
       setTimeout(() => setSaved(false), 1800)
     } catch (e) {
       console.error('Error guardando producto:', e)
-      alert('Error al guardar: ' + (e?.message || 'intentá de nuevo'))
+      const msg = e?.name === 'AbortError'
+        ? 'Tiempo de espera agotado. Verificá tu conexión e intentá de nuevo.'
+        : (e?.message || 'Error al guardar, intentá de nuevo.')
+      alert(msg)
     } finally {
       setSaving(false)
     }
@@ -728,15 +731,18 @@ export default function ShopScreen({ isOwner }) {
   })
 
   const handleSave = useCallback(async (id, fields) => {
-    // coming_soon may not exist yet in DB — try with it, fallback without
+    // Try full update; if coming_soon column doesn't exist yet, retry without it
+    const tryUpdate = async (f) => {
+      const updated = await updateShopProduct(id, f)
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, ...f, ...updated } : p))
+    }
     try {
-      const updated = await updateShopProduct(id, fields)
-      setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p))
+      await tryUpdate(fields)
     } catch (e) {
-      if (e?.message?.includes('coming_soon')) {
+      const msg = e?.message ?? ''
+      if (msg.includes('coming_soon') || msg.includes('column')) {
         const { coming_soon, ...rest } = fields
-        const updated = await updateShopProduct(id, rest)
-        setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p))
+        await tryUpdate(rest)
       } else {
         throw e
       }
