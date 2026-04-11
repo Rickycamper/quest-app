@@ -31,6 +31,18 @@ function fmtDateTime(iso) {
     + d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: true })
 }
 
+// Show start time as "Hoy 7:30 PM" or "Sáb 08 · 7:30 PM"
+function fmtStartTime(iso) {
+  const d   = new Date(iso)
+  const now = new Date()
+  const time = d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: true })
+  if (d.toDateString() === now.toDateString()) return `Hoy · ${time}`
+  const tom = new Date(now); tom.setDate(now.getDate() + 1)
+  if (d.toDateString() === tom.toDateString()) return `Mañana · ${time}`
+  const date = d.toLocaleDateString('es', { weekday: 'short', day: '2-digit', month: 'short' })
+  return `${date} · ${time}`
+}
+
 function Countdown({ targetMs }) {
   const [label, setLabel] = useState('')
   useEffect(() => {
@@ -175,9 +187,9 @@ function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
           )}
           <span style={{ fontSize: 10, color: isActive ? '#F87171' : '#6B7280', fontWeight: 600, flexShrink: 0 }}>
             {isActive
-              ? <Countdown targetMs={endMs} />
+              ? <><span style={{ marginRight: 3 }}>●</span><Countdown targetMs={endMs} /></>
               : isPast ? (status === 'cancelled' ? 'Cancelada' : 'Finalizada')
-              : <Countdown targetMs={startMs} />}
+              : fmtStartTime(auction.start_time)}
           </span>
         </div>
 
@@ -331,40 +343,39 @@ export default function AuctionScreen({ isStaff, onClose }) {
         ))}
       </div>
 
-      {/* TCG filter chips — shown only on Próximas tab */}
+      {/* TCG filter — shown only on Próximas tab */}
       {tab === 'upcoming' && (
-        <div style={{
-          display: 'flex', gap: 6, padding: '8px 16px 0',
-          overflowX: 'auto', scrollbarWidth: 'none', flexShrink: 0,
-        }}>
-          <button
-            onClick={() => setGameFilter(null)}
-            style={{
-              flexShrink: 0, padding: '4px 12px', borderRadius: 20,
-              border: `1px solid ${!gameFilter ? 'rgba(255,255,255,0.3)' : '#222'}`,
-              background: !gameFilter ? 'rgba(255,255,255,0.07)' : 'transparent',
-              color: !gameFilter ? '#FFF' : '#4B5563',
-              fontSize: 11, fontWeight: 600, cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
-            }}
-          >Todos</button>
-          {GAMES.map(g => {
-            const gs = GAME_STYLES[g]
-            const active = gameFilter === g
-            return (
-              <button key={g} onClick={() => setGameFilter(active ? null : g)} style={{
-                flexShrink: 0, padding: '4px 12px', borderRadius: 20,
-                border: `1px solid ${active ? gs.border : '#222'}`,
-                background: active ? gs.bg : 'transparent',
-                color: active ? gs.color : '#4B5563',
-                fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif',
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-              }}>
-                <GameIcon game={g} size={10} />{g}
-              </button>
-            )
-          })}
+        <div style={{ padding: '8px 14px 0', flexShrink: 0 }}>
+          <div style={{
+            background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
+            display: 'flex', alignItems: 'center', padding: '8px 10px', gap: 6,
+          }}>
+            <button onClick={() => setGameFilter(null)} style={{
+              flex: 1, height: 34, borderRadius: 8,
+              border: !gameFilter ? '1.5px solid rgba(255,255,255,0.35)' : '1.5px solid transparent',
+              background: !gameFilter ? 'rgba(255,255,255,0.1)' : 'transparent',
+              color: !gameFilter ? '#FFFFFF' : '#4B5563',
+              fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>ALL</button>
+            <div style={{ width: 1, height: 20, background: '#2A2A2A', flexShrink: 0 }} />
+            {GAMES.map(g => {
+              const gs = GAME_STYLES[g]
+              const active = gameFilter === g
+              return (
+                <button key={g} onClick={() => setGameFilter(active ? null : g)} title={g} style={{
+                  flex: 1, height: 34, borderRadius: 8,
+                  border: `1.5px solid ${active ? gs.border : 'transparent'}`,
+                  background: active ? gs.bg : 'transparent',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.18s, border-color 0.18s',
+                  boxShadow: active ? `0 0 10px ${gs.border}55` : 'none',
+                }}>
+                  <GameIcon game={g} size={18} />
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 

@@ -19,7 +19,12 @@
     <meta name="description" content="La comunidad TCG de Panamá — compite, colecciona y conecta." />
     <meta name="mobile-web-app-capable" content="yes" />
     <!-- Prevent white flash before React mounts -->
-    <style>html,body{background:#0A0A0A}</style>
+    <!-- Disable text selection & callout globally — prevents iOS "Copy/Look Up" popup on long-press -->
+    <style>
+      html,body{background:#0A0A0A}
+      *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+      input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
+    </style>
   </head>
   <body>
     <div id="root" style="background:#0A0A0A;min-height:100dvh;display:flex;flex-direction:column"></div>

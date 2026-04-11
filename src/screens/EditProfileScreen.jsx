@@ -4,7 +4,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { getProfile, updateProfile, uploadAvatar, signOut, deleteAccount } from '../lib/supabase'
 import { useToast } from '../components/Toast'
-import { BRANCHES } from '../lib/constants'
+import { BRANCHES, GAMES, GAME_STYLES } from '../lib/constants'
+import GameIcon from '../components/GameIcon'
 import { CameraIcon, MailIcon as MailIconShared } from '../components/Icons'
 
 function PhoneIcon() {
@@ -44,6 +45,8 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
   const [phone,         setPhone]         = useState('')
   const [email,         setEmail]         = useState('')
   const [branch,        setBranch]        = useState('')
+  const [tcgGames,      setTcgGames]      = useState([])
+  const [socialLinks,   setSocialLinks]   = useState({ instagram: '', tiktok: '', twitter: '', youtube: '' })
   const [avatarUrl,     setAvatarUrl]     = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [avatarFile,    setAvatarFile]    = useState(null)
@@ -63,6 +66,8 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
         setPhone(p.phone ?? '')
         setEmail(p.email ?? '')
         setBranch(p.branch ?? '')
+        setTcgGames(p.tcg_games ?? [])
+        setSocialLinks({ instagram: '', tiktok: '', twitter: '', youtube: '', ...(p.social_links ?? {}) })
         setAvatarUrl(p.avatar_url ?? null)
       })
       .catch(e => setError(e.message))
@@ -107,6 +112,8 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
         email:      email.trim() || null,
         branch:     branch || null,
         avatar_url: newAvatarUrl,
+        tcg_games:    tcgGames,
+        social_links: socialLinks,
       })
       onSaved?.(updated)
       toast('Perfil actualizado', { type: 'success' })
@@ -251,6 +258,41 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
           </select>
         )}
 
+        {/* ── TCG Games ── */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+            🎴 JUEGOS QUE JUEGO
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {GAMES.map(g => {
+              const gs = GAME_STYLES[g]
+              const active = tcgGames.includes(g)
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setTcgGames(prev =>
+                    prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
+                  )}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 12px', borderRadius: 20,
+                    border: `1.5px solid ${active ? gs.border : '#2A2A2A'}`,
+                    background: active ? gs.bg : 'transparent',
+                    color: active ? gs.color : '#4B5563',
+                    fontSize: 12, fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <GameIcon game={g} size={14} />
+                  {g}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         {/* ── Phone ── */}
         {fieldRow(
           <PhoneIcon />, 'TELÉFONO',
@@ -263,27 +305,37 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
           />
         )}
 
-        {/* ── Email ── */}
-        {fieldRow(
-          <MailIcon />, 'CORREO',
-          <input
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            style={{ ...inputStyle, width: '100%' }}
-            placeholder="tu@correo.com"
-            type="email"
-            autoCapitalize="none"
-          />
-        )}
-
-        {/* Info note */}
-        <div style={{
-          marginTop: 8, padding: '10px 14px', borderRadius: 8,
-          background: 'rgba(255,255,255,0.03)', border: '1px solid #1A1A1A',
-        }}>
-          <p style={{ fontSize: 11, color: '#4B5563', lineHeight: 1.6 }}>
-            Tu teléfono y correo solo son visibles para los admins de Quest para coordinar envíos y torneos.
-          </p>
+        {/* ── Social Links ── */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>
+            REDES SOCIALES
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { key: 'instagram', label: 'Instagram',  placeholder: 'tu_usuario',    color: '#E1306C', prefix: '@' },
+              { key: 'tiktok',    label: 'TikTok',     placeholder: 'tu_usuario',    color: '#69C9D0', prefix: '@' },
+              { key: 'twitter',   label: 'X / Twitter',placeholder: 'tu_usuario',    color: '#9CA3AF', prefix: '@' },
+              { key: 'youtube',   label: 'YouTube',    placeholder: 'tu_canal',      color: '#FF0000', prefix: '@' },
+            ].map(({ key, label, placeholder, color, prefix }) => (
+              <div key={key} style={{
+                display: 'flex', alignItems: 'center',
+                background: '#111111', border: '1px solid #222', borderRadius: 10, overflow: 'hidden',
+              }}>
+                <span style={{ padding: '0 6px 0 14px', fontSize: 12, fontWeight: 700, color, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {label}
+                </span>
+                <span style={{ color: '#4B5563', fontSize: 14, paddingRight: 2, flexShrink: 0 }}>{prefix}</span>
+                <input
+                  value={socialLinks[key]}
+                  onChange={e => setSocialLinks(prev => ({ ...prev, [key]: e.target.value.replace(/\s/g, '').replace(/^@/, '') }))}
+                  style={{ ...inputStyle, border: 'none', borderRadius: 0, flex: 1 }}
+                  placeholder={placeholder}
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ── Zona de cuenta ── */}

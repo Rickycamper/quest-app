@@ -1,25 +1,98 @@
 // ─────────────────────────────────────────────
 // QUEST — CreateAuctionModal (staff/admin only)
 // ─────────────────────────────────────────────
-import { useState, useRef } from 'react'
-import { createAuction, uploadAuctionImage } from '../lib/supabase'
+import { useState, useRef, useEffect } from 'react'
+import { createAuction, uploadAuctionImage, getAuctions } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
 import { useAuth } from '../context/AuthContext'
 
+// ── Helpers ────────────────────────────────────
+function snapTo5(time) {
+  if (!time) return time
+  const [h, m] = time.split(':').map(Number)
+  const snapped = Math.round(m / 5) * 5
+  if (snapped >= 60) return `${String(h + 1).padStart(2, '0')}:00`
+  return `${String(h).padStart(2, '0')}:${String(snapped).padStart(2, '0')}`
+}
+
+function isSameSlot(isoA, isoB) {
+  if (!isoA || !isoB) return false
+  const a = new Date(isoA), b = new Date(isoB)
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth()    === b.getMonth()    &&
+    a.getDate()     === b.getDate()     &&
+    a.getHours()    === b.getHours()    &&
+    a.getMinutes()  === b.getMinutes()
+}
+
+function findNextFreeSlot(date, time, auctions) {
+  if (!date || !time) return null
+  let [h, m] = time.split(':').map(Number)
+  // Start one slot ahead
+  m += 5; if (m >= 60) { h += 1; m = 0 }
+  for (let i = 0; i < 96; i++) {  // max 8 hours ahead
+    const t = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+    const iso = new Date(`${date}T${t}`).toISOString()
+    const taken = auctions.some(a => a.status !== 'ended' && a.status !== 'cancelled' && isSameSlot(a.start_time, iso))
+    if (!taken) return t
+    m += 5; if (m >= 60) { h += 1; m = 0 }
+    if (h >= 24) break
+  }
+  return null
+}
+
+function fmt12(time) {
+  if (!time) return ''
+  const [h, m] = time.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12  = h % 12 || 12
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`
+}
+
 export default function CreateAuctionModal({ onClose, onCreated }) {
   const { profile } = useAuth()
-  const [title,      setTitle]      = useState('')
-  const [game,       setGame]       = useState(GAMES[0])
-  const [minBid,     setMinBid]     = useState('')
-  const [startDate,  setStartDate]  = useState(new Date().toISOString().slice(0, 10))
-  const [startTime,  setStartTime]  = useState('')
-  const [imageFile,  setImageFile]  = useState(null)
+  const [title,        setTitle]        = useState('')
+  const [game,         setGame]         = useState(GAMES[0])
+  const [minBid,       setMinBid]       = useState('')
+  const [startDate,    setStartDate]    = useState(new Date().toISOString().slice(0, 10))
+  const [startTime,    setStartTime]    = useState('')
+  const [imageFile,    setImageFile]    = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
-  const [saving,     setSaving]     = useState(false)
-  const [error,      setError]      = useState('')
-  const [done,       setDone]       = useState(false)
+  const [saving,       setSaving]       = useState(false)
+  const [error,        setError]        = useState('')
+  const [done,         setDone]         = useState(false)
+  const [auctions,     setAuctions]     = useState([])
+  const [conflict,     setConflict]     = useState(null)   // null | { nextFree: '8:05' | null }
   const fileRef = useRef()
+
+  // Load existing auctions once for conflict detection
+  useEffect(() => {
+    getAuctions().then(setAuctions).catch(() => {})
+  }, [])
+
+  // Check conflict whenever date or time changes
+  useEffect(() => {
+    if (!startDate || !startTime) { setConflict(null); return }
+    const iso = new Date(`${startDate}T${startTime}`).toISOString()
+    const taken = auctions.some(a =>
+      a.status !== 'ended' && a.status !== 'cancelled' && isSameSlot(a.start_time, iso)
+    )
+    if (taken) {
+      setConflict({ nextFree: findNextFreeSlot(startDate, startTime, auctions) })
+    } else {
+      setConflict(null)
+    }
+  }, [startDate, startTime, auctions])
+
+  const handleTimeChange = (raw) => {
+    const snapped = snapTo5(raw)
+    setStartTime(snapped)
+  }
+
+  const useNextFree = () => {
+    if (conflict?.nextFree) setStartTime(conflict.nextFree)
+  }
 
   const handleImage = (e) => {
     const file = e.target.files?.[0]
@@ -33,9 +106,14 @@ export default function CreateAuctionModal({ onClose, onCreated }) {
     if (!imageFile)                { setError('Sube una imagen'); return }
     if (!minBid || +minBid < 1)   { setError('Bid mínimo debe ser al menos $1'); return }
     if (!startDate || !startTime) { setError('Ingresa la fecha y hora de inicio'); return }
+    if (conflict)                  { setError('Ese horario ya está ocupado'); return }
 
     const startISO = new Date(`${startDate}T${startTime}`).toISOString()
     if (new Date(startISO) <= new Date()) { setError('La hora de inicio debe ser en el futuro'); return }
+
+    // Final minutes validation — must be multiple of 5
+    const mins = new Date(startISO).getMinutes()
+    if (mins % 5 !== 0) { setError('La hora debe ser en intervalos de 5 minutos'); return }
 
     setSaving(true); setError('')
     try {
@@ -77,7 +155,17 @@ export default function CreateAuctionModal({ onClose, onCreated }) {
           color: '#6B7280', fontSize: 20, padding: '0 4px 0 0', lineHeight: 1,
         }}>←</button>
         <span style={{ fontSize: 16, fontWeight: 800, color: '#FFF' }}>Nueva Subasta</span>
-        <span style={{ fontSize: 12, color: '#4B5563', marginLeft: 'auto' }}>⏱ 5 min fijos</span>
+        {/* 5-min indicator */}
+        <div style={{
+          marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
+          background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.25)',
+          borderRadius: 8, padding: '3px 9px',
+        }}>
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="#FB923C" strokeWidth="0">
+            <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zm.75 2.75v3.69l2.53 2.53-1.06 1.06-2.72-2.72V4.25h1.25z"/>
+          </svg>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#FB923C' }}>Intervalos de 5 min</span>
+        </div>
       </div>
 
       {/* Body */}
@@ -175,28 +263,95 @@ export default function CreateAuctionModal({ onClose, onCreated }) {
               </div>
             </div>
 
-            {/* Start date + time */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
-              <div style={{ flex: 1 }}>
-                <span style={labelStyle}>FECHA DE INICIO</span>
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                  style={{ ...inputStyle, colorScheme: 'dark' }} />
+            {/* Start date + time — compact row */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {/* Date */}
+                <div style={{ flex: 1.1 }}>
+                  <span style={labelStyle}>FECHA</span>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    style={{
+                      width: '100%', padding: '8px 10px', boxSizing: 'border-box',
+                      background: '#111', border: '1px solid #222', borderRadius: 10,
+                      color: '#FFF', fontSize: 13, fontFamily: 'Inter, sans-serif',
+                      outline: 'none', colorScheme: 'dark',
+                    }}
+                  />
+                </div>
+                {/* Time */}
+                <div style={{ flex: 1 }}>
+                  <span style={labelStyle}>HORA · 5 min</span>
+                  <input
+                    type="time"
+                    step="300"
+                    value={startTime}
+                    onChange={e => handleTimeChange(e.target.value)}
+                    style={{
+                      width: '100%', padding: '8px 10px', boxSizing: 'border-box',
+                      background: '#111', borderRadius: 10, colorScheme: 'dark',
+                      color: '#FFF', fontSize: 13, fontFamily: 'Inter, sans-serif',
+                      outline: 'none',
+                      border: conflict
+                        ? '1.5px solid rgba(239,68,68,0.55)'
+                        : startTime
+                          ? '1.5px solid rgba(74,222,128,0.4)'
+                          : '1px solid #222',
+                      transition: 'border-color 0.15s',
+                    }}
+                  />
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <span style={labelStyle}>HORA DE INICIO</span>
-                <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
-                  style={{ ...inputStyle, colorScheme: 'dark' }} />
+
+              {/* Status area — fixed height so layout never shifts */}
+              <div style={{ minHeight: 28, marginTop: 6, display: 'flex', alignItems: 'center' }}>
+                {conflict ? (
+                  <div style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '6px 10px', borderRadius: 8,
+                    background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="#F87171" strokeWidth="0" style={{ flexShrink: 0 }}>
+                      <path d="M5.55 4.57v1.47h4.9V4.57C10.45 3.22 9.35 2.12 8 2.12S5.55 3.22 5.55 4.57Zm-1.96 1.47V4.57C3.59 2.14 5.57.16 8 .16s4.41 1.98 4.41 4.41v1.47h.49c1.08 0 1.96.88 1.96 1.96v5.88c0 1.08-.88 1.96-1.96 1.96H3.1c-1.08 0-1.96-.88-1.96-1.96V8c0-1.08.88-1.96 1.96-1.96h.49Z"/>
+                    </svg>
+                    <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: '#F87171', fontFamily: 'Inter, sans-serif' }}>
+                      {fmt12(startTime)} ocupado
+                      {conflict.nextFree ? ` · libre: ${fmt12(conflict.nextFree)}` : ''}
+                    </span>
+                    {conflict.nextFree && (
+                      <button onClick={useNextFree} style={{
+                        flexShrink: 0, padding: '3px 9px', borderRadius: 6, border: 'none',
+                        background: 'rgba(74,222,128,0.12)', color: '#4ADE80',
+                        fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                      }}>
+                        Usar {fmt12(conflict.nextFree)}
+                      </button>
+                    )}
+                  </div>
+                ) : startTime ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, paddingLeft: 2 }}>
+                    <svg width="10" height="10" viewBox="0 0 16 16" fill="#4ADE80" strokeWidth="0">
+                      <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/>
+                    </svg>
+                    <span style={{ fontSize: 11, color: '#4ADE80', fontFamily: 'Inter, sans-serif' }}>
+                      Disponible — {fmt12(startTime)}
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </div>
 
-            <button onClick={handleSubmit} disabled={saving} style={{
+            <button onClick={handleSubmit} disabled={saving || !!conflict} style={{
               width: '100%', padding: 14, borderRadius: 12, border: 'none',
-              background: saving ? '#1A1A1A' : '#FFFFFF',
-              color: saving ? '#555' : '#111',
-              fontSize: 15, fontWeight: 700, cursor: saving ? 'default' : 'pointer',
+              background: (saving || conflict) ? '#1A1A1A' : '#FFFFFF',
+              color: (saving || conflict) ? '#555' : '#111',
+              fontSize: 15, fontWeight: 700,
+              cursor: (saving || conflict) ? 'default' : 'pointer',
               fontFamily: 'Inter, sans-serif',
             }}>
-              {saving ? 'Subiendo...' : '🔨 Programar subasta'}
+              {saving ? 'Subiendo...' : conflict ? 'Elige otro horario' : '🔨 Programar subasta'}
             </button>
           </>
         )}

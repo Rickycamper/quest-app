@@ -3,7 +3,7 @@
 // Staff/Admin panel: review & approve claims
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getPendingClaims, reviewClaim, getAdminUsers, setUserPremium, getPendingArrivalPackages, confirmPackageArrival, rejectPackageArrival, updatePackageStatus, getTournaments, deleteTournament, getPackageStats } from '../lib/supabase'
+import { supabase, getPendingClaims, reviewClaim, getAdminUsers, setUserPremium, getPendingArrivalPackages, confirmPackageArrival, rejectPackageArrival, updatePackageStatus, getTournaments, deleteTournament, getPackageStats, getPendingRedemptions, approveRedemption, rejectRedemption } from '../lib/supabase'
 import { GAME_STYLES } from '../lib/constants'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
@@ -552,6 +552,88 @@ function TournamentsAdminTab({ adminBranch }) {
 }
 
 // ── Shipping stats tab ─────────────────────────
+// ── Q Points tab ───────────────────────────────
+function QPointsTab() {
+  const [redemptions, setRedemptions] = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [busy, setBusy]               = useState({})
+
+  const load = () => {
+    setLoading(true)
+    getPendingRedemptions()
+      .then(setRedemptions)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
+  useEffect(() => { load() }, [])
+
+  const handle = async (id, approve, note = '') => {
+    setBusy(b => ({ ...b, [id]: true }))
+    try {
+      if (approve) await approveRedemption(id)
+      else await rejectRedemption(id, note)
+      setRedemptions(r => r.filter(x => x.id !== id))
+    } catch {}
+    setBusy(b => ({ ...b, [id]: false }))
+  }
+
+  if (loading) return (
+    <div style={{ textAlign: 'center', padding: 40 }}>
+      <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+    </div>
+  )
+
+  if (redemptions.length === 0) return (
+    <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+      <div style={{ fontSize: 36, marginBottom: 12 }}>🪙</div>
+      <div style={{ fontSize: 15, color: '#4B5563', fontWeight: 600 }}>Sin canjes pendientes</div>
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 4 }}>
+        CANJES PENDIENTES ({redemptions.length})
+      </div>
+      {redemptions.map(r => (
+        <div key={r.id} style={{ background: '#1A1A1A', borderRadius: 12, padding: '12px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', background: '#2A2A2A', flexShrink: 0 }}>
+              <Avatar url={r.profiles?.avatar_url} size={36} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>@{r.profiles?.username}</div>
+              <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>
+                {new Date(r.created_at).toLocaleDateString('es-PA')}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#FBBF24', fontFamily: 'Inter, sans-serif' }}>🪙 {r.points}</div>
+              <div style={{ fontSize: 12, color: '#4ADE80', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>${(r.points / 1000).toFixed(2)}</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              disabled={busy[r.id]}
+              onClick={() => handle(r.id, true)}
+              style={{ flex: 1, padding: '9px 0', borderRadius: 8, background: '#4ADE80', border: 'none', color: '#111', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+            >
+              ✓ Aprobar
+            </button>
+            <button
+              disabled={busy[r.id]}
+              onClick={() => handle(r.id, false, 'Rechazado por admin')}
+              style={{ flex: 1, padding: '9px 0', borderRadius: 8, background: 'transparent', border: '1.5px solid #374151', color: '#9CA3AF', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+            >
+              ✕ Rechazar
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function StatsTab() {
   const [rows,    setRows]    = useState([])
   const [loading, setLoading] = useState(true)
@@ -738,6 +820,12 @@ export default function AdminScreen({ onClose }) {
         <button style={tabStyle('stats')} onClick={() => setTab('stats')}>
           Stats
         </button>
+        <button style={tabStyle('qpoints')} onClick={() => setTab('qpoints')}>
+          🪙 Q pts
+        </button>
+        <button style={tabStyle('articles')} onClick={() => setTab('articles')}>
+          📰 RSS
+        </button>
       </div>
 
       {/* Body */}
@@ -815,7 +903,80 @@ export default function AdminScreen({ onClose }) {
           </>
         )}
 
+        {tab === 'qpoints' && <QPointsTab />}
+
+        {tab === 'articles' && <ArticlesTab />}
+
       </div>
+    </div>
+  )
+}
+
+function ArticlesTab() {
+  const [busy,   setBusy]   = useState(false)
+  const [result, setResult] = useState(null)
+  const [error,  setError]  = useState('')
+
+  const refresh = async () => {
+    setBusy(true); setError(''); setResult(null)
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-articles', { body: {} })
+      if (error) throw error
+      setResult(data?.results ?? [])
+    } catch (e) {
+      setError(e?.message ?? String(e))
+    }
+    setBusy(false)
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 14 }}>
+        ARTÍCULOS RSS
+      </div>
+      <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, marginBottom: 16 }}>
+        Carga artículos de MTGGoldfish, Wizards, PokeBeach y más. Aparecen en el feed cuando filtrás por juego.
+      </p>
+      <button
+        onClick={refresh}
+        disabled={busy}
+        style={{
+          width: '100%', padding: '12px 0', borderRadius: 10,
+          background: busy ? '#1A1A1A' : '#FFFFFF',
+          border: 'none', color: busy ? '#555' : '#111',
+          fontSize: 14, fontWeight: 700, cursor: busy ? 'default' : 'pointer',
+          fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}
+      >
+        {busy
+          ? <><div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#666', animation: 'spin 0.7s linear infinite' }} /> Cargando artículos...</>
+          : '🔄 Actualizar artículos ahora'
+        }
+      </button>
+      {error && (
+        <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13 }}>
+          {error}
+        </div>
+      )}
+      {result && (
+        <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {result.map((r, i) => (
+            <div key={i} style={{
+              padding: '10px 12px', borderRadius: 10,
+              background: r.error ? 'rgba(239,68,68,0.05)' : 'rgba(74,222,128,0.05)',
+              border: `1px solid ${r.error ? 'rgba(239,68,68,0.15)' : 'rgba(74,222,128,0.15)'}`,
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: r.error ? '#F87171' : '#4ADE80' }}>
+                {r.source}
+              </div>
+              <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>
+                {r.error ? `Error: ${r.error}` : `${r.count} artículos importados`}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

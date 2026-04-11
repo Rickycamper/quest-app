@@ -52,6 +52,27 @@ export function AuthProvider({ children }) {
     return () => { subscription.unsubscribe(); clearTimeout(timeout) }
   }, [])
 
+  // ── Realtime: keep q_points (and profile) in sync ──────────────
+  // When award_points RPC updates the profiles row, push the new
+  // values straight into state so the header coin counter updates
+  // without requiring a manual refresh.
+  useEffect(() => {
+    if (!user?.id) return
+    const ch = supabase
+      .channel(`profile-sync-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        (payload) => {
+          if (payload.new) {
+            setProfile(prev => prev ? { ...prev, ...payload.new } : payload.new)
+          }
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [user?.id])
+
   const isOwner = profile?.is_owner === true
   const isStaff = profile?.role === 'staff' || profile?.role === 'admin' || isOwner
   const isAdmin = profile?.role === 'admin' || isOwner

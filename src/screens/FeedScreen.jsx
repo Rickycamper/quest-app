@@ -3,8 +3,9 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
+import { useGuest } from '../App'
 import { supabase } from '../lib/supabase'
-import { getFeed, getUserLikedPosts, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost } from '../lib/supabase'
+import { getFeed, getUserLikedPosts, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost, getArticles } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, RoleBadge, BoltIcon } from '../components/Icons'
@@ -123,6 +124,7 @@ function ImageCarousel({ images }) {
   const translateX = -slide * 100
   const stripStyle = {
     display: 'flex', willChange: 'transform',
+    alignItems: 'center',   // center shorter images vertically without stretching them
     transform: dragging
       ? `translateX(calc(${translateX}% + ${dragX}px))`
       : `translateX(${translateX}%)`,
@@ -134,7 +136,8 @@ function ImageCarousel({ images }) {
       ref={trackRef}
       style={{
         borderRadius: 10, overflow: 'hidden', marginBottom: 14,
-        background: '#111111', position: 'relative',
+        background: '#0A0A0A', position: 'relative',
+        maxHeight: 450,
         userSelect: 'none', touchAction: 'pan-y',
         cursor: images.length > 1 ? (dragging ? 'grabbing' : 'grab') : 'default',
       }}
@@ -151,7 +154,7 @@ function ImageCarousel({ images }) {
             src={src}
             alt=""
             draggable={false}
-            style={{ width: '100%', flexShrink: 0, height: 'auto', display: 'block', pointerEvents: 'none' }}
+            style={{ width: '100%', flexShrink: 0, height: '100%', maxHeight: 450, objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
           />
         ))}
       </div>
@@ -308,7 +311,8 @@ function VideoPlayer({ src }) {
   )
 }
 
-function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onViewProfile, onDeleted }) {
+function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onViewProfile, onDeleted, animDelay = 0 }) {
+  const { requireAuth } = useGuest()
   const [liked,          setLiked]         = useState(post.user_has_liked ?? false)
   const [likeAnim,       setLikeAnim]      = useState(false)
   const [saved,          setSaved]         = useState(false)
@@ -392,10 +396,10 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   }
 
   const handleDelete = async () => {
-    // Admin deleting someone else's post — ask for confirmation
-    if (!isOwnPost && isStaff) {
-      if (!window.confirm(`¿Eliminar el post de @${post.profiles?.username ?? 'este usuario'}?`)) return
-    }
+    if (!window.confirm(isOwnPost
+      ? '¿Eliminar tu post?'
+      : `¿Eliminar el post de @${post.profiles?.username ?? 'este usuario'}?`
+    )) return
     setShowMenu(false)
     setDeleting(true)
     try { await deletePost(post.id); onDeleted?.(post.id) } catch {}
@@ -408,7 +412,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   const canDelete  = isOwnPost || isStaff
   const isFollowed = following?.has(authorId)
 
-  const handleLike = async () => {
+  const handleLike = () => requireAuth(async () => {
     if (likeBusy) return
     setLikeBusy(true)
     const nowLiked = !liked
@@ -422,7 +426,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
     }
     try { await toggleLike(post.id) } catch { setLiked(!nowLiked); setLikes(l => nowLiked ? l - 1 : l + 1) }
     setLikeBusy(false)
-  }
+  })
 
   const handleSave = async () => {
     if (saveBusy) return
@@ -443,10 +447,17 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   }
 
   return (
-    <div style={{ borderBottom: '1px solid #1A1A1A', padding: '16px 20px', animation: 'fadeUp 0.3s ease both' }}>
+    <div style={{
+      background: '#111111',
+      border: '1px solid #1E1E1E',
+      borderRadius: 16,
+      padding: '14px 16px',
+      animation: 'fadeUp 0.3s ease both',
+      animationDelay: `${animDelay}ms`,
+    }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <div onClick={() => authorId && onViewProfile?.(authorId)} style={{
+        <div onClick={() => authorId && requireAuth(() => onViewProfile?.(authorId))} style={{
           width: 36, height: 36, borderRadius: '50%',
           background: '#1F1F1F', border: '1.5px solid #2A2A2A',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0,
@@ -458,7 +469,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           {/* Text block */}
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span onClick={() => authorId && onViewProfile?.(authorId)}
+              <span onClick={() => authorId && requireAuth(() => onViewProfile?.(authorId))}
                 style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', cursor: authorId ? 'pointer' : 'default', flexShrink: 0 }}>
                 @{post.profiles?.username ?? 'user'}
               </span>
@@ -541,8 +552,8 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
         if (imgs.length === 0) return null
         if (imgs.length === 1 && IS_VIDEO_URL.test(imgs[0])) return <VideoPlayer src={imgs[0]} />
         if (imgs.length === 1) return (
-          <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 12, background: '#111111' }}>
-            <img src={imgs[0]} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} />
+          <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 12, background: '#0A0A0A', maxHeight: 450 }}>
+            <img src={imgs[0]} alt="" style={{ width: '100%', height: '100%', maxHeight: 450, objectFit: 'cover', display: 'block' }} />
           </div>
         )
         return <ImageCarousel images={imgs} />
@@ -573,18 +584,10 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
-          <p style={{ fontSize: 14, color: '#D1D5DB', lineHeight: 1.6, margin: 0, flex: 1 }}>
+        <div style={{ marginBottom: 14 }}>
+          <p style={{ fontSize: 14, color: '#D1D5DB', lineHeight: 1.6, margin: 0 }}>
             {captionLocal}
           </p>
-          {post.tag && (
-            <span style={{
-              padding: '2px 7px', borderRadius: 6, flexShrink: 0, marginTop: 2,
-              background: gs.bg, border: `1px solid ${gs.border}`,
-              color: gs.color, fontSize: 10, fontWeight: 600,
-              display: 'inline-flex', alignItems: 'center', gap: 3,
-            }}><GameIcon game={post.tag} size={11} />{post.tag}</span>
-          )}
         </div>
       )}
 
@@ -619,6 +622,12 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           {shared && <span style={{ fontSize: 11, color: '#4ADE80' }}>Copiado</span>}
         </button>
 
+        {/* Game icon — pushed to the right */}
+        {post.tag && (
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', opacity: 0.7 }}>
+            <GameIcon game={post.tag} size={18} />
+          </div>
+        )}
       </div>
       {/* Comments panel */}
       {showComments && (
@@ -683,8 +692,9 @@ const PULL_THRESHOLD = 65
 const PAGE_SIZE      = 8
 const cacheKey       = (g) => `q_feed_${g ?? 'all'}`
 
-export default function FeedScreen({ profile, isStaff, onViewProfile, refreshKey = 0 }) {
+export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, onPost, refreshKey = 0 }) {
   const [posts,       setPosts]      = useState([])
+  const [articles,    setArticles]   = useState([])
   const [game,        setGame]       = useState(null)
   const [loading,     setLoading]    = useState(true)
   const [bgRefresh,   setBgRefresh]  = useState(false)
@@ -762,6 +772,12 @@ export default function FeedScreen({ profile, isStaff, onViewProfile, refreshKey
       setBgRefresh(true)
     }
     setGame(g)
+    // Load articles for the selected game
+    if (g) {
+      getArticles(g).then(setArticles).catch(() => setArticles([]))
+    } else {
+      setArticles([])
+    }
   }
 
   const loadMore = useCallback(() => {
@@ -915,34 +931,104 @@ export default function FeedScreen({ profile, isStaff, onViewProfile, refreshKey
           {refreshing ? 'Actualizando…' : pullProgress >= 1 ? '↑ Soltá para recargar' : '↓ Jalá para recargar'}
         </div>
       )}
-      {/* Game filter */}
-      <div className="filter-scroll" style={{ padding: '12px 20px 4px' }}>
-        <button onClick={() => handleGameSwitch(null)} style={{
-          padding: '7px 16px', borderRadius: 8, flexShrink: 0,
-          border: `1.5px solid ${!game ? 'rgba(255,255,255,0.3)' : '#2A2A2A'}`,
-          background: !game ? 'rgba(255,255,255,0.08)' : 'transparent',
-          color: !game ? '#FFFFFF' : '#4B5563',
-          fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-        }}>All</button>
-        {GAMES.map(g => {
-          const gs = GAME_STYLES[g]
-          const active = game === g
-          return (
-            <button key={g} onClick={() => handleGameSwitch(active ? null : g)} style={{
-              padding: '7px 16px', borderRadius: 8, flexShrink: 0,
-              border: `1.5px solid ${active ? gs.border : '#2A2A2A'}`,
-              background: active ? gs.bg : 'transparent',
-              color: active ? gs.color : '#4B5563',
-              fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-            }}><GameIcon game={g} size={13} /> {g}</button>
-          )
-        })}
+      {/* Game filter — full-width icon strip for everyone */}
+      <div style={{ padding: '10px 14px 4px' }}>
+        <div style={{
+          background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
+          display: 'flex', alignItems: 'center', padding: '8px 10px', gap: 6,
+        }}>
+          <button onClick={() => handleGameSwitch(null)} style={{
+            flex: 1, height: 34, borderRadius: 8,
+            border: !game ? '1.5px solid rgba(255,255,255,0.35)' : '1.5px solid transparent',
+            background: !game ? 'rgba(255,255,255,0.1)' : 'transparent',
+            color: !game ? '#FFFFFF' : '#4B5563',
+            fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.18s, border-color 0.18s',
+            animation: !game ? 'iconPop 0.28s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+          }}>ALL</button>
+          <div style={{ width: 1, height: 20, background: '#2A2A2A', flexShrink: 0 }} />
+          {GAMES.map(g => {
+            const gs = GAME_STYLES[g]
+            const active = game === g
+            return (
+              <button key={g} onClick={() => handleGameSwitch(active ? null : g)} title={g} style={{
+                flex: 1, height: 34, borderRadius: 8,
+                border: `1.5px solid ${active ? gs.border : 'transparent'}`,
+                background: active ? gs.bg : 'transparent',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.18s, border-color 0.18s, box-shadow 0.18s',
+                boxShadow: active ? `0 0 10px ${gs.border}55` : 'none',
+                animation: active ? 'iconPop 0.28s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+              }}>
+                <GameIcon game={g} size={18} />
+              </button>
+            )
+          })}
+        </div>
       </div>
 
+      {/* ── Articles strip (shown when a game is selected and articles exist) ── */}
+      {articles.length > 0 && (
+        <div style={{ padding: '12px 0 4px' }}>
+          <div style={{ paddingLeft: 14, marginBottom: 8, fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.06em' }}>
+            NOTICIAS
+          </div>
+          <div className="filter-scroll" style={{ padding: '0 14px', gap: 10 }}>
+            {articles.map(a => {
+              const gs = GAME_STYLES[a.game] ?? {}
+              const ago = (() => {
+                if (!a.published_at) return ''
+                const d = Math.floor((Date.now() - new Date(a.published_at)) / 86400000)
+                return d === 0 ? 'hoy' : d === 1 ? 'ayer' : `${d}d`
+              })()
+              return (
+                <a
+                  key={a.id}
+                  href={a.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    flexShrink: 0, width: 200, borderRadius: 14, overflow: 'hidden',
+                    background: '#111', border: '1px solid #1E1E1E',
+                    display: 'flex', flexDirection: 'column',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {a.image_url ? (
+                    <div style={{ width: '100%', height: 100, overflow: 'hidden', background: '#0A0A0A', flexShrink: 0 }}>
+                      <img src={a.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    </div>
+                  ) : (
+                    <div style={{
+                      width: '100%', height: 100, flexShrink: 0,
+                      background: gs.bg ?? 'rgba(255,255,255,0.03)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <GameIcon game={a.game} size={32} />
+                    </div>
+                  )}
+                  <div style={{ padding: '10px 10px 12px', display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+                    <p style={{
+                      fontSize: 12, fontWeight: 700, color: '#E5E7EB', lineHeight: 1.4, margin: 0,
+                      display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    }}>{a.title}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 6 }}>
+                      <span style={{ fontSize: 10, color: gs.color ?? '#6B7280', fontWeight: 600 }}>{a.source_name}</span>
+                      {ago && <span style={{ fontSize: 10, color: '#374151' }}>{ago}</span>}
+                    </div>
+                  </div>
+                </a>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {loading && (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 14px 0' }}>
           {[...Array(3)].map((_, i) => (
-            <div key={i} style={{ padding: '14px 16px', borderBottom: '1px solid #111' }}>
+            <div key={i} style={{ padding: '14px 16px', background: '#111111', border: '1px solid #1E1E1E', borderRadius: 16 }}>
               {/* Avatar + name row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <span style={sk(36, 36, 18)} />
@@ -987,25 +1073,28 @@ export default function FeedScreen({ profile, isStaff, onViewProfile, refreshKey
         </div>
       )}
 
-      {posts
-        .filter(post => {
-          if (post.caption?.includes('[PRIVADO]')) {
-            return post.profiles?.id === profile?.id || isStaff
-          }
-          return true
-        })
-        .map(post => (
-          <PostCard
-            key={post.id}
-            post={post}
-            currentUserId={profile?.id}
-            isStaff={isStaff}
-            following={following}
-            onFollowChange={handleFollowChange}
-            onViewProfile={onViewProfile}
-            onDeleted={handleDeleted}
-          />
-        ))}
+      <div key={game ?? '__all'} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 14px 0' }}>
+        {posts
+          .filter(post => {
+            if (post.caption?.includes('[PRIVADO]')) {
+              return post.profiles?.id === profile?.id || isStaff
+            }
+            return true
+          })
+          .map((post, i) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              animDelay={Math.min(i * 40, 240)}
+              currentUserId={profile?.id}
+              isStaff={isStaff}
+              following={following}
+              onFollowChange={handleFollowChange}
+              onViewProfile={onViewProfile}
+              onDeleted={handleDeleted}
+            />
+          ))}
+      </div>
 
       {/* Infinite scroll sentinel */}
       <div ref={sentinelRef} style={{ height: 1 }} />

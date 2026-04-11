@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import {
+  supabase,
   getAuctionBids, getAuctionChat, placeBid,
   endAuction, sendAuctionChat,
   subscribeToAuctionBids, subscribeToAuctionChat,
@@ -18,36 +19,80 @@ function fmtAmt(n) {
   return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// Dynamic bid increment based on current price
+function getBidIncrement(currentPrice) {
+  const p = Number(currentPrice)
+  if (p < 15)   return 0.50
+  if (p < 50)   return 1.00
+  if (p < 100)  return 2.00
+  if (p < 200)  return 5.00
+  return 10.00
+}
+
 // Isolated timer component — only THIS re-renders every 250ms, not the whole screen
-const LiveTimer = memo(function LiveTimer({ endTimeMs, isActive }) {
-  const [display, setDisplay] = useState('--:--')
-  const [color,   setColor]   = useState('#4ADE80')
+// Format diff ms → "3h 45m" when ≥1h, "MM:SS" when <1h
+function fmtDiff(diff) {
+  if (diff <= 0) return '00:00'
+  const h = Math.floor(diff / 3600000)
+  const m = Math.floor((diff % 3600000) / 60000)
+  const s = Math.floor((diff % 60000) / 1000)
+  if (h > 0) return `${h}h ${String(m).padStart(2,'0')}m`
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+}
+
+const LiveTimer = memo(function LiveTimer({ startTimeMs, endTimeMs, isActive }) {
+  const [display,   setDisplay]   = useState('--:--')
+  const [color,     setColor]     = useState('#9CA3AF')
+  const [isPending, setIsPending] = useState(() => Date.now() < startTimeMs)
 
   useEffect(() => {
-    if (!isActive) { setDisplay('FIN'); setColor('#F87171'); return }
     const tick = () => {
-      const diff = Math.max(0, endTimeMs - Date.now())
-      const secs = Math.ceil(diff / 1000)
-      const m = Math.floor(secs / 60)
-      const s = secs % 60
-      setDisplay(`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`)
+      const now = Date.now()
+      if (now < startTimeMs) {
+        setIsPending(true)
+        setDisplay(fmtDiff(startTimeMs - now))
+        setColor('#9CA3AF')
+        return
+      }
+      setIsPending(false)
+      if (!isActive) { setDisplay('FIN'); setColor('#F87171'); return }
+      const diff = Math.max(0, endTimeMs - now)
+      setDisplay(fmtDiff(diff))
       setColor(diff < 30000 ? '#F87171' : diff < 60000 ? '#FB923C' : '#4ADE80')
     }
     tick()
     const id = setInterval(tick, 250)
     return () => clearInterval(id)
-  }, [endTimeMs, isActive])
+  }, [startTimeMs, endTimeMs, isActive])
+
+  const trulyLive = isActive && !isPending
 
   return (
     <div style={{
-      padding: '6px 12px', borderRadius: 10, textAlign: 'center', flexShrink: 0,
-      background: isActive ? 'rgba(0,0,0,0.4)' : 'rgba(239,68,68,0.1)',
-      border: `1.5px solid ${isActive ? color + '55' : 'rgba(239,68,68,0.3)'}`,
+      padding: '5px 12px 7px', borderRadius: 10, textAlign: 'center', flexShrink: 0,
+      background: trulyLive ? 'rgba(239,68,68,0.08)' : 'rgba(0,0,0,0.4)',
+      border: `1.5px solid ${trulyLive ? color + '66' : '#2A2A2A'}`,
     }}>
+      {trulyLive && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+          fontSize: 9, fontWeight: 900, color: '#EF4444', letterSpacing: '0.12em', marginBottom: 2,
+        }}>
+          <span style={{
+            width: 5, height: 5, borderRadius: '50%', background: '#EF4444',
+            display: 'inline-block', animation: 'pulse 1s infinite',
+          }} />
+          LIVE
+        </div>
+      )}
+      {isPending && (
+        <div style={{ fontSize: 9, fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', marginBottom: 2 }}>
+          PRONTO
+        </div>
+      )}
       <div style={{ fontSize: 18, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
         {display}
       </div>
-      {isActive && <div style={{ fontSize: 9, color: '#4B5563', fontWeight: 700, marginTop: 2 }}>EN VIVO</div>}
     </div>
   )
 })
@@ -63,6 +108,8 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
   const [bidding,     setBidding]     = useState(false)
   const [bidErr,      setBidErr]      = useState('')
   const [bidSuccess,  setBidSuccess]  = useState(false)
+  const [confirmBid,  setConfirmBid]  = useState(false)
+  const confirmTimer  = useRef(null)
   const [ended,       setEnded]       = useState(false)
   const [imgRatio,    setImgRatio]    = useState(null)  // natural w/h ratio
   const [viewImg,     setViewImg]     = useState(false) // full-screen image viewer
@@ -72,24 +119,58 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
   const chatEndRef    = useRef(null)
   const endedRef      = useRef(false)
 
-  // endTimeMs is stable — compute once
-  const endTimeMs  = useRef(new Date(auction.start_time).getTime() + auction.duration_seconds * 1000).current
-  const [isActive, setIsActive] = useState(() => Date.now() < endTimeMs)
+  // startTimeMs is stable; endTimeMs is reactive (sniper bids can extend it)
+  const startTimeMs                   = useRef(new Date(auction.start_time).getTime()).current
+  const [endTimeMs, setEndTimeMs]     = useState(() => startTimeMs + auction.duration_seconds * 1000)
+  const [sniperFlash, setSniperFlash] = useState(false) // ⚡ +5s badge
+  // isActive = auction has started AND not yet ended
+  const [isActive, setIsActive] = useState(() => Date.now() >= startTimeMs && Date.now() < endTimeMs)
   const gs = auction.game ? (GAME_STYLES[auction.game] ?? GAME_STYLES['MTG']) : null
 
-  // One-shot timeout flips isActive — no polling in parent
+  // Flip isActive at the right moments (re-runs when endTimeMs changes)
   useEffect(() => {
-    const ms = endTimeMs - Date.now()
-    if (ms <= 0) { setIsActive(false); return }
-    const id = setTimeout(() => setIsActive(false), ms)
-    return () => clearTimeout(id)
-  }, [endTimeMs])
+    const now = Date.now()
+    const ids = []
+    if (now < startTimeMs) {
+      ids.push(setTimeout(() => setIsActive(true),  startTimeMs - now))
+      ids.push(setTimeout(() => setIsActive(false), endTimeMs   - now))
+    } else if (now < endTimeMs) {
+      ids.push(setTimeout(() => setIsActive(false), endTimeMs - now))
+    } else {
+      setIsActive(false)
+    }
+    return () => ids.forEach(clearTimeout)
+  }, [startTimeMs, endTimeMs])
+
+  // Realtime: sync duration_seconds extension from other users' sniper bids
+  useEffect(() => {
+    const ch = supabase
+      .channel(`auction-sniper-${auction.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'auctions',
+        filter: `id=eq.${auction.id}`,
+      }, (payload) => {
+        const newDur = payload.new?.duration_seconds
+        const oldDur = payload.old?.duration_seconds
+        if (newDur && newDur !== oldDur) {
+          setEndTimeMs(startTimeMs + newDur * 1000)
+          setSniperFlash(true)
+          setTimeout(() => setSniperFlash(false), 3000)
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [auction.id, startTimeMs])
 
   // Derived bid stats — only recompute when bids change
   const sortedBids = useMemo(() => [...bids].sort((a, b) => b.amount - a.amount), [bids])
   const topBid     = sortedBids[0] ?? null
   const isUnlocked = useMemo(() => !!(topBid && Number(topBid.amount) >= Number(auction.min_bid)), [topBid, auction.min_bid])
-  const minNext    = useMemo(() => topBid ? Number(topBid.amount) + 1 : Number(auction.min_bid), [topBid, auction.min_bid])
+  const minNext    = useMemo(() => {
+    if (!topBid) return Number(auction.min_bid)
+    const current = Number(topBid.amount)
+    return +(current + getBidIncrement(current)).toFixed(2)
+  }, [topBid, auction.min_bid])
 
   // ── Load initial data ─────────────────────
   useEffect(() => {
@@ -155,7 +236,13 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
     setBidding(true); setBidErr(''); setBidSuccess(false)
     lastBidTime.current = now
     try {
-      await placeBid(auction.id, parseFloat(amount))
+      const result = await placeBid(auction.id, parseFloat(amount))
+      // result is now jsonb: { amount, sniped, duration_seconds }
+      if (result?.sniped && result?.duration_seconds) {
+        setEndTimeMs(startTimeMs + result.duration_seconds * 1000)
+        setSniperFlash(true)
+        setTimeout(() => setSniperFlash(false), 3000)
+      }
       const fresh = await getAuctionBids(auction.id)
       setBids(fresh)
       setBidSuccess(true)
@@ -165,7 +252,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
       setBidErr(e.message || 'Error al pujar')
     }
     setBidding(false)
-  }, [auction.id, isActive, minNext])
+  }, [auction.id, isActive, minNext, startTimeMs])
 
   // ── Send chat ─────────────────────────────
   const handleSendChat = async () => {
@@ -216,7 +303,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
           )}
         </div>
 
-        <LiveTimer endTimeMs={endTimeMs} isActive={isActive} />
+        <LiveTimer startTimeMs={startTimeMs} endTimeMs={endTimeMs} isActive={isActive} />
       </div>
 
       {/* ── Scrollable body ── */}
@@ -478,6 +565,21 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
       }}>
         {isActive ? (
           <>
+            {/* ⚡ Sniper protection banner */}
+            {sniperFlash && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                marginBottom: 8, padding: '7px 14px', borderRadius: 10,
+                background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.35)',
+                animation: 'pulse 0.6s ease',
+              }}>
+                <span style={{ fontSize: 15 }}>⚡</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#FCD34D', letterSpacing: '0.04em' }}>
+                  ¡Sniper! +5 segundos añadidos
+                </span>
+              </div>
+            )}
+
             {/* Bid error */}
             {bidErr && (
               <div style={{ fontSize: 11, color: '#F87171', marginBottom: 6, textAlign: 'center' }}>{bidErr}</div>
@@ -494,10 +596,10 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
                   color: '#4B5563', fontSize: 14, fontWeight: 700, pointerEvents: 'none',
                 }}>$</span>
                 <input
-                  type="number" min={minNext} step="1"
+                  type="number" min={minNext} step={getBidIncrement(topBid?.amount ?? 0)}
                   value={customAmt}
-                  onChange={e => { setCustomAmt(e.target.value); setBidErr('') }}
-                  placeholder={String(Math.ceil(minNext))}
+                  onChange={e => { setCustomAmt(e.target.value); setBidErr(''); setConfirmBid(false); clearTimeout(confirmTimer.current) }}
+                  placeholder={String(minNext)}
                   onKeyDown={e => e.key === 'Enter' && handleBid(customAmt || minNext)}
                   style={{
                     width: '100%', padding: '13px 10px 13px 26px',
@@ -509,16 +611,27 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
                 />
               </div>
               <button
-                onClick={() => handleBid(customAmt || minNext)}
+                onClick={() => {
+                  if (!confirmBid) {
+                    setConfirmBid(true)
+                    clearTimeout(confirmTimer.current)
+                    confirmTimer.current = setTimeout(() => setConfirmBid(false), 3000)
+                    return
+                  }
+                  clearTimeout(confirmTimer.current)
+                  setConfirmBid(false)
+                  handleBid(customAmt || minNext)
+                }}
                 disabled={bidding}
                 style={{
                   flexShrink: 0, padding: '13px 18px', borderRadius: 12, border: 'none',
-                  background: bidding ? '#1A1A1A' : '#FFFFFF',
-                  color: bidding ? '#555' : '#111',
+                  background: bidding ? '#1A1A1A' : confirmBid ? '#F59E0B' : '#FFFFFF',
+                  color: bidding ? '#555' : confirmBid ? '#000' : '#111',
                   fontSize: 14, fontWeight: 800, cursor: bidding ? 'default' : 'pointer',
                   fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
+                  transition: 'background 0.15s, color 0.15s',
                 }}>
-                {bidding ? '…' : `🔨 ${fmtAmt(customAmt && +customAmt >= minNext ? +customAmt : minNext)}`}
+                {bidding ? '…' : confirmBid ? '¿Confirmar?' : `🔨 ${fmtAmt(customAmt && +customAmt >= minNext ? +customAmt : minNext)}`}
               </button>
             </div>
 

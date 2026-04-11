@@ -1,14 +1,31 @@
 // ─────────────────────────────────────────────
 // QUEST — RankingsScreen
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef } from 'react'
-import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament } from '../lib/supabase'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
-import { PremiumBadge, RoleBadge, MapPinIcon } from '../components/Icons'
+import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon } from '../components/Icons'
+
+// ── Inline icons (16×16, fill, strokeWidth 0) ─────────
+const UserPlusIcon = ({ size = 14, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill={color} strokeWidth="0">
+    <path d="M6 8c2.21 0 4-1.79 4-4S8.21 0 6 0 2 1.79 2 4s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zm9-4v-2h-2V2h-2V0h2V-2h2v2h2v2h-2z" />
+  </svg>
+)
+const CheckIcon = ({ size = 12, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill={color} strokeWidth="0">
+    <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/>
+  </svg>
+)
+const PencilIcon = ({ size = 12, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill={color} strokeWidth="0">
+    <path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354l-1.086-1.086zM11.189 6.25 9.75 4.81l-6.286 6.287a.25.25 0 0 0-.064.108l-.558 1.953 1.953-.558a.249.249 0 0 0 .108-.064l6.286-6.286z"/>
+  </svg>
+)
 
 const PTS = { 1: 3, 2: 2, 3: 1 }
 
@@ -259,10 +276,46 @@ function TournamentCard({ t, index, onViewProfile, isAdmin }) {
   const [savingSched,  setSavingSched]  = useState(false)
   const [schedErr,     setSchedErr]     = useState('')
 
+  // Derived values — declared first so hooks below can depend on them
   const gs           = GAME_STYLES[t.game] ?? GAME_STYLES['MTG']
   const bs           = BRANCH_STYLES[t.branch] ?? { color: '#6B7280', bg: 'rgba(107,114,128,0.10)', border: 'rgba(107,114,128,0.25)', dot: '#6B7280' }
   const top3         = (t.tournament_results ?? []).sort((a, b) => a.position - b.position).slice(0, 3)
   const participants = t.tournament_participants ?? []
+
+  // ── Invite panel ──────────────────────────────
+  const [showInvite,   setShowInvite]   = useState(false)
+  const [inviteQuery,  setInviteQuery]  = useState('')
+  const [inviteList,   setInviteList]   = useState([])
+  const [inviteLoading,setInviteLoading]= useState(false)
+  const [invitedIds,   setInvitedIds]   = useState({}) // userId → true
+  const inviteRef = useRef(null)
+
+  const doInviteSearch = useCallback(async (q) => {
+    setInviteLoading(true)
+    try {
+      const all = await searchUsers(q)
+      const enrolledSet = new Set(participants.map(p => p.user_id))
+      setInviteList(all.filter(u => !enrolledSet.has(u.id)))
+    } catch { setInviteList([]) }
+    setInviteLoading(false)
+  }, [participants])
+
+  useEffect(() => {
+    if (!showInvite) return
+    const timer = setTimeout(() => doInviteSearch(inviteQuery), 250)
+    return () => clearTimeout(timer)
+  }, [inviteQuery, showInvite, doInviteSearch])
+
+  const handleInvite = async (user) => {
+    if (invitedIds[user.id]) return
+    setInvitedIds(prev => ({ ...prev, [user.id]: 'sending' }))
+    try {
+      await inviteTournament(t.id, t.name, user.id)
+      setInvitedIds(prev => ({ ...prev, [user.id]: 'sent' }))
+    } catch {
+      setInvitedIds(prev => ({ ...prev, [user.id]: false }))
+    }
+  }
   const joinedCount  = participants.length
   const isJoined     = participants.some(p => p.user_id === profile?.id)
   const now          = new Date()
@@ -499,15 +552,113 @@ function TournamentCard({ t, index, onViewProfile, isAdmin }) {
             </div>
           )}
 
-          {/* Admin — edit schedule */}
+          {/* ── Invite panel — visible to ALL users on upcoming tournaments ── */}
+          {!isPast && (
+            <div style={{ borderTop: '1px solid #161616', padding: '8px 14px 10px' }}>
+              {/* Toggle button */}
+              <button
+                onClick={() => { setShowInvite(v => !v); setInviteQuery(''); setInvitedIds({}) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 8,
+                  background: showInvite ? 'rgba(52,211,153,0.12)' : 'rgba(52,211,153,0.06)',
+                  border: `1px solid ${showInvite ? 'rgba(52,211,153,0.35)' : 'rgba(52,211,153,0.15)'}`,
+                  color: '#34D399', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <UserPlusIcon size={13} color="#34D399" />
+                Invitar jugadores
+              </button>
+
+              {/* Search + results */}
+              {showInvite && (
+                <div style={{ marginTop: 8, animation: 'fadeUp 0.15s ease' }}>
+                  {/* Search input with icon */}
+                  <div style={{ position: 'relative', marginBottom: 6 }}>
+                    <div style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.4 }}>
+                      <SearchIcon size={13} color="#9CA3AF" />
+                    </div>
+                    <input
+                      ref={inviteRef}
+                      value={inviteQuery}
+                      onChange={e => setInviteQuery(e.target.value)}
+                      placeholder="Buscar jugador…"
+                      autoFocus
+                      style={{
+                        width: '100%', padding: '7px 10px 7px 28px', borderRadius: 8, boxSizing: 'border-box',
+                        background: '#0A0A0A', border: '1px solid #222', color: '#FFF',
+                        fontSize: 12, outline: 'none', fontFamily: 'Inter, sans-serif',
+                      }}
+                    />
+                  </div>
+
+                  {inviteLoading && (
+                    <div style={{ fontSize: 11, color: '#4B5563', padding: '4px 2px', fontFamily: 'Inter, sans-serif' }}>Buscando…</div>
+                  )}
+                  {!inviteLoading && inviteList.length === 0 && (
+                    <div style={{ fontSize: 11, color: '#374151', padding: '4px 2px', fontFamily: 'Inter, sans-serif' }}>
+                      {inviteQuery ? 'Sin resultados' : 'Escribe para buscar'}
+                    </div>
+                  )}
+
+                  <div style={{ maxHeight: 190, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {inviteList.slice(0, 20).map(user => {
+                      const state = invitedIds[user.id]
+                      return (
+                        <div key={user.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '6px 4px', borderRadius: 8,
+                        }}>
+                          {/* Avatar */}
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0, border: '1px solid #2A2A2A' }}>
+                            <Avatar url={user.avatar_url} size={28} />
+                          </div>
+                          <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#D1D5DB', fontFamily: 'Inter, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            @{user.username}
+                          </span>
+                          {/* Invite button */}
+                          <button
+                            onClick={() => handleInvite(user)}
+                            disabled={!!state}
+                            style={{
+                              flexShrink: 0,
+                              display: 'flex', alignItems: 'center', gap: 4,
+                              padding: '4px 10px', borderRadius: 6,
+                              border: `1px solid ${state === 'sent' ? 'rgba(52,211,153,0.3)' : state === 'sending' ? '#222' : 'rgba(52,211,153,0.2)'}`,
+                              background: state === 'sent' ? 'rgba(52,211,153,0.1)' : state === 'sending' ? 'transparent' : 'rgba(52,211,153,0.08)',
+                              color: state === 'sent' ? '#34D399' : state === 'sending' ? '#4B5563' : '#34D399',
+                              fontSize: 10, fontWeight: 700, cursor: state ? 'default' : 'pointer',
+                              fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
+                            }}
+                          >
+                            {state === 'sent'
+                              ? <><CheckIcon size={10} color="#34D399" /> Enviado</>
+                              : state === 'sending' ? '…'
+                              : <><UserPlusIcon size={10} color="#34D399" /> Invitar</>}
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Admin — edit schedule only ── */}
           {isAdmin && (
-            <div style={{ padding: '10px 14px 12px', borderTop: '1px solid #161616', marginTop: 4 }}>
+            <div style={{ padding: '8px 14px 12px', borderTop: '1px solid #161616' }}>
               {!editingSched ? (
                 <button onClick={openEdit} style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
                   fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 8,
                   background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)',
                   color: '#A78BFA', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                }}>✏️ Editar horario / cupos</button>
+                }}>
+                  <PencilIcon size={11} color="#A78BFA" />
+                  Editar horario / cupos
+                </button>
               ) : (
                 <div style={{ animation: 'fadeUp 0.15s ease' }}>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
@@ -530,11 +681,14 @@ function TournamentCard({ t, index, onViewProfile, isAdmin }) {
                   {schedErr && <div style={{ fontSize: 11, color: '#F87171', marginBottom: 6 }}>{schedErr}</div>}
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button onClick={saveSchedule} disabled={savingSched} style={{
-                      flex: 1, padding: '7px', borderRadius: 8, border: 'none',
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                      padding: '7px', borderRadius: 8, border: 'none',
                       background: 'rgba(74,222,128,0.12)', color: '#4ADE80',
                       fontSize: 12, fontWeight: 700, cursor: savingSched ? 'default' : 'pointer',
                       opacity: savingSched ? 0.5 : 1, fontFamily: 'Inter, sans-serif',
-                    }}>{savingSched ? 'Guardando…' : '✓ Guardar'}</button>
+                    }}>
+                      {savingSched ? '…' : <><CheckIcon size={11} color="#4ADE80" /> Guardar</>}
+                    </button>
                     <button onClick={() => setEditingSched(false)} disabled={savingSched} style={{
                       padding: '7px 14px', borderRadius: 8, border: 'none',
                       background: 'rgba(239,68,68,0.08)', color: '#F87171',
@@ -795,40 +949,62 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
       {/* Filters — game + branch */}
       {true && (
         <>
-          <div className="filter-scroll" style={{ padding: '8px 20px 0' }}>
-            {GAMES.map(g => {
-              const gs = GAME_STYLES[g]
-              const active = game === g
-              return (
-                <button key={g} onClick={() => setGame(active ? null : g)} style={{
-                  padding: '5px 12px', borderRadius: 8, flexShrink: 0,
-                  border: `1px solid ${active ? gs.border : '#2A2A2A'}`,
-                  background: active ? gs.bg : 'transparent',
-                  color: active ? gs.color : '#4B5563',
-                  fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                }}><GameIcon game={g} size={12} />{g}</button>
-              )
-            })}
+          <div style={{ padding: '8px 14px 0' }}>
+            <div style={{
+              background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
+              display: 'flex', alignItems: 'center', padding: '8px 10px', gap: 6,
+            }}>
+              <button onClick={() => setGame(null)} style={{
+                flex: 1, height: 34, borderRadius: 8,
+                border: !game ? '1.5px solid rgba(255,255,255,0.35)' : '1.5px solid transparent',
+                background: !game ? 'rgba(255,255,255,0.1)' : 'transparent',
+                color: !game ? '#FFFFFF' : '#4B5563',
+                fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>ALL</button>
+              <div style={{ width: 1, height: 20, background: '#2A2A2A', flexShrink: 0 }} />
+              {GAMES.map(g => {
+                const gs = GAME_STYLES[g]
+                const active = game === g
+                return (
+                  <button key={g} onClick={() => setGame(active ? null : g)} title={g} style={{
+                    flex: 1, height: 34, borderRadius: 8,
+                    border: `1.5px solid ${active ? gs.border : 'transparent'}`,
+                    background: active ? gs.bg : 'transparent',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 0.18s, border-color 0.18s',
+                    boxShadow: active ? `0 0 10px ${gs.border}55` : 'none',
+                  }}>
+                    <GameIcon game={g} size={18} />
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <div className="filter-scroll" style={{ padding: '6px 20px 4px' }}>
-            {['', ...BRANCHES].map(b => {
-              const bStyle = b ? BRANCH_STYLES[b] : null
-              const active = branch === (b || null)
-              return (
-                <button key={b} onClick={() => setBranch(b || null)} style={{
-                  padding: '5px 12px', borderRadius: 8, flexShrink: 0,
-                  border: `1px solid ${active ? (bStyle?.border ?? 'rgba(255,255,255,0.2)') : '#2A2A2A'}`,
-                  background: active ? (bStyle?.bg ?? 'rgba(255,255,255,0.07)') : 'transparent',
-                  color: active ? (bStyle?.color ?? '#FFFFFF') : '#4B5563',
-                  fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                }}>
-                  {bStyle && <span style={{ width: 6, height: 6, borderRadius: '50%', background: active ? bStyle.dot : '#374151', flexShrink: 0, transition: 'background 0.15s' }} />}
-                  {b || 'Global'}
-                </button>
-              )
-            })}
+          <div style={{ padding: '6px 14px 4px' }}>
+            <div style={{
+              background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
+              display: 'flex', alignItems: 'center', padding: '6px 8px', gap: 4,
+            }}>
+              {['', ...BRANCHES].map(b => {
+                const bStyle = b ? BRANCH_STYLES[b] : null
+                const active = branch === (b || null)
+                return (
+                  <button key={b} onClick={() => setBranch(b || null)} style={{
+                    flex: 1, height: 32, borderRadius: 8,
+                    border: `1.5px solid ${active ? (bStyle?.border ?? 'rgba(255,255,255,0.35)') : 'transparent'}`,
+                    background: active ? (bStyle?.bg ?? 'rgba(255,255,255,0.1)') : 'transparent',
+                    color: active ? (bStyle?.color ?? '#FFFFFF') : '#4B5563',
+                    fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                    transition: 'background 0.18s, border-color 0.18s',
+                  }}>
+                    {bStyle && <span style={{ width: 5, height: 5, borderRadius: '50%', background: active ? bStyle.dot : '#374151', flexShrink: 0, transition: 'background 0.15s' }} />}
+                    {b || 'Global'}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </>
       )}
