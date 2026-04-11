@@ -451,7 +451,32 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
           {isOwner ? (
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em' }}>PRECIO (USD)</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em' }}>PRECIO (USD)</div>
+                  {/* Refresh from TCGPlayer */}
+                  {(product.sku?.startsWith('SCRYFALL-') || product.sku?.startsWith('PKMN-')) && (
+                    <button onClick={async () => {
+                      try {
+                        let newPrice = null
+                        if (product.sku.startsWith('SCRYFALL-')) {
+                          const id = product.sku.replace('SCRYFALL-', '')
+                          const r = await fetch(`https://api.scryfall.com/cards/${id}`)
+                          const d = await r.json()
+                          newPrice = d.prices?.usd
+                        } else {
+                          const id = product.sku.replace('PKMN-', '')
+                          const r = await fetch(`https://api.pokemontcg.io/v2/cards/${id}?select=tcgplayer`)
+                          const d = await r.json()
+                          newPrice = d.data?.tcgplayer?.prices?.normal?.market ?? d.data?.tcgplayer?.prices?.holofoil?.market
+                        }
+                        if (newPrice) { setPrice(String(newPrice)); setAskPrice(false) }
+                        else alert('No se encontró precio actualizado')
+                      } catch { alert('Error al actualizar precio') }
+                    }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 9, fontWeight: 700, color: '#4ADE80', padding: 0 }}>
+                      🔄 TCGPlayer
+                    </button>
+                  )}
+                </div>
                 <button onClick={() => setAskPrice(v => !v)} style={{
                   background: 'none', border: 'none', cursor: 'pointer', padding: 0,
                   fontSize: 10, fontWeight: 700, color: askPrice ? '#A78BFA' : '#4B5563',
@@ -682,10 +707,15 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
   const [panama,      setPanama]      = useState('0')
   const [chitre,      setChitre]      = useState('0')
   const [imageUrl,    setImageUrl]    = useState('')
+  const [cardSearch,     setCardSearch]     = useState('')
+  const [pokemonResults, setPokemonResults] = useState([])
   const [fetching,    setFetching]    = useState(false)
   const [saving,      setSaving]      = useState(false)
   const [err,         setErr]         = useState('')
 
+  const isSingle = category === 'single'
+
+  // Coqui fetch (sealed)
   const handleFetch = async () => {
     if (!sku.trim()) return
     setFetching(true)
@@ -699,6 +729,49 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
       }
     } catch {}
     setFetching(false)
+  }
+
+  // Scryfall fetch (MTG singles) → TCGPlayer price
+  const handleScryfallSearch = async () => {
+    if (!cardSearch.trim()) return
+    setFetching(true); setPokemonResults([])
+    try {
+      const res = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(cardSearch.trim())}`)
+      const data = await res.json()
+      if (data.object === 'card') {
+        setName(data.name)
+        const img = data.image_uris?.normal ?? data.card_faces?.[0]?.image_uris?.normal
+        if (img) setImageUrl(img)
+        if (data.prices?.usd) { setPrice(data.prices.usd); setAskPrice(false) }
+        setSku(`SCRYFALL-${data.id}`)
+      } else {
+        alert(data.details || 'Carta no encontrada en Scryfall')
+      }
+    } catch { alert('Error al buscar en Scryfall') }
+    setFetching(false)
+  }
+
+  // Pokemon TCG API (singles) → TCGPlayer price
+  const handlePokemonSearch = async () => {
+    if (!cardSearch.trim()) return
+    setFetching(true); setPokemonResults([])
+    try {
+      const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(cardSearch.trim())}"&pageSize=8&select=id,name,images,tcgplayer,set`)
+      const data = await res.json()
+      setPokemonResults(data.data ?? [])
+      if (!data.data?.length) alert('Carta no encontrada')
+    } catch { alert('Error al buscar Pokémon') }
+    setFetching(false)
+  }
+
+  const selectPokemonCard = (card) => {
+    setName(`${card.name} (${card.set?.name ?? ''})`)
+    if (card.images?.large) setImageUrl(card.images.large)
+    const mkt = card.tcgplayer?.prices?.normal?.market ?? card.tcgplayer?.prices?.holofoil?.market
+    if (mkt) { setPrice(String(mkt)); setAskPrice(false) }
+    setSku(`PKMN-${card.id}`)
+    setPokemonResults([])
+    setCardSearch('')
   }
 
   const handleAdd = async () => {
@@ -788,19 +861,63 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
           </div>
         )}
 
-        {/* SKU — optional */}
-        <div>
-          <FL>SKU Coqui (opcional — para auto-buscar imagen y nombre)</FL>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input value={sku} onChange={e => setSku(e.target.value.toUpperCase())}
-              placeholder="ej: WOCD5168SP" style={inp} />
-            <button onClick={handleFetch} disabled={!sku.trim() || fetching} style={{
-              padding: '10px 12px', borderRadius: 10, border: '1px solid #2A2A2A',
-              background: '#1A1A1A', color: '#A78BFA', fontSize: 11, fontWeight: 700,
-              cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
-            }}>{fetching ? '…' : '🔍 Buscar'}</button>
+        {/* Smart search: Coqui for sealed, Scryfall/Pokemon for singles */}
+        {!isSingle ? (
+          <div>
+            <FL>SKU Coqui (opcional — auto-busca imagen y nombre)</FL>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input value={sku} onChange={e => setSku(e.target.value.toUpperCase())}
+                placeholder="ej: WOCD5168SP" style={inp} />
+              <button onClick={handleFetch} disabled={!sku.trim() || fetching} style={{
+                padding: '10px 12px', borderRadius: 10, border: '1px solid #2A2A2A',
+                background: '#1A1A1A', color: '#A78BFA', fontSize: 11, fontWeight: 700,
+                cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
+              }}>{fetching ? '…' : '🔍 Buscar'}</button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div>
+            <FL>
+              {game === 'MTG'     ? 'Nombre de carta (TCGPlayer via Scryfall)' :
+               game === 'Pokemon' ? 'Nombre de carta (TCGPlayer via PokémonTCG)' :
+               'Buscar carta (opcional)'}
+            </FL>
+            <div style={{ position: 'relative' }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: pokemonResults.length ? 0 : undefined }}>
+                <input value={cardSearch} onChange={e => setCardSearch(e.target.value)}
+                  placeholder={game === 'MTG' ? 'ej: Lightning Bolt' : game === 'Pokemon' ? 'ej: Charizard' : 'Nombre de carta'}
+                  onKeyDown={e => { if (e.key === 'Enter') game === 'MTG' ? handleScryfallSearch() : game === 'Pokemon' ? handlePokemonSearch() : null }}
+                  style={inp} />
+                <button
+                  onClick={game === 'MTG' ? handleScryfallSearch : game === 'Pokemon' ? handlePokemonSearch : undefined}
+                  disabled={!cardSearch.trim() || fetching || !['MTG','Pokemon'].includes(game)}
+                  style={{
+                    padding: '10px 12px', borderRadius: 10, border: '1px solid #2A2A2A',
+                    background: '#1A1A1A', color: '#4ADE80', fontSize: 11, fontWeight: 700,
+                    cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
+                  }}>{fetching ? '…' : '💰 TCGPlayer'}</button>
+              </div>
+              {/* Pokemon results picker */}
+              {pokemonResults.length > 0 && (
+                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 10, overflow: 'hidden', marginTop: 4 }}>
+                  {pokemonResults.map(c => {
+                    const mkt = c.tcgplayer?.prices?.normal?.market ?? c.tcgplayer?.prices?.holofoil?.market
+                    return (
+                      <div key={c.id} onClick={() => selectPokemonCard(c)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', cursor: 'pointer', borderBottom: '1px solid #222' }}>
+                        {c.images?.small && <img src={c.images.small} style={{ width: 30, height: 42, objectFit: 'contain', borderRadius: 3 }} />}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>{c.name}</div>
+                          <div style={{ fontSize: 10, color: '#6B7280' }}>{c.set?.name}</div>
+                        </div>
+                        {mkt && <span style={{ fontSize: 12, fontWeight: 800, color: '#4ADE80' }}>${mkt.toFixed(2)}</span>}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div>
           <FL>Nombre *</FL>
@@ -955,6 +1072,7 @@ export default function ShopScreen({ isOwner }) {
   const [gameFilter, setGameFilter] = useState(null)
   const [subFilter,  setSubFilter]  = useState(null)
   const [search,     setSearch]     = useState('')
+  const [sortBy,     setSortBy]     = useState('relevance')
   const searchRef = useRef(null)
 
   useEffect(() => {
@@ -965,7 +1083,7 @@ export default function ShopScreen({ isOwner }) {
 
   // Reset sub-filters when switching category
   const handleCategory = (c) => {
-    setCategory(c); setGameFilter(null); setSubFilter(null); setSearch('')
+    setCategory(c); setGameFilter(null); setSubFilter(null); setSearch(''); setSortBy('relevance')
   }
 
   const filtered = products.filter(p => {
@@ -977,6 +1095,10 @@ export default function ShopScreen({ isOwner }) {
     }
     if (category === 'accessory') return subFilter ? p.subcategory === subFilter : true
     return gameFilter ? p.game === gameFilter : true
+  }).sort((a, b) => {
+    if (sortBy === 'price_asc')  return (a.price || 0) - (b.price || 0)
+    if (sortBy === 'price_desc') return (b.price || 0) - (a.price || 0)
+    return (a.sort_order || 0) - (b.sort_order || 0)
   })
 
   const handleSave = useCallback(async (id, fields) => {
@@ -1074,13 +1196,31 @@ export default function ShopScreen({ isOwner }) {
 
       {/* ── Sub-filter ── */}
       {!search && (
-        <div style={{ padding: '0 16px', marginBottom: 14 }}>
+        <div style={{ padding: '0 16px', marginBottom: 10 }}>
           {category !== 'accessory'
             ? <GameFilter value={gameFilter} onChange={setGameFilter} />
             : <AccessoryFilter value={subFilter} onChange={setSubFilter} />
           }
         </div>
       )}
+
+      {/* ── Sort pills ── */}
+      <div style={{ padding: '0 16px', marginBottom: 14, display: 'flex', gap: 6 }}>
+        {[
+          { id: 'relevance',  label: 'Relevancia' },
+          { id: 'price_asc',  label: 'Precio ↑'   },
+          { id: 'price_desc', label: 'Precio ↓'   },
+        ].map(s => (
+          <button key={s.id} onClick={() => setSortBy(s.id)} style={{
+            padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
+            border: `1.5px solid ${sortBy === s.id ? '#FFF' : '#2A2A2A'}`,
+            background: sortBy === s.id ? '#FFF' : 'transparent',
+            color: sortBy === s.id ? '#111' : '#6B7280',
+            fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+            transition: 'all 0.15s',
+          }}>{s.label}</button>
+        ))}
+      </div>
 
       {/* ── Grid ── */}
       <div style={{ padding: '0 16px' }}>
