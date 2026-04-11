@@ -498,10 +498,9 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
           )}
 
           {/* ── Branch rows ── */}
-          {!comingSoon && (
-            <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 10 }}>
-                {isOwner ? 'INVENTARIO POR SUCURSAL' : 'DISPONIBILIDAD'}
+                {isOwner ? 'INVENTARIO POR SUCURSAL' : comingSoon ? 'UNIDADES EN CAMINO' : 'DISPONIBILIDAD'}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[['qty_david','David',david,setDavid],['qty_panama','Panamá',panama,setPanama],['qty_chitre','Chitré',chitre,setChitre]].map(([key, label, val, set]) => {
@@ -547,16 +546,13 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                 })}
               </div>
             </div>
-          )}
 
           {/* ── Owner: live status + total ── */}
           {isOwner && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, padding: '8px 12px', background: '#111', borderRadius: 8 }}>
               <div style={{ width: 7, height: 7, borderRadius: '50%', background: sl.dot }} />
               <span style={{ fontSize: 12, fontWeight: 700, color: sl.color }}>{sl.text}</span>
-              {!comingSoon && (
-                <span style={{ fontSize: 12, color: '#4B5563', marginLeft: 4 }}>· Total: {liveQty} uds</span>
-              )}
+              <span style={{ fontSize: 12, color: '#4B5563', marginLeft: 4 }}>· Total: {liveQty} uds</span>
             </div>
           )}
 
