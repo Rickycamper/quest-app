@@ -549,18 +549,38 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
             </div>
           )}
 
-          {/* ── Customer WA CTA ── */}
+          {/* ── Customer CTAs ── */}
           {!isOwner && (
-            <button onClick={handleAsk} disabled={comingSoon} style={{
-              width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
-              background: !comingSoon ? '#25D366' : '#1A1A1A',
-              color: !comingSoon ? '#FFF' : '#374151',
-              fontSize: 14, fontWeight: 800, cursor: !comingSoon ? 'pointer' : 'default',
-              fontFamily: 'Inter, sans-serif',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}>
-              <WAIcon size={15} /> Preguntar por WhatsApp
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* Reserve now — only when coming soon */}
+              {comingSoon && (
+                <button onClick={(e) => {
+                  e.stopPropagation()
+                  const text = `Hola! Quiero reservar: *${product.name}*. ¿Cuándo llega y cómo aparto uno?`
+                  window.open(`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(text)}`, '_blank')
+                }} style={{
+                  width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
+                  background: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
+                  color: '#111', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}>
+                  <WAIcon size={15} /> Reservar ahora
+                </button>
+              )}
+              {/* Ask / buy — always shown, disabled only if coming soon */}
+              <button onClick={handleAsk} disabled={comingSoon} style={{
+                width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
+                background: !comingSoon ? '#25D366' : '#111',
+                color: !comingSoon ? '#FFF' : '#374151',
+                fontSize: 14, fontWeight: 800, cursor: !comingSoon ? 'pointer' : 'default',
+                fontFamily: 'Inter, sans-serif',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                border: comingSoon ? '1px solid #1F1F1F' : 'none',
+              }}>
+                <WAIcon size={15} /> {comingSoon ? 'Disponible próximamente' : 'Preguntar por WhatsApp'}
+              </button>
+            </div>
           )}
         </div>
       </div>
