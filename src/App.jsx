@@ -210,8 +210,6 @@ function MainApp() {
   const lastScrollY  = useRef(0)
   const scrollRef    = useRef(null)
   const swipeOrigin  = useRef(null)
-  const screenMapRef = useRef(screenMap)
-  useEffect(() => { screenMapRef.current = screenMap }, [screenMap])
 
   // Swipe navigation — use native window listeners so iOS Safari doesn't
   // swallow the touch inside the scrollable screen-scroll container.
@@ -296,6 +294,10 @@ function MainApp() {
     folder:   <FolderScreen   profile={profile} />,
     search:   <SearchScreen   onViewProfile={handleViewProfile} />,
   }), [profile, isStaff, isOwner, handleViewProfile, feedRefreshKey])
+
+  // Must be declared AFTER screenMap to avoid TDZ
+  const screenMapRef = useRef(screenMap)
+  useEffect(() => { screenMapRef.current = screenMap }, [screenMap])
 
   const needsTerms = profile && !profile.terms_accepted_at
 
