@@ -1891,3 +1891,40 @@ export async function deleteShopProduct(id) {
     .eq('id', id)
   if (error) throw error
 }
+
+// ── Shop Reservations ─────────────────────────
+
+export async function getProductReservations(productId) {
+  const { data, error } = await supabase
+    .from('shop_reservations')
+    .select('id, qty, paid_pct, notes, created_at, user_id, profiles:user_id(id, username, avatar_url)')
+    .eq('product_id', productId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function createReservation({ productId, userId, qty, paidPct, notes, productName }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const { data, error } = await supabase
+    .from('shop_reservations')
+    .insert({ product_id: productId, user_id: userId, qty, paid_pct: paidPct, notes: notes || null, created_by: session?.user?.id })
+    .select('id, qty, paid_pct, notes, created_at, user_id, profiles:user_id(id, username, avatar_url)')
+    .single()
+  if (error) throw error
+  // Notify the customer
+  const paidLabel = paidPct === 100 ? '100% pagado ✅' : '50% de depósito recibido'
+  createNotification(
+    userId,
+    'shop_reservation',
+    '📦 Pre-order confirmado',
+    `Tu reserva de ${qty > 1 ? `${qty}x ` : ''}*${productName}* está registrada — ${paidLabel}. Te avisamos cuando esté listo.`,
+    { productId }
+  )
+  return data
+}
+
+export async function deleteReservation(id) {
+  const { error } = await supabase.from('shop_reservations').delete().eq('id', id)
+  if (error) throw error
+}
