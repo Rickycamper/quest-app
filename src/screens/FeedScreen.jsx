@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
-import { useGuest } from '../App'
+import { useGuest } from '../context/GuestContext'
 import { supabase } from '../lib/supabase'
 import { getFeed, getUserLikedPosts, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost, getArticles } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'

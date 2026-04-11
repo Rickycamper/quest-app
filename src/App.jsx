@@ -1,7 +1,8 @@
 // ─────────────────────────────────────────────
 // QUEST — App.jsx  (main router)
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext, Component } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, Component } from 'react'
+import { GuestContext, useGuest } from './context/GuestContext'
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null } }
@@ -101,9 +102,7 @@ const globalCSS = `
   button:not([disabled]):active { opacity: 0.72; }
 `
 
-// ── Guest Context ────────────────────────────────────────────────────────────
-export const GuestContext = createContext({ isGuest: false, requireAuth: (fn) => fn?.() })
-export const useGuest = () => useContext(GuestContext)
+// GuestContext + useGuest are in ./context/GuestContext.jsx (avoids circular imports)
 
 function GuestGateModal({ onLogin, onSignup, onClose }) {
   return (
