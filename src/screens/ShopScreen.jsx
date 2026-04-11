@@ -1098,6 +1098,8 @@ export default function ShopScreen({ isOwner }) {
   }).sort((a, b) => {
     if (sortBy === 'price_asc')  return (a.price || 0) - (b.price || 0)
     if (sortBy === 'price_desc') return (b.price || 0) - (a.price || 0)
+    if (sortBy === 'newest') return new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    if (sortBy === 'oldest') return new Date(a.created_at || 0) - new Date(b.created_at || 0)
     return (a.sort_order || 0) - (b.sort_order || 0)
   })
 
@@ -1204,22 +1206,31 @@ export default function ShopScreen({ isOwner }) {
         </div>
       )}
 
-      {/* ── Sort pills ── */}
-      <div style={{ padding: '0 16px', marginBottom: 14, display: 'flex', gap: 6 }}>
-        {[
-          { id: 'relevance',  label: 'Relevancia' },
-          { id: 'price_asc',  label: 'Precio ↑'   },
-          { id: 'price_desc', label: 'Precio ↓'   },
-        ].map(s => (
-          <button key={s.id} onClick={() => setSortBy(s.id)} style={{
-            padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
-            border: `1.5px solid ${sortBy === s.id ? '#FFF' : '#2A2A2A'}`,
-            background: sortBy === s.id ? '#FFF' : 'transparent',
-            color: sortBy === s.id ? '#111' : '#6B7280',
-            fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif',
-            transition: 'all 0.15s',
-          }}>{s.label}</button>
-        ))}
+      {/* ── Sort dropdown ── */}
+      <div style={{ padding: '0 16px', marginBottom: 14, display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ position: 'relative' }}>
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            style={{
+              appearance: 'none', WebkitAppearance: 'none',
+              background: '#111', border: '1px solid #2A2A2A',
+              borderRadius: 10, color: '#FFF', fontSize: 12, fontWeight: 700,
+              padding: '7px 30px 7px 12px', outline: 'none',
+              fontFamily: 'Inter, sans-serif', cursor: 'pointer',
+            }}
+          >
+            <option value="relevance">Relevancia</option>
+            <option value="newest">Más reciente</option>
+            <option value="oldest">Más viejo</option>
+            <option value="price_asc">Precio ↑</option>
+            <option value="price_desc">Precio ↓</option>
+          </select>
+          <svg style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+            width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M2 3.5L5 7L8 3.5" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
       </div>
 
       {/* ── Grid ── */}
