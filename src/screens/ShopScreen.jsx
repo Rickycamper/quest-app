@@ -637,13 +637,13 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
               )}
               {/* Ask / buy — always shown, disabled only if coming soon */}
               <button onClick={handleAsk} disabled={comingSoon} style={{
-                width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
+                width: '100%', padding: '14px 0', borderRadius: 12,
+                border: comingSoon ? '1px solid #1F1F1F' : 'none',
                 background: !comingSoon ? '#25D366' : '#111',
                 color: !comingSoon ? '#FFF' : '#374151',
                 fontSize: 14, fontWeight: 800, cursor: !comingSoon ? 'pointer' : 'default',
                 fontFamily: 'Inter, sans-serif',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                border: comingSoon ? '1px solid #1F1F1F' : 'none',
               }}>
                 <WAIcon size={15} /> {comingSoon ? 'Disponible próximamente' : 'Preguntar por WhatsApp'}
               </button>
