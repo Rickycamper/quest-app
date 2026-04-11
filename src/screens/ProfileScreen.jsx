@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getProfile, getUserPosts, getFollowCounts, toggleFollow, getFollowing, getHeadToHead, resetH2H } from '../lib/supabase'
+import { getProfile, getUserPosts, getFollowCounts, toggleFollow, getFollowing, getHeadToHead, resetH2H, getMyStats, redeemPoints } from '../lib/supabase'
 import { GAME_STYLES, BRANCH_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import { PremiumBadge, RoleBadge, MapPinIcon } from '../components/Icons'
@@ -36,7 +36,13 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
   const [isFollowing, setIsFollowing] = useState(false)
   const [h2h,       setH2h]       = useState(null)  // { wins, losses, total, matches }
   const [showH2H,   setShowH2H]   = useState(false)
-  const [loading,   setLoading]   = useState(true)
+  const [showStats,    setShowStats]    = useState(false)
+  const [myStats,      setMyStats]      = useState([])
+  const [showRedeem,   setShowRedeem]   = useState(false)
+  const [redeemAmt,    setRedeemAmt]    = useState(1000)
+  const [redeemBusy,   setRedeemBusy]  = useState(false)
+  const [redeemMsg,    setRedeemMsg]    = useState('')
+  const [loading,      setLoading]      = useState(true)
   const [loadError, setLoadError] = useState('')
   const [fBusy,     setFBusy]     = useState(false)
   const [selected,  setSelected]  = useState(null)  // post modal
@@ -53,13 +59,15 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
       getFollowCounts(userId),
       !isOwn ? getFollowing() : Promise.resolve(new Set()),
       !isOwn ? getHeadToHead(userId, isPremium).catch(() => null) : Promise.resolve(null),
-    ]).then(([prof, userPosts, cnt, followingSet, h2hData]) => {
+      isOwn  ? getMyStats().catch(() => []) : Promise.resolve([]),
+    ]).then(([prof, userPosts, cnt, followingSet, h2hData, statsData]) => {
       if (cancelled) return
       setProfile(prof)
       setPosts(userPosts)
       setCounts(cnt)
       setIsFollowing(followingSet.has(userId))
       setH2h(h2hData)
+      setMyStats(statsData)
     }).catch(e => {
       if (!cancelled) setLoadError(e?.message || 'Error al cargar el perfil')
     })
@@ -135,9 +143,9 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           </div>
 
           {/* Stats row */}
-          <div style={{ display: 'flex', gap: 20, flex: 1, paddingBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 16, flex: 1, paddingBottom: 4 }}>
             {[
-              { label: 'Posts',    value: posts.length },
+              { label: 'Posts',      value: posts.length },
               { label: 'Seguidores', value: counts.followers },
               { label: 'Siguiendo',  value: counts.following },
             ].map(s => (
@@ -146,6 +154,18 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
                 <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{s.label}</div>
               </div>
             ))}
+            {/* Q Points — shown on own profile */}
+            {isOwn && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: '#FBBF24', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                  <svg width={14} height={14} viewBox="0 0 16 16" fill="none">
+                    <path d="m14.281666666666666 6.706533333333333 -4.531466666666667 -5.809333333333333c-0.22759999999999997 -0.237 -0.5015333333333333 -0.42466666666666664 -0.8046666666666666 -0.5514666666666667 -0.30319999999999997 -0.1268 -0.6291333333333333 -0.18993333333333332 -0.9577333333333333 -0.18553333333333333 -0.32853333333333334 0.004399999999999999 -0.6527333333333333 0.07626666666666666 -0.9524 0.2112 -0.29966666666666664 0.13479999999999998 -0.5684666666666667 0.3298 -0.7895999999999999 0.5728666666666666l-4.507933333333333 5.762266666666666c-0.24953333333333333 0.38539999999999996 -0.38293333333333335 0.8344666666666667 -0.3841333333333333 1.2935999999999999 0.013066666666666666 0.4401333333333333 0.14593333333333333 0.8684 0.3841333333333333 1.2386666666666666l0.04706666666666666 0.05486666666666666 4.500066666666666 5.809333333333333c0.2215333333333333 0.23459999999999998 0.48906666666666665 0.4210666666666667 0.7857333333333334 0.5478666666666666 0.2967333333333333 0.1267333333333333 0.6163333333333333 0.19113333333333332 0.9390000000000001 0.18906666666666666 0.33359999999999995 -0.0002666666666666667 0.6635333333333333 -0.07013333333333333 0.9685333333333334 -0.2051333333333333 0.3051333333333333 -0.135 0.5786666666666667 -0.3321333333333333 0.8033333333333333 -0.5788l4.500066666666666 -5.762333333333332c0.24593333333333334 -0.38859999999999995 0.37259999999999993 -0.8408 0.36419999999999997 -1.3006 -0.0084 -0.4598 -0.15126666666666666 -0.9071333333333333 -0.41126666666666667 -1.2865333333333333h0.04706666666666666Z" fill="#FBBF24" strokeWidth="0"/>
+                  </svg>
+                  {profile?.q_points ?? 0}
+                </div>
+                <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Q Coins</div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -163,51 +183,141 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
               {profile.branch}
             </div>
           )}
+          {/* TCG games played */}
+          {profile?.tcg_games?.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+              {profile.tcg_games.map(g => {
+                const gs = GAME_STYLES[g]
+                return (
+                  <span key={g} title={g} style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: gs?.bg ?? 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${gs?.border ?? '#2A2A2A'}`,
+                  }}>
+                    <GameIcon game={g} size={14} />
+                  </span>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Social links */}
+          {(() => {
+            const sl = profile?.social_links ?? {}
+            const SOCIALS = [
+              { key: 'instagram', color: '#E1306C', url: h => `https://instagram.com/${h}`,
+                icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg> },
+              { key: 'tiktok',    color: '#69C9D0', url: h => `https://tiktok.com/@${h}`,
+                icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.16 8.16 0 0 0 4.77 1.52V6.75a4.85 4.85 0 0 1-1-.06z"/></svg> },
+              { key: 'twitter',   color: '#9CA3AF', url: h => `https://x.com/${h}`,
+                icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
+              { key: 'youtube',   color: '#FF0000', url: h => `https://youtube.com/@${h}`,
+                icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> },
+            ]
+            const active = SOCIALS.filter(s => sl[s.key]?.trim())
+            if (!active.length) return null
+            return (
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                {active.map(s => (
+                  <a key={s.key} href={s.url(sl[s.key])} target="_blank" rel="noopener noreferrer"
+                    style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.05)', border: '1px solid #2A2A2A',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: s.color, textDecoration: 'none', flexShrink: 0,
+                      transition: 'border-color 0.15s',
+                    }}
+                  >{s.icon}</a>
+                ))}
+              </div>
+            )
+          })()}
+
           {/* Contact info — only visible on own profile */}
-          {isOwn && (profile?.phone || profile?.email) && (
-            <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {profile.phone && (
-                <div style={{ fontSize: 12, color: '#4B5563' }}>📞 {profile.phone}</div>
-              )}
-              {profile.email && (
-                <div style={{ fontSize: 12, color: '#4B5563' }}>✉️ {profile.email}</div>
-              )}
+          {isOwn && profile?.phone && (
+            <div style={{ marginTop: 6 }}>
+              <div style={{ fontSize: 12, color: '#4B5563' }}>📞 {profile.phone}</div>
             </div>
           )}
         </div>
 
         {/* Action buttons */}
         {isOwn ? (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={onEditProfile} style={{
-              flex: 1, padding: '9px 0',
-              borderRadius: 8, background: 'transparent',
-              border: '1.5px solid #2A2A2A',
-              color: '#9CA3AF', fontSize: 13, fontWeight: 700,
-              cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-            }}>
-              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-              Editar perfil
-            </button>
-            {/* Log a duel from your own profile — search for opponent inside modal */}
-            <button
-              onClick={() => onVs?.()}
-              style={{
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={onEditProfile} style={{
                 flex: 1, padding: '9px 0',
                 borderRadius: 8, background: 'transparent',
                 border: '1.5px solid #2A2A2A',
-                color: '#FB923C', fontSize: 13, fontWeight: 700,
+                color: '#9CA3AF', fontSize: 13, fontWeight: 700,
                 cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                transition: 'all 0.15s',
-              }}
-            >
-              ⚔️ Duelo
-            </button>
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              }}>
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                Editar perfil
+              </button>
+              <button
+                onClick={() => onVs?.()}
+                style={{
+                  flex: 1, padding: '9px 0',
+                  borderRadius: 8, background: 'transparent',
+                  border: '1.5px solid #2A2A2A',
+                  color: '#FB923C', fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  transition: 'all 0.15s',
+                }}
+              >
+                ⚔️ Duelo
+              </button>
+            </div>
+            {/* Q Points redemption button — shown when user has ≥1000 pts */}
+            {(profile?.q_points ?? 0) >= 1000 && (
+              <button onClick={() => { setRedeemMsg(''); setShowRedeem(true) }} style={{
+                width: '100%', padding: '9px 14px',
+                borderRadius: 8, background: 'rgba(251,191,36,0.08)',
+                border: '1.5px solid rgba(251,191,36,0.3)',
+                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#FBBF24', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <svg width={12} height={12} viewBox="0 0 16 16" fill="none"><path d="m14.281666666666666 6.706533333333333 -4.531466666666667 -5.809333333333333c-0.22759999999999997 -0.237 -0.5015333333333333 -0.42466666666666664 -0.8046666666666666 -0.5514666666666667 -0.30319999999999997 -0.1268 -0.6291333333333333 -0.18993333333333332 -0.9577333333333333 -0.18553333333333333 -0.32853333333333334 0.004399999999999999 -0.6527333333333333 0.07626666666666666 -0.9524 0.2112 -0.29966666666666664 0.13479999999999998 -0.5684666666666667 0.3298 -0.7895999999999999 0.5728666666666666l-4.507933333333333 5.762266666666666c-0.24953333333333333 0.38539999999999996 -0.38293333333333335 0.8344666666666667 -0.3841333333333333 1.2935999999999999 0.013066666666666666 0.4401333333333333 0.14593333333333333 0.8684 0.3841333333333333 1.2386666666666666l0.04706666666666666 0.05486666666666666 4.500066666666666 5.809333333333333c0.2215333333333333 0.23459999999999998 0.48906666666666665 0.4210666666666667 0.7857333333333334 0.5478666666666666 0.2967333333333333 0.1267333333333333 0.6163333333333333 0.19113333333333332 0.9390000000000001 0.18906666666666666 0.33359999999999995 -0.0002666666666666667 0.6635333333333333 -0.07013333333333333 0.9685333333333334 -0.2051333333333333 0.3051333333333333 -0.135 0.5786666666666667 -0.3321333333333333 0.8033333333333333 -0.5788l4.500066666666666 -5.762333333333332c0.24593333333333334 -0.38859999999999995 0.37259999999999993 -0.8408 0.36419999999999997 -1.3006 -0.0084 -0.4598 -0.15126666666666666 -0.9071333333333333 -0.41126666666666667 -1.2865333333333333h0.04706666666666666Z" fill="#FBBF24" strokeWidth="0"/></svg>
+                  Canjear Q Coins
+                </span>
+                <span style={{ fontSize: 12, color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>
+                  {profile.q_points} pts = ${(profile.q_points / 1000).toFixed(2)}
+                </span>
+              </button>
+            )}
+
+            {/* Win rate stats button */}
+            {myStats.length > 0 && (
+              <button onClick={() => setShowStats(true)} style={{
+                width: '100%', padding: '9px 14px',
+                borderRadius: 8, background: 'rgba(74,222,128,0.06)',
+                border: '1.5px solid rgba(74,222,128,0.2)',
+                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#6B7280' }}>📊 Mi récord</span>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {myStats.slice(0, 3).map(s => {
+                    const pct = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0
+                    return (
+                      <span key={s.game} style={{ fontSize: 11, fontFamily: 'Inter, sans-serif' }}>
+                        <span style={{ color: '#9CA3AF', fontWeight: 600 }}>{s.game}</span>
+                        {' '}
+                        <span style={{ color: pct >= 50 ? '#4ADE80' : '#F87171', fontWeight: 800 }}>{pct}%</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              </button>
+            )}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -334,7 +444,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
                       background: 'rgba(0,0,0,0.6)', borderRadius: 4,
                       padding: '2px 5px', fontSize: 10, color: '#FFF',
                     }}>
-                      ❤️ {post.post_likes[0].count}
+                      ⚡ {post.post_likes[0].count}
                     </div>
                   )}
                 </div>
@@ -350,6 +460,127 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
       )}
 
       {/* H2H detail modal */}
+      {/* Q Points redemption modal */}
+      {showRedeem && (
+        <div onClick={() => !redeemBusy && setShowRedeem(false)} style={{
+          position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)',
+          display: 'flex', alignItems: 'flex-end', zIndex: 100,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            width: '100%', background: '#111111',
+            borderRadius: '20px 20px 0 0', padding: '20px 20px 36px',
+            animation: 'slideUp 0.22s ease',
+          }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#2A2A2A', margin: '0 auto 20px' }} />
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', marginBottom: 4 }}>Canjear Q Coins</div>
+            <div style={{ fontSize: 12, color: '#6B7280', fontFamily: 'Inter, sans-serif', marginBottom: 20 }}>
+              1000 Q Coins = $1.00 en crédito de tienda · Tienes {profile?.q_points ?? 0} Q Coins
+            </div>
+
+            {/* Amount selector */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              {[1000, 2000, 5000].filter(v => v <= (profile?.q_points ?? 0)).map(v => (
+                <button key={v} onClick={() => setRedeemAmt(v)} style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10,
+                  background: redeemAmt === v ? 'rgba(251,191,36,0.15)' : '#1A1A1A',
+                  border: `1.5px solid ${redeemAmt === v ? 'rgba(251,191,36,0.5)' : '#2A2A2A'}`,
+                  color: redeemAmt === v ? '#FBBF24' : '#6B7280',
+                  fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}>
+                  {v}<br />
+                  <span style={{ fontSize: 11, fontWeight: 600 }}>${(v / 1000).toFixed(2)}</span>
+                </button>
+              ))}
+            </div>
+
+            {redeemMsg && (
+              <div style={{ fontSize: 12, color: redeemMsg.startsWith('✅') ? '#4ADE80' : '#F87171', textAlign: 'center', marginBottom: 12, fontFamily: 'Inter, sans-serif' }}>
+                {redeemMsg}
+              </div>
+            )}
+
+            <button
+              disabled={redeemBusy || redeemAmt > (profile?.q_points ?? 0)}
+              onClick={async () => {
+                setRedeemBusy(true)
+                setRedeemMsg('')
+                try {
+                  await redeemPoints(redeemAmt)
+                  setProfile(p => ({ ...p, q_points: (p?.q_points ?? 0) - redeemAmt }))
+                  setRedeemMsg(`✅ Solicitud enviada — un admin la procesará pronto`)
+                  setTimeout(() => setShowRedeem(false), 2000)
+                } catch (e) {
+                  setRedeemMsg(e.message || 'Error al canjear')
+                } finally {
+                  setRedeemBusy(false)
+                }
+              }}
+              style={{
+                width: '100%', padding: '14px 0', borderRadius: 12,
+                background: redeemBusy ? '#1A1A1A' : '#FBBF24',
+                border: 'none', color: redeemBusy ? '#555' : '#111',
+                fontSize: 14, fontWeight: 800, cursor: redeemBusy ? 'default' : 'pointer',
+                fontFamily: 'Inter, sans-serif',
+              }}
+            >
+              {redeemBusy ? 'Procesando…' : `Canjear ${redeemAmt} Q Coins → $${(redeemAmt / 1000).toFixed(2)}`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* My Stats modal */}
+      {showStats && (
+        <div onClick={() => setShowStats(false)} style={{
+          position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)',
+          display: 'flex', alignItems: 'flex-end', zIndex: 100,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            width: '100%', background: '#111111',
+            borderRadius: '20px 20px 0 0', padding: '20px 20px 32px',
+            animation: 'slideUp 0.22s ease',
+          }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#2A2A2A', margin: '0 auto 20px' }} />
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', marginBottom: 16 }}>📊 Mi récord</div>
+            {myStats.length === 0 ? (
+              <div style={{ fontSize: 13, color: '#4B5563', fontFamily: 'Inter, sans-serif', textAlign: 'center', padding: '20px 0' }}>
+                Aún no tienes partidas confirmadas
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {myStats.map(s => {
+                  const pct = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0
+                  const color = pct >= 60 ? '#4ADE80' : pct >= 40 ? '#FBBF24' : '#F87171'
+                  return (
+                    <div key={s.game} style={{ background: '#1A1A1A', borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                          <GameIcon game={s.game} size={14} />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>{s.game}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 800, fontFamily: 'Inter, sans-serif' }}>{s.wins}V</span>
+                          <span style={{ fontSize: 11, color: '#333' }}>·</span>
+                          <span style={{ fontSize: 12, color: '#F87171', fontWeight: 800, fontFamily: 'Inter, sans-serif' }}>{s.losses}D</span>
+                          <span style={{ fontSize: 12, fontWeight: 800, color, fontFamily: 'Inter, sans-serif', minWidth: 36, textAlign: 'right' }}>{pct}%</span>
+                        </div>
+                      </div>
+                      {/* Win rate bar */}
+                      <div style={{ height: 4, borderRadius: 2, background: '#2A2A2A', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2, transition: 'width 0.4s ease' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+                <div style={{ fontSize: 11, color: '#4B5563', textAlign: 'center', fontFamily: 'Inter, sans-serif', marginTop: 4 }}>
+                  Solo partidas confirmadas por ambos jugadores
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {showH2H && h2h && (
         <H2HModal
           opponentName={profile?.username}
@@ -422,7 +653,7 @@ function PostModal({ post, profile, onClose }) {
         {/* Stats */}
         <div style={{ display: 'flex', gap: 16, marginTop: 14 }}>
           <span style={{ color: '#9CA3AF', fontSize: 13 }}>
-            ❤️ {post.post_likes?.[0]?.count ?? 0}
+            ⚡ {post.post_likes?.[0]?.count ?? 0}
           </span>
           <span style={{ color: '#9CA3AF', fontSize: 13 }}>
             💬 {post.post_comments?.[0]?.count ?? 0}

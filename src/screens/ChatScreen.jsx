@@ -2,7 +2,7 @@
 // QUEST — ChatScreen
 // Direct message overlay between two users
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import {
   getOrCreateConversation,
@@ -13,6 +13,8 @@ import {
 } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 
+const PAGE = 300 // messages per page
+
 export default function ChatScreen({ otherUser, onBack }) {
   const { profile } = useAuth()
   const [conversationId, setConversationId] = useState(null)
@@ -20,8 +22,12 @@ export default function ChatScreen({ otherUser, onBack }) {
   const [text, setText]                     = useState('')
   const [sending, setSending]               = useState(false)
   const [loading, setLoading]               = useState(true)
+  const [loadingMore, setLoadingMore]       = useState(false)
+  const [hasMore, setHasMore]               = useState(false)
   const [sendError, setSendError]           = useState('')
-  const bottomRef = useRef(null)
+  const bottomRef  = useRef(null)
+  const listRef    = useRef(null)
+  const convIdRef  = useRef(null)
 
   // Load / create conversation then subscribe to new messages
   useEffect(() => {
@@ -31,10 +37,12 @@ export default function ChatScreen({ otherUser, onBack }) {
     ;(async () => {
       try {
         const cid  = await getOrCreateConversation(otherUser.id)
-        const msgs = await getMessages(cid)
+        const msgs = await getMessages(cid, PAGE)
         if (cancelled) return
+        convIdRef.current = cid
         setConversationId(cid)
         setMessages(msgs)
+        setHasMore(msgs.length === PAGE)
         await markMessagesRead(cid)
 
         channel = subscribeToMessages(cid, (msg) => {
@@ -54,10 +62,34 @@ export default function ChatScreen({ otherUser, onBack }) {
     }
   }, [otherUser.id])
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom only on initial load and new messages sent by me
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if (!loading) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load older messages (pagination)
+  const handleLoadMore = useCallback(async () => {
+    if (!convIdRef.current || loadingMore || !hasMore) return
+    const oldest = messages[0]?.created_at
+    if (!oldest) return
+    setLoadingMore(true)
+    try {
+      const older = await getMessages(convIdRef.current, PAGE, oldest)
+      if (older.length < PAGE) setHasMore(false)
+      if (older.length === 0) { setHasMore(false); return }
+      // Remember scroll position so it doesn't jump to top
+      const list = listRef.current
+      const prevScrollHeight = list?.scrollHeight ?? 0
+      setMessages(prev => [...older, ...prev])
+      // Restore scroll position after prepend
+      requestAnimationFrame(() => {
+        if (list) list.scrollTop = list.scrollHeight - prevScrollHeight
+      })
+    } catch (e) {
+      console.error('Load more error', e)
+    }
+    setLoadingMore(false)
+  }, [convIdRef, loadingMore, hasMore, messages])
 
   const handleSend = async () => {
     if (!text.trim() || !conversationId || sending) return
@@ -68,6 +100,7 @@ export default function ChatScreen({ otherUser, onBack }) {
     try {
       const msg = await sendMessage(conversationId, body, otherUser.id)
       setMessages(prev => [...prev, msg])
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
     } catch (e) {
       setText(body) // restore on failure
       setSendError(e.message || 'Error al enviar')
@@ -86,7 +119,26 @@ export default function ChatScreen({ otherUser, onBack }) {
       </div>
 
       {/* ── Message list ── */}
-      <div style={s.messageList}>
+      <div ref={listRef} style={s.messageList}>
+        {/* Load more button */}
+        {!loading && hasMore && (
+          <div style={{ textAlign: 'center', paddingBottom: 8 }}>
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              style={{
+                background: 'rgba(255,255,255,0.05)', border: '1px solid #2A2A2A',
+                borderRadius: 20, padding: '6px 18px',
+                color: '#9CA3AF', fontSize: 12, fontWeight: 600,
+                cursor: loadingMore ? 'default' : 'pointer',
+                fontFamily: 'Inter, sans-serif',
+              }}
+            >
+              {loadingMore ? 'Cargando…' : '↑ Ver mensajes anteriores'}
+            </button>
+          </div>
+        )}
+
         {loading && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
             <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite' }} />
@@ -95,12 +147,34 @@ export default function ChatScreen({ otherUser, onBack }) {
         {!loading && messages.length === 0 && (
           <div style={s.emptyHint}>No hay mensajes aún. ¡Empieza la conversación!</div>
         )}
-        {messages.map(m => {
+
+        {messages.map((m, i) => {
           const isMe = m.sender_id === profile?.id
+          // Show date separator when day changes
+          const prev = messages[i - 1]
+          const showDate = !prev || new Date(m.created_at).toDateString() !== new Date(prev.created_at).toDateString()
+          const dateLabel = (() => {
+            const d = new Date(m.created_at)
+            const now = new Date()
+            if (d.toDateString() === now.toDateString()) return 'Hoy'
+            const yest = new Date(now); yest.setDate(now.getDate() - 1)
+            if (d.toDateString() === yest.toDateString()) return 'Ayer'
+            return d.toLocaleDateString('es', { weekday: 'short', day: '2-digit', month: 'short', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
+          })()
+
           return (
-            <div key={m.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
-              <div style={{ ...s.bubble, ...(isMe ? s.bubbleMe : s.bubbleThem) }}>
-                {m.body}
+            <div key={m.id}>
+              {showDate && (
+                <div style={{ textAlign: 'center', margin: '8px 0 4px' }}>
+                  <span style={{ fontSize: 11, color: '#4B5563', fontFamily: 'Inter, sans-serif', background: '#111', padding: '2px 10px', borderRadius: 10 }}>
+                    {dateLabel}
+                  </span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                <div style={{ ...s.bubble, ...(isMe ? s.bubbleMe : s.bubbleThem) }}>
+                  {m.body}
+                </div>
               </div>
             </div>
           )

@@ -161,8 +161,31 @@ function MainApp() {
   const [showOnboarding,    setShowOnboarding]    = useState(false)
   const [headerHidden, setHeaderHidden] = useState(false)
   const [navHidden,    setNavHidden]    = useState(false)
-  const lastScrollY = useRef(0)
-  const scrollRef   = useRef(null)
+  const lastScrollY  = useRef(0)
+  const scrollRef    = useRef(null)
+  const swipeOrigin  = useRef(null)
+
+  const handleTouchStart = useCallback((e) => {
+    const t = e.touches[0]
+    swipeOrigin.current = { x: t.clientX, y: t.clientY }
+  }, [])
+
+  const handleTouchEnd = useCallback((e) => {
+    if (!swipeOrigin.current) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - swipeOrigin.current.x
+    const dy = t.clientY - swipeOrigin.current.y
+    swipeOrigin.current = null
+    // Needs to be clearly horizontal (not a vertical scroll attempt)
+    if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.4) return
+    setActiveTab(prev => {
+      const tabs = Object.keys(screenMap)
+      const idx  = tabs.indexOf(prev)
+      if (dx < 0 && idx < tabs.length - 1) return tabs[idx + 1]   // swipe left  → next tab
+      if (dx > 0 && idx > 0)               return tabs[idx - 1]   // swipe right → prev tab
+      return prev
+    })
+  }, [screenMap])
 
   const handleScroll = (e) => {
     const y = e.currentTarget.scrollTop
@@ -426,7 +449,8 @@ function MainApp() {
       </div>
 
       {/* Lazy-mount: screens render on first visit, then stay mounted (no re-fetch on tab switch). */}
-      <div ref={scrollRef} className="screen-scroll" onScroll={handleScroll}>
+      <div ref={scrollRef} className="screen-scroll" onScroll={handleScroll}
+        onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         {Object.keys(screenMap).map(tab => (
           visitedTabs.has(tab) ? (
             <div key={tab} style={{ display: tab === activeTab ? 'block' : 'none', minHeight: '100%' }}>
