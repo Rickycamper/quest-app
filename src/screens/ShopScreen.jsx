@@ -327,6 +327,8 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   const [price,      setPrice]      = useState(String(product.price ?? 0))
   const [askPrice,   setAskPrice]   = useState(!product.price || Number(product.price) === 0)
   const [comingSoon, setComingSoon] = useState(!!product.coming_soon)
+  const [imageUrl,   setImageUrl]   = useState(product.image_url ?? '')
+  const [imgError,   setImgError]   = useState(false)
   const [saving,     setSaving]     = useState(false)
   const [saved,      setSaved]      = useState(false)
   const [delConfirm, setDelConfirm] = useState(false)
@@ -362,7 +364,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   // Live computed values for owner mode
   const liveQty = (parseInt(david) || 0) + (parseInt(panama) || 0) + (parseInt(chitre) || 0)
   const liveProduct = isOwner
-    ? { ...product, qty_david: parseInt(david)||0, qty_panama: parseInt(panama)||0, qty_chitre: parseInt(chitre)||0, price: askPrice ? 0 : (parseFloat(price)||0), coming_soon: comingSoon }
+    ? { ...product, qty_david: parseInt(david)||0, qty_panama: parseInt(panama)||0, qty_chitre: parseInt(chitre)||0, price: askPrice ? 0 : (parseFloat(price)||0), coming_soon: comingSoon, image_url: imageUrl || product.image_url }
     : product
   const sl = stockLabel(liveProduct)
 
@@ -372,7 +374,8 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
     panama      !== String(product.qty_panama ?? 0) ||
     chitre      !== String(product.qty_chitre ?? 0) ||
     (askPrice ? 0 : parseFloat(price)||0) !== Number(product.price ?? 0) ||
-    comingSoon  !== !!product.coming_soon
+    comingSoon  !== !!product.coming_soon ||
+    imageUrl.trim() !== (product.image_url ?? '')
   )
 
   const handleSave = async () => {
@@ -385,6 +388,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
         qty_chitre: parseInt(chitre) || 0,
         price: askPrice ? 0 : (parseFloat(price) || 0),
         coming_soon: comingSoon,
+        image_url: imageUrl.trim() || null,
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 1800)
@@ -444,8 +448,26 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
         </div>
 
         {/* Image */}
-        <div style={{ margin: '0 16px', borderRadius: 14, overflow: 'hidden', background: '#0A0A0A' }}>
-          <ProductImage src={product.image_url} game={product.game} ratio="4/3" detail />
+        <div style={{ margin: '0 16px', borderRadius: 14, overflow: 'hidden', background: '#0A0A0A', position: 'relative' }}>
+          <ProductImage src={imageUrl || product.image_url} game={product.game} ratio="4/3" detail />
+          {isOwner && (
+            <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
+              <button
+                onClick={() => {
+                  const url = window.prompt('URL de la imagen:', imageUrl || product.image_url || '')
+                  if (url !== null) { setImageUrl(url.trim()); setImgError(false) }
+                }}
+                style={{
+                  background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 8, padding: '6px 10px', color: '#FFF', fontSize: 11,
+                  fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(6px)',
+                  fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 5,
+                }}
+              >
+                📷 Cambiar imagen
+              </button>
+            </div>
+          )}
         </div>
 
         <div style={{ padding: '16px 16px 0' }}>
