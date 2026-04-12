@@ -161,14 +161,14 @@ function ClaimCard({ claim, onReviewed }) {
 }
 
 // ── User card for the Usuarios tab ─────────────
-function UserCard({ user, onToggle, currentIsOwner }) {
+function UserCard({ user, onToggle, currentIsOwner, currentIsAdmin }) {
   const [busy, setBusy] = useState(false)
   const [err,  setErr]  = useState('')
   const isPremium  = user.role === 'premium'
   const isStaff    = user.role === 'staff' || user.role === 'admin'
   const isOwnerAcc = user.is_owner === true
-  // Admins cannot modify the owner account — only the owner can touch themselves
-  const canModify  = currentIsOwner || !isOwnerAcc
+  // Only owner can modify the owner account; admin/owner can modify everyone else
+  const canModify  = (currentIsOwner || currentIsAdmin) && (!isOwnerAcc || currentIsOwner)
 
   const handleToggle = async () => {
     if (isStaff || !canModify) return
@@ -270,7 +270,7 @@ function UsersTab({ currentIsOwner, adminBranch }) {
       )}
       {error && <div style={{ color: '#F87171', fontSize: 13 }}>{error}</div>}
       {!loading && users.map(u => (
-        <UserCard key={u.id} user={u} onToggle={handleToggle} currentIsOwner={currentIsOwner} />
+        <UserCard key={u.id} user={u} onToggle={handleToggle} currentIsOwner={currentIsOwner} currentIsAdmin={currentIsAdmin} />
       ))}
       {!loading && users.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 0', color: '#4B5563', fontSize: 13 }}>Sin resultados</div>
@@ -734,9 +734,9 @@ function StatsTab() {
 }
 
 export default function AdminScreen({ onClose }) {
-  const { isOwner: currentIsOwner, profile } = useAuth()
-  // Branch admins (admin role but not owner) only see their own branch
-  const adminBranch = currentIsOwner ? null : (profile?.branch ?? null)
+  const { isOwner: currentIsOwner, isAdmin: currentIsAdmin, profile } = useAuth()
+  // Admin role and owner both see all branches
+  const adminBranch = (currentIsOwner || currentIsAdmin) ? null : (profile?.branch ?? null)
   const [tab,     setTab]     = useState('claims')
   const [claims,  setClaims]  = useState([])
   const [loading, setLoading] = useState(true)

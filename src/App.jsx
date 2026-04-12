@@ -181,7 +181,7 @@ function ShopComingSoon() {
 }
 
 function MainApp() {
-  const { profile, isStaff, isOwner, refreshProfile } = useAuth()
+  const { profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
   const { isGuest, requireAuth } = useGuest()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
   const [activeTab,      setActiveTab]     = useState('feed')
@@ -336,7 +336,7 @@ function MainApp() {
         </div>
       )}
       {showClaim      && <ClaimModal            onClose={() => setShowClaim(false)} isStaff={isStaff} />}
-      {showTournament && <CreateTournamentModal onClose={() => setShowTournament(false)} defaultBranch={isOwner ? null : (profile?.branch ?? null)} />}
+      {showTournament && <CreateTournamentModal onClose={() => setShowTournament(false)} defaultBranch={(isOwner || isAdmin) ? null : (profile?.branch ?? null)} />}
       {showAdmin && <AdminScreen     onClose={() => setShowAdmin(false)} />}
       {showAuction && <AuctionScreen isStaff={isStaff} onClose={() => setShowAuction(false)} />}
       {showHub && (
