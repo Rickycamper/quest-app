@@ -331,6 +331,32 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   const [saved,      setSaved]      = useState(false)
   const [delConfirm, setDelConfirm] = useState(false)
 
+  // ── Swipe-to-dismiss ─────────────────────────────────────────────
+  const sheetRef   = useRef(null)
+  const dragRef    = useRef({ startY: 0, dragging: false })
+  const [dragY,    setDragY]    = useState(0)
+
+  const onTouchStart = (e) => {
+    const sheet = sheetRef.current
+    // Only start drag if sheet is scrolled to top
+    if (sheet && sheet.scrollTop > 2) return
+    dragRef.current = { startY: e.touches[0].clientY, dragging: true }
+  }
+  const onTouchMove = (e) => {
+    if (!dragRef.current.dragging) return
+    const sheet = sheetRef.current
+    if (sheet && sheet.scrollTop > 2) { dragRef.current.dragging = false; setDragY(0); return }
+    const dy = Math.max(0, e.touches[0].clientY - dragRef.current.startY)
+    setDragY(dy)
+    if (dy > 5) e.preventDefault()
+  }
+  const onTouchEnd = () => {
+    if (!dragRef.current.dragging) return
+    dragRef.current.dragging = false
+    if (dragY > 80) { setDragY(0); onClose() }
+    else setDragY(0)
+  }
+
   const theme = gameTheme(product.game)
 
   // Live computed values for owner mode
@@ -396,16 +422,25 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
       background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
       display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
     }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        width: '100%', maxWidth: 390,
-        background: '#0F0F0F', borderRadius: '20px 20px 0 0',
-        paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
-        animation: 'slideUp 0.25s ease',
-        maxHeight: '92vh', overflowY: 'auto',
-      }}>
+      <div
+        ref={sheetRef}
+        onClick={e => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          width: '100%', maxWidth: 390,
+          background: '#0F0F0F', borderRadius: '20px 20px 0 0',
+          paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
+          animation: dragY > 0 ? 'none' : 'slideUp 0.25s ease',
+          maxHeight: '92vh', overflowY: 'auto',
+          transform: dragY > 0 ? `translateY(${dragY}px)` : 'none',
+          transition: dragY > 0 ? 'none' : 'transform 0.25s ease',
+          touchAction: 'pan-y',
+        }}>
         {/* Drag handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px' }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: '#2A2A2A' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px', cursor: 'grab' }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: dragY > 40 ? '#6B7280' : '#2A2A2A', transition: 'background 0.15s' }} />
         </div>
 
         {/* Image */}
