@@ -379,7 +379,10 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
       const c = await addComment(post.id, text)
       setComments(prev => [...prev, c])
       setCommentCount(n => n + 1)
-    } catch { setCommentText(text) }
+    } catch (e) {
+      setCommentText(text)
+      if (e?.message) alert(e.message)
+    }
     setSendingCmt(false)
   }
 

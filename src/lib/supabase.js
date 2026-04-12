@@ -4,6 +4,20 @@
 import { createClient } from '@supabase/supabase-js'
 import { RANKING_PTS, GAME_STYLES } from './constants'
 
+// ── In-memory rate limiter ────────────────────
+// Tracks last action timestamp per user per action type
+const _rateLimits = {}
+function checkRateLimit(userId, action, cooldownMs) {
+  const key = `${userId}:${action}`
+  const now = Date.now()
+  const last = _rateLimits[key] ?? 0
+  if (now - last < cooldownMs) {
+    const remaining = Math.ceil((cooldownMs - (now - last)) / 1000)
+    throw new Error(`Espera ${remaining}s antes de volver a ${action === 'comment' ? 'comentar' : action === 'follow' ? 'seguir/dejar de seguir' : 'reaccionar'}.`)
+  }
+  _rateLimits[key] = now
+}
+
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
@@ -456,9 +470,12 @@ export async function getComments(postId) {
 export async function addComment(postId, content) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) throw new Error('No hay sesión activa')
+  checkRateLimit(session.user.id, 'comment', 30_000) // 30s entre comentarios
+  if (!content?.trim()) throw new Error('El comentario no puede estar vacío.')
+  if (content.length > 500) throw new Error('El comentario no puede superar 500 caracteres.')
   const { data, error } = await supabase
     .from('post_comments')
-    .insert({ post_id: postId, user_id: session.user.id, content })
+    .insert({ post_id: postId, user_id: session.user.id, content: content.trim() })
     .select('id, content, created_at, profiles:user_id(id, username, avatar_url)')
     .single()
   if (error) throw error
@@ -468,6 +485,7 @@ export async function addComment(postId, content) {
 export async function toggleLike(postId) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) throw new Error('No hay sesión activa')
+  checkRateLimit(session.user.id, 'like', 3_000) // 3s entre likes
   const { data: existing } = await supabase
     .from('post_likes')
     .select('id')
@@ -533,6 +551,7 @@ export async function toggleSave(postId) {
 export async function toggleFollow(targetUserId) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) throw new Error('No hay sesión activa')
+  checkRateLimit(session.user.id, 'follow', 5_000) // 5s entre follows
   const { data: existing } = await supabase
     .from('follows')
     .select('id')
