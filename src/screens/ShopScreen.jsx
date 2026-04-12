@@ -5,7 +5,7 @@
 // Search bar across all sections
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, searchUsers } from '../lib/supabase'
+import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, searchUsers, notifyOwnerOfShopChange } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
@@ -1064,7 +1064,9 @@ function AccessoryFilter({ value, onChange }) {
 }
 
 // ── Main screen ───────────────────────────────
-export default function ShopScreen({ isOwner }) {
+export default function ShopScreen({ isOwner, isStaff }) {
+  const { profile } = useAuth()
+  const canEdit = isOwner || isStaff
   const [products,   setProducts]   = useState([])
   const [loading,    setLoading]    = useState(true)
   const [showAdd,    setShowAdd]    = useState(false)
@@ -1104,28 +1106,39 @@ export default function ShopScreen({ isOwner }) {
   })
 
   const handleSave = useCallback(async (id, fields) => {
-    // Try full update; if coming_soon column doesn't exist yet, retry without it
     const tryUpdate = async (f) => {
       const updated = await updateShopProduct(id, f)
       setProducts(prev => prev.map(p => p.id === id ? { ...p, ...f, ...updated } : p))
+      return updated
     }
+    let updated
     try {
-      await tryUpdate(fields)
+      updated = await tryUpdate(fields)
     } catch (e) {
       const msg = e?.message ?? ''
       if (msg.includes('coming_soon') || msg.includes('column')) {
         const { coming_soon, ...rest } = fields
-        await tryUpdate(rest)
+        updated = await tryUpdate(rest)
       } else {
         throw e
       }
     }
-  }, [])
+    // If a staff member (not owner) made the change, notify the owner
+    if (!isOwner && isStaff && profile?.username) {
+      const product = products.find(p => p.id === id)
+      const productName = updated?.name ?? product?.name ?? 'producto'
+      notifyOwnerOfShopChange('editó', productName, profile.username).catch(() => {})
+    }
+  }, [isOwner, isStaff, profile?.username, products])
 
   const handleDelete = useCallback(async (id) => {
+    const product = products.find(p => p.id === id)
     await deleteShopProduct(id)
     setProducts(prev => prev.filter(p => p.id !== id))
-  }, [])
+    if (!isOwner && isStaff && profile?.username && product?.name) {
+      notifyOwnerOfShopChange('eliminó', product.name, profile.username).catch(() => {})
+    }
+  }, [isOwner, isStaff, profile?.username, products])
 
   const handleAdded = useCallback((prod) => setProducts(prev => [...prev, prod]), [])
 
@@ -1140,7 +1153,7 @@ export default function ShopScreen({ isOwner }) {
 
       {/* ── Search + owner controls ── */}
       <div style={{ padding: '10px 16px 0', marginBottom: 12 }}>
-        {isOwner && (
+        {canEdit && (
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 8 }}>
             <button onClick={() => setShowAdd(true)} style={{
               padding: '7px 14px', borderRadius: 10, background: '#A78BFA',
@@ -1255,7 +1268,7 @@ export default function ShopScreen({ isOwner }) {
         {!loading && filtered.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {filtered.map(p => (
-              <ProductCard key={p.id} product={p} isOwner={isOwner} onSave={handleSave} onDelete={handleDelete} />
+              <ProductCard key={p.id} product={p} isOwner={canEdit} onSave={handleSave} onDelete={handleDelete} />
             ))}
           </div>
         )}

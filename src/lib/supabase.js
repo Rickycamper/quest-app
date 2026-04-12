@@ -1010,6 +1010,28 @@ export async function createNotification(userId, type, title, body, meta = {}) {
   }).catch(() => {})
 }
 
+// ── Notify owner when a staff/admin makes a shop change ───────────────────────
+export async function notifyOwnerOfShopChange(action, productName, adminUsername) {
+  try {
+    // Get owner's user ID
+    const { data } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('is_owner', true)
+      .single()
+    if (!data?.id) return
+    await createNotification(
+      data.id,
+      'shop_admin_action',
+      '🛒 Cambio en el Shop',
+      `@${adminUsername} ${action}: "${productName}"`,
+      { action, productName, adminUsername }
+    )
+  } catch {
+    // Silent fail — don't block the save
+  }
+}
+
 // ── PUSH SUBSCRIPTIONS ────────────────────────
 
 function urlBase64ToUint8Array(base64) {

@@ -287,8 +287,8 @@ function MainApp() {
 
   const screenMap = useMemo(() => ({
     feed:     <FeedScreen     profile={profile} isStaff={isStaff} isOwner={isOwner} onViewProfile={(id) => requireAuth(() => handleViewProfile(id))} onPost={() => requireAuth(() => setShowPost(true))} refreshKey={feedRefreshKey} />,
-    shop:     isOwner
-      ? <ShopScreen isOwner={isOwner} />
+    shop:     (isOwner || isStaff)
+      ? <ShopScreen isOwner={isOwner} isStaff={isStaff} />
       : <ShopComingSoon />,
     ranks:    <RankingsScreen profile={profile} isStaff={isStaff} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onViewProfile={handleViewProfile} />,
     folder:   <FolderScreen   profile={profile} />,
