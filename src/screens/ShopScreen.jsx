@@ -78,7 +78,7 @@ function ProductImage({ src, game, ratio = '1/1', detail = false }) {
         </div>
       )}
       <img src={src} alt="" onLoad={() => setLoaded(true)} onError={() => setErr(true)}
-        style={{ width: '100%', height: '100%', objectFit: 'contain', display: loaded ? 'block' : 'none' }} />
+        style={{ width: '100%', height: '100%', objectFit: 'contain', display: loaded ? 'block' : 'none', padding: detail ? '12px' : '8px', boxSizing: 'border-box' }} />
     </div>
   )
 }
