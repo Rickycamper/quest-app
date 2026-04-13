@@ -765,7 +765,8 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
   const [chitre,      setChitre]      = useState('0')
   const [imageUrl,    setImageUrl]    = useState('')
   const [cardSearch,     setCardSearch]     = useState('')
-  const [pokemonResults, setPokemonResults] = useState([])
+  const [cardResults,    setCardResults]    = useState([]) // MTG + Pokemon results
+  const [priceFromTcg,   setPriceFromTcg]  = useState(false) // price was auto-fetched
   const [fetching,    setFetching]    = useState(false)
   const [saving,      setSaving]      = useState(false)
   const [err,         setErr]         = useState('')
@@ -788,51 +789,80 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
     setFetching(false)
   }
 
-  // Scryfall fetch (MTG singles) → TCGPlayer price
+  // Scryfall fetch (MTG singles) → multiple results
   const handleScryfallSearch = async () => {
     if (!cardSearch.trim()) return
-    setFetching(true); setPokemonResults([])
+    setFetching(true); setCardResults([])
     try {
-      const res = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(cardSearch.trim())}`)
+      const res = await fetch(`https://api.scryfall.com/cards/search?q=name:${encodeURIComponent(cardSearch.trim())}&unique=cards&order=name&dir=asc`)
       const data = await res.json()
-      if (data.object === 'card') {
-        setName(data.name)
-        const img = data.image_uris?.normal ?? data.card_faces?.[0]?.image_uris?.normal
-        if (img) setImageUrl(img)
-        if (data.prices?.usd) { setPrice(data.prices.usd); setAskPrice(false) }
-        setSku(`SCRYFALL-${data.id}`)
+      if (data.object === 'list' && data.data?.length) {
+        setCardResults(data.data.map(c => ({
+          id: c.id,
+          name: c.name,
+          set: c.set_name,
+          image: c.image_uris?.normal ?? c.card_faces?.[0]?.image_uris?.normal,
+          price: c.prices?.usd ? parseFloat(c.prices.usd) : null,
+          sku: `SCRYFALL-${c.id}`,
+          game: 'MTG',
+        })))
       } else {
-        alert(data.details || 'Carta no encontrada en Scryfall')
+        alert('Carta no encontrada en Scryfall')
       }
     } catch { alert('Error al buscar en Scryfall') }
     setFetching(false)
   }
 
-  // Pokemon TCG API (singles) → TCGPlayer price
+  // Pokemon TCG API (singles) → multiple results
   const handlePokemonSearch = async () => {
     if (!cardSearch.trim()) return
-    setFetching(true); setPokemonResults([])
+    setFetching(true); setCardResults([])
     try {
-      const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(cardSearch.trim())}"&pageSize=8&select=id,name,images,tcgplayer,set`)
+      const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(cardSearch.trim())}"&pageSize=20&select=id,name,images,tcgplayer,set`)
       const data = await res.json()
-      setPokemonResults(data.data ?? [])
-      if (!data.data?.length) alert('Carta no encontrada')
+      if (data.data?.length) {
+        setCardResults(data.data.map(c => {
+          const mkt = c.tcgplayer?.prices?.normal?.market
+            ?? c.tcgplayer?.prices?.holofoil?.market
+            ?? c.tcgplayer?.prices?.['1stEditionHolofoil']?.market
+            ?? null
+          return {
+            id: c.id,
+            name: `${c.name}`,
+            set: c.set?.name,
+            image: c.images?.small,
+            price: mkt,
+            sku: `PKMN-${c.id}`,
+            game: 'Pokemon',
+          }
+        }))
+      } else {
+        alert('Carta no encontrada')
+      }
     } catch { alert('Error al buscar Pokémon') }
     setFetching(false)
   }
 
-  const selectPokemonCard = (card) => {
-    setName(`${card.name} (${card.set?.name ?? ''})`)
-    if (card.images?.large) setImageUrl(card.images.large)
-    const mkt = card.tcgplayer?.prices?.normal?.market ?? card.tcgplayer?.prices?.holofoil?.market
-    if (mkt) { setPrice(String(mkt)); setAskPrice(false) }
-    setSku(`PKMN-${card.id}`)
-    setPokemonResults([])
+  const selectCard = (card) => {
+    setName(card.set ? `${card.name} (${card.set})` : card.name)
+    if (card.image) setImageUrl(card.image)
+    const finalPrice = card.price != null ? Math.max(0.25, card.price) : null
+    if (finalPrice != null) {
+      setPrice(String(finalPrice.toFixed(2)))
+      setAskPrice(false)
+      setPriceFromTcg(true)
+    } else {
+      setPriceFromTcg(false)
+    }
+    setSku(card.sku)
+    setCardResults([])
     setCardSearch('')
   }
 
   const handleAdd = async () => {
     if (!name.trim()) { setErr('Completa el nombre'); return }
+    const rawPrice = parseFloat(price) || 0
+    const finalPrice = (!askPrice && rawPrice > 0) ? Math.max(0.25, rawPrice) : rawPrice
     setSaving(true); setErr('')
     try {
       const prod = await upsertShopProduct({
@@ -840,7 +870,7 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
         name: name.trim(), category,
         game: category !== 'accessory' ? game : null,
         subcategory: category === 'accessory' ? subcat : null,
-        price: askPrice ? 0 : (parseFloat(price) || 0),
+        price: askPrice ? 0 : finalPrice,
         coming_soon: comingSoon,
         image_url: imageUrl || null,
         qty_david:  parseInt(david)  || 0,
@@ -954,22 +984,21 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
                     cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
                   }}>{fetching ? '…' : '💰 TCGPlayer'}</button>
               </div>
-              {/* Pokemon results picker */}
-              {pokemonResults.length > 0 && (
-                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 10, overflow: 'hidden', marginTop: 4 }}>
-                  {pokemonResults.map(c => {
-                    const mkt = c.tcgplayer?.prices?.normal?.market ?? c.tcgplayer?.prices?.holofoil?.market
-                    return (
-                      <div key={c.id} onClick={() => selectPokemonCard(c)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', cursor: 'pointer', borderBottom: '1px solid #222' }}>
-                        {c.images?.small && <img src={c.images.small} style={{ width: 30, height: 42, objectFit: 'contain', borderRadius: 3 }} />}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>{c.name}</div>
-                          <div style={{ fontSize: 10, color: '#6B7280' }}>{c.set?.name}</div>
-                        </div>
-                        {mkt && <span style={{ fontSize: 12, fontWeight: 800, color: '#4ADE80' }}>${mkt.toFixed(2)}</span>}
+              {/* Card results picker — MTG + Pokemon */}
+              {cardResults.length > 0 && (
+                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 10, overflow: 'hidden', marginTop: 4, maxHeight: 280, overflowY: 'auto' }}>
+                  {cardResults.map(c => (
+                    <div key={c.id} onClick={() => selectCard(c)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', cursor: 'pointer', borderBottom: '1px solid #1F1F1F' }}>
+                      {c.image && <img src={c.image} style={{ width: 30, height: 42, objectFit: 'contain', borderRadius: 3, background: '#FFF' }} />}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
+                        {c.set && <div style={{ fontSize: 10, color: '#6B7280' }}>{c.set}</div>}
                       </div>
-                    )
-                  })}
+                      {c.price != null
+                        ? <span style={{ fontSize: 12, fontWeight: 800, color: '#4ADE80', flexShrink: 0 }}>${Math.max(0.25, c.price).toFixed(2)}</span>
+                        : <span style={{ fontSize: 10, color: '#4B5563', flexShrink: 0 }}>Sin precio</span>}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -986,18 +1015,27 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
             <FL>Precio (USD)</FL>
-            <button onClick={() => setAskPrice(v => !v)} style={{
+            <button onClick={() => { setAskPrice(v => !v); setPriceFromTcg(false) }} style={{
               background: 'none', border: 'none', cursor: 'pointer', padding: 0,
               fontSize: 10, fontWeight: 700, color: askPrice ? '#A78BFA' : '#4B5563',
             }}>
               {askPrice ? '✓ Preguntar por precio' : 'Preguntar por precio'}
             </button>
           </div>
-          {!askPrice && (
+          {!askPrice && priceFromTcg && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: 10 }}>
+              <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 700 }}>💰 Desde TCGPlayer</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 18, fontWeight: 800, color: '#FFF' }}>${parseFloat(price).toFixed(2)}</span>
+                <button onClick={() => setPriceFromTcg(false)} style={{ background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', fontSize: 11, padding: 0 }}>editar</button>
+              </div>
+            </div>
+          )}
+          {!askPrice && !priceFromTcg && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#111', border: '1px solid #2A2A2A', borderRadius: 10, padding: '0 10px' }}>
               <span style={{ color: '#4B5563', fontSize: 14 }}>$</span>
               <input type="number" value={price} onChange={e => setPrice(e.target.value)}
-                placeholder="0.00" style={{ ...inp, border: 'none', background: 'none', padding: '10px 4px' }} />
+                placeholder="0.00" min="0.25" step="0.01" style={{ ...inp, border: 'none', background: 'none', padding: '10px 4px' }} />
             </div>
           )}
           {askPrice && (
