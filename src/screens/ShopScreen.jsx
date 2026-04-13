@@ -970,7 +970,7 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
                'Buscar carta (opcional)'}
             </FL>
             <div style={{ position: 'relative' }}>
-              <div style={{ display: 'flex', gap: 8, marginBottom: pokemonResults.length ? 0 : undefined }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: cardResults.length ? 0 : undefined }}>
                 <input value={cardSearch} onChange={e => setCardSearch(e.target.value)}
                   placeholder={game === 'MTG' ? 'ej: Lightning Bolt' : game === 'Pokemon' ? 'ej: Charizard' : 'Nombre de carta'}
                   onKeyDown={e => { if (e.key === 'Enter') game === 'MTG' ? handleScryfallSearch() : game === 'Pokemon' ? handlePokemonSearch() : null }}
