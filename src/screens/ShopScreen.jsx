@@ -18,6 +18,13 @@ const BRANCHES = [
   { key: 'qty_chitre', label: 'Chitré' },
 ]
 
+const JUSTTCG_GAME_IDS = {
+  'One Piece': 'one-piece-card-game',
+  'Digimon':   'digimon-card-game',
+  'Gundam':    'gundam-card-game',
+  'Riftbound': 'riftbound-league-of-legends-tcg',
+}
+
 const CATEGORIES = [
   { id: 'sealed',    label: 'Sealed'      },
   { id: 'single',    label: 'Singles'     },
@@ -843,6 +850,38 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
     setFetching(false)
   }
 
+  // JustTCG fetch (One Piece, Digimon, Gundam, Riftbound) → USD prices
+  const handleJustTcgSearch = async () => {
+    if (!cardSearch.trim()) return
+    const gameId = JUSTTCG_GAME_IDS[game]
+    if (!gameId) return
+    setFetching(true); setCardResults([])
+    try {
+      const res = await fetch(
+        `https://api.justtcg.com/v1/cards?q=${encodeURIComponent(cardSearch.trim())}&game=${gameId}&condition=NM`,
+        { headers: { 'X-API-Key': import.meta.env.VITE_JUSTTCG_API_KEY } }
+      )
+      const data = await res.json()
+      if (data.data?.length) {
+        setCardResults(data.data.slice(0, 20).map(c => {
+          const nmVariant = c.variants?.find(v => v.condition === 'NM') ?? c.variants?.[0]
+          return {
+            id: c.id,
+            name: c.name,
+            set: c.set_name ?? c.set,
+            image: c.image_url ?? c.image ?? null,
+            price: nmVariant?.price ? parseFloat(nmVariant.price) : null,
+            sku: `JUSTTCG-${c.id}`,
+            game,
+          }
+        }))
+      } else {
+        alert('Carta no encontrada en JustTCG')
+      }
+    } catch { alert('Error al buscar carta') }
+    setFetching(false)
+  }
+
   const selectCard = (card) => {
     setName(card.set ? `${card.name} (${card.set})` : card.name)
     if (card.image) setImageUrl(card.image)
@@ -972,17 +1011,22 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
             <div style={{ position: 'relative' }}>
               <div style={{ display: 'flex', gap: 8, marginBottom: cardResults.length ? 0 : undefined }}>
                 <input value={cardSearch} onChange={e => setCardSearch(e.target.value)}
-                  placeholder={game === 'MTG' ? 'ej: Lightning Bolt' : game === 'Pokemon' ? 'ej: Charizard' : 'Nombre de carta'}
-                  onKeyDown={e => { if (e.key === 'Enter') game === 'MTG' ? handleScryfallSearch() : game === 'Pokemon' ? handlePokemonSearch() : null }}
+                  placeholder={game === 'MTG' ? 'ej: Lightning Bolt' : game === 'Pokemon' ? 'ej: Charizard' : game === 'One Piece' ? 'ej: Monkey D. Luffy' : game === 'Digimon' ? 'ej: Agumon' : 'Nombre de carta'}
+                  onKeyDown={e => {
+                    if (e.key !== 'Enter') return
+                    if (game === 'MTG') handleScryfallSearch()
+                    else if (game === 'Pokemon') handlePokemonSearch()
+                    else if (JUSTTCG_GAME_IDS[game]) handleJustTcgSearch()
+                  }}
                   style={inp} />
                 <button
-                  onClick={game === 'MTG' ? handleScryfallSearch : game === 'Pokemon' ? handlePokemonSearch : undefined}
-                  disabled={!cardSearch.trim() || fetching || !['MTG','Pokemon'].includes(game)}
+                  onClick={game === 'MTG' ? handleScryfallSearch : game === 'Pokemon' ? handlePokemonSearch : JUSTTCG_GAME_IDS[game] ? handleJustTcgSearch : undefined}
+                  disabled={!cardSearch.trim() || fetching || !['MTG','Pokemon','One Piece','Digimon','Gundam','Riftbound'].includes(game)}
                   style={{
                     padding: '10px 12px', borderRadius: 10, border: '1px solid #2A2A2A',
                     background: '#1A1A1A', color: '#4ADE80', fontSize: 11, fontWeight: 700,
                     cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
-                  }}>{fetching ? '…' : '💰 TCGPlayer'}</button>
+                  }}>{fetching ? '…' : JUSTTCG_GAME_IDS[game] ? '💰 JustTCG' : '💰 TCGPlayer'}</button>
               </div>
               {/* Card results picker — MTG + Pokemon */}
               {cardResults.length > 0 && (
