@@ -54,7 +54,7 @@ function ProductImage({ src, game, ratio = '1/1', detail = false }) {
 
   const wrap = {
     width: '100%', aspectRatio: ratio,
-    background: '#0A0A0A', position: 'relative',
+    background: (src && !err) ? '#FFFFFF' : '#0A0A0A', position: 'relative',
     borderRadius: detail ? 12 : '10px 10px 0 0',
     overflow: 'hidden',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -448,7 +448,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
         </div>
 
         {/* Image */}
-        <div style={{ margin: '0 16px', borderRadius: 14, overflow: 'hidden', background: '#0A0A0A', position: 'relative' }}>
+        <div style={{ margin: '0 16px', borderRadius: 14, overflow: 'hidden', background: '#FFFFFF', position: 'relative' }}>
           <ProductImage src={imageUrl || product.image_url} game={product.game} ratio="4/3" detail />
           {isOwner && (
             <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
