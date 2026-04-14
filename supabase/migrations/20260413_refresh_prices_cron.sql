@@ -26,10 +26,10 @@ SELECT cron.schedule(
   )
 );
 
--- Job 2: One Piece — every 3 days at 18:00 UTC (in-stock only, saves JustTCG requests)
+-- Job 2: One Piece — every Monday at 18:00 UTC (in-stock only, saves JustTCG requests)
 SELECT cron.schedule(
   'refresh-prices-onepiece',
-  '0 18 */3 * *',
+  '0 18 * * 1',
   format($$
     SELECT net.http_post(
       url     := %L,
