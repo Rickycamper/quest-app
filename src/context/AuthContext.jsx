@@ -73,12 +73,13 @@ export function AuthProvider({ children }) {
     return () => { supabase.removeChannel(ch) }
   }, [user?.id])
 
-  const isOwner = profile?.is_owner === true
-  const isStaff = profile?.role === 'staff' || profile?.role === 'admin' || isOwner
-  const isAdmin = profile?.role === 'admin' || isOwner
+  const isOwner   = profile?.is_owner === true
+  const isStaff   = profile?.role === 'staff' || profile?.role === 'admin' || isOwner
+  const isAdmin   = profile?.role === 'admin' || isOwner
+  const isPremium = profile?.role === 'premium' || isStaff // staff+ inherits premium
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isStaff, isAdmin, isOwner, authEvent, recoverySession, refreshProfile: () => loadProfile(user) }}>
+    <AuthContext.Provider value={{ user, profile, loading, isStaff, isAdmin, isOwner, isPremium, authEvent, recoverySession, refreshProfile: () => loadProfile(user) }}>
       {children}
     </AuthContext.Provider>
   )

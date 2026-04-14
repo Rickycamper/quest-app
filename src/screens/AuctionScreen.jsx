@@ -217,7 +217,8 @@ function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
 
 // ── Main Screen ───────────────────────────────
 export default function AuctionScreen({ isStaff, onClose }) {
-  const { profile } = useAuth()
+  const { profile, isPremium } = useAuth()
+  const canCreateAuction = isPremium || isStaff
   const [auctions,    setAuctions]    = useState([])
   const [loading,     setLoading]     = useState(true)
   const [liveAuction, setLiveAuction] = useState(null)
@@ -316,13 +317,21 @@ export default function AuctionScreen({ isStaff, onClose }) {
           )}
         </div>
         <div style={{ flex: 1 }} />
-        {isStaff && (
+        {canCreateAuction ? (
           <button onClick={() => setShowCreate(true)} style={{
             padding: '7px 14px', borderRadius: 10, border: 'none',
             background: 'rgba(255,255,255,0.06)', color: '#9CA3AF',
             fontSize: 12, fontWeight: 700, cursor: 'pointer',
             fontFamily: 'Inter, sans-serif',
           }}>+ Nueva</button>
+        ) : (
+          <div style={{
+            padding: '5px 10px', borderRadius: 10,
+            border: '1px solid rgba(167,139,250,0.3)',
+            background: 'rgba(167,139,250,0.08)',
+            fontSize: 11, fontWeight: 700, color: '#A78BFA',
+            cursor: 'default',
+          }}>⭐ Premium</div>
         )}
       </div>
 
@@ -400,12 +409,25 @@ export default function AuctionScreen({ isStaff, onClose }) {
             <div style={{ fontSize: 14, color: '#4B5563' }}>
               {tab === 'upcoming' ? 'No hay subastas próximas' : 'Sin historial'}
             </div>
-            {tab === 'upcoming' && isStaff && (
+            {tab === 'upcoming' && canCreateAuction && (
               <button onClick={() => setShowCreate(true)} style={{
                 marginTop: 16, padding: '10px 24px', borderRadius: 10, border: 'none',
                 background: '#FFF', color: '#111', fontSize: 13, fontWeight: 700,
                 cursor: 'pointer', fontFamily: 'Inter, sans-serif',
               }}>Crear primera subasta</button>
+            )}
+            {tab === 'upcoming' && !canCreateAuction && (
+              <div style={{
+                marginTop: 16, padding: '14px 20px', borderRadius: 12,
+                border: '1px solid rgba(167,139,250,0.25)',
+                background: 'rgba(167,139,250,0.06)',
+                maxWidth: 260, margin: '16px auto 0',
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#A78BFA', marginBottom: 4 }}>⭐ Función Premium</div>
+                <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
+                  Upgrade a Premium para crear y publicar subastas en la comunidad.
+                </div>
+              </div>
             )}
           </div>
         ) : (
