@@ -1208,6 +1208,8 @@ export default function ShopScreen({ isOwner, isStaff }) {
   const canEdit = isOwner || isStaff
   const [products,   setProducts]   = useState([])
   const [loading,    setLoading]    = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshLog, setRefreshLog] = useState(null) // { updated, skipped, errors }
   const [showAdd,    setShowAdd]    = useState(false)
   const [category,   setCategory]   = useState('sealed')
   const [gameFilter, setGameFilter] = useState(null)
@@ -1281,6 +1283,48 @@ export default function ShopScreen({ isOwner, isStaff }) {
 
   const handleAdded = useCallback((prod) => setProducts(prev => [...prev, prod]), [])
 
+  // Bulk price refresh for MTG (Scryfall) and Pokemon (pokemontcg.io) singles
+  const handleRefreshPrices = async () => {
+    const singles = products.filter(p =>
+      (p.category || 'sealed') === 'single' &&
+      (p.sku?.startsWith('SCRYFALL-') || p.sku?.startsWith('PKMN-'))
+    )
+    if (!singles.length) { alert('No hay singles de MTG o Pokémon para actualizar.'); return }
+    setRefreshing(true)
+    setRefreshLog(null)
+    let updated = 0, skipped = 0, errors = 0
+    for (const p of singles) {
+      try {
+        let newPrice = null
+        if (p.sku.startsWith('SCRYFALL-')) {
+          const id = p.sku.replace('SCRYFALL-', '')
+          const r = await fetch(`https://api.scryfall.com/cards/${id}`)
+          const d = await r.json()
+          newPrice = d.prices?.usd ? parseFloat(d.prices.usd) : null
+        } else {
+          const id = p.sku.replace('PKMN-', '')
+          const r = await fetch(`https://api.pokemontcg.io/v2/cards/${id}?select=tcgplayer`)
+          const d = await r.json()
+          const prices = d.data?.tcgplayer?.prices
+          newPrice = prices?.normal?.market ?? prices?.holofoil?.market ?? prices?.['1stEditionHolofoil']?.market ?? null
+          if (newPrice) newPrice = parseFloat(newPrice)
+        }
+        if (newPrice && newPrice !== Number(p.price)) {
+          const finalPrice = Math.max(0.25, newPrice)
+          await updateShopProduct(p.id, { price: finalPrice })
+          setProducts(prev => prev.map(x => x.id === p.id ? { ...x, price: finalPrice } : x))
+          updated++
+        } else {
+          skipped++
+        }
+        // Small delay to avoid rate limiting
+        await new Promise(r => setTimeout(r, 120))
+      } catch { errors++ }
+    }
+    setRefreshing(false)
+    setRefreshLog({ updated, skipped, errors, total: singles.length })
+  }
+
   const catCounts = {
     sealed:    products.filter(p => (p.category || 'sealed') === 'sealed').length,
     single:    products.filter(p => (p.category || 'sealed') === 'single').length,
@@ -1293,11 +1337,28 @@ export default function ShopScreen({ isOwner, isStaff }) {
       {/* ── Search + owner controls ── */}
       <div style={{ padding: '10px 16px 0', marginBottom: 12 }}>
         {canEdit && (
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 8 }}>
-            <button onClick={() => setShowAdd(true)} style={{
-              padding: '7px 14px', borderRadius: 10, background: '#A78BFA',
-              border: 'none', color: '#FFF', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-            }}>+ Agregar producto</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={handleRefreshPrices} disabled={refreshing} style={{
+                padding: '7px 12px', borderRadius: 10, background: 'transparent',
+                border: '1px solid #2A2A2A', color: refreshing ? '#4B5563' : '#4ADE80',
+                fontSize: 12, fontWeight: 700, cursor: refreshing ? 'default' : 'pointer',
+                fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 5,
+              }}>
+                {refreshing ? '⏳ Actualizando…' : '🔄 Actualizar precios'}
+              </button>
+              <button onClick={() => setShowAdd(true)} style={{
+                padding: '7px 14px', borderRadius: 10, background: '#A78BFA',
+                border: 'none', color: '#FFF', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              }}>+ Agregar producto</button>
+            </div>
+            {refreshLog && (
+              <div style={{ textAlign: 'right', fontSize: 11, color: '#6B7280' }}>
+                ✅ {refreshLog.updated} actualizados · ⏭️ {refreshLog.skipped} sin cambios
+                {refreshLog.errors > 0 && ` · ⚠️ ${refreshLog.errors} errores`}
+                {' '}de {refreshLog.total} singles
+              </div>
+            )}
           </div>
         )}
         {/* Search bar */}
