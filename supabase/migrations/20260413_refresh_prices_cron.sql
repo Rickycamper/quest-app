@@ -26,10 +26,11 @@ SELECT cron.schedule(
   )
 );
 
--- Job 2: One Piece — every Monday at 18:00 UTC (in-stock only, saves JustTCG requests)
+-- Job 2: One Piece, Digimon, Gundam, Riftbound — 1st and 15th of each month at 18:00 UTC
+-- Only in-stock cards with a fixed price (ask-price cards skipped automatically via price > 0)
 SELECT cron.schedule(
-  'refresh-prices-onepiece',
-  '0 18 * * 1',
+  'refresh-prices-justtcg',
+  '0 18 1,15 * *',
   format($$
     SELECT net.http_post(
       url     := %L,
@@ -37,7 +38,7 @@ SELECT cron.schedule(
       body    := '{}'::jsonb
     );
   $$,
-    'https://qattyrdmlbolocnzczos.supabase.co/functions/v1/refresh-prices?mode=onepiece',
+    'https://qattyrdmlbolocnzczos.supabase.co/functions/v1/refresh-prices?mode=justtcg',
     '{"Content-Type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhdHR5cmRtbGJvbG9jbnpjem9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNzIxMTQsImV4cCI6MjA4ODg0ODExNH0.nSkj0_GmictGVwR8RQ2yE-E-EqiYxr182gp6bT4sToc"}'
   )
 );

@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────
 // QUEST — Edge Function: refresh-prices
-// MTG + Pokemon: daily at 1 PM Panama (18:00 UTC)
-// One Piece:     every 3 days at 1 PM Panama — only in-stock cards
-// Digimon/Gundam/Riftbound: manual only (low price volatility)
+// MTG + Pokemon:                    daily (18:00 UTC) — Scryfall / pokemontcg.io (free)
+// One Piece, Digimon, Gundam, Riftbound: 1st & 15th of month — JustTCG (1000 req/month)
+//   Skips: cards with price = 0 (ask-price) and cards with no stock
 // ─────────────────────────────────────────────
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -46,20 +46,18 @@ Deno.serve(async (req) => {
       if (error) throw error
       singles = data ?? []
 
-    } else if (mode === 'onepiece') {
-      // One Piece via JustTCG — only in-stock cards to save requests
+    } else if (mode === 'justtcg') {
+      // One Piece, Digimon, Gundam, Riftbound via JustTCG
+      // Skip: cards with price = 0 (ask-price) and out-of-stock cards
       const { data, error } = await supabase
         .from('shop_products')
         .select('id, sku, price, name, qty_david, qty_panama, qty_chitre')
         .eq('category', 'single')
         .like('sku', 'JUSTTCG-%')
-        .or('qty_david.gt.0,qty_panama.gt.0,qty_chitre.gt.0')
+        .gt('price', 0)  // skip ask-price cards
+        .or('qty_david.gt.0,qty_panama.gt.0,qty_chitre.gt.0')  // only in-stock
       if (error) throw error
-      singles = (data ?? []).filter(p => {
-        // Only One Piece cards (filter by checking JustTCG game — stored in name context)
-        // We filter by having a JUSTTCG- sku for now; game filtering in future
-        return true
-      })
+      singles = data ?? []
     }
 
     if (!singles.length) {
