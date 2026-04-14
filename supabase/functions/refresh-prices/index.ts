@@ -10,8 +10,15 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 )
 
-const DELAY_MS   = 150  // delay between requests to avoid rate limiting
-const MIN_PRICE  = 0.25
+const DELAY_MS = 150  // delay between requests to avoid rate limiting
+
+function normalizeTcgPrice(raw: number): number {
+  if (!raw || raw <= 0) return 0.25
+  if (raw <= 0.25) return 0.25
+  if (raw <= 0.74) return 0.75
+  if (raw < 1.00)  return 1.00
+  return Math.round(raw * 100) / 100
+}
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
@@ -65,8 +72,8 @@ Deno.serve(async (req) => {
           }
         }
 
-        if (newPrice && Math.abs(newPrice - Number(product.price)) >= 0.01) {
-          const finalPrice = Math.max(MIN_PRICE, newPrice)
+        if (newPrice && Math.abs(normalizeTcgPrice(newPrice) - Number(product.price)) >= 0.01) {
+          const finalPrice = normalizeTcgPrice(newPrice)
           await supabase
             .from('shop_products')
             .update({ price: finalPrice, updated_at: new Date().toISOString() })

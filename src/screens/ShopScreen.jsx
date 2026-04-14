@@ -18,6 +18,19 @@ const BRANCHES = [
   { key: 'qty_chitre', label: 'Chitré' },
 ]
 
+// ── Price normalization from TCGPlayer market price ──────────────
+// < $0.25  → $0.25  (minimum)
+// $0.26–$0.74 → $0.75
+// $0.75–$0.99 → $1.00
+// $1.00+   → keep as-is
+function normalizeTcgPrice(raw) {
+  if (!raw || raw <= 0) return 0.25
+  if (raw <= 0.25) return 0.25
+  if (raw <= 0.74) return 0.75
+  if (raw < 1.00)  return 1.00
+  return Math.round(raw * 100) / 100
+}
+
 const JUSTTCG_GAME_IDS = {
   'One Piece': 'one-piece-card-game',
   'Digimon':   'digimon-card-game',
@@ -533,7 +546,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                           const d = await r.json()
                           newPrice = d.data?.tcgplayer?.prices?.normal?.market ?? d.data?.tcgplayer?.prices?.holofoil?.market
                         }
-                        if (newPrice) { setPrice(String(newPrice)); setAskPrice(false) }
+                        if (newPrice) { setPrice(String(normalizeTcgPrice(parseFloat(newPrice)))); setAskPrice(false) }
                         else alert('No se encontró precio actualizado')
                       } catch { alert('Error al actualizar precio') }
                     }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 9, fontWeight: 700, color: '#4ADE80', padding: 0 }}>
@@ -885,7 +898,7 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
   const selectCard = (card) => {
     setName(card.set ? `${card.name} (${card.set})` : card.name)
     if (card.image) setImageUrl(card.image)
-    const finalPrice = card.price != null ? Math.max(0.25, card.price) : null
+    const finalPrice = card.price != null ? normalizeTcgPrice(card.price) : null
     if (finalPrice != null) {
       setPrice(String(finalPrice.toFixed(2)))
       setAskPrice(false)
@@ -901,7 +914,7 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
   const handleAdd = async () => {
     if (!name.trim()) { setErr('Completa el nombre'); return }
     const rawPrice = parseFloat(price) || 0
-    const finalPrice = (!askPrice && rawPrice > 0) ? Math.max(0.25, rawPrice) : rawPrice
+    const finalPrice = (!askPrice && rawPrice > 0) ? normalizeTcgPrice(rawPrice) : rawPrice
     setSaving(true); setErr('')
     try {
       const prod = await upsertShopProduct({
@@ -1039,7 +1052,7 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
                         {c.set && <div style={{ fontSize: 10, color: '#6B7280' }}>{c.set}</div>}
                       </div>
                       {c.price != null
-                        ? <span style={{ fontSize: 12, fontWeight: 800, color: '#4ADE80', flexShrink: 0 }}>${Math.max(0.25, c.price).toFixed(2)}</span>
+                        ? <span style={{ fontSize: 12, fontWeight: 800, color: '#4ADE80', flexShrink: 0 }}>${normalizeTcgPrice(c.price).toFixed(2)}</span>
                         : <span style={{ fontSize: 10, color: '#4B5563', flexShrink: 0 }}>Sin precio</span>}
                     </div>
                   ))}
@@ -1310,7 +1323,7 @@ export default function ShopScreen({ isOwner, isStaff }) {
           if (newPrice) newPrice = parseFloat(newPrice)
         }
         if (newPrice && newPrice !== Number(p.price)) {
-          const finalPrice = Math.max(0.25, newPrice)
+          const finalPrice = normalizeTcgPrice(newPrice)
           await updateShopProduct(p.id, { price: finalPrice })
           setProducts(prev => prev.map(x => x.id === p.id ? { ...x, price: finalPrice } : x))
           updated++
