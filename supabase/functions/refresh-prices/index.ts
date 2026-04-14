@@ -1,7 +1,8 @@
 // ─────────────────────────────────────────────
 // QUEST — Edge Function: refresh-prices
-// Runs daily at 1 PM (Panama time = UTC-5 → 18:00 UTC)
-// Updates TCGPlayer prices for all MTG and Pokemon singles
+// MTG + Pokemon: daily at 1 PM Panama (18:00 UTC)
+// One Piece:     every 3 days at 1 PM Panama — only in-stock cards
+// Digimon/Gundam/Riftbound: manual only (low price volatility)
 // ─────────────────────────────────────────────
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -10,7 +11,8 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 )
 
-const DELAY_MS = 150  // delay between requests to avoid rate limiting
+const JUSTTCG_KEY = Deno.env.get('JUSTTCG_API_KEY') ?? ''
+const DELAY_MS    = 150
 
 function normalizeTcgPrice(raw: number): number {
   if (!raw || raw <= 0) return 0.25
@@ -23,22 +25,45 @@ function normalizeTcgPrice(raw: number): number {
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 Deno.serve(async (req) => {
-  // Allow manual trigger via POST (for testing)
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
   }
 
-  try {
-    // 1. Fetch all MTG and Pokemon singles
-    const { data: singles, error } = await supabase
-      .from('shop_products')
-      .select('id, sku, price, name')
-      .eq('category', 'single')
-      .or('sku.like.SCRYFALL-%,sku.like.PKMN-%')
+  // Accept ?mode=onepiece or ?mode=mtgpokemon (default = mtgpokemon)
+  const url  = new URL(req.url)
+  const mode = url.searchParams.get('mode') ?? 'mtgpokemon'
 
-    if (error) throw error
-    if (!singles?.length) {
-      return new Response(JSON.stringify({ message: 'No singles to update', updated: 0 }), {
+  try {
+    let singles: any[] = []
+
+    if (mode === 'mtgpokemon') {
+      // MTG (Scryfall) + Pokemon (pokemontcg.io) — no request limit, run daily
+      const { data, error } = await supabase
+        .from('shop_products')
+        .select('id, sku, price, name')
+        .eq('category', 'single')
+        .or('sku.like.SCRYFALL-%,sku.like.PKMN-%')
+      if (error) throw error
+      singles = data ?? []
+
+    } else if (mode === 'onepiece') {
+      // One Piece via JustTCG — only in-stock cards to save requests
+      const { data, error } = await supabase
+        .from('shop_products')
+        .select('id, sku, price, name, qty_david, qty_panama, qty_chitre')
+        .eq('category', 'single')
+        .like('sku', 'JUSTTCG-%')
+        .or('qty_david.gt.0,qty_panama.gt.0,qty_chitre.gt.0')
+      if (error) throw error
+      singles = (data ?? []).filter(p => {
+        // Only One Piece cards (filter by checking JustTCG game — stored in name context)
+        // We filter by having a JUSTTCG- sku for now; game filtering in future
+        return true
+      })
+    }
+
+    if (!singles.length) {
+      return new Response(JSON.stringify({ message: 'No singles to update', updated: 0, mode }), {
         headers: { 'Content-Type': 'application/json' }
       })
     }
@@ -50,15 +75,14 @@ Deno.serve(async (req) => {
         let newPrice: number | null = null
 
         if (product.sku.startsWith('SCRYFALL-')) {
-          // MTG via Scryfall
           const id = product.sku.replace('SCRYFALL-', '')
           const res = await fetch(`https://api.scryfall.com/cards/${id}`)
           if (res.ok) {
             const data = await res.json()
             newPrice = data.prices?.usd ? parseFloat(data.prices.usd) : null
           }
+
         } else if (product.sku.startsWith('PKMN-')) {
-          // Pokemon via pokemontcg.io
           const id = product.sku.replace('PKMN-', '')
           const res = await fetch(`https://api.pokemontcg.io/v2/cards/${id}?select=tcgplayer`)
           if (res.ok) {
@@ -69,6 +93,18 @@ Deno.serve(async (req) => {
               ?? prices?.['1stEditionHolofoil']?.market
               ?? null
             newPrice = raw ? parseFloat(raw) : null
+          }
+
+        } else if (product.sku.startsWith('JUSTTCG-') && JUSTTCG_KEY) {
+          const id = product.sku.replace('JUSTTCG-', '')
+          const res = await fetch(
+            `https://api.justtcg.com/v1/cards/${id}`,
+            { headers: { 'X-API-Key': JUSTTCG_KEY } }
+          )
+          if (res.ok) {
+            const data = await res.json()
+            const nmVariant = data.data?.variants?.find((v: any) => v.condition === 'NM') ?? data.data?.variants?.[0]
+            newPrice = nmVariant?.price ? parseFloat(nmVariant.price) : null
           }
         }
 
@@ -89,25 +125,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    const result = {
-      message: 'Price refresh complete',
-      total: singles.length,
-      updated,
-      skipped,
-      errors,
-      timestamp: new Date().toISOString(),
-    }
-
+    const result = { message: 'Price refresh complete', mode, total: singles.length, updated, skipped, errors, timestamp: new Date().toISOString() }
     console.log(JSON.stringify(result))
-    return new Response(JSON.stringify(result), {
-      headers: { 'Content-Type': 'application/json' }
-    })
+    return new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json' } })
 
   } catch (e) {
     console.error('refresh-prices error:', e)
-    return new Response(JSON.stringify({ error: String(e) }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    })
+    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
 })

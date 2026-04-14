@@ -1,23 +1,43 @@
 -- ─────────────────────────────────────────────
--- QUEST — Daily price refresh cron job
--- Runs at 1:00 PM Panama time (UTC-5) = 18:00 UTC
--- Calls the refresh-prices Edge Function
+-- QUEST — Price refresh cron jobs
+-- ─────────────────────────────────────────────
+-- MTG + Pokemon: daily at 1 PM Panama (18:00 UTC) — free APIs, no limit
+-- One Piece:     every 3 days at 1 PM Panama     — JustTCG (1000 req/month), in-stock only
 -- ─────────────────────────────────────────────
 
--- Enable pg_cron and pg_net extensions (if not already enabled)
--- These must be enabled in Supabase Dashboard → Extensions first
+-- Remove old job if exists
+SELECT cron.unschedule('refresh-tcg-prices-daily') WHERE EXISTS (
+  SELECT 1 FROM cron.job WHERE jobname = 'refresh-tcg-prices-daily'
+);
 
+-- Job 1: MTG + Pokemon — every day at 18:00 UTC
 SELECT cron.schedule(
-  'refresh-tcg-prices-daily',         -- job name
-  '0 18 * * *',                        -- every day at 18:00 UTC (1 PM Panama)
-  $$
-  SELECT net.http_post(
-    url     := (SELECT value FROM vault.secrets WHERE name = 'supabase_url') || '/functions/v1/refresh-prices',
-    headers := jsonb_build_object(
-      'Content-Type',  'application/json',
-      'Authorization', 'Bearer ' || (SELECT value FROM vault.secrets WHERE name = 'supabase_anon_key')
-    ),
-    body    := '{}'::jsonb
-  );
-  $$
+  'refresh-prices-mtg-pokemon',
+  '0 18 * * *',
+  format($$
+    SELECT net.http_post(
+      url     := %L,
+      headers := %L::jsonb,
+      body    := '{}'::jsonb
+    );
+  $$,
+    'https://qattyrdmlbolocnzczos.supabase.co/functions/v1/refresh-prices?mode=mtgpokemon',
+    '{"Content-Type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhdHR5cmRtbGJvbG9jbnpjem9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNzIxMTQsImV4cCI6MjA4ODg0ODExNH0.nSkj0_GmictGVwR8RQ2yE-E-EqiYxr182gp6bT4sToc"}'
+  )
+);
+
+-- Job 2: One Piece — every 3 days at 18:00 UTC (in-stock only, saves JustTCG requests)
+SELECT cron.schedule(
+  'refresh-prices-onepiece',
+  '0 18 */3 * *',
+  format($$
+    SELECT net.http_post(
+      url     := %L,
+      headers := %L::jsonb,
+      body    := '{}'::jsonb
+    );
+  $$,
+    'https://qattyrdmlbolocnzczos.supabase.co/functions/v1/refresh-prices?mode=onepiece',
+    '{"Content-Type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhdHR5cmRtbGJvbG9jbnpjem9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNzIxMTQsImV4cCI6MjA4ODg0ODExNH0.nSkj0_GmictGVwR8RQ2yE-E-EqiYxr182gp6bT4sToc"}'
+  )
 );
