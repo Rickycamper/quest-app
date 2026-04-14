@@ -17,7 +17,7 @@ function normalizeTcgPrice(raw: number): number {
   if (raw <= 0.25) return 0.25
   if (raw <= 0.74) return 0.75
   if (raw < 1.00)  return 1.00
-  return Math.round(raw * 100) / 100
+  return Math.ceil(raw / 0.25) * 0.25
 }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))

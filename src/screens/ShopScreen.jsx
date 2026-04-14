@@ -28,7 +28,8 @@ function normalizeTcgPrice(raw) {
   if (raw <= 0.25) return 0.25
   if (raw <= 0.74) return 0.75
   if (raw < 1.00)  return 1.00
-  return Math.round(raw * 100) / 100
+  // $1.00+ → round up to nearest $0.25 ($1.01→$1.25, $1.26→$1.50, etc.)
+  return Math.ceil(raw / 0.25) * 0.25
 }
 
 const JUSTTCG_GAME_IDS = {
