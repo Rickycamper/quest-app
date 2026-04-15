@@ -1263,12 +1263,18 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
     setMem(v => Math.max(-10, Math.min(10, v + dir)))
     navigator.vibrate?.(8)
   }
-  // Direct absolute set (used by number-circle taps in MemoryGauge)
+  // Direct absolute set for memory circles
   const setMemAbs = (v) => {
     if (winner) return
     setMem(Math.max(-10, Math.min(10, v)))
     navigator.vibrate?.(8)
   }
+
+  // Digimon memory helpers (used inside ClockPanel via closure)
+  const p1Val  = mem <= 0 ? Math.abs(mem) : 0
+  const p2Val  = mem > 0  ? mem            : 0
+  const tapP1  = (n) => setMemAbs(mem === -n ? 0 : -n)
+  const tapP2  = (n) => setMemAbs(mem === n  ? 0 : n)
 
   // Tap: end YOUR turn → start OPPONENT's timer (non-Digimon only)
   const handleTap = (who) => {
@@ -1318,21 +1324,25 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
     }
   }
 
+  const MEM_ROWS = [[5,4,3,2,1],[6,7,8,9,10]]
+
   const ClockPanel = ({ who, user, secs, flipped }) => {
-    const isActive   = clockActive === who
-    const isWinner   = winner === who
-    const isLoser    = winner !== null && winner !== who
-    const isHolding  = holdWho === who
-    const color      = who === 'me' ? PLAYER_COLORS[0] : PLAYER_COLORS[1]
-    const low        = secs <= 60 && secs > 0
-    const urgent     = secs <= 10 && secs > 0
+    const isActive  = clockActive === who
+    const isWinner  = winner === who
+    const isLoser   = winner !== null && winner !== who
+    const isHolding = holdWho === who
+    const color     = who === 'me' ? PLAYER_COLORS[0] : PLAYER_COLORS[1]
+    const low       = secs <= 60 && secs > 0
+    const urgent    = secs <= 10 && secs > 0
+    // Digimon: each player manages their own memory circles
+    const playerVal = isDigimon ? (who === 'me' ? p1Val : p2Val) : 0
+    const onTapMem  = isDigimon ? (who === 'me' ? tapP1 : tapP2) : null
 
     const bg = isWinner ? color
-      : isLoser   ? `${color}22`
-      : isActive  ? `${color}cc`
-      : `${color}44`
+      : isLoser  ? `${color}22`
+      : isActive ? `${color}bb`
+      : `${color}40`
 
-    // SVG ring for hold progress
     const R = 38, CIRC = 2 * Math.PI * R
     const dash = isHolding ? CIRC * holdPct : 0
 
@@ -1343,37 +1353,64 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
         onPointerLeave={cancelHold}
         style={{
           flex: 1, position: 'relative', overflow: 'hidden',
-          background: bg, transition: 'background 0.3s',
+          background: bg, transition: 'background 0.35s',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', touchAction: 'none',
           transform: flipped ? 'rotate(180deg)' : 'none',
           userSelect: 'none', WebkitUserSelect: 'none',
+          gap: isDigimon ? 10 : 0,
         }}
       >
         {/* Active pulse ring */}
         {isActive && !winner && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            border: `3px solid ${color}`,
-            borderRadius: 0,
-            animation: 'ringPulse 1.4s infinite',
-            pointerEvents: 'none',
-          }} />
+          <div style={{ position: 'absolute', inset: 0, border: `3px solid ${color}`, animation: 'ringPulse 1.4s infinite', pointerEvents: 'none' }} />
         )}
 
-        {/* Winner icon (center) */}
+        {/* Winner icon */}
         {isWinner && (
           <div style={{ animation: 'fadeUp 0.3s ease', pointerEvents: 'none' }}>
-            {who === 'me'
-              ? <MiddleFingerIcon size={64} />
-              : <div style={{ fontSize: 52, lineHeight: 1 }}>💀</div>
-            }
+            {who === 'me' ? <MiddleFingerIcon size={64} /> : <div style={{ fontSize: 52, lineHeight: 1 }}>💀</div>}
           </div>
         )}
 
-        {/* Center: avatar + name */}
-        {!isWinner && (
+        {/* ── DIGIMON: big memory card ── */}
+        {!isWinner && isDigimon && (
+          <div
+            onPointerDown={e => e.stopPropagation()}
+            onPointerUp={e => e.stopPropagation()}
+            style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center', touchAction: 'auto' }}
+          >
+            {MEM_ROWS.map((row, ri) => (
+              <div key={ri} style={{ display: 'flex', gap: 6 }}>
+                {row.map(n => {
+                  const on = isActive && playerVal === n
+                  return (
+                    <button
+                      key={n}
+                      onPointerDown={e => { e.stopPropagation(); onTapMem(n) }}
+                      onPointerUp={e => e.stopPropagation()}
+                      style={{
+                        width: 48, height: 48, borderRadius: '50%',
+                        background: on ? '#FFFFFF' : 'rgba(0,0,0,0.5)',
+                        border: on ? `3px solid ${color}` : '2px solid rgba(255,255,255,0.18)',
+                        color: on ? '#111111' : isActive ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.38)',
+                        fontSize: n === 10 ? 13 : 17, fontWeight: 900,
+                        cursor: 'pointer', fontFamily: 'Inter, sans-serif', lineHeight: 1,
+                        boxShadow: on ? `0 0 0 4px ${color}45, 0 0 22px ${color}70` : 'none',
+                        transform: on ? 'scale(1.13)' : 'scale(1)',
+                        transition: 'all 0.13s', touchAction: 'none',
+                      }}
+                    >{n}</button>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── NON-DIGIMON: avatar + name center ── */}
+        {!isWinner && !isDigimon && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, pointerEvents: 'none' }}>
             <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: `3px solid rgba(255,255,255,${isActive ? 0.6 : 0.25})`, background: 'rgba(0,0,0,0.4)', flexShrink: 0, transition: 'border-color 0.3s' }}>
               <Avatar url={user?.avatar_url} size={52} />
@@ -1384,26 +1421,31 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
           </div>
         )}
 
-        {/* Timer — left side */}
+        {/* Timer — left side (both modes) */}
         {!isWinner && (
-          <div style={{
-            position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-            pointerEvents: 'none', textAlign: 'left',
-          }}>
+          <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', textAlign: 'left' }}>
             <div style={{
-              fontSize: 36, fontWeight: 900, fontFamily: 'Inter, sans-serif',
+              fontSize: 32, fontWeight: 900, fontFamily: 'Inter, sans-serif',
               letterSpacing: '-1px', lineHeight: 1,
-              color: low ? '#FCA5A5' : `rgba(255,255,255,${isActive ? 1 : 0.45})`,
+              color: low ? '#FCA5A5' : `rgba(255,255,255,${isActive ? 1 : 0.4})`,
               animation: urgent && isActive ? 'pulse 0.8s infinite' : 'none',
               transition: 'color 0.3s',
-            }}>
-              {fmt(secs)}
-            </div>
+            }}>{fmt(secs)}</div>
             {isActive && !winner && (
-              <div style={{ fontSize: 8, fontWeight: 700, color: color, letterSpacing: '0.1em', marginTop: 3, fontFamily: 'Inter, sans-serif' }}>
-                ▶ TU TURNO
-              </div>
+              <div style={{ fontSize: 8, fontWeight: 700, color, letterSpacing: '0.1em', marginTop: 3, fontFamily: 'Inter, sans-serif' }}>▶ TU TURNO</div>
             )}
+          </div>
+        )}
+
+        {/* Player info corner (Digimon) */}
+        {!isWinner && isDigimon && (
+          <div style={{ position: 'absolute', right: 12, bottom: 10, display: 'flex', alignItems: 'center', gap: 5, pointerEvents: 'none' }}>
+            <div style={{ width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid rgba(255,255,255,0.3)', background: 'rgba(0,0,0,0.35)', flexShrink: 0 }}>
+              <Avatar url={user?.avatar_url} size={22} />
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.65)', fontFamily: 'Inter, sans-serif' }}>
+              @{user?.username ?? '…'}
+            </span>
           </div>
         )}
 
@@ -1417,7 +1459,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
           </svg>
         )}
 
-        {/* Hint label (non-Digimon only, before game starts) */}
+        {/* Hint label (non-Digimon) */}
         {!winner && !isDigimon && active === null && (
           <div style={{ position: 'absolute', top: 10, left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
             <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', fontFamily: 'Inter, sans-serif' }}>
@@ -1438,25 +1480,60 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
       {/* Opponent panel — top, flipped */}
       <ClockPanel who="them" user={opponent} secs={themTime} flipped />
 
-      {/* Center divider + back (or Digimon memory gauge) */}
-      {game === 'Digimon'
-        ? <MemoryGauge mem={mem} onSet={setMemAbs} onBack={onBack} />
-        : (
-          <div style={{ flexShrink: 0, height: 2, background: 'rgba(0,0,0,0.7)', position: 'relative', overflow: 'visible', zIndex: 10 }}>
-            <button
-              onClick={onBack}
-              style={{
-                position: 'absolute', left: '50%', top: '50%',
-                transform: 'translate(-50%,-50%)',
-                width: 44, height: 44, background: '#111', border: '1px solid #2A2A2A',
-                borderRadius: 12, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#6B7280', fontSize: 18, zIndex: 11,
-              }}
-            >←</button>
+      {/* Center divider */}
+      {isDigimon ? (
+        /* Digimon: slim bar — 0 reset circle + back button */
+        <div style={{
+          flexShrink: 0, height: 48, background: '#080808', zIndex: 10,
+          borderTop: '1.5px solid #000', borderBottom: '1.5px solid #000',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+        }}>
+          <button onClick={onBack} style={{
+            width: 36, height: 32, borderRadius: 8, background: 'transparent',
+            border: '1px solid #252525', color: '#555', fontSize: 14,
+            cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          }}>←</button>
+
+          {/* Mini position track */}
+          <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+            {Array.from({ length: 21 }, (_, i) => i - 10).map(pos => {
+              const on = pos === mem
+              const c  = pos < 0 ? PLAYER_COLORS[0] : pos > 0 ? PLAYER_COLORS[1] : '#555'
+              return <div key={pos} style={{
+                width: on ? 9 : 5, height: on ? 9 : 5, borderRadius: '50%', flexShrink: 0,
+                background: on ? c : 'rgba(255,255,255,0.08)',
+                boxShadow: on ? `0 0 6px ${c}` : 'none',
+                transition: 'all 0.12s',
+              }} />
+            })}
           </div>
-        )
-      }
+
+          <button onPointerDown={() => setMemAbs(0)} style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: mem === 0 ? '#FFF' : '#141414',
+            border: mem === 0 ? '2px solid #FFF' : '2px solid rgba(255,255,255,0.15)',
+            color: mem === 0 ? '#111' : 'rgba(255,255,255,0.5)',
+            fontSize: 14, fontWeight: 900, cursor: 'pointer',
+            fontFamily: 'Inter, sans-serif', lineHeight: 1,
+            boxShadow: mem === 0 ? '0 0 14px rgba(255,255,255,0.3)' : 'none',
+            transition: 'all 0.12s',
+          }}>0</button>
+        </div>
+      ) : (
+        <div style={{ flexShrink: 0, height: 2, background: 'rgba(0,0,0,0.7)', position: 'relative', overflow: 'visible', zIndex: 10 }}>
+          <button
+            onClick={onBack}
+            style={{
+              position: 'absolute', left: '50%', top: '50%',
+              transform: 'translate(-50%,-50%)',
+              width: 44, height: 44, background: '#111', border: '1px solid #2A2A2A',
+              borderRadius: 12, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#6B7280', fontSize: 18, zIndex: 11,
+            }}
+          >←</button>
+        </div>
+      )}
 
       {/* My panel — bottom */}
       <ClockPanel who="me" user={me} secs={meTime} flipped={false} />
