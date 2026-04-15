@@ -1069,6 +1069,131 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
   )
 }
 
+// ── Digimon Memory Gauge ──────────────────────
+// Shared track: negative = P1's memory, positive = P2's memory.
+// When mem > 0  → P2's turn (P2 has that many memory).
+// When mem <= 0 → P1's turn (P1 has |mem| memory, 0 = end of turn).
+function MemoryGauge({ onBack }) {
+  const [mem, setMem] = useState(-1) // start: P1 has 1 memory
+
+  const step = (dir) => {
+    setMem(v => { const nv = Math.max(-10, Math.min(10, v + dir)); navigator.vibrate?.(8); return nv })
+  }
+
+  const isP1Turn = mem <= 0
+  const absVal   = Math.abs(mem)
+  const P1C      = PLAYER_COLORS[0]
+  const P2C      = PLAYER_COLORS[1]
+  const activeC  = isP1Turn ? P1C : P2C
+  // dots: -10…-1 = P1, 0 = center, 1…10 = P2
+  const DOTS = Array.from({ length: 21 }, (_, i) => i - 10)
+
+  return (
+    <div style={{
+      flexShrink: 0, background: '#0A0A0A', zIndex: 10,
+      borderTop: '2px solid rgba(0,0,0,0.8)', borderBottom: '2px solid rgba(0,0,0,0.8)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
+      paddingBottom: 4,
+    }}>
+      {/* Turn label — P2 side (reads right-side up for P2 since top panel is flipped) */}
+      <div style={{
+        transform: 'rotate(180deg)', width: '100%',
+        display: 'flex', justifyContent: 'center', paddingTop: 6, paddingBottom: 2,
+      }}>
+        <span style={{
+          fontSize: 9, fontWeight: 800, letterSpacing: '0.12em',
+          color: !isP1Turn ? P2C : 'rgba(255,255,255,0.15)',
+          fontFamily: 'Inter, sans-serif', transition: 'color 0.2s',
+        }}>
+          {!isP1Turn ? `TURNO P2 · ${absVal} MEMORIA` : 'ESPERANDO…'}
+        </span>
+      </div>
+
+      {/* Dot track */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '4px 8px', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', maxWidth: '100%' }}>
+        {DOTS.map(pos => {
+          const isActive = pos === mem
+          const isP1dot  = pos < 0
+          const isCenter = pos === 0
+          const dotC     = isP1dot ? P1C : isCenter ? '#4B5563' : P2C
+          return (
+            <div key={pos} style={{
+              width: isCenter ? 10 : 9, height: isCenter ? 10 : 9,
+              borderRadius: '50%', margin: '0 2px', flexShrink: 0,
+              background: isActive ? dotC : isCenter ? '#1F1F1F' : 'rgba(255,255,255,0.05)',
+              border: isActive ? 'none' : `1px solid ${isCenter ? '#333' : 'rgba(255,255,255,0.08)'}`,
+              boxShadow: isActive ? `0 0 6px ${dotC}` : 'none',
+              transition: 'all 0.15s',
+            }} />
+          )
+        })}
+      </div>
+
+      {/* Controls row: [P1 −]  [VALUE]  [P1 +]   back   [P2 −]  [VALUE flipped]  [P2 +] */}
+      <div style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '2px 12px', gap: 0, justifyContent: 'space-between' }}>
+
+        {/* P1 controls (bottom player) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button onPointerDown={() => step(1)} style={{
+            width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P1C}44`,
+            background: `${P1C}14`, color: P1C, fontSize: 20, fontWeight: 900,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+          }}>+</button>
+          <div style={{ textAlign: 'center', minWidth: 36 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: isP1Turn ? P1C : '#333', fontFamily: 'Inter, sans-serif', lineHeight: 1, transition: 'color 0.2s' }}>
+              {isP1Turn ? absVal : '·'}
+            </div>
+            <div style={{ fontSize: 8, fontWeight: 700, color: P1C, letterSpacing: '0.1em', marginTop: 1 }}>P1</div>
+          </div>
+          <button onPointerDown={() => step(-1)} style={{
+            width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P1C}44`,
+            background: `${P1C}14`, color: P1C, fontSize: 24, fontWeight: 900,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+          }}>−</button>
+        </div>
+
+        {/* Back button */}
+        <button onClick={onBack} style={{
+          width: 38, height: 38, background: '#111', border: '1px solid #2A2A2A',
+          borderRadius: 10, cursor: 'pointer', color: '#6B7280', fontSize: 16,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>←</button>
+
+        {/* P2 controls (top player, flipped) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, transform: 'rotate(180deg)' }}>
+          <button onPointerDown={() => step(-1)} style={{
+            width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P2C}44`,
+            background: `${P2C}14`, color: P2C, fontSize: 20, fontWeight: 900,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+          }}>+</button>
+          <div style={{ textAlign: 'center', minWidth: 36 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: !isP1Turn ? P2C : '#333', fontFamily: 'Inter, sans-serif', lineHeight: 1, transition: 'color 0.2s' }}>
+              {!isP1Turn ? absVal : '·'}
+            </div>
+            <div style={{ fontSize: 8, fontWeight: 700, color: P2C, letterSpacing: '0.1em', marginTop: 1 }}>P2</div>
+          </div>
+          <button onPointerDown={() => step(1)} style={{
+            width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P2C}44`,
+            background: `${P2C}14`, color: P2C, fontSize: 24, fontWeight: 900,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+          }}>−</button>
+        </div>
+      </div>
+
+      {/* Turn label — P1 side */}
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', paddingBottom: 6, paddingTop: 2 }}>
+        <span style={{
+          fontSize: 9, fontWeight: 800, letterSpacing: '0.12em',
+          color: isP1Turn ? P1C : 'rgba(255,255,255,0.15)',
+          fontFamily: 'Inter, sans-serif', transition: 'color 0.2s',
+        }}>
+          {isP1Turn ? `TURNO P1 · ${absVal} MEMORIA` : 'ESPERANDO…'}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 // ── W/L step (non-counter games) ──────────────
 // Looks like the life counter: two full-screen colored panels.
 // ── Chess-clock times per game (seconds per player) ──────────────
@@ -1277,20 +1402,25 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
       {/* Opponent panel — top, flipped */}
       <ClockPanel who="them" user={opponent} secs={themTime} flipped />
 
-      {/* Center divider + back */}
-      <div style={{ flexShrink: 0, height: 2, background: 'rgba(0,0,0,0.7)', position: 'relative', overflow: 'visible', zIndex: 10 }}>
-        <button
-          onClick={onBack}
-          style={{
-            position: 'absolute', left: '50%', top: '50%',
-            transform: 'translate(-50%,-50%)',
-            width: 44, height: 44, background: '#111', border: '1px solid #2A2A2A',
-            borderRadius: 12, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#6B7280', fontSize: 18, zIndex: 11,
-          }}
-        >←</button>
-      </div>
+      {/* Center divider + back (or Digimon memory gauge) */}
+      {game === 'Digimon'
+        ? <MemoryGauge onBack={onBack} />
+        : (
+          <div style={{ flexShrink: 0, height: 2, background: 'rgba(0,0,0,0.7)', position: 'relative', overflow: 'visible', zIndex: 10 }}>
+            <button
+              onClick={onBack}
+              style={{
+                position: 'absolute', left: '50%', top: '50%',
+                transform: 'translate(-50%,-50%)',
+                width: 44, height: 44, background: '#111', border: '1px solid #2A2A2A',
+                borderRadius: 12, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#6B7280', fontSize: 18, zIndex: 11,
+              }}
+            >←</button>
+          </div>
+        )
+      }
 
       {/* My panel — bottom */}
       <ClockPanel who="me" user={me} secs={meTime} flipped={false} />
