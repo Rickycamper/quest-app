@@ -1072,13 +1072,9 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
 // ── Digimon Memory Gauge ──────────────────────
 // Shared track: negative = P1's memory, positive = P2's memory.
 // When mem > 0  → P2's turn (P2 has that many memory).
-// When mem <= 0 → P1's turn (P1 has |mem| memory, 0 = end of turn).
-function MemoryGauge({ onBack }) {
-  const [mem, setMem] = useState(-1) // start: P1 has 1 memory
-
-  const step = (dir) => {
-    setMem(v => { const nv = Math.max(-10, Math.min(10, v + dir)); navigator.vibrate?.(8); return nv })
-  }
+// When mem <= 0 → P1's turn (P1 has |mem| memory, 0 = border / end of turn signal).
+// State lives in WLStep so the chess clock reacts to which side the marker is on.
+function MemoryGauge({ mem, onStep, onBack }) {
 
   const isP1Turn = mem <= 0
   const absVal   = Math.abs(mem)
@@ -1134,7 +1130,7 @@ function MemoryGauge({ onBack }) {
 
         {/* P1 controls (bottom player) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button onPointerDown={() => step(1)} style={{
+          <button onPointerDown={() => onStep(1)} style={{
             width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P1C}44`,
             background: `${P1C}14`, color: P1C, fontSize: 20, fontWeight: 900,
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
@@ -1145,7 +1141,7 @@ function MemoryGauge({ onBack }) {
             </div>
             <div style={{ fontSize: 8, fontWeight: 700, color: P1C, letterSpacing: '0.1em', marginTop: 1 }}>P1</div>
           </div>
-          <button onPointerDown={() => step(-1)} style={{
+          <button onPointerDown={() => onStep(-1)} style={{
             width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P1C}44`,
             background: `${P1C}14`, color: P1C, fontSize: 24, fontWeight: 900,
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
@@ -1161,7 +1157,7 @@ function MemoryGauge({ onBack }) {
 
         {/* P2 controls (top player, flipped) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, transform: 'rotate(180deg)' }}>
-          <button onPointerDown={() => step(-1)} style={{
+          <button onPointerDown={() => onStep(-1)} style={{
             width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P2C}44`,
             background: `${P2C}14`, color: P2C, fontSize: 20, fontWeight: 900,
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
@@ -1172,7 +1168,7 @@ function MemoryGauge({ onBack }) {
             </div>
             <div style={{ fontSize: 8, fontWeight: 700, color: P2C, letterSpacing: '0.1em', marginTop: 1 }}>P2</div>
           </div>
-          <button onPointerDown={() => step(1)} style={{
+          <button onPointerDown={() => onStep(1)} style={{
             width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P2C}44`,
             background: `${P2C}14`, color: P2C, fontSize: 24, fontWeight: 900,
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
@@ -1208,10 +1204,12 @@ function fmt(secs) {
 // Chess-clock: tap your panel = end your turn (stops YOUR time, starts THEIRS).
 // Hold 5 s on your panel = instant win.
 function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
+  const isDigimon  = game === 'Digimon'
   const startSecs  = CLOCK_SECS[game] ?? 15 * 60
   const [meTime,   setMeTime]   = useState(startSecs)
   const [themTime, setThemTime] = useState(startSecs)
-  const [active,   setActive]   = useState(null)   // null | 'me' | 'them'
+  const [active,   setActive]   = useState(null)   // null | 'me' | 'them'  (non-Digimon)
+  const [mem,      setMem]      = useState(0)       // Digimon memory gauge: -10…0…10
   const [winner,   setWinner]   = useState(null)   // null | 'me' | 'them'
   const [holdPct,  setHoldPct]  = useState(0)      // 0–1 hold progress
   const [holdWho,  setHoldWho]  = useState(null)
@@ -1222,29 +1220,52 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
   const holdStart = useRef(0)
   const HOLD_MS  = 5000
 
-  // Countdown tick
+  // For Digimon: derive whose clock ticks from memory side.
+  // mem <= 0 → P1's turn ('me'), mem > 0 → P2's turn ('them').
+  // Game auto-starts the moment it loads (no tap needed to begin).
+  const clockActive = isDigimon
+    ? (winner ? null : (mem > 0 ? 'them' : 'me'))
+    : active
+
+  // Countdown tick — driven by clockActive
   useEffect(() => {
-    if (!active || winner) return
+    if (!clockActive || winner) return
     const id = setInterval(() => {
-      if (active === 'me') {
+      if (clockActive === 'me') {
         setMeTime(t => {
-          if (t <= 1) { setWinner('them'); setActive(null); return 0 }
+          if (t <= 1) { setWinner('them'); return 0 }
           return t - 1
         })
       } else {
         setThemTime(t => {
-          if (t <= 1) { setWinner('me'); setActive(null); return 0 }
+          if (t <= 1) { setWinner('me'); return 0 }
           return t - 1
         })
       }
     }, 1000)
     return () => clearInterval(id)
-  }, [active, winner])
+  }, [clockActive, winner])
 
-  // Tap: end YOUR turn → start OPPONENT's timer
-  const handleTap = (who) => {
+  // Vibrate when memory crosses sides (Digimon turn change)
+  const prevMemSide = useRef(mem > 0 ? 'them' : 'me')
+  useEffect(() => {
+    if (!isDigimon) return
+    const newSide = mem > 0 ? 'them' : 'me'
+    if (newSide !== prevMemSide.current) {
+      navigator.vibrate?.([30, 20, 60])
+      prevMemSide.current = newSide
+    }
+  }, [mem, isDigimon])
+
+  const stepMem = (dir) => {
     if (winner) return
-    // Only act if it's currently your turn (or game hasn't started)
+    setMem(v => Math.max(-10, Math.min(10, v + dir)))
+    navigator.vibrate?.(8)
+  }
+
+  // Tap: end YOUR turn → start OPPONENT's timer (non-Digimon only)
+  const handleTap = (who) => {
+    if (isDigimon || winner) return
     if (active !== null && active !== who) return
     setActive(who === 'me' ? 'them' : 'me')
     navigator.vibrate?.(18)
@@ -1291,7 +1312,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
   }
 
   const ClockPanel = ({ who, user, secs, flipped }) => {
-    const isActive   = active === who
+    const isActive   = clockActive === who
     const isWinner   = winner === who
     const isLoser    = winner !== null && winner !== who
     const isHolding  = holdWho === who
@@ -1368,7 +1389,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
         )}
 
         {/* Hint label */}
-        {!winner && active === null && (
+        {!winner && !isDigimon && active === null && (
           <div style={{ position: 'absolute', top: 14, left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', fontFamily: 'Inter, sans-serif' }}>
               TOCA AL TERMINAR TU TURNO
@@ -1404,7 +1425,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
 
       {/* Center divider + back (or Digimon memory gauge) */}
       {game === 'Digimon'
-        ? <MemoryGauge onBack={onBack} />
+        ? <MemoryGauge mem={mem} onStep={stepMem} onBack={onBack} />
         : (
           <div style={{ flexShrink: 0, height: 2, background: 'rgba(0,0,0,0.7)', position: 'relative', overflow: 'visible', zIndex: 10 }}>
             <button
