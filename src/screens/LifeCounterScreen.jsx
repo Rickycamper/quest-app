@@ -1070,127 +1070,123 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
 }
 
 // ── Digimon Memory Gauge ──────────────────────
-// Shared track: negative = P1's memory, positive = P2's memory.
-// mem <= 0 → P1's turn;  mem > 0 → P2's turn.
-// State lives in WLStep so the chess clock reacts automatically.
+// Two physical-card style panels side-by-side.
+// Left = P1 (normal), Right = P2 (rotated 180° so P2 reads right-side up from the top).
+// Circles: large dark with white bold numbers, active one glows white.
+// mem <= 0 → P1's turn; mem > 0 → P2's turn.
 function MemoryGauge({ mem, onSet, onBack }) {
   const isP1Turn = mem <= 0
-  const P1C = PLAYER_COLORS[0]   // magenta
-  const P2C = PLAYER_COLORS[1]   // sinopia red
-  const p1Val = mem <= 0 ? Math.abs(mem) : 0   // P1's current memory (0-10)
-  const p2Val = mem > 0  ? mem            : 0   // P2's current memory (0-10)
+  const P1C = PLAYER_COLORS[0]
+  const P2C = PLAYER_COLORS[1]
+  const p1Val = mem <= 0 ? Math.abs(mem) : 0
+  const p2Val = mem > 0  ? mem            : 0
 
-  // Tap a number circle → set memory directly
-  const tapP1 = (n) => onSet(n === p1Val ? 0 : -n)   // toggle off → 0
-  const tapP2 = (n) => onSet(n === p2Val ? 0 : n)
+  const tapP1 = (n) => onSet(mem === -n ? 0 : -n)
+  const tapP2 = (n) => onSet(mem === n  ? 0 : n)
 
-  const NumberGrid = ({ vals, activeVal, isActive, color, onTap }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'center', padding: '6px 8px' }}>
-      {/* Row 1: 1–5 */}
-      <div style={{ display: 'flex', gap: 5 }}>
-        {[1,2,3,4,5].map(n => {
-          const on = isActive && activeVal === n
-          return (
-            <button key={n} onPointerDown={() => onTap(n)} style={{
-              width: 44, height: 44, borderRadius: '50%', border: 'none',
-              background: on ? color : 'rgba(255,255,255,0.06)',
-              color: on ? '#FFF' : isActive ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.18)',
-              fontSize: 16, fontWeight: 900, cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif', lineHeight: 1,
-              boxShadow: on ? `0 0 14px ${color}80` : 'none',
-              transform: on ? 'scale(1.12)' : 'scale(1)',
-              transition: 'all 0.12s',
-            }}>{n}</button>
-          )
-        })}
+  // Both cards use the same row layout:
+  //   Row 1: 5 4 3 2 1  (1 closest to center/0)
+  //   Row 2: 6 7 8 9 10
+  // P2's card is rotated 180deg, so from P2's view they see 5 4 3 2 1 / 6 7 8 9 10.
+  const ROWS = [[5,4,3,2,1],[6,7,8,9,10]]
+
+  const MemCard = ({ playerVal, isActive, color, onTap, flip }) => (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: 4, padding: '7px 4px 5px',
+      background: isActive ? `${color}1A` : 'rgba(255,255,255,0.015)',
+      transform: flip ? 'rotate(180deg)' : 'none',
+      transition: 'background 0.35s',
+    }}>
+      {/* Turn / label strip */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 1 }}>
+        {isActive && (
+          <span style={{ fontSize: 7, fontWeight: 900, color, letterSpacing: '0.15em', fontFamily: 'Inter, sans-serif' }}>
+            ▶ TURNO
+          </span>
+        )}
+        <span style={{ fontSize: 7, fontWeight: 700, color: isActive ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.15)', letterSpacing: '0.1em', fontFamily: 'Inter, sans-serif' }}>
+          {flip ? 'P2' : 'P1'}
+        </span>
+        {playerVal > 0 && isActive && (
+          <span style={{ fontSize: 7, fontWeight: 700, color, fontFamily: 'Inter, sans-serif', letterSpacing: '0.08em' }}>
+            · {playerVal} MEM
+          </span>
+        )}
       </div>
-      {/* Row 2: 6–10 */}
-      <div style={{ display: 'flex', gap: 5 }}>
-        {[6,7,8,9,10].map(n => {
-          const on = isActive && activeVal === n
-          return (
-            <button key={n} onPointerDown={() => onTap(n)} style={{
-              width: 44, height: 44, borderRadius: '50%', border: 'none',
-              background: on ? color : 'rgba(255,255,255,0.06)',
-              color: on ? '#FFF' : isActive ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.18)',
-              fontSize: n === 10 ? 13 : 16, fontWeight: 900, cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif', lineHeight: 1,
-              boxShadow: on ? `0 0 14px ${color}80` : 'none',
-              transform: on ? 'scale(1.12)' : 'scale(1)',
-              transition: 'all 0.12s',
-            }}>{n}</button>
-          )
-        })}
-      </div>
+
+      {/* Number rows */}
+      {ROWS.map((row, ri) => (
+        <div key={ri} style={{ display: 'flex', gap: 3 }}>
+          {row.map(n => {
+            const active = isActive && playerVal === n
+            return (
+              <button
+                key={n}
+                onPointerDown={() => onTap(n)}
+                style={{
+                  width: 34, height: 34, borderRadius: '50%',
+                  // Physical card feel: dark circle, white bold number
+                  background: active ? '#FFFFFF' : '#141414',
+                  border: active ? `2.5px solid ${color}` : '2px solid rgba(255,255,255,0.13)',
+                  color: active ? '#111' : isActive ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.3)',
+                  fontSize: n === 10 ? 11 : 14, fontWeight: 900,
+                  cursor: 'pointer', fontFamily: 'Inter, sans-serif', lineHeight: 1,
+                  boxShadow: active ? `0 0 0 3px ${color}50, 0 0 18px ${color}60` : 'none',
+                  transform: active ? 'scale(1.1)' : 'scale(1)',
+                  transition: 'all 0.12s',
+                  touchAction: 'none',
+                }}
+              >{n}</button>
+            )
+          })}
+        </div>
+      ))}
     </div>
   )
 
   return (
     <div style={{
-      flexShrink: 0, background: '#0B0B0B', zIndex: 10,
-      borderTop: '2px solid #000', borderBottom: '2px solid #000',
+      flexShrink: 0, zIndex: 10,
+      display: 'flex', flexDirection: 'row', alignItems: 'stretch',
+      background: '#0A0A0A',
+      borderTop: '2.5px solid #000', borderBottom: '2.5px solid #000',
     }}>
-      {/* ── P2 section (rotated so P2 reads it right-side up) ── */}
-      <div style={{ transform: 'rotate(180deg)', borderBottom: '1px solid #1A1A1A' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 14px 0' }}>
-          <span style={{
-            fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', fontFamily: 'Inter, sans-serif',
-            color: !isP1Turn ? P2C : 'rgba(255,255,255,0.15)', transition: 'color 0.2s',
-          }}>
-            {!isP1Turn ? `▶ TURNO P2 · ${p2Val} MEM` : 'ESPERANDO…'}
-          </span>
-          <span style={{ fontSize: 9, fontWeight: 700, color: '#333', fontFamily: 'Inter, sans-serif' }}>P2</span>
-        </div>
-        <NumberGrid vals={[1,2,3,4,5,6,7,8,9,10]} activeVal={p2Val} isActive={!isP1Turn} color={P2C} onTap={tapP2} />
-      </div>
+      {/* P1 card — left, normal */}
+      <MemCard playerVal={p1Val} isActive={isP1Turn}  color={P1C} onTap={tapP1} flip={false} />
 
-      {/* ── Center strip: 0 reset + back ── */}
+      {/* Center divider: 0 circle + back */}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '5px 16px', borderBottom: '1px solid #1A1A1A',
-        background: '#0A0A0A',
+        width: 38, flexShrink: 0,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'space-evenly',
+        borderLeft: '1px solid #1A1A1A', borderRight: '1px solid #1A1A1A',
+        background: '#080808', padding: '6px 0',
       }}>
-        <button onPointerDown={() => onSet(0)} style={{
-          width: 40, height: 28, borderRadius: 8, border: `1.5px solid ${mem === 0 ? '#FFF' : '#2A2A2A'}`,
-          background: mem === 0 ? 'rgba(255,255,255,0.12)' : 'transparent',
-          color: mem === 0 ? '#FFF' : '#4B5563', fontSize: 12, fontWeight: 800,
-          cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '0.05em',
-        }}>0</button>
-
-        {/* Mini dot track for quick overview */}
-        <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          {Array.from({ length: 21 }, (_, i) => i - 10).map(pos => {
-            const on = pos === mem
-            const c  = pos < 0 ? P1C : pos > 0 ? P2C : '#4B5563'
-            return <div key={pos} style={{
-              width: on ? 8 : 5, height: on ? 8 : 5, borderRadius: '50%', flexShrink: 0,
-              background: on ? c : 'rgba(255,255,255,0.07)',
-              boxShadow: on ? `0 0 5px ${c}` : 'none',
-              transition: 'all 0.12s',
-            }} />
-          })}
-        </div>
-
         <button onClick={onBack} style={{
-          width: 40, height: 28, borderRadius: 8, background: 'transparent',
-          border: '1px solid #2A2A2A', color: '#6B7280', fontSize: 13,
-          cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          width: 28, height: 24, borderRadius: 6,
+          background: 'transparent', border: '1px solid #222',
+          color: '#555', fontSize: 11, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
         }}>←</button>
+
+        {/* 0 circle */}
+        <button
+          onPointerDown={() => onSet(0)}
+          style={{
+            width: 30, height: 30, borderRadius: '50%',
+            background: mem === 0 ? '#FFF' : '#141414',
+            border: mem === 0 ? '2px solid #FFF' : '2px solid rgba(255,255,255,0.18)',
+            color: mem === 0 ? '#111' : 'rgba(255,255,255,0.45)',
+            fontSize: 13, fontWeight: 900, cursor: 'pointer',
+            fontFamily: 'Inter, sans-serif', lineHeight: 1,
+            boxShadow: mem === 0 ? '0 0 12px rgba(255,255,255,0.35)' : 'none',
+            transition: 'all 0.12s', touchAction: 'none',
+          }}
+        >0</button>
       </div>
 
-      {/* ── P1 section ── */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 14px 0' }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: '#333', fontFamily: 'Inter, sans-serif' }}>P1</span>
-          <span style={{
-            fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', fontFamily: 'Inter, sans-serif',
-            color: isP1Turn ? P1C : 'rgba(255,255,255,0.15)', transition: 'color 0.2s',
-          }}>
-            {isP1Turn ? `▶ TURNO P1 · ${p1Val} MEM` : 'ESPERANDO…'}
-          </span>
-        </div>
-        <NumberGrid vals={[1,2,3,4,5,6,7,8,9,10]} activeVal={p1Val} isActive={isP1Turn} color={P1C} onTap={tapP1} />
-      </div>
+      {/* P2 card — right, rotated so P2 reads correctly from top */}
+      <MemCard playerVal={p2Val} isActive={!isP1Turn} color={P2C} onTap={tapP2} flip={true} />
     </div>
   )
 }
