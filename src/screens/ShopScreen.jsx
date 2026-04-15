@@ -537,10 +537,11 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                       try {
                         let newPrice = null
                         if (product.sku.startsWith('SCRYFALL-')) {
-                          const id = product.sku.replace('SCRYFALL-', '')
+                          const isFoil = product.sku.endsWith('-FOIL')
+                          const id = product.sku.replace('SCRYFALL-', '').replace('-FOIL', '')
                           const r = await fetch(`https://api.scryfall.com/cards/${id}`)
                           const d = await r.json()
-                          newPrice = d.prices?.usd
+                          newPrice = isFoil ? d.prices?.usd_foil : d.prices?.usd
                         } else {
                           const id = product.sku.replace('PKMN-', '')
                           const r = await fetch(`https://api.pokemontcg.io/v2/cards/${id}?select=tcgplayer`)
@@ -810,23 +811,47 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
     setFetching(false)
   }
 
-  // Scryfall fetch (MTG singles) → multiple results
+  // Scryfall fetch (MTG singles) → all prints including foil variants
   const handleScryfallSearch = async () => {
     if (!cardSearch.trim()) return
     setFetching(true); setCardResults([])
     try {
-      const res = await fetch(`https://api.scryfall.com/cards/search?q=name:${encodeURIComponent(cardSearch.trim())}&unique=cards&order=name&dir=asc`)
+      const res = await fetch(`https://api.scryfall.com/cards/search?q=name:${encodeURIComponent(cardSearch.trim())}&unique=prints&order=released&dir=desc`)
       const data = await res.json()
       if (data.object === 'list' && data.data?.length) {
-        setCardResults(data.data.map(c => ({
-          id: c.id,
-          name: c.name,
-          set: c.set_name,
-          image: c.image_uris?.normal ?? c.card_faces?.[0]?.image_uris?.normal,
-          price: c.prices?.usd ? parseFloat(c.prices.usd) : null,
-          sku: `SCRYFALL-${c.id}`,
-          game: 'MTG',
-        })))
+        const entries = []
+        data.data.forEach(c => {
+          const image = c.image_uris?.normal ?? c.card_faces?.[0]?.image_uris?.normal
+          const usd = c.prices?.usd ? parseFloat(c.prices.usd) : null
+          const usdFoil = c.prices?.usd_foil ? parseFloat(c.prices.usd_foil) : null
+          // Non-foil version (or base if no foil)
+          if (usd !== null || usdFoil === null) {
+            entries.push({
+              id: `${c.id}-nf`,
+              name: c.name,
+              set: c.set_name,
+              foil: false,
+              image,
+              price: usd,
+              sku: `SCRYFALL-${c.id}`,
+              game: 'MTG',
+            })
+          }
+          // Foil version (if price available)
+          if (usdFoil !== null) {
+            entries.push({
+              id: `${c.id}-foil`,
+              name: c.name,
+              set: c.set_name,
+              foil: true,
+              image,
+              price: usdFoil,
+              sku: `SCRYFALL-${c.id}-FOIL`,
+              game: 'MTG',
+            })
+          }
+        })
+        setCardResults(entries)
       } else {
         alert('Carta no encontrada en Scryfall')
       }
@@ -897,7 +922,8 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
   }
 
   const selectCard = (card) => {
-    setName(card.set ? `${card.name} (${card.set})` : card.name)
+    const foilSuffix = card.foil ? ' · Foil' : ''
+    setName(card.set ? `${card.name} (${card.set})${foilSuffix}` : `${card.name}${foilSuffix}`)
     if (card.image) setImageUrl(card.image)
     const finalPrice = card.price != null ? normalizeTcgPrice(card.price) : null
     if (finalPrice != null) {
@@ -1044,17 +1070,26 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
               </div>
               {/* Card results picker — MTG + Pokemon */}
               {cardResults.length > 0 && (
-                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 10, overflow: 'hidden', marginTop: 4, maxHeight: 280, overflowY: 'auto' }}>
+                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 12, overflow: 'hidden', marginTop: 6, maxHeight: 380, overflowY: 'auto' }}>
                   {cardResults.map(c => (
-                    <div key={c.id} onClick={() => selectCard(c)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', cursor: 'pointer', borderBottom: '1px solid #1F1F1F' }}>
-                      {c.image && <img src={c.image} style={{ width: 30, height: 42, objectFit: 'contain', borderRadius: 3, background: '#FFF' }} />}
+                    <div key={c.id} onClick={() => selectCard(c)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #1F1F1F', transition: 'background 0.1s' }}
+                      onTouchStart={e => e.currentTarget.style.background = '#222'}
+                      onTouchEnd={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      {c.image
+                        ? <img src={c.image} style={{ width: 44, height: 62, objectFit: 'contain', borderRadius: 4, flexShrink: 0, background: '#111' }} />
+                        : <div style={{ width: 44, height: 62, borderRadius: 4, background: '#111', flexShrink: 0 }} />
+                      }
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
-                        {c.set && <div style={{ fontSize: 10, color: '#6B7280' }}>{c.set}</div>}
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                        {c.set && <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>{c.set}</div>}
+                        {c.foil && <div style={{ marginTop: 4, display: 'inline-block', fontSize: 10, fontWeight: 700, color: '#A78BFA', background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)', borderRadius: 4, padding: '1px 6px' }}>✦ FOIL</div>}
                       </div>
-                      {c.price != null
-                        ? <span style={{ fontSize: 12, fontWeight: 800, color: '#4ADE80', flexShrink: 0 }}>${normalizeTcgPrice(c.price).toFixed(2)}</span>
-                        : <span style={{ fontSize: 10, color: '#4B5563', flexShrink: 0 }}>Sin precio</span>}
+                      <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                        {c.price != null
+                          ? <span style={{ fontSize: 13, fontWeight: 800, color: '#4ADE80' }}>${normalizeTcgPrice(c.price).toFixed(2)}</span>
+                          : <span style={{ fontSize: 11, color: '#4B5563' }}>Sin precio</span>}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1311,10 +1346,13 @@ export default function ShopScreen({ isOwner, isStaff }) {
       try {
         let newPrice = null
         if (p.sku.startsWith('SCRYFALL-')) {
-          const id = p.sku.replace('SCRYFALL-', '')
+          const isFoil = p.sku.endsWith('-FOIL')
+          const id = p.sku.replace('SCRYFALL-', '').replace('-FOIL', '')
           const r = await fetch(`https://api.scryfall.com/cards/${id}`)
           const d = await r.json()
-          newPrice = d.prices?.usd ? parseFloat(d.prices.usd) : null
+          newPrice = isFoil
+            ? (d.prices?.usd_foil ? parseFloat(d.prices.usd_foil) : null)
+            : (d.prices?.usd ? parseFloat(d.prices.usd) : null)
         } else {
           const id = p.sku.replace('PKMN-', '')
           const r = await fetch(`https://api.pokemontcg.io/v2/cards/${id}?select=tcgplayer`)
