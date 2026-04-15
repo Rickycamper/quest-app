@@ -1071,120 +1071,125 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
 
 // ── Digimon Memory Gauge ──────────────────────
 // Shared track: negative = P1's memory, positive = P2's memory.
-// When mem > 0  → P2's turn (P2 has that many memory).
-// When mem <= 0 → P1's turn (P1 has |mem| memory, 0 = border / end of turn signal).
-// State lives in WLStep so the chess clock reacts to which side the marker is on.
-function MemoryGauge({ mem, onStep, onBack }) {
-
+// mem <= 0 → P1's turn;  mem > 0 → P2's turn.
+// State lives in WLStep so the chess clock reacts automatically.
+function MemoryGauge({ mem, onSet, onBack }) {
   const isP1Turn = mem <= 0
-  const absVal   = Math.abs(mem)
-  const P1C      = PLAYER_COLORS[0]
-  const P2C      = PLAYER_COLORS[1]
-  const activeC  = isP1Turn ? P1C : P2C
-  // dots: -10…-1 = P1, 0 = center, 1…10 = P2
-  const DOTS = Array.from({ length: 21 }, (_, i) => i - 10)
+  const P1C = PLAYER_COLORS[0]   // magenta
+  const P2C = PLAYER_COLORS[1]   // sinopia red
+  const p1Val = mem <= 0 ? Math.abs(mem) : 0   // P1's current memory (0-10)
+  const p2Val = mem > 0  ? mem            : 0   // P2's current memory (0-10)
 
-  return (
-    <div style={{
-      flexShrink: 0, background: '#0A0A0A', zIndex: 10,
-      borderTop: '2px solid rgba(0,0,0,0.8)', borderBottom: '2px solid rgba(0,0,0,0.8)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
-      paddingBottom: 4,
-    }}>
-      {/* Turn label — P2 side (reads right-side up for P2 since top panel is flipped) */}
-      <div style={{
-        transform: 'rotate(180deg)', width: '100%',
-        display: 'flex', justifyContent: 'center', paddingTop: 6, paddingBottom: 2,
-      }}>
-        <span style={{
-          fontSize: 9, fontWeight: 800, letterSpacing: '0.12em',
-          color: !isP1Turn ? P2C : 'rgba(255,255,255,0.15)',
-          fontFamily: 'Inter, sans-serif', transition: 'color 0.2s',
-        }}>
-          {!isP1Turn ? `TURNO P2 · ${absVal} MEMORIA` : 'ESPERANDO…'}
-        </span>
-      </div>
+  // Tap a number circle → set memory directly
+  const tapP1 = (n) => onSet(n === p1Val ? 0 : -n)   // toggle off → 0
+  const tapP2 = (n) => onSet(n === p2Val ? 0 : n)
 
-      {/* Dot track */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '4px 8px', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', maxWidth: '100%' }}>
-        {DOTS.map(pos => {
-          const isActive = pos === mem
-          const isP1dot  = pos < 0
-          const isCenter = pos === 0
-          const dotC     = isP1dot ? P1C : isCenter ? '#4B5563' : P2C
+  const NumberGrid = ({ vals, activeVal, isActive, color, onTap }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'center', padding: '6px 8px' }}>
+      {/* Row 1: 1–5 */}
+      <div style={{ display: 'flex', gap: 5 }}>
+        {[1,2,3,4,5].map(n => {
+          const on = isActive && activeVal === n
           return (
-            <div key={pos} style={{
-              width: isCenter ? 10 : 9, height: isCenter ? 10 : 9,
-              borderRadius: '50%', margin: '0 2px', flexShrink: 0,
-              background: isActive ? dotC : isCenter ? '#1F1F1F' : 'rgba(255,255,255,0.05)',
-              border: isActive ? 'none' : `1px solid ${isCenter ? '#333' : 'rgba(255,255,255,0.08)'}`,
-              boxShadow: isActive ? `0 0 6px ${dotC}` : 'none',
-              transition: 'all 0.15s',
-            }} />
+            <button key={n} onPointerDown={() => onTap(n)} style={{
+              width: 44, height: 44, borderRadius: '50%', border: 'none',
+              background: on ? color : 'rgba(255,255,255,0.06)',
+              color: on ? '#FFF' : isActive ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.18)',
+              fontSize: 16, fontWeight: 900, cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif', lineHeight: 1,
+              boxShadow: on ? `0 0 14px ${color}80` : 'none',
+              transform: on ? 'scale(1.12)' : 'scale(1)',
+              transition: 'all 0.12s',
+            }}>{n}</button>
           )
         })}
       </div>
+      {/* Row 2: 6–10 */}
+      <div style={{ display: 'flex', gap: 5 }}>
+        {[6,7,8,9,10].map(n => {
+          const on = isActive && activeVal === n
+          return (
+            <button key={n} onPointerDown={() => onTap(n)} style={{
+              width: 44, height: 44, borderRadius: '50%', border: 'none',
+              background: on ? color : 'rgba(255,255,255,0.06)',
+              color: on ? '#FFF' : isActive ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.18)',
+              fontSize: n === 10 ? 13 : 16, fontWeight: 900, cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif', lineHeight: 1,
+              boxShadow: on ? `0 0 14px ${color}80` : 'none',
+              transform: on ? 'scale(1.12)' : 'scale(1)',
+              transition: 'all 0.12s',
+            }}>{n}</button>
+          )
+        })}
+      </div>
+    </div>
+  )
 
-      {/* Controls row: [P1 −]  [VALUE]  [P1 +]   back   [P2 −]  [VALUE flipped]  [P2 +] */}
-      <div style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '2px 12px', gap: 0, justifyContent: 'space-between' }}>
-
-        {/* P1 controls (bottom player) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button onPointerDown={() => onStep(1)} style={{
-            width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P1C}44`,
-            background: `${P1C}14`, color: P1C, fontSize: 20, fontWeight: 900,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-          }}>+</button>
-          <div style={{ textAlign: 'center', minWidth: 36 }}>
-            <div style={{ fontSize: 22, fontWeight: 900, color: isP1Turn ? P1C : '#333', fontFamily: 'Inter, sans-serif', lineHeight: 1, transition: 'color 0.2s' }}>
-              {isP1Turn ? absVal : '·'}
-            </div>
-            <div style={{ fontSize: 8, fontWeight: 700, color: P1C, letterSpacing: '0.1em', marginTop: 1 }}>P1</div>
-          </div>
-          <button onPointerDown={() => onStep(-1)} style={{
-            width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P1C}44`,
-            background: `${P1C}14`, color: P1C, fontSize: 24, fontWeight: 900,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-          }}>−</button>
+  return (
+    <div style={{
+      flexShrink: 0, background: '#0B0B0B', zIndex: 10,
+      borderTop: '2px solid #000', borderBottom: '2px solid #000',
+    }}>
+      {/* ── P2 section (rotated so P2 reads it right-side up) ── */}
+      <div style={{ transform: 'rotate(180deg)', borderBottom: '1px solid #1A1A1A' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 14px 0' }}>
+          <span style={{
+            fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', fontFamily: 'Inter, sans-serif',
+            color: !isP1Turn ? P2C : 'rgba(255,255,255,0.15)', transition: 'color 0.2s',
+          }}>
+            {!isP1Turn ? `▶ TURNO P2 · ${p2Val} MEM` : 'ESPERANDO…'}
+          </span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: '#333', fontFamily: 'Inter, sans-serif' }}>P2</span>
         </div>
-
-        {/* Back button */}
-        <button onClick={onBack} style={{
-          width: 38, height: 38, background: '#111', border: '1px solid #2A2A2A',
-          borderRadius: 10, cursor: 'pointer', color: '#6B7280', fontSize: 16,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>←</button>
-
-        {/* P2 controls (top player, flipped) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, transform: 'rotate(180deg)' }}>
-          <button onPointerDown={() => onStep(-1)} style={{
-            width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P2C}44`,
-            background: `${P2C}14`, color: P2C, fontSize: 20, fontWeight: 900,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-          }}>+</button>
-          <div style={{ textAlign: 'center', minWidth: 36 }}>
-            <div style={{ fontSize: 22, fontWeight: 900, color: !isP1Turn ? P2C : '#333', fontFamily: 'Inter, sans-serif', lineHeight: 1, transition: 'color 0.2s' }}>
-              {!isP1Turn ? absVal : '·'}
-            </div>
-            <div style={{ fontSize: 8, fontWeight: 700, color: P2C, letterSpacing: '0.1em', marginTop: 1 }}>P2</div>
-          </div>
-          <button onPointerDown={() => onStep(1)} style={{
-            width: 34, height: 34, borderRadius: 8, border: `1.5px solid ${P2C}44`,
-            background: `${P2C}14`, color: P2C, fontSize: 24, fontWeight: 900,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-          }}>−</button>
-        </div>
+        <NumberGrid vals={[1,2,3,4,5,6,7,8,9,10]} activeVal={p2Val} isActive={!isP1Turn} color={P2C} onTap={tapP2} />
       </div>
 
-      {/* Turn label — P1 side */}
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', paddingBottom: 6, paddingTop: 2 }}>
-        <span style={{
-          fontSize: 9, fontWeight: 800, letterSpacing: '0.12em',
-          color: isP1Turn ? P1C : 'rgba(255,255,255,0.15)',
-          fontFamily: 'Inter, sans-serif', transition: 'color 0.2s',
-        }}>
-          {isP1Turn ? `TURNO P1 · ${absVal} MEMORIA` : 'ESPERANDO…'}
-        </span>
+      {/* ── Center strip: 0 reset + back ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '5px 16px', borderBottom: '1px solid #1A1A1A',
+        background: '#0A0A0A',
+      }}>
+        <button onPointerDown={() => onSet(0)} style={{
+          width: 40, height: 28, borderRadius: 8, border: `1.5px solid ${mem === 0 ? '#FFF' : '#2A2A2A'}`,
+          background: mem === 0 ? 'rgba(255,255,255,0.12)' : 'transparent',
+          color: mem === 0 ? '#FFF' : '#4B5563', fontSize: 12, fontWeight: 800,
+          cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '0.05em',
+        }}>0</button>
+
+        {/* Mini dot track for quick overview */}
+        <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          {Array.from({ length: 21 }, (_, i) => i - 10).map(pos => {
+            const on = pos === mem
+            const c  = pos < 0 ? P1C : pos > 0 ? P2C : '#4B5563'
+            return <div key={pos} style={{
+              width: on ? 8 : 5, height: on ? 8 : 5, borderRadius: '50%', flexShrink: 0,
+              background: on ? c : 'rgba(255,255,255,0.07)',
+              boxShadow: on ? `0 0 5px ${c}` : 'none',
+              transition: 'all 0.12s',
+            }} />
+          })}
+        </div>
+
+        <button onClick={onBack} style={{
+          width: 40, height: 28, borderRadius: 8, background: 'transparent',
+          border: '1px solid #2A2A2A', color: '#6B7280', fontSize: 13,
+          cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+        }}>←</button>
+      </div>
+
+      {/* ── P1 section ── */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 14px 0' }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: '#333', fontFamily: 'Inter, sans-serif' }}>P1</span>
+          <span style={{
+            fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', fontFamily: 'Inter, sans-serif',
+            color: isP1Turn ? P1C : 'rgba(255,255,255,0.15)', transition: 'color 0.2s',
+          }}>
+            {isP1Turn ? `▶ TURNO P1 · ${p1Val} MEM` : 'ESPERANDO…'}
+          </span>
+        </div>
+        <NumberGrid vals={[1,2,3,4,5,6,7,8,9,10]} activeVal={p1Val} isActive={isP1Turn} color={P1C} onTap={tapP1} />
       </div>
     </div>
   )
@@ -1260,6 +1265,12 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
   const stepMem = (dir) => {
     if (winner) return
     setMem(v => Math.max(-10, Math.min(10, v + dir)))
+    navigator.vibrate?.(8)
+  }
+  // Direct absolute set (used by number-circle taps in MemoryGauge)
+  const setMemAbs = (v) => {
+    if (winner) return
+    setMem(Math.max(-10, Math.min(10, v)))
     navigator.vibrate?.(8)
   }
 
@@ -1355,26 +1366,48 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
           }} />
         )}
 
-        {/* Winner icon */}
+        {/* Winner icon (center) */}
         {isWinner && (
           <div style={{ animation: 'fadeUp 0.3s ease', pointerEvents: 'none' }}>
             {who === 'me'
-              ? <MiddleFingerIcon size={72} />
-              : <div style={{ fontSize: 60, lineHeight: 1 }}>💀</div>
+              ? <MiddleFingerIcon size={64} />
+              : <div style={{ fontSize: 52, lineHeight: 1 }}>💀</div>
             }
           </div>
         )}
 
-        {/* Timer display */}
+        {/* Center: avatar + name */}
+        {!isWinner && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, pointerEvents: 'none' }}>
+            <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: `3px solid rgba(255,255,255,${isActive ? 0.6 : 0.25})`, background: 'rgba(0,0,0,0.4)', flexShrink: 0, transition: 'border-color 0.3s' }}>
+              <Avatar url={user?.avatar_url} size={52} />
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 800, color: `rgba(255,255,255,${isActive ? 0.95 : 0.5})`, fontFamily: 'Inter, sans-serif', transition: 'color 0.3s' }}>
+              @{user?.username ?? '…'}
+            </span>
+          </div>
+        )}
+
+        {/* Timer — left side */}
         {!isWinner && (
           <div style={{
-            fontSize: urgent ? 72 : 64, fontWeight: 900,
-            fontFamily: 'Inter, sans-serif', letterSpacing: '-2px',
-            color: low ? '#FCA5A5' : '#FFF',
-            animation: urgent && isActive ? 'pulse 0.8s infinite' : 'none',
-            pointerEvents: 'none',
+            position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+            pointerEvents: 'none', textAlign: 'left',
           }}>
-            {fmt(secs)}
+            <div style={{
+              fontSize: 36, fontWeight: 900, fontFamily: 'Inter, sans-serif',
+              letterSpacing: '-1px', lineHeight: 1,
+              color: low ? '#FCA5A5' : `rgba(255,255,255,${isActive ? 1 : 0.45})`,
+              animation: urgent && isActive ? 'pulse 0.8s infinite' : 'none',
+              transition: 'color 0.3s',
+            }}>
+              {fmt(secs)}
+            </div>
+            {isActive && !winner && (
+              <div style={{ fontSize: 8, fontWeight: 700, color: color, letterSpacing: '0.1em', marginTop: 3, fontFamily: 'Inter, sans-serif' }}>
+                ▶ TU TURNO
+              </div>
+            )}
           </div>
         )}
 
@@ -1388,28 +1421,14 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
           </svg>
         )}
 
-        {/* Hint label */}
+        {/* Hint label (non-Digimon only, before game starts) */}
         {!winner && !isDigimon && active === null && (
-          <div style={{ position: 'absolute', top: 14, left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', fontFamily: 'Inter, sans-serif' }}>
+          <div style={{ position: 'absolute', top: 10, left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', fontFamily: 'Inter, sans-serif' }}>
               TOCA AL TERMINAR TU TURNO
             </span>
           </div>
         )}
-
-        {/* Player info */}
-        <div style={{
-          position: 'absolute', bottom: 14, left: 0, right: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          pointerEvents: 'none',
-        }}>
-          <div style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
-            <Avatar url={user?.avatar_url} size={26} />
-          </div>
-          <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.85)', fontFamily: 'Inter, sans-serif' }}>
-            @{user?.username ?? '…'}
-          </span>
-        </div>
       </div>
     )
   }
@@ -1425,7 +1444,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
 
       {/* Center divider + back (or Digimon memory gauge) */}
       {game === 'Digimon'
-        ? <MemoryGauge mem={mem} onStep={stepMem} onBack={onBack} />
+        ? <MemoryGauge mem={mem} onSet={setMemAbs} onBack={onBack} />
         : (
           <div style={{ flexShrink: 0, height: 2, background: 'rgba(0,0,0,0.7)', position: 'relative', overflow: 'visible', zIndex: 10 }}>
             <button
