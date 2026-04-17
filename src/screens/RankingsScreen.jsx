@@ -47,7 +47,7 @@ function advanceStaleYear(dateStr) {
 function SeasonBanner({ season }) {
   if (!season) return null
 
-  const isTest   = season.number === 1
+  const isTest   = Number(season.number) < 2  // null/0/1 all = test season
   // Safe parse: slice to YYYY-MM-DD first so it works whether Supabase returns
   // a plain date string or a full ISO timestamp. Also auto-correct stale years.
   const endStr   = advanceStaleYear(season.end_date)
@@ -290,7 +290,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
 
       {/* ── Season announcement — adapts to current season ── */}
       {(() => {
-        const isTest = !activeSeason || activeSeason.number === 1
+        const isTest = !activeSeason || Number(activeSeason.number) < 2
         // Safe date parse + auto-correct stale years (e.g. DB still has 2025)
         const endStr   = advanceStaleYear(activeSeason?.end_date   ?? '2026-04-30')
         const startStr = advanceStaleYear(activeSeason?.start_date ?? '2026-01-01')
