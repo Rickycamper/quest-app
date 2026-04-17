@@ -1289,9 +1289,13 @@ export default function ShopScreen({ isOwner, isStaff }) {
       .then(setProducts).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
-  // Reset sub-filters when switching category
+  // Reset sub-filters when switching category.
+  // Singles default to "Más reciente" — they turn over constantly (new cards
+  // get uploaded daily), so newest-first is what users actually want to see.
+  // Sealed / Accesorios keep the hand-curated sort_order (Relevancia).
   const handleCategory = (c) => {
-    setCategory(c); setGameFilter(null); setSubFilter(null); setSearch(''); setSortBy('relevance')
+    setCategory(c); setGameFilter(null); setSubFilter(null); setSearch('')
+    setSortBy(c === 'single' ? 'newest' : 'relevance')
   }
 
   const filtered = products.filter(p => {
