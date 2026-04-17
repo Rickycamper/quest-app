@@ -29,15 +29,29 @@ const PencilIcon = ({ size = 12, color = 'currentColor' }) => (
 
 const PTS = { 1: 3, 2: 2, 3: 1 }
 
+// Auto-advance a date string's year to current if it's clearly stale (> ~6 months ago)
+function advanceStaleYear(dateStr) {
+  const s = (dateStr ?? '').slice(0, 10)
+  if (!s) return s
+  const d = new Date(s + 'T12:00:00')
+  if (isNaN(d)) return s
+  const now = new Date()
+  // Keep bumping by 1 year until the date is within the last 6 months relative to today
+  while (d < new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())) {
+    d.setFullYear(d.getFullYear() + 1)
+  }
+  return d.toISOString().slice(0, 10)
+}
+
 // ── Season Banner ─────────────────────────────
 function SeasonBanner({ season }) {
   if (!season) return null
 
   const isTest   = season.number === 1
   // Safe parse: slice to YYYY-MM-DD first so it works whether Supabase returns
-  // a plain date string ("2026-04-30") or a full ISO timestamp ("2026-04-30T00:00:00+00:00")
-  const endStr   = (season.end_date   ?? '').slice(0, 10)
-  const startStr = (season.start_date ?? '').slice(0, 10)
+  // a plain date string or a full ISO timestamp. Also auto-correct stale years.
+  const endStr   = advanceStaleYear(season.end_date)
+  const startStr = advanceStaleYear(season.start_date)
   const end      = new Date(endStr   + 'T23:59:59')
   const start    = new Date(startStr + 'T00:00:00')
   const now      = new Date()
@@ -277,9 +291,9 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
       {/* ── Season announcement — adapts to current season ── */}
       {(() => {
         const isTest = !activeSeason || activeSeason.number === 1
-        // Safe date parse — works whether Supabase returns "2026-04-30" or a full ISO timestamp
-        const endStr   = (activeSeason?.end_date   ?? '2026-04-30').slice(0, 10)
-        const startStr = (activeSeason?.start_date ?? '2026-01-01').slice(0, 10)
+        // Safe date parse + auto-correct stale years (e.g. DB still has 2025)
+        const endStr   = advanceStaleYear(activeSeason?.end_date   ?? '2026-04-30')
+        const startStr = advanceStaleYear(activeSeason?.start_date ?? '2026-01-01')
         const endDate  = new Date(endStr   + 'T23:59:59')
         const startDate = new Date(startStr + 'T00:00:00')
         const now      = new Date()
@@ -297,7 +311,6 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
               borderRadius: 14, overflow: 'hidden',
               background: 'linear-gradient(135deg, rgba(251,146,60,0.10) 0%, rgba(245,158,11,0.05) 100%)',
               border: '1px solid rgba(251,146,60,0.25)',
-              animation: 'fadeUp 0.25s ease',
             }}>
               <div style={{
                 padding: '10px 14px 8px',
@@ -362,7 +375,6 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
             borderRadius: 14, overflow: 'hidden',
             background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(251,191,36,0.06) 100%)',
             border: '1px solid rgba(245,158,11,0.25)',
-            animation: 'fadeUp 0.25s ease',
           }}>
             <div style={{
               padding: '10px 14px 8px',
