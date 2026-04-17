@@ -2,7 +2,7 @@
 // QUEST — RankingsScreen
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament } from '../lib/supabase'
+import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, getActiveSeason } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
@@ -28,6 +28,85 @@ const PencilIcon = ({ size = 12, color = 'currentColor' }) => (
 )
 
 const PTS = { 1: 3, 2: 2, 3: 1 }
+
+// ── Season Banner ─────────────────────────────
+function SeasonBanner({ season }) {
+  if (!season) return null
+
+  const isTest   = season.number === 1
+  const end      = new Date(season.end_date + 'T23:59:59')
+  const start    = new Date(season.start_date + 'T00:00:00')
+  const now      = new Date()
+  const daysLeft = Math.max(0, Math.ceil((end - now) / 86_400_000))
+  const pct      = Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)))
+
+  const accentColor = isTest ? '#FB923C' : '#F59E0B'
+  const label       = isTest ? 'PRUEBA' : 'ACTIVA'
+  const labelBg     = isTest ? 'rgba(251,146,60,0.12)' : 'rgba(74,222,128,0.12)'
+  const labelBorder = isTest ? 'rgba(251,146,60,0.3)'  : 'rgba(74,222,128,0.25)'
+  const labelColor  = isTest ? '#FB923C'               : '#4ADE80'
+  const monthFmt    = (d) => d.toLocaleDateString('es', { day: 'numeric', month: 'short' })
+  const rangeStr    = `${monthFmt(start)} – ${monthFmt(end)}`
+
+  return (
+    <div style={{
+      margin: '6px 14px 0',
+      padding: '9px 12px',
+      borderRadius: 12,
+      background: `${accentColor}08`,
+      border: `1px solid ${accentColor}22`,
+      display: 'flex', flexDirection: 'column', gap: 6,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Icon */}
+        <svg width="13" height="13" viewBox="0 0 16 16" fill={accentColor} strokeWidth="0">
+          {isTest
+            ? <path d="M2 1.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-1v1a4.5 4.5 0 0 1-2.557 4.06c-.29.139-.443.377-.443.59v.7c0 .213.154.451.443.59A4.5 4.5 0 0 1 12.5 13v1h1a.5.5 0 0 1 0 1h-11a.5.5 0 1 1 0-1h1v-1a4.5 4.5 0 0 1 2.557-4.06c.29-.139.443-.377.443-.59v-.7c0-.213-.154-.451-.443-.59A4.5 4.5 0 0 1 3.5 3V2h-1a.5.5 0 0 1-.5-.5z"/>
+            : <path d={HAND_MIDDLE_PATH} />
+          }
+        </svg>
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: accentColor }}>
+            {isTest ? 'Temporada de Prueba' : season.name}
+          </span>
+          <span style={{ fontSize: 10, color: '#4B5563', marginLeft: 6 }}>{rangeStr}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: daysLeft <= 7 ? '#F87171' : '#6B7280' }}>
+            {daysLeft === 0 ? '¡hoy!' : `${daysLeft}d`}
+          </span>
+          <div style={{
+            fontSize: 8, fontWeight: 800, padding: '2px 6px', borderRadius: 5,
+            background: labelBg, border: `1px solid ${labelBorder}`, color: labelColor, letterSpacing: '0.05em',
+          }}>{label}</div>
+        </div>
+      </div>
+      {/* Progress bar */}
+      <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: `${accentColor}60`, transition: 'width 0.6s ease' }} />
+      </div>
+      {/* S2 coming soon strip — only during test season */}
+      {isTest && (
+        <div style={{
+          marginTop: 2,
+          padding: '7px 10px',
+          borderRadius: 8,
+          background: 'rgba(245,158,11,0.07)',
+          border: '1px solid rgba(245,158,11,0.2)',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
+            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+          </svg>
+          <div>
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#F59E0B' }}>Temporada 2 — comienza el 1° de mayo</span>
+            <div style={{ fontSize: 9, color: '#78716C', marginTop: 1 }}>Esos puntos sí cuentan para el Season Championship</div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const HAND_MIDDLE_PATH = "M8 0.16c-0.6769464285714285 0 -1.2252392857142855 0.5482964285714286 -1.2252392857142855 1.2252392857142855v5.0296071428571425c-0.26036428571428566 -0.23279642857142857 -0.6034321428571429 -0.37369642857142854 -0.9801928571428571 -0.37369642857142854 -0.8117214285714286 0 -1.4702857142857142 0.6585642857142857 -1.4702857142857142 1.4702857142857142v2.450478571428571c0 0.26955357142857145 -0.22054285714285715 0.49009642857142854 -0.49009642857142854 0.49009642857142854s-0.49009642857142854 -0.22054285714285715 -0.49009642857142854 -0.49009642857142854v-1.7061464285714285c-0.061260714285714286 0.042885714285714284 -0.11946071428571428 0.09189285714285714 -0.17765714285714285 0.13783928571428572l-0.5881178571428571 0.49009642857142854c-0.4472107142857143 0.3737 -0.7045107142857142 0.9250571428571428 -0.7045107142857142 1.5070464285714285v1.1639749999999998c0 1.1639785714285713 0.5176642857142857 2.266692857142857 1.4120892857142857 3.011025l0.16540714285714286 0.13783928571428572c0.8821714285714286 0.7351464285714285 1.9910142857142854 1.1364107142857143 3.1366107142857143 1.1364107142857143h3.617521428571428c2.1656071428571426 0 3.9207642857142857 -1.7551535714285713 3.9207642857142857 -3.9207642857142857v-2.9375142857142853c0 -0.8117178571428572 -0.6585678571428571 -1.4702857142857142 -1.4702857142857142 -1.4702857142857142 -0.37982499999999997 0 -0.7228928571428571 0.14396428571428568 -0.9832571428571427 0.3767607142857143 -0.058196428571428566 -0.7596464285714285 -0.6922607142857142 -1.3569535714285714 -1.4672214285714285 -1.3569535714285714 -0.3767642857142857 0 -0.7198285714285714 0.14090357142857143 -0.9801928571428571 0.3737V1.3852392857142857C9.225239285714284 0.7082964285714285 8.676942857142857 0.16 8 0.16Z"
 const HAND_PEACE_PATH = "M7.509965625 0.16c0.5420625 0 0.98 0.4379375 0.98 0.98v6.37h-1.96V1.14c0 -0.5420625 0.4379375 -0.98 0.98 -0.98Zm2.94 4.9c0.5420625 0 0.98 0.4379375 0.98 0.98V8c0 0.5420625 -0.4379375 0.98 -0.98 0.98s-0.98 -0.4379375 -0.98 -0.98v-1.96c0 -0.5420625 0.4379375 -0.98 0.98 -0.98Zm1.96 1.96c0 -0.5420625 0.4379375 -0.98 0.98 -0.98s0.98 0.4379375 0.98 0.98v1.96c0 0.5420625 -0.4379375 0.98 -0.98 0.98s-0.98 -0.4379375 -0.98 -0.98v-1.96ZM3.507278125 1.728l2.529625 5.782h-2.137625L1.712653125 2.512c-0.2174375 -0.496125 0.0091875 -1.071875 0.5053125 -1.2893125s1.0749375 0.0091875 1.2893125 0.5053125Zm0.826875 6.7773125 -0.006125 -0.0153125h2.9369375c0.6768125 0 1.225 0.5481875 1.225 1.225s-0.5481875 1.225 -1.225 1.225h-1.715c-0.2695 0 -0.49 0.2205 -0.49 0.49s0.2205 0.49 0.49 0.49h1.715c1.218875 0 2.205 -0.986125 2.205 -2.205v-0.018375c0.287875 0.165375 0.6216875 0.263375 0.98 0.263375 0.40425 0 0.777875 -0.1225 1.09025 -0.33075 0.2664375 0.7625625 0.9953125 1.31075 1.84975 1.31075 0.3583125 0 0.692125 -0.0949375 0.98 -0.263375v0.263375c0 2.70725 -2.19275 4.9 -4.9 4.9h-1.8895625c-1.2985 0 -2.5449375 -0.5175625 -3.4636875 -1.4363125l-0.35525 -0.35525c-0.7380625 -0.735 -1.1515 -1.733375 -1.1515 -2.7715625V10.45c0 -1.0014375 0.753375 -1.8283125 1.7241875 -1.9446875Z"
@@ -73,8 +152,64 @@ const sk = (w, h, r = 6) => ({
   backgroundSize: '400px 100%', animation: 'shimmer 1.4s infinite linear',
 })
 
+// ── Season badge pill ─────────────────────────
+// Badge key format: S{seasonNum}-{rank}-{game}-{branch}  e.g. "S2-1-MTG-Panama"
+// Legacy format (rank-1 only):   S{seasonNum}-{game}-{branch}   e.g. "S1-MTG-Panama"
+const BADGE_MEDAL = {
+  '1': { icon: '🥇', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
+  '2': { icon: '🥈', color: '#9CA3AF', bg: 'rgba(156,163,175,0.12)', border: 'rgba(156,163,175,0.3)' },
+  '3': { icon: '🥉', color: '#B87333', bg: 'rgba(184,115,51,0.12)', border: 'rgba(184,115,51,0.3)' },
+}
+
+function parseBadge(b) {
+  // New format: S2-1-MTG-Panama → { sNum:'S2', rank:'1', game:'MTG', branch:'Panama' }
+  const parts = b.split('-')
+  if (parts.length >= 4 && /^\d+$/.test(parts[1])) {
+    const sNum   = parts[0]
+    const rank   = parts[1]
+    const branch = parts[parts.length - 1]
+    const game   = parts.slice(2, -1).join('-')
+    return { sNum, rank, game, branch }
+  }
+  // Legacy format: S1-MTG-Panama
+  if (parts.length >= 3) {
+    const sNum   = parts[0]
+    const branch = parts[parts.length - 1]
+    const game   = parts.slice(1, -1).join('-')
+    return { sNum, rank: '1', game, branch }
+  }
+  return null
+}
+
+function SeasonBadgePill({ badges, game, branch }) {
+  if (!badges?.length || !game) return null
+
+  const matching = badges
+    .map(parseBadge)
+    .filter(p => p && p.game === game && (!branch || p.branch === branch))
+    .sort((a, b) => parseInt(a.rank) - parseInt(b.rank)) // best rank first
+
+  if (!matching.length) return null
+
+  return (
+    <>
+      {matching.slice(0, 2).map((p, i) => {
+        const m = BADGE_MEDAL[p.rank] ?? BADGE_MEDAL['1']
+        return (
+          <span key={i} title={`${p.sNum} · Puesto #${p.rank} · ${p.game} ${p.branch}`} style={{
+            fontSize: 9, fontWeight: 800, padding: '1px 5px', borderRadius: 5,
+            background: m.bg, border: `1px solid ${m.border}`,
+            color: m.color, letterSpacing: '0.04em', flexShrink: 0,
+          }}>{m.icon}{p.sNum}</span>
+        )
+      })}
+    </>
+  )
+}
+
 // ── Leaderboard ──────────────────────────────
-function LeaderboardTab({ branch, game, isAdmin }) {
+function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
+  const [showRules, setShowRules] = useState(false)
   const [entries,   setEntries]   = useState([])
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState('')
@@ -124,15 +259,274 @@ function LeaderboardTab({ branch, game, isAdmin }) {
 
   const canEdit = isAdmin
 
-  // No TCG selected yet — Global means all branches, not all games
+  // No TCG selected yet — show season info + rules
   if (!game) return (
-    <div style={{ padding: '64px 20px', textAlign: 'center' }}>
-      <svg width="44" height="44" viewBox="0 0 16 16" fill="#6B7280" style={{ marginBottom: 14, display: 'inline-block' }}>
-        <path d="m2 13 3.26875 -7.353125c0.478125 -1.075 1.259375 -1.984375 2.25 -2.615625L12.109375 0.09375c0.09375 -0.059375 0.203125 -0.090625 0.3125 -0.090625C12.740625 0 13 0.259375 13 0.58125v0.05c0 0.08125 -0.015625 0.159375 -0.04375 0.234375l-1.86875 4.6625c-0.059375 0.146875 -0.0875 0.303125 -0.0875 0.459375 0 0.171875 0.0375 0.34375 0.10625 0.503125L14 13H7.528125l0.36875 -1.10625 1.2625 -0.421875c0.203125 -0.06875 0.340625 -0.259375 0.340625 -0.475s-0.1375 -0.40625 -0.340625 -0.475l-1.2625 -0.421875 -0.421875 -1.2625c-0.06875 -0.2 -0.259375 -0.3375 -0.475 -0.3375s-0.40625 0.1375 -0.475 0.340625l-0.421875 1.2625 -1.2625 0.421875c-0.203125 0.06875 -0.340625 0.259375 -0.340625 0.475s0.1375 0.40625 0.340625 0.475l1.2625 0.421875 0.36875 1.103125H2zm6.7375 -8.578125c-0.034375 -0.103125 -0.128125 -0.171875 -0.2375 -0.171875s-0.203125 0.06875 -0.2375 0.171875l-0.209375 0.63125 -0.63125 0.209375c-0.103125 0.034375 -0.171875 0.128125 -0.171875 0.2375s0.06875 0.203125 0.171875 0.2375l0.63125 0.209375 0.209375 0.63125c0.034375 0.103125 0.128125 0.171875 0.2375 0.171875s0.203125 -0.06875 0.2375 -0.171875l0.209375 -0.63125 0.63125 -0.209375c0.103125 -0.034375 0.171875 -0.128125 0.171875 -0.2375s-0.06875 -0.203125 -0.171875 -0.2375l-0.63125 -0.209375 -0.209375 -0.63125zM1 14h14c0.553125 0 1 0.446875 1 1s-0.446875 1 -1 1H1c-0.553125 0 -1 -0.446875 -1 -1s0.446875 -1 1 -1z" strokeWidth="0"/>
-      </svg>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#6B7280' }}>Selecciona un TCG</div>
-      <div style={{ fontSize: 12, color: '#374151', marginTop: 6, lineHeight: 1.5 }}>
-        Elige un juego arriba para ver el ranking{branch ? ` de ${branch}` : ' global'}
+    <div style={{ padding: '12px 14px 32px', display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.25s ease' }}>
+
+      {/* ── Season announcement — adapts to current season ── */}
+      {(() => {
+        const isTest = !activeSeason || activeSeason.number === 1
+        // Days left in current season
+        const endDate  = activeSeason ? new Date(activeSeason.end_date + 'T23:59:59') : new Date('2026-04-30T23:59:59')
+        const daysLeft = Math.max(0, Math.ceil((endDate - new Date()) / 86_400_000))
+
+        if (isTest) {
+          // S1 still active — show "ending soon + S2 coming" card
+          return (
+            <div style={{
+              borderRadius: 14, overflow: 'hidden',
+              background: 'linear-gradient(135deg, rgba(251,146,60,0.10) 0%, rgba(245,158,11,0.05) 100%)',
+              border: '1px solid rgba(251,146,60,0.25)',
+            }}>
+              <div style={{
+                padding: '10px 14px 8px',
+                borderBottom: '1px solid rgba(251,146,60,0.12)',
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                {/* Hourglass SVG */}
+                <div style={{
+                  width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+                  background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="#FB923C" strokeWidth="0">
+                    <path d="M2 1.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-1v1a4.5 4.5 0 0 1-2.557 4.06c-.29.139-.443.377-.443.59v.7c0 .213.154.451.443.59A4.5 4.5 0 0 1 12.5 13v1h1a.5.5 0 0 1 0 1h-11a.5.5 0 1 1 0-1h1v-1a4.5 4.5 0 0 1 2.557-4.06c.29-.139.443-.377.443-.59v-.7c0-.213-.154-.451-.443-.59A4.5 4.5 0 0 1 3.5 3V2h-1a.5.5 0 0 1-.5-.5z"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#FB923C', letterSpacing: '-0.01em' }}>
+                    Temporada de Prueba — en curso
+                  </div>
+                  <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>
+                    Termina el 30 de abril 2026 · {daysLeft}d restantes
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 6,
+                  background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.3)',
+                  color: '#FB923C', letterSpacing: '0.05em', flexShrink: 0,
+                }}>PRUEBA</div>
+              </div>
+              <div style={{ padding: '10px 14px 0' }}>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#D1D5DB', lineHeight: 1.55 }}>
+                  Estamos en la temporada de prueba. Los puntos de esta temporada <strong style={{ color: '#FB923C' }}>no cuentan para el ranking final</strong> — es para que todos aprendan cómo funciona el sistema.
+                </p>
+              </div>
+              {/* S2 coming soon strip */}
+              <div style={{
+                margin: '0 14px 12px',
+                padding: '9px 12px',
+                borderRadius: 10,
+                background: 'rgba(245,158,11,0.07)',
+                border: '1px solid rgba(245,158,11,0.2)',
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
+                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                </svg>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B' }}>Temporada 2 oficial — comienza el 1° de mayo</span>
+                  <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>Esos puntos sí cuentan para el Season Championship</div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        // S2+ active — show official season card
+        return (
+          <div style={{
+            borderRadius: 14, overflow: 'hidden',
+            background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(251,191,36,0.06) 100%)',
+            border: '1px solid rgba(245,158,11,0.25)',
+          }}>
+            <div style={{
+              padding: '10px 14px 8px',
+              borderBottom: '1px solid rgba(245,158,11,0.15)',
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+                background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
+                  <path d={HAND_MIDDLE_PATH} />
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#F59E0B', letterSpacing: '-0.01em' }}>
+                  {activeSeason?.name ?? 'Temporada 2'} — Oficial
+                </div>
+                <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>
+                  1° de mayo · 31 de agosto 2026 · {daysLeft}d restantes
+                </div>
+              </div>
+              <div style={{
+                fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 6,
+                background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)',
+                color: '#4ADE80', letterSpacing: '0.05em', flexShrink: 0,
+              }}>ACTIVA</div>
+            </div>
+            <div style={{ padding: '10px 14px 12px' }}>
+              <p style={{ margin: '0 0 6px', fontSize: 12, color: '#D1D5DB', lineHeight: 1.55 }}>
+                La temporada de prueba terminó. La <strong style={{ color: '#F59E0B' }}>{activeSeason?.name ?? 'Temporada 2'} es oficial</strong> — los puntos que acumules <strong style={{ color: '#FFFFFF' }}>cuentan para el ranking final</strong> y el Season Championship.
+              </p>
+              <p style={{ margin: 0, fontSize: 11, color: '#6B7280', lineHeight: 1.5 }}>
+                Top 2 por ciudad clasifica al Season Championship.
+              </p>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── Rules card (collapsible) ── */}
+      <div style={{
+        borderRadius: 14,
+        background: '#111111',
+        border: '1px solid #1E1E1E',
+        overflow: 'hidden',
+      }}>
+        {/* Toggle header */}
+        <button
+          onClick={() => setShowRules(r => !r)}
+          style={{
+            width: '100%', padding: '12px 14px',
+            borderBottom: showRules ? '1px solid #1A1A1A' : 'none',
+            background: 'none', border: 'none', borderBottom: showRules ? '1px solid #1A1A1A' : 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          }}
+        >
+          <span style={{ fontSize: 10, fontWeight: 800, color: '#6B7280', letterSpacing: '0.08em' }}>
+            CÓMO FUNCIONAN LOS PUNTOS
+          </span>
+          <svg
+            width="13" height="13" viewBox="0 0 16 16" fill="#4B5563" strokeWidth="0"
+            style={{ transform: showRules ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease', flexShrink: 0 }}
+          >
+            <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+          </svg>
+        </button>
+        {/* Collapsed hint */}
+        {!showRules && (
+          <div style={{ padding: '0 14px 10px', fontSize: 11, color: '#374151', lineHeight: 1.4 }}>
+            Inscripción previa · 72h para reclamar · mín. +6/+8 jugadores · 1°=3pts 2°=2pts 3°=1pt
+          </div>
+        )}
+
+        {showRules && [{
+            icon: (
+              // Clipboard / registration icon
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="#A78BFA" strokeWidth="0">
+                <path d="M10.5 0a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-5A.5.5 0 0 1 5 1.5v-1A.5.5 0 0 1 5.5 0h5zm-5 1h5V.5a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5V1zM3 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H3zm1.5 4.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/>
+              </svg>
+            ),
+            color: '#A78BFA',
+            title: 'Inscríbete en el torneo',
+            body: 'Debes estar registrado dentro del app en el torneo antes de jugarlo. Sin inscripción previa no podrás hacer el claim de tus puntos.',
+          },
+          {
+            icon: (
+              // Clock icon
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="#FCD34D" strokeWidth="0">
+                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+              </svg>
+            ),
+            color: '#FCD34D',
+            title: '72 horas para reclamar',
+            body: 'Los torneos se eliminan automáticamente 3 días después de realizados. Reporta tu resultado antes de que desaparezca.',
+          },
+          {
+            icon: (
+              // People / group icon
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="#4ADE80" strokeWidth="0">
+                <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                <path fillRule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/>
+                <path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+              </svg>
+            ),
+            color: '#4ADE80',
+            title: 'Mínimo de jugadores',
+            body: null,
+            custom: (
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                {[
+                  { branch: 'Panama', min: 8, color: '#38BDF8' },
+                  { branch: 'David',  min: 6, color: '#FB923C' },
+                  { branch: 'Chitre', min: 6, color: '#A78BFA' },
+                ].map(({ branch: b, min, color }) => (
+                  <div key={b} style={{
+                    flex: 1, padding: '7px 6px', borderRadius: 10, textAlign: 'center',
+                    background: `${color}0D`, border: `1px solid ${color}30`,
+                  }}>
+                    <div style={{ fontSize: 17, fontWeight: 900, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>+{min}</div>
+                    <div style={{ fontSize: 9, color: '#6B7280', marginTop: 3, fontWeight: 700, letterSpacing: '0.06em' }}>{b.toUpperCase()}</div>
+                  </div>
+                ))}
+              </div>
+            ),
+          },
+          {
+            icon: (
+              // Trophy / rank icon — uses our app's rank-1 hand SVG
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
+                <path d={HAND_MIDDLE_PATH} />
+              </svg>
+            ),
+            color: '#F59E0B',
+            title: 'Sistema de puntos',
+            body: null,
+            custom: (
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                {[
+                  { rank: 1, pts: 3, path: HAND_MIDDLE_PATH, color: '#F59E0B' },
+                  { rank: 2, pts: 2, path: HAND_PEACE_PATH,  color: '#9CA3AF' },
+                  { rank: 3, pts: 1, path: HAMSA_PATH,        color: '#B87333' },
+                ].map(({ rank, pts, path, color }) => (
+                  <div key={rank} style={{
+                    flex: 1, padding: '7px 6px', borderRadius: 10, textAlign: 'center',
+                    background: `${color}0D`, border: `1px solid ${color}30`,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill={color} strokeWidth="0">
+                      <path d={path} />
+                    </svg>
+                    <div style={{ fontSize: 13, fontWeight: 800, color, lineHeight: 1 }}>{pts}pts</div>
+                    <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.06em' }}>#{rank} LUGAR</div>
+                  </div>
+                ))}
+              </div>
+            ),
+          },
+        ].map((rule, i, arr) => (
+          <div key={i} style={{
+            padding: '11px 14px',
+            borderBottom: i < arr.length - 1 ? '1px solid #161616' : 'none',
+            display: 'flex', gap: 11, alignItems: 'flex-start',
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8, flexShrink: 0, marginTop: 1,
+              background: `${rule.color}12`, border: `1px solid ${rule.color}25`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>{rule.icon}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#E5E5E5', marginBottom: 3 }}>{rule.title}</div>
+              {rule.body && (
+                <div style={{ fontSize: 11, color: '#6B7280', lineHeight: 1.55 }}>{rule.body}</div>
+              )}
+              {rule.custom}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Pick a game prompt ── */}
+      <div style={{ textAlign: 'center', paddingTop: 4 }}>
+        <div style={{ fontSize: 12, color: '#374151' }}>
+          Elige un TCG arriba para ver el ranking{branch ? ` de ${branch}` : ' global'} ↑
+        </div>
       </div>
     </div>
   )
@@ -192,11 +586,12 @@ function LeaderboardTab({ branch, game, isAdmin }) {
                 fontSize: 15, flexShrink: 0, overflow: 'hidden',
               }}><Avatar url={entry.avatar_url} size={34} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   @{entry.username}
                   {entry.verified && <span style={{ fontSize: 10, color: '#60A5FA' }}>✓</span>}
                   {entry.role === 'premium' && <PremiumBadge size={12} />}
                   <RoleBadge isOwner={entry.is_owner} role={entry.role} size={12} />
+                  <SeasonBadgePill badges={entry.season_badges} game={game} branch={branch} />
                 </div>
                 {entry.branch && (
                   <div style={{ fontSize: 11, color: BRANCH_STYLES[entry.branch]?.color ?? '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -886,11 +1281,17 @@ function ClaimsTab({ isStaff }) {
 
 // ── Main screen ──────────────────────────────
 export default function RankingsScreen({ profile, isStaff, onReportClaim, onCreateTournament, onViewProfile }) {
-  const [tab,       setTab]      = useState('leaderboard')
-  const [game,      setGame]     = useState(null)
-  const [branch,    setBranch]   = useState(null)
-  const [pulsing,   setPulsing]  = useState(true)  // pulse hint on first view
+  const [tab,           setTab]          = useState('leaderboard')
+  const [game,          setGame]         = useState(null)
+  const [branch,        setBranch]       = useState(null)
+  const [pulsing,       setPulsing]      = useState(true)  // pulse hint on first view
+  const [activeSeason,  setActiveSeason] = useState(null)
   const pulseTimer = useRef(null)
+
+  // Load active season once on mount
+  useEffect(() => {
+    getActiveSeason().then(setActiveSeason).catch(() => {})
+  }, [])
 
   // Auto-stop pulsing after 3 s; restart brief pulse on tab change
   useEffect(() => {
@@ -1009,9 +1410,12 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
         </>
       )}
 
+      {/* Season banner — compact version, only when a game is selected (empty state has its own full version) */}
+      {tab === 'leaderboard' && game && <SeasonBanner season={activeSeason} />}
+
       {['leaderboard', 'tournaments'].map(t => (
         <div key={t} style={{ display: t === tab ? 'block' : 'none' }}>
-          {t === 'leaderboard' && <LeaderboardTab branch={branch} game={game} isAdmin={profile?.role === 'admin'} />}
+          {t === 'leaderboard' && <LeaderboardTab branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} />}
           {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={profile?.role === 'admin'} />}
         </div>
       ))}
