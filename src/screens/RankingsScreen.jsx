@@ -47,13 +47,15 @@ function advanceStaleYear(dateStr) {
 function SeasonBanner({ season }) {
   if (!season) return null
 
-  const isTest   = Number(season.number) < 2  // null/0/1 all = test season
-  // Safe parse: slice to YYYY-MM-DD first so it works whether Supabase returns
-  // a plain date string or a full ISO timestamp. Also auto-correct stale years.
+  // Safe parse + auto-correct stale years
   const endStr   = advanceStaleYear(season.end_date)
   const startStr = advanceStaleYear(season.start_date)
   const end      = new Date(endStr   + 'T23:59:59')
   const start    = new Date(startStr + 'T00:00:00')
+  // isTest derived purely from date: if today is before the day after this season ends
+  // → still in S1 test period (ignores whatever "number" the DB stores)
+  const nextSeasonStart = new Date(end); nextSeasonStart.setDate(nextSeasonStart.getDate() + 1)
+  const isTest   = new Date() < nextSeasonStart
   const now      = new Date()
   const daysLeft = isNaN(end) ? 0 : Math.max(0, Math.ceil((end - now) / 86_400_000))
   const pct      = (isNaN(start) || isNaN(end)) ? 0 : Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)))
@@ -290,7 +292,6 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
 
       {/* ── Season announcement — adapts to current season ── */}
       {(() => {
-        const isTest = !activeSeason || Number(activeSeason.number) < 2
         // Safe date parse + auto-correct stale years (e.g. DB still has 2025)
         const endStr   = advanceStaleYear(activeSeason?.end_date   ?? '2026-04-30')
         const startStr = advanceStaleYear(activeSeason?.start_date ?? '2026-01-01')
@@ -298,6 +299,9 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
         const startDate = new Date(startStr + 'T00:00:00')
         const now      = new Date()
         const daysLeft = isNaN(endDate) ? 0 : Math.max(0, Math.ceil((endDate - now) / 86_400_000))
+        // isTest from date only — today before the day after this season ends = still test period
+        const s1End = new Date(endDate); s1End.setDate(s1End.getDate() + 1)
+        const isTest = !activeSeason || now < s1End
         // Derive next season dates: starts the day after current ends, lasts 4 months
         const nextStart = isNaN(endDate) ? null : (() => { const d = new Date(endDate); d.setDate(d.getDate() + 1); return d })()
         const fmt = (d, opts) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', opts)
