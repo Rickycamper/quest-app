@@ -33,9 +33,18 @@ if (!window.__supabase || window.__supabase.__v !== _CLIENT_V) {
     },
     global: {
       fetch: (url, options) => {
-        const isStorage = typeof url === 'string' && url.includes('/storage/v1/')
-        const ms = isStorage ? 60000 : 30000
+        const s = typeof url === 'string' ? url : ''
+        const isStorage = s.includes('/storage/v1/')
+        const isAuth    = s.includes('/auth/v1/')
+        // Auth & storage ops get 60 s; regular API calls get 30 s
+        const ms = isStorage || isAuth ? 60_000 : 30_000
         const ctrl = new AbortController()
+        // Respect Supabase's own abort signal if it passes one
+        const orig = options?.signal
+        if (orig) {
+          if (orig.aborted) { ctrl.abort() }
+          else orig.addEventListener('abort', () => ctrl.abort(), { once: true })
+        }
         const id = setTimeout(() => ctrl.abort(), ms)
         return fetch(url, { ...options, signal: ctrl.signal })
           .finally(() => clearTimeout(id))
@@ -146,7 +155,7 @@ export async function deleteAccount() {
 export async function getProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, role, branch, avatar_url, points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, social_links')
+    .select('id, username, role, branch, avatar_url, points, q_points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, social_links, season_badges')
     .eq('id', userId)
     .single()
   if (error) throw error
@@ -642,16 +651,6 @@ export async function getLeaderboard({ branch = null, game = null } = {}) {
   if (branch) query = query.eq('branch', branch)
 
   const { data, error } = await query
-  if (error) throw error
-  return data
-}
-
-export async function getActiveSeason() {
-  const { data, error } = await supabase
-    .from('ranking_seasons')
-    .select('*')
-    .eq('active', true)
-    .single()
   if (error) throw error
   return data
 }
@@ -1988,4 +1987,53 @@ export async function deleteReservation(reservation) {
     qtyUpdate = { [qtyCol]: newQty }
   }
   return { qtyUpdate }
+}
+
+// ── SEASONS ──────────────────────────────────────────────────────
+
+/** Returns the currently active season (or null) */
+export async function getActiveSeason() {
+  const { data, error } = await supabase
+    .from('seasons')
+    .select('id, number, name, start_date, end_date')
+    .eq('active', true)
+    .maybeSingle()
+  if (error) throw error
+  return data ?? null
+}
+
+/** Returns past seasons in descending order */
+export async function getPastSeasons() {
+  const { data, error } = await supabase
+    .from('seasons')
+    .select('id, number, name, start_date, end_date')
+    .eq('active', false)
+    .order('number', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+/** Returns top-N season snapshot for a given season, game, and branch */
+export async function getSeasonSnapshot(seasonId, game, branch, limit = 50) {
+  const query = supabase
+    .from('season_snapshots')
+    .select('rank, points, user_id, profiles:user_id(id, username, avatar_url, branch, role, is_owner, verified)')
+    .eq('season_id', seasonId)
+    .eq('game', game)
+    .order('rank', { ascending: true })
+    .limit(limit)
+
+  if (branch) {
+    query.eq('branch', branch)
+  } else {
+    query.is('branch', null)
+  }
+
+  const { data, error } = await query
+  if (error) throw error
+  return (data ?? []).map(r => ({
+    ...r.profiles,
+    points: r.points,
+    rank:   r.rank,
+  }))
 }

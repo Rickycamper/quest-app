@@ -181,7 +181,7 @@ function ShopComingSoon() {
 }
 
 function MainApp() {
-  const { profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
+  const { user, profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
   const { isGuest, requireAuth } = useGuest()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
   const [activeTab,      setActiveTab]     = useState('feed')
@@ -279,7 +279,10 @@ function MainApp() {
   }
 
   const handleViewProfile = useCallback((userId) => setViewingUserId(userId), [])
-  const handleOwnProfile  = useCallback(() => { if (profile?.id) setViewingUserId(profile.id) }, [profile?.id])
+  const handleOwnProfile  = useCallback(() => {
+    const id = profile?.id ?? user?.id
+    if (id) setViewingUserId(id)
+  }, [profile?.id, user?.id])
 
   // Lazy mount: only render a screen after it has been visited for the first time.
   // FeedScreen is pre-visited so it loads immediately; all others wait until tapped.
@@ -370,10 +373,10 @@ function MainApp() {
         />
       )}
 
-      {/* Profile overlay — slides over everything */}
+      {/* Profile overlay — slides over everything, including BottomNav (z:100) */}
       {viewingUserId && (
         <div style={{
-          position: 'absolute', inset: 0, zIndex: 50,
+          position: 'absolute', inset: 0, zIndex: 150,
           background: '#0A0A0A', overflowY: 'auto', scrollbarWidth: 'none',
           paddingTop: 'env(safe-area-inset-top, 0px)',
           animation: 'slideUp 0.22s ease',
