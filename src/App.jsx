@@ -24,7 +24,7 @@ import LifeCounterScreen     from './screens/LifeCounterScreen'
 import ChatScreen            from './screens/ChatScreen'
 import LogMatchModal         from './screens/LogMatchModal'
 import SearchScreen          from './screens/SearchScreen'
-import ShopScreen            from './screens/ShopScreen'
+import ShopScreen, { prefetchShopProducts } from './screens/ShopScreen'
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null } }
@@ -267,6 +267,14 @@ function MainApp() {
   useEffect(() => {
     if (!profile?.id) return
     subscribeToPush(profile.id)
+  }, [profile?.id])
+
+  // Pre-warm the shop product cache 2 s after the feed settles, so the first
+  // time the user opens the Shop tab the products are already in memory.
+  useEffect(() => {
+    if (!profile?.id) return
+    const t = setTimeout(prefetchShopProducts, 2000)
+    return () => clearTimeout(t)
   }, [profile?.id])
 
   // Expose openSearch globally so QuestHub can trigger it after closing

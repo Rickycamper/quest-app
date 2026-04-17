@@ -1292,12 +1292,47 @@ function AccessoryFilter({ value, onChange }) {
   )
 }
 
+// ── Module-level product cache ────────────────
+// Pre-populated by prefetchShopProducts() called from App.jsx ~2s after login,
+// so the first time the user opens Shop the data is already in memory.
+let _shopCache    = null
+let _shopCacheTs  = 0
+const SHOP_TTL    = 5 * 60 * 1000 // 5 minutes
+
+export function prefetchShopProducts() {
+  const now = Date.now()
+  if (_shopCache && now - _shopCacheTs < SHOP_TTL) return // already fresh
+  getShopProducts()
+    .then(data => { _shopCache = data; _shopCacheTs = Date.now() })
+    .catch(() => {})
+}
+
+// ── Skeleton card shown while first load is in progress ──────────────────────
+function SkeletonCard() {
+  const sh = {
+    background: 'linear-gradient(90deg,#1C1C1C 25%,#252525 50%,#1C1C1C 75%)',
+    backgroundSize: '400px 100%',
+    animation: 'shimmer 1.4s ease infinite',
+  }
+  return (
+    <div style={{ borderRadius: 14, overflow: 'hidden', background: '#111', border: '1px solid #1E1E1E' }}>
+      <div style={{ aspectRatio: '1/1', ...sh }} />
+      <div style={{ padding: '10px 12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ height: 10, borderRadius: 6, width: '55%', ...sh }} />
+        <div style={{ height: 14, borderRadius: 6, width: '88%', ...sh }} />
+        <div style={{ height: 11, borderRadius: 6, width: '40%', ...sh }} />
+      </div>
+    </div>
+  )
+}
+
 // ── Main screen ───────────────────────────────
 export default function ShopScreen({ isOwner, isStaff }) {
   const { profile } = useAuth()
   const canEdit = isOwner || isStaff
-  const [products,   setProducts]   = useState([])
-  const [loading,    setLoading]    = useState(true)
+  // Initialize from cache so pre-fetched data shows instantly (no loading flash)
+  const [products,   setProducts]   = useState(() => _shopCache ?? [])
+  const [loading,    setLoading]    = useState(() => _shopCache === null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshLog, setRefreshLog] = useState(null) // { updated, skipped, errors }
   const [showAdd,    setShowAdd]    = useState(false)
@@ -1309,9 +1344,15 @@ export default function ShopScreen({ isOwner, isStaff }) {
   const searchRef = useRef(null)
 
   useEffect(() => {
-    setLoading(true)
+    const now = Date.now()
+    const fresh = _shopCache && (now - _shopCacheTs < SHOP_TTL)
+    if (fresh) { setProducts(_shopCache); setLoading(false); return }
+    // Stale or no cache → fetch. Show spinner only if we have nothing yet.
+    if (!_shopCache) setLoading(true)
     getShopProducts()
-      .then(setProducts).catch(() => {}).finally(() => setLoading(false))
+      .then(data => { _shopCache = data; _shopCacheTs = Date.now(); setProducts(data) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   // Reset sub-filters when switching category.
@@ -1557,8 +1598,8 @@ export default function ShopScreen({ isOwner, isStaff }) {
       {/* ── Grid ── */}
       <div style={{ padding: '0 16px' }}>
         {loading && (
-          <div style={{ textAlign: 'center', padding: 48, color: '#4B5563', fontSize: 13 }}>
-            Cargando productos…
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {Array.from({ length: 6 }, (_, i) => <SkeletonCard key={i} />)}
           </div>
         )}
 
