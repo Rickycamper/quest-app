@@ -540,7 +540,9 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                           // Extract card name (before set/foil suffix)
                           const cardName = (product.name || '').replace(' · Foil', '').replace(/\s*\([^)]+\)\s*$/, '').trim()
                           const isFoil = product.sku.endsWith('-FOIL')
-                          const r = await fetch(`/api/mtg-price?card=${encodeURIComponent(cardName)}&foil=${isFoil}`)
+                          // Pass scryfall_id so the server can hit SCG's exact product URL
+                          const scryId = product.sku.replace('SCRYFALL-', '').replace('-FOIL', '')
+                          const r = await fetch(`/api/mtg-price?card=${encodeURIComponent(cardName)}&foil=${isFoil}&scryfall_id=${scryId}`)
                           const d = await r.json()
                           newPrice = d.price ?? null
                         } else {
@@ -1360,10 +1362,13 @@ export default function ShopScreen({ isOwner, isStaff }) {
       try {
         let newPrice = null
         if (p.sku.startsWith('SCRYFALL-')) {
-          // SCG price via Vercel function
+          // SCG price via Vercel function — pass scryfall_id so server can
+          // hit the exact product URL (set/cn/foil-specific) rather than
+          // a name-only search that returns ambiguous variants.
           const cardName = (p.name || '').replace(' · Foil', '').replace(/\s*\([^)]+\)\s*$/, '').trim()
           const isFoil = p.sku.endsWith('-FOIL')
-          const r = await fetch(`/api/mtg-price?card=${encodeURIComponent(cardName)}&foil=${isFoil}`)
+          const scryId = p.sku.replace('SCRYFALL-', '').replace('-FOIL', '')
+          const r = await fetch(`/api/mtg-price?card=${encodeURIComponent(cardName)}&foil=${isFoil}&scryfall_id=${scryId}`)
           const d = await r.json()
           newPrice = d.price ?? null
           // Fallback to Scryfall/TCGPlayer if SCG didn't return a price

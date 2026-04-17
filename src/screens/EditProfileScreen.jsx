@@ -103,7 +103,9 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
       let newAvatarUrl = avatarUrl
       if (avatarFile) {
         setUploadingImg(true)
-        newAvatarUrl = await uploadAvatar(avatarFile)
+        // Pass userId so uploadAvatar skips the /auth/v1/user round-trip
+        // that can hang on slow/flaky networks and leave save stuck.
+        newAvatarUrl = await uploadAvatar(avatarFile, userId)
         setUploadingImg(false)
       }
       const updated = await updateProfile(userId, {

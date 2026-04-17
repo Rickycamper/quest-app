@@ -282,16 +282,32 @@ function compressVideo(file, { maxWidth = 1280, bitrate = 2_500_000 } = {}) {
   })
 }
 
-export async function uploadAvatar(file) {
-  const { data: { user } } = await supabase.auth.getUser()
+// Uploads an avatar and returns its public URL.
+// Accepts optional userId — if the caller already has it (e.g. from AuthContext)
+// we skip the extra /auth/v1/user round-trip that can hang on slow networks.
+// Falls back to getSession() which reads from localStorage (no network).
+export async function uploadAvatar(file, userId = null) {
+  let uid = userId
+  if (!uid) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      uid = session?.user?.id ?? null
+    } catch {}
+  }
+  if (!uid) throw new Error('Sesión expirada. Vuelve a iniciar sesión.')
+
   // Always compress to JPEG — drastically reduces upload size and time
   const compressed = await compressImage(file)
-  const path = `${user.id}/avatar.jpg`
+  const path = `${uid}/avatar.jpg`
   const { error } = await supabase.storage
     .from('avatars')
     .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' })
-  if (error) throw error
+  if (error) {
+    console.warn('[uploadAvatar] storage error:', error)
+    throw new Error(error.message || 'No se pudo subir la foto. Revisa tu conexión.')
+  }
   const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  if (!data?.publicUrl) throw new Error('No se pudo obtener la URL de la foto.')
   // Cache-bust so React re-renders the new photo
   return data.publicUrl + '?t=' + Date.now()
 }

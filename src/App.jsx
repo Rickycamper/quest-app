@@ -184,19 +184,32 @@ function MainApp() {
 
   // Swipe navigation — use native window listeners so iOS Safari doesn't
   // swallow the touch inside the scrollable screen-scroll container.
+  //
+  // Thresholds are deliberately conservative: a regular vertical scroll on
+  // mobile often has a few px of horizontal drift, and the old 30px/1.0
+  // values were firing on those (bouncing users from Feed → Shop while they
+  // were just trying to read the feed). Requiring 80px horizontal AND a
+  // 2.5× dominance over vertical eliminates false positives.
   useEffect(() => {
     const onStart = (e) => {
+      // Ignore multi-touch (pinch-zoom, etc.) — never a swipe-nav intent
+      if (e.touches.length > 1) { swipeOrigin.current = null; return }
       const t = e.touches[0]
-      swipeOrigin.current = { x: t.clientX, y: t.clientY }
+      swipeOrigin.current = { x: t.clientX, y: t.clientY, t: Date.now() }
     }
     const onEnd = (e) => {
       if (!swipeOrigin.current) return
       const t  = e.changedTouches[0]
       const dx = t.clientX - swipeOrigin.current.x
       const dy = t.clientY - swipeOrigin.current.y
+      const dt = Date.now() - swipeOrigin.current.t
       swipeOrigin.current = null
-      // Must be horizontal — lower threshold so it's easy to trigger
-      if (Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(dy) * 1.0) return
+      // Require a clear horizontal gesture: ≥ 80px horizontal, ≥ 2.5×
+      // dominance over vertical, and completed in under 600ms (real swipes
+      // are quick; longer touches are usually drags or slow scrolls).
+      if (Math.abs(dx) < 80) return
+      if (Math.abs(dx) < Math.abs(dy) * 2.5) return
+      if (dt > 600) return
       setActiveTab(prev => {
         const tabs = Object.keys(screenMapRef.current)
         const idx  = tabs.indexOf(prev)
