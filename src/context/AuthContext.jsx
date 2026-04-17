@@ -14,14 +14,22 @@ export function AuthProvider({ children }) {
   const [authEvent, setAuthEvent]         = useState(null)
   const [recoverySession, setRecoverySession] = useState(null)
 
-  // Load profile after auth
-  const loadProfile = async (authUser) => {
+  // Load profile after auth. Logs errors (so slow/failed network shows up
+  // in console) and retries once with a short delay before giving up.
+  const loadProfile = async (authUser, attempt = 1) => {
     if (!authUser) { setProfile(null); return }
     try {
       const p = await getProfile(authUser.id)
       setProfile(p)
-    } catch {
-      setProfile(null)
+    } catch (e) {
+      console.warn(`[auth] getProfile failed (attempt ${attempt}):`, e?.message || e)
+      if (attempt < 2) {
+        setTimeout(() => loadProfile(authUser, attempt + 1), 1500)
+        return
+      }
+      // After 2 failed attempts, keep any existing profile (don't nuke it)
+      // so a transient network blip doesn't log the user out of owner/staff UI.
+      setProfile(prev => prev ?? null)
     }
   }
 
@@ -64,9 +72,11 @@ export function AuthProvider({ children }) {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
         (payload) => {
-          if (payload.new) {
-            setProfile(prev => prev ? { ...prev, ...payload.new } : payload.new)
-          }
+          if (!payload.new) return
+          // Only merge into an existing profile. If prev is null (initial load
+          // failed), a partial realtime payload (e.g. just {id, q_points})
+          // would clobber role/is_owner/etc. — so wait for loadProfile to run.
+          setProfile(prev => prev ? { ...prev, ...payload.new } : prev)
         }
       )
       .subscribe()

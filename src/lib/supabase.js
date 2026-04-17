@@ -155,7 +155,10 @@ export async function deleteAccount() {
 export async function getProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, role, branch, avatar_url, points, q_points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, social_links, season_badges')
+    // NOTE: q_points is intentionally NOT selected here — some DBs may not
+    // have the column; the realtime profile-sync channel fills it in from
+    // UPDATE payloads after award_points / redeem_points run.
+    .select('id, username, role, branch, avatar_url, points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, social_links, season_badges')
     .eq('id', userId)
     .single()
   if (error) throw error

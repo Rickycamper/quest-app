@@ -3,9 +3,15 @@
   "configurations": [
     {
       "name": "quest-app",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--host"],
+      "runtimeExecutable": "/Users/ricardotroya/.nvm/versions/node/v20.20.0/bin/node",
+      "runtimeArgs": ["/Users/ricardotroya/Downloads/quest-app/node_modules/.bin/vite", "--host"],
       "port": 5173
+    },
+    {
+      "name": "blinq",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3456", "/Users/ricardotroya/Downloads/blinq-website"],
+      "port": 3456
     }
   ]
 }

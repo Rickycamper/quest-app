@@ -171,11 +171,28 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
 
         {/* Name + info */}
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             {profile?.username}
             {profile?.verified && <span style={{ fontSize: 13, color: '#60A5FA' }}>✓</span>}
             {profile?.role === 'premium' && <PremiumBadge size={14} />}
             <RoleBadge isOwner={profile?.is_owner} role={profile?.role} size={14} />
+            {/* Season badges — 🥇🥈🥉 with rank-aware color */}
+            {profile?.season_badges?.slice(0, 4).map(b => {
+              const parts  = b.split('-')
+              // New format S2-1-MTG-Panama, legacy S1-MTG-Panama
+              const rank   = (parts.length >= 4 && /^\d+$/.test(parts[1])) ? parts[1] : '1'
+              const sNum   = parts[0]
+              const medals = { '1': { icon: '🥇', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)' },
+                               '2': { icon: '🥈', color: '#9CA3AF', bg: 'rgba(156,163,175,0.12)', border: 'rgba(156,163,175,0.28)' },
+                               '3': { icon: '🥉', color: '#B87333', bg: 'rgba(184,115,51,0.12)',  border: 'rgba(184,115,51,0.3)'  } }
+              const m = medals[rank] ?? medals['1']
+              return (
+                <span key={b} title={b} style={{
+                  fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 5,
+                  background: m.bg, border: `1px solid ${m.border}`, color: m.color, letterSpacing: '0.04em',
+                }}>{m.icon}{sNum}</span>
+              )
+            })}
           </div>
           {profile?.branch && (
             <div style={{ fontSize: 12, color: BRANCH_STYLES[profile.branch]?.color ?? '#6B7280', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
