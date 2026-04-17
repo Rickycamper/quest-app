@@ -34,18 +34,26 @@ function SeasonBanner({ season }) {
   if (!season) return null
 
   const isTest   = season.number === 1
-  const end      = new Date(season.end_date + 'T23:59:59')
-  const start    = new Date(season.start_date + 'T00:00:00')
+  // Safe parse: slice to YYYY-MM-DD first so it works whether Supabase returns
+  // a plain date string ("2026-04-30") or a full ISO timestamp ("2026-04-30T00:00:00+00:00")
+  const endStr   = (season.end_date   ?? '').slice(0, 10)
+  const startStr = (season.start_date ?? '').slice(0, 10)
+  const end      = new Date(endStr   + 'T23:59:59')
+  const start    = new Date(startStr + 'T00:00:00')
   const now      = new Date()
-  const daysLeft = Math.max(0, Math.ceil((end - now) / 86_400_000))
-  const pct      = Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)))
+  const daysLeft = isNaN(end) ? 0 : Math.max(0, Math.ceil((end - now) / 86_400_000))
+  const pct      = (isNaN(start) || isNaN(end)) ? 0 : Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)))
+
+  // Derive next season start/end (+1 day / +4 months) dynamically
+  const nextStart = isNaN(end) ? null : (() => { const d = new Date(end); d.setDate(d.getDate() + 1); return d })()
+  const nextEnd   = nextStart  ? (() => { const d = new Date(nextStart); d.setMonth(d.getMonth() + 4); d.setDate(d.getDate() - 1); return d })() : null
 
   const accentColor = isTest ? '#FB923C' : '#F59E0B'
   const label       = isTest ? 'PRUEBA' : 'ACTIVA'
   const labelBg     = isTest ? 'rgba(251,146,60,0.12)' : 'rgba(74,222,128,0.12)'
   const labelBorder = isTest ? 'rgba(251,146,60,0.3)'  : 'rgba(74,222,128,0.25)'
   const labelColor  = isTest ? '#FB923C'               : '#4ADE80'
-  const monthFmt    = (d) => d.toLocaleDateString('es', { day: 'numeric', month: 'short' })
+  const monthFmt    = (d) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
   const rangeStr    = `${monthFmt(start)} – ${monthFmt(end)}`
 
   return (
@@ -56,6 +64,7 @@ function SeasonBanner({ season }) {
       background: `${accentColor}08`,
       border: `1px solid ${accentColor}22`,
       display: 'flex', flexDirection: 'column', gap: 6,
+      animation: 'slideDown 0.22s cubic-bezier(0.34,1.3,0.64,1)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {/* Icon */}
@@ -85,8 +94,8 @@ function SeasonBanner({ season }) {
       <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: `${accentColor}60`, transition: 'width 0.6s ease' }} />
       </div>
-      {/* S2 coming soon strip — only during test season */}
-      {isTest && (
+      {/* Next season strip — only during test season, dates derived dynamically */}
+      {isTest && nextStart && (
         <div style={{
           marginTop: 2,
           padding: '7px 10px',
@@ -99,7 +108,9 @@ function SeasonBanner({ season }) {
             <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
           </svg>
           <div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: '#F59E0B' }}>Temporada 2 — comienza el 1° de mayo</span>
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#F59E0B' }}>
+              Temporada 2 — comienza el {nextStart.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
             <div style={{ fontSize: 9, color: '#78716C', marginTop: 1 }}>Esos puntos sí cuentan para el Season Championship</div>
           </div>
         </div>
@@ -266,17 +277,27 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
       {/* ── Season announcement — adapts to current season ── */}
       {(() => {
         const isTest = !activeSeason || activeSeason.number === 1
-        // Days left in current season
-        const endDate  = activeSeason ? new Date(activeSeason.end_date + 'T23:59:59') : new Date('2026-04-30T23:59:59')
-        const daysLeft = Math.max(0, Math.ceil((endDate - new Date()) / 86_400_000))
+        // Safe date parse — works whether Supabase returns "2026-04-30" or a full ISO timestamp
+        const endStr   = (activeSeason?.end_date   ?? '2026-04-30').slice(0, 10)
+        const startStr = (activeSeason?.start_date ?? '2026-01-01').slice(0, 10)
+        const endDate  = new Date(endStr   + 'T23:59:59')
+        const startDate = new Date(startStr + 'T00:00:00')
+        const now      = new Date()
+        const daysLeft = isNaN(endDate) ? 0 : Math.max(0, Math.ceil((endDate - now) / 86_400_000))
+        // Derive next season dates: starts the day after current ends, lasts 4 months
+        const nextStart = isNaN(endDate) ? null : (() => { const d = new Date(endDate); d.setDate(d.getDate() + 1); return d })()
+        const fmt = (d, opts) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', opts)
+        const endFmt  = fmt(endDate,  { day: 'numeric', month: 'long', year: 'numeric' })
+        const nextFmt = nextStart ? fmt(nextStart, { day: 'numeric', month: 'long', year: 'numeric' }) : '?'
 
         if (isTest) {
-          // S1 still active — show "ending soon + S2 coming" card
+          // S1 still active — show "ending soon + next season coming" card
           return (
             <div style={{
               borderRadius: 14, overflow: 'hidden',
               background: 'linear-gradient(135deg, rgba(251,146,60,0.10) 0%, rgba(245,158,11,0.05) 100%)',
               border: '1px solid rgba(251,146,60,0.25)',
+              animation: 'fadeUp 0.25s ease',
             }}>
               <div style={{
                 padding: '10px 14px 8px',
@@ -298,7 +319,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
                     Temporada de Prueba — en curso
                   </div>
                   <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>
-                    Termina el 30 de abril 2026 · {daysLeft}d restantes
+                    Termina el {endFmt} · {daysLeft}d restantes
                   </div>
                 </div>
                 <div style={{
@@ -312,23 +333,25 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
                   Estamos en la temporada de prueba. Los puntos de esta temporada <strong style={{ color: '#FB923C' }}>no cuentan para el ranking final</strong> — es para que todos aprendan cómo funciona el sistema.
                 </p>
               </div>
-              {/* S2 coming soon strip */}
-              <div style={{
-                margin: '0 14px 12px',
-                padding: '9px 12px',
-                borderRadius: 10,
-                background: 'rgba(245,158,11,0.07)',
-                border: '1px solid rgba(245,158,11,0.2)',
-                display: 'flex', alignItems: 'center', gap: 10,
-              }}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
-                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-                </svg>
-                <div>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B' }}>Temporada 2 oficial — comienza el 1° de mayo</span>
-                  <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>Esos puntos sí cuentan para el Season Championship</div>
+              {/* Next season coming soon strip */}
+              {nextStart && (
+                <div style={{
+                  margin: '0 14px 12px',
+                  padding: '9px 12px',
+                  borderRadius: 10,
+                  background: 'rgba(245,158,11,0.07)',
+                  border: '1px solid rgba(245,158,11,0.2)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                  </svg>
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B' }}>Temporada 2 oficial — comienza el {nextFmt}</span>
+                    <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>Esos puntos sí cuentan para el Season Championship</div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )
         }
@@ -339,6 +362,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
             borderRadius: 14, overflow: 'hidden',
             background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(251,191,36,0.06) 100%)',
             border: '1px solid rgba(245,158,11,0.25)',
+            animation: 'fadeUp 0.25s ease',
           }}>
             <div style={{
               padding: '10px 14px 8px',
@@ -359,7 +383,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
                   {activeSeason?.name ?? 'Temporada 2'} — Oficial
                 </div>
                 <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>
-                  1° de mayo · 31 de agosto 2026 · {daysLeft}d restantes
+                  {fmt(startDate, { day: 'numeric', month: 'long' })} – {fmt(endDate, { day: 'numeric', month: 'long', year: 'numeric' })} · {daysLeft}d restantes
                 </div>
               </div>
               <div style={{
@@ -1373,8 +1397,9 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
                     border: `1.5px solid ${active ? gs.border : 'transparent'}`,
                     background: active ? gs.bg : 'transparent',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'background 0.18s, border-color 0.18s',
-                    boxShadow: active ? `0 0 10px ${gs.border}55` : 'none',
+                    transition: 'background 0.22s ease, border-color 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease',
+                    boxShadow: active ? `0 0 12px ${gs.border}66` : 'none',
+                    transform: active ? 'scale(1.08)' : 'scale(1)',
                   }}>
                     <GameIcon game={g} size={18} />
                   </button>
@@ -1398,9 +1423,10 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
                     color: active ? (bStyle?.color ?? '#FFFFFF') : '#4B5563',
                     fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                    transition: 'background 0.18s, border-color 0.18s',
+                    transition: 'background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.15s ease',
+                    transform: active ? 'scale(1.04)' : 'scale(1)',
                   }}>
-                    {bStyle && <span style={{ width: 5, height: 5, borderRadius: '50%', background: active ? bStyle.dot : '#374151', flexShrink: 0, transition: 'background 0.15s' }} />}
+                    {bStyle && <span style={{ width: 5, height: 5, borderRadius: '50%', background: active ? bStyle.dot : '#374151', flexShrink: 0, transition: 'background 0.2s ease' }} />}
                     {b || 'Global'}
                   </button>
                 )
@@ -1415,7 +1441,7 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
 
       {['leaderboard', 'tournaments'].map(t => (
         <div key={t} style={{ display: t === tab ? 'block' : 'none' }}>
-          {t === 'leaderboard' && <LeaderboardTab branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} />}
+          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} />}
           {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={profile?.role === 'admin'} />}
         </div>
       ))}
