@@ -187,6 +187,9 @@ const BADGE_MEDAL = {
 }
 
 function parseBadge(b) {
+  // Defensive: Supabase can return nulls, numbers, or unexpected shapes on older rows.
+  // We don't want one malformed badge to crash the whole leaderboard render.
+  if (typeof b !== 'string' || !b) return null
   // New format: S2-1-MTG-Panama → { sNum:'S2', rank:'1', game:'MTG', branch:'Panama' }
   const parts = b.split('-')
   if (parts.length >= 4 && /^\d+$/.test(parts[1])) {

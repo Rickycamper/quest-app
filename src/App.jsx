@@ -29,18 +29,47 @@ import ShopScreen            from './screens/ShopScreen'
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null } }
   static getDerivedStateFromError(e) { return { error: e } }
+  componentDidCatch(error, info) {
+    // Surface to console so the user can screenshot it if needed
+    console.error('[ErrorBoundary]', this.props.label || 'root', error, info?.componentStack)
+  }
+  componentDidUpdate(prevProps) {
+    // Auto-reset when the resetKey changes (e.g. user switches tab).
+    // Without this, a single screen crash would stay "stuck" forever.
+    if (this.state.error && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ error: null })
+    }
+  }
   render() {
-    if (this.state.error) return (
-      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#0A0A0A', padding:24, gap:16 }}>
-        <div style={{ fontSize:32 }}>⚠️</div>
-        <div style={{ color:'#EF4444', fontSize:13, fontFamily:'monospace', textAlign:'center', maxWidth:340, wordBreak:'break-all', lineHeight:1.6 }}>
-          {this.state.error?.message || String(this.state.error)}
+    if (this.state.error) {
+      const compact = this.props.compact
+      const msg = this.state.error?.message || String(this.state.error)
+      return (
+        <div style={{
+          minHeight: compact ? 300 : '100%',
+          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+          background:'#0A0A0A', padding: compact ? 32 : 24, gap:14, textAlign:'center',
+        }}>
+          <div style={{ fontSize: compact ? 36 : 32 }}>⚠️</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#E5E5E5' }}>
+            {compact ? 'Esta pantalla no se pudo cargar' : 'Algo salió mal'}
+          </div>
+          <div style={{ color:'#9CA3AF', fontSize:12, fontFamily:'monospace', maxWidth:320, wordBreak:'break-word', lineHeight:1.6 }}>
+            {msg}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <button onClick={() => this.setState({ error: null })} style={{
+              padding:'10px 22px', background:'transparent', border:'1px solid #2A2A2A',
+              color:'#E5E5E5', borderRadius:10, fontWeight:700, fontSize:13, cursor:'pointer',
+            }}>Reintentar</button>
+            <button onClick={() => window.location.reload()} style={{
+              padding:'10px 22px', background:'#FFF', border:'none',
+              color:'#111', borderRadius:10, fontWeight:700, fontSize:13, cursor:'pointer',
+            }}>Recargar app</button>
+          </div>
         </div>
-        <button onClick={() => window.location.reload()} style={{ marginTop:8, padding:'12px 28px', background:'#FFF', border:'none', borderRadius:10, fontWeight:700, fontSize:14, cursor:'pointer' }}>
-          Recargar
-        </button>
-      </div>
-    )
+      )
+    }
     return this.props.children
   }
 }
@@ -497,11 +526,16 @@ function MainApp() {
       </div>
 
       {/* Lazy-mount: screens render on first visit, then stay mounted (no re-fetch on tab switch). */}
+      {/* Per-screen ErrorBoundary: if one tab crashes (stale bundle, bad data, etc.)   */}
+      {/* the user gets a "Reintentar / Recargar" card instead of a silent black screen */}
+      {/* and the other tabs keep working.                                              */}
       <div ref={scrollRef} className="screen-scroll" onScroll={handleScroll}>
         {Object.keys(screenMap).map(tab => (
           visitedTabs.has(tab) ? (
             <div key={tab} style={{ display: tab === activeTab ? 'block' : 'none', minHeight: '100%' }}>
-              {screenMap[tab]}
+              <ErrorBoundary label={tab} compact resetKey={activeTab}>
+                {screenMap[tab]}
+              </ErrorBoundary>
             </div>
           ) : null
         ))}
