@@ -11,6 +11,31 @@ import { GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
 
 const STORE_WHATSAPP = '50766130548'
+// Branch-specific WhatsApp numbers.
+// Key = branch, value = E.164 without + (for wa.me). When a product is only
+// stocked in a single branch, we route the customer to that branch's number.
+// Fallback: STORE_WHATSAPP (used for multi-branch or out-of-stock products).
+const BRANCH_WHATSAPP = {
+  david:  '50762718525',
+  panama: STORE_WHATSAPP,
+  chitre: STORE_WHATSAPP,
+}
+
+// Decide which WhatsApp number to use for a given product.
+// Rule: if the product has stock in exactly one branch, use that branch's
+// number. Otherwise (multi-branch, no stock, or coming-soon), fall back to
+// the main store number.
+function waNumberForProduct(product) {
+  const d = product?.qty_david  ?? 0
+  const p = product?.qty_panama ?? 0
+  const c = product?.qty_chitre ?? 0
+  const branches = []
+  if (d > 0) branches.push('david')
+  if (p > 0) branches.push('panama')
+  if (c > 0) branches.push('chitre')
+  if (branches.length === 1) return BRANCH_WHATSAPP[branches[0]] ?? STORE_WHATSAPP
+  return STORE_WHATSAPP
+}
 
 const BRANCHES = [
   { key: 'qty_david',  label: 'David'  },
@@ -436,7 +461,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
     e.stopPropagation()
     const priceStr = (!product.price || Number(product.price) === 0) ? '' : ` (${fmtPrice(product.price)})`
     const text = `Hola! Me interesa: *${product.name}*${priceStr}. ¿Está disponible?${userTag}`
-    window.open(`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(text)}`, '_blank')
+    window.open(`https://wa.me/${waNumberForProduct(product)}?text=${encodeURIComponent(text)}`, '_blank')
   }
 
   const step = (setter, delta) => setter(v => String(Math.max(0, (parseInt(v) || 0) + delta)))
@@ -706,7 +731,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                 <button onClick={(e) => {
                   e.stopPropagation()
                   const text = `Hola! Quiero reservar: *${product.name}*. ¿Cuándo llega y cómo aparto uno?${userTag}`
-                  window.open(`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(text)}`, '_blank')
+                  window.open(`https://wa.me/${waNumberForProduct(product)}?text=${encodeURIComponent(text)}`, '_blank')
                 }} style={{
                   width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
                   background: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
