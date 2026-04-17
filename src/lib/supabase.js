@@ -39,14 +39,31 @@ if (!window.__supabase || window.__supabase.__v !== _CLIENT_V) {
         // Auth & storage ops get 60 s; regular API calls get 30 s
         const ms = isStorage || isAuth ? 60_000 : 30_000
         const ctrl = new AbortController()
-        // Respect Supabase's own abort signal if it passes one
+        // Respect Supabase's own abort signal if it passes one.
+        // IMPORTANT: If the original signal is already aborted, do NOT call
+        // fetch() — Safari iOS throws "TypeError: load failed" instead of
+        // AbortError when fetch() receives an already-aborted signal, and
+        // that error bubbles up as a hard error to the user.
         const orig = options?.signal
         if (orig) {
-          if (orig.aborted) { ctrl.abort() }
-          else orig.addEventListener('abort', () => ctrl.abort(), { once: true })
+          if (orig.aborted) {
+            return Promise.reject(
+              Object.assign(new DOMException('Request aborted', 'AbortError'), { isSilent: true })
+            )
+          }
+          orig.addEventListener('abort', () => ctrl.abort(), { once: true })
         }
         const id = setTimeout(() => ctrl.abort(), ms)
         return fetch(url, { ...options, signal: ctrl.signal })
+          .catch(err => {
+            // Normalise Safari's "TypeError: load failed" (aborted fetch) into
+            // a proper AbortError so callers can distinguish network errors from
+            // genuine API errors.
+            if (err?.name === 'TypeError' && /load failed/i.test(err?.message)) {
+              throw Object.assign(new DOMException('Request aborted', 'AbortError'), { cause: err })
+            }
+            throw err
+          })
           .finally(() => clearTimeout(id))
       }
     }

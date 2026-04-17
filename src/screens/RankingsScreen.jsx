@@ -255,7 +255,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
     setError('')
     getLeaderboard({ branch: branch || null, game })
       .then(setEntries)
-      .catch(e => setError(e.message))
+      .catch(e => { if (e?.name !== 'AbortError') setError(e.message || 'Error de conexión.') })
       .finally(() => setLoading(false))
   }, [branch, game])
 
@@ -1144,14 +1144,25 @@ function TournamentsTab({ game, branch, onViewProfile, isAdmin }) {
   const [items,   setItems]   = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
+    let cancelled = false
     setLoading(true)
+    setError('')
     getTournaments({ game: game || null, branch: branch || null })
-      .then(setItems)
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [game, branch])
+      .then(data => { if (!cancelled) setItems(data) })
+      .catch(e => {
+        if (cancelled) return
+        // AbortError = signal was already cancelled (e.g. component unmounted
+        // mid-request, or Safari threw "load failed" — see supabase.js wrapper).
+        // Treat it silently; the component will retry or unmount cleanly.
+        if (e?.name === 'AbortError') return
+        setError(e.message || 'Error de conexión. Verificá tu internet.')
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [game, branch, retryKey])
 
   if (loading) return (
     <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1171,7 +1182,17 @@ function TournamentsTab({ game, branch, onViewProfile, isAdmin }) {
   )
 
   if (error) return (
-    <div style={{ margin: '16px 20px', padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13 }}>{error}</div>
+    <div style={{ margin: '16px 20px', padding: '14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', textAlign: 'center' }}>
+      <div style={{ color: '#F87171', fontSize: 13 }}>
+        {/aborted|load failed|network|fetch/i.test(error)
+          ? 'Error de conexión. Verificá tu internet e intentá de nuevo.'
+          : error}
+      </div>
+      <button
+        onClick={() => setRetryKey(k => k + 1)}
+        style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.15)', color: '#F87171', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+      >Reintentar</button>
+    </div>
   )
 
   if (!items.length) return (
