@@ -571,16 +571,25 @@ function AppInner() {
   const [gateScreen,    setGateScreen]    = useState(null) // null | 'login' | 'signup'
   const [showGateModal, setShowGateModal] = useState(false)
 
-  // Detect recovery from URL hash on first load (implicit flow: #type=recovery)
+  // Detect recovery from URL hash on first load (legacy implicit flow: #type=recovery)
+  // PKCE flow sends ?code= instead; Supabase JS exchanges it automatically and
+  // fires PASSWORD_RECOVERY through onAuthStateChange — no manual handling needed.
   useEffect(() => {
     const hash = window.location.hash
     if (hash.includes('type=recovery')) {
       setShowReset(true)
       window.history.replaceState(null, '', window.location.pathname)
     }
+    // Clean up PKCE code param from URL so it doesn't stay in the address bar
+    // after Supabase exchanges it. Supabase reads it before React mounts so this
+    // removal is safe to do on first render.
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('code')) {
+      window.history.replaceState(null, '', window.location.pathname)
+    }
   }, [])
 
-  // Also detect via Supabase auth events (PKCE flow or when events fire after load)
+  // Detect via Supabase auth events (works for both implicit and PKCE flows)
   useEffect(() => {
     if (authEvent === 'PASSWORD_RECOVERY') { setShowReset(true); return }
     if (authEvent === 'SIGNED_IN') {

@@ -21,7 +21,7 @@ function checkRateLimit(userId, action, cooldownMs) {
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-const _CLIENT_V = 7
+const _CLIENT_V = 8
 
 if (!window.__supabase || window.__supabase.__v !== _CLIENT_V) {
   const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -29,6 +29,12 @@ if (!window.__supabase || window.__supabase.__v !== _CLIENT_V) {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      // PKCE flow: email links (reset-password, signup confirmation) go directly
+      // to the app URL as ?code=XXX instead of routing through the Supabase
+      // verify endpoint (supabase.co/auth/v1/verify). This avoids DNS failures
+      // some users experience when clicking reset-password links, and is more
+      // resilient across all browsers and network environments.
+      flowType: 'pkce',
       lock: (_name, _timeout, fn) => fn(),
     },
     global: {
