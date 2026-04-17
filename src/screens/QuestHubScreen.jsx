@@ -313,6 +313,13 @@ function QPointsView({ profile, onRedeemed }) {
   const [redeemMsg,  setRedeemMsg]  = useState('')
   const [balance, setBalance]       = useState(profile?.q_points ?? 0)
 
+  // Sync balance with profile.q_points — realtime channel (AuthContext) pushes
+  // new totals after award_points/redeem_points RPCs fire. Without this the
+  // big balance card would stay frozen at its mount-time value.
+  useEffect(() => {
+    if (typeof profile?.q_points === 'number') setBalance(profile.q_points)
+  }, [profile?.q_points])
+
   useEffect(() => {
     getPointsHistory()
       .then(setHistory)
@@ -606,12 +613,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
             ¿Qué querés explorar?
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {TILES.filter(tile => {
-              // Q Coins tile stays owner-only (redemption flow not ready for users)
-              if (tile.id === 'qpoints') return profile?.is_owner === true
-              // Shop is open to all players; ShopScreen itself gates edit actions.
-              return true
-            }).map(tile => (
+            {TILES.map(tile => (
               <button
                 key={tile.id}
                 onClick={() => handleTile(tile)}

@@ -3,7 +3,7 @@
 // Provides: user, profile, role, loading
 // ─────────────────────────────────────────────
 import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase, getProfile } from '../lib/supabase'
+import { supabase, getProfile, getQPoints } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
@@ -21,6 +21,12 @@ export function AuthProvider({ children }) {
     try {
       const p = await getProfile(authUser.id)
       setProfile(p)
+      // Separately fetch q_points so a failure there can't block/null the
+      // main profile (keeps isOwner/role stable if the q_points column has
+      // any RLS quirks). Merge in once it arrives.
+      getQPoints(authUser.id).then(q => {
+        if (q != null) setProfile(prev => prev ? { ...prev, q_points: q } : prev)
+      })
     } catch (e) {
       console.warn(`[auth] getProfile failed (attempt ${attempt}):`, e?.message || e)
       if (attempt < 2) {

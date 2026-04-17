@@ -152,6 +152,23 @@ export async function deleteAccount() {
 }
 
 // ── PROFILE ─────────────────────────────────
+/**
+ * Fetch only the q_points balance for a user. Separated from getProfile so a
+ * failure (missing column, RLS hiccup) can't block the whole profile load.
+ * Returns null on any error — caller should treat that as "unknown".
+ */
+export async function getQPoints(userId) {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('q_points')
+      .eq('id', userId)
+      .maybeSingle()
+    if (error) return null
+    return data?.q_points ?? 0
+  } catch { return null }
+}
+
 export async function getProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
