@@ -141,7 +141,11 @@ export function EmailSignupScreen({ onBack, onDone }) {
         setSuccess(true)
       }
     } catch (e) {
-      setError(e.message)
+      if (e?.isNetworkError || e?.name === 'AbortError' || /fetch|network|load failed/i.test(e?.message)) {
+        setError('Sin conexión. Verificá tu internet e intentá de nuevo.')
+      } else {
+        setError(e.message || 'No se pudo crear la cuenta. Intentá de nuevo.')
+      }
     }
     setLoading(false)
   }
@@ -257,7 +261,9 @@ export function LoginScreen({ onBack, onSignUp, onForgot }) {
       await signInWithEmail(email, password)
     } catch (e) {
       const code = e.code || e.error_code || ''
-      if (code === 'email_not_confirmed' || e.message?.includes('Email not confirmed')) {
+      if (e?.isNetworkError || e?.name === 'AbortError' || /fetch|network|load failed/i.test(e?.message)) {
+        setError('Sin conexión. Verificá tu internet e intentá de nuevo.')
+      } else if (code === 'email_not_confirmed' || e.message?.includes('Email not confirmed')) {
         setError('Confirmá tu email primero — revisá tu bandeja de entrada.')
       } else if (e.message?.includes('Invalid login credentials') || e.message?.includes('invalid_credentials')) {
         setError('Email o contraseña incorrectos.')
@@ -392,12 +398,18 @@ export function ForgotPasswordScreen({ onBack, onDone }) {
     if (!email) return
     setLoading(true); setError('')
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/`,
       })
       if (error) throw error
       setStep('sent')
-    } catch (e) { setError(e.message) }
+    } catch (e) {
+      if (e?.isNetworkError || e?.name === 'AbortError' || /fetch|network|load failed/i.test(e?.message)) {
+        setError('Sin conexión. Verificá tu internet e intentá de nuevo.')
+      } else {
+        setError(e.message || 'No se pudo enviar el email. Intentá de nuevo.')
+      }
+    }
     setLoading(false)
   }
 

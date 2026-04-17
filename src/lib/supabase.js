@@ -56,11 +56,16 @@ if (!window.__supabase || window.__supabase.__v !== _CLIENT_V) {
         const id = setTimeout(() => ctrl.abort(), ms)
         return fetch(url, { ...options, signal: ctrl.signal })
           .catch(err => {
-            // Normalise Safari's "TypeError: load failed" (aborted fetch) into
-            // a proper AbortError so callers can distinguish network errors from
-            // genuine API errors.
-            if (err?.name === 'TypeError' && /load failed/i.test(err?.message)) {
-              throw Object.assign(new DOMException('Request aborted', 'AbortError'), { cause: err })
+            // Normalise platform-specific network errors into a consistent
+            // NetworkError so callers can show a friendly message:
+            //  • Safari iOS  → "TypeError: Load failed"
+            //  • Chrome      → "TypeError: Failed to fetch"
+            //  • Firefox     → "TypeError: NetworkError when attempting to fetch resource"
+            if (err?.name === 'TypeError' && /load failed|failed to fetch|networkerror/i.test(err?.message)) {
+              const ne = new TypeError('Error de conexión. Verificá tu internet.')
+              ne.isNetworkError = true
+              ne.cause = err
+              throw ne
             }
             throw err
           })
