@@ -7,10 +7,31 @@ import { supabase, getProfile, getQPoints } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
+/**
+ * Read the stored Supabase user from localStorage synchronously.
+ * Supabase persists the session under a key like "sb-{ref}-auth-token".
+ * If found, we can skip the loading screen entirely for returning users —
+ * onAuthStateChange will still fire and update state with fresh tokens.
+ */
+function getStoredUser() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k?.startsWith('sb-') && k?.endsWith('-auth-token')) {
+        const val = JSON.parse(localStorage.getItem(k) || '{}')
+        if (val?.access_token && val?.user?.id) return val.user
+      }
+    }
+  } catch {}
+  return null
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser]                   = useState(null)
+  // Pre-populate user from localStorage so returning users skip the loading screen.
+  // useState lazy-init runs once; onAuthStateChange still fires and refreshes state.
+  const [user, setUser]                   = useState(getStoredUser)
   const [profile, setProfile]             = useState(null)
-  const [loading, setLoading]             = useState(true)
+  const [loading, setLoading]             = useState(() => !getStoredUser())
   const [authEvent, setAuthEvent]         = useState(null)
   const [recoverySession, setRecoverySession] = useState(null)
 
