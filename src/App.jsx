@@ -151,35 +151,6 @@ function AuthFlow({ onGuest, initialScreen, onDone }) {
   return null
 }
 
-function ShopComingSoon() {
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', minHeight: '70vh', gap: 20, padding: 32,
-      textAlign: 'center',
-    }}>
-      <div style={{ fontSize: 64 }}>🛒</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', fontFamily: 'Inter, sans-serif' }}>
-        Quest Shop
-      </div>
-      <div style={{
-        fontSize: 13, color: '#6B7280', fontFamily: 'Inter, sans-serif',
-        lineHeight: 1.6, maxWidth: 260,
-      }}>
-        Próximamente podrás comprar singles, sobres y accesorios directamente desde la app.
-      </div>
-      <div style={{
-        marginTop: 8, padding: '8px 20px', borderRadius: 20,
-        background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)',
-        fontSize: 12, fontWeight: 700, color: '#FBBF24', fontFamily: 'Inter, sans-serif',
-        letterSpacing: '0.05em', textTransform: 'uppercase',
-      }}>
-        Coming Soon
-      </div>
-    </div>
-  )
-}
-
 function MainApp() {
   const { user, profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
   const { isGuest, requireAuth } = useGuest()
@@ -290,9 +261,9 @@ function MainApp() {
 
   const screenMap = useMemo(() => ({
     feed:     <FeedScreen     profile={profile} isStaff={isStaff} isOwner={isOwner} onViewProfile={(id) => requireAuth(() => handleViewProfile(id))} onPost={() => requireAuth(() => setShowPost(true))} refreshKey={feedRefreshKey} />,
-    shop:     (isOwner || isStaff)
-      ? <ShopScreen isOwner={isOwner} isStaff={isStaff} />
-      : <ShopComingSoon />,
+    // Shop is visible to everyone; ShopScreen internally gates add/edit/delete
+    // behind canEdit = isOwner || isStaff, so regular users see a read-only catalog.
+    shop:     <ShopScreen isOwner={isOwner} isStaff={isStaff} />,
     ranks:    <RankingsScreen profile={profile} isStaff={isStaff} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onViewProfile={handleViewProfile} />,
     folder:   <FolderScreen   profile={profile} />,
     search:   <SearchScreen   onViewProfile={handleViewProfile} />,

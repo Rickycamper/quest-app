@@ -607,8 +607,9 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {TILES.filter(tile => {
+              // Q Coins tile stays owner-only (redemption flow not ready for users)
               if (tile.id === 'qpoints') return profile?.is_owner === true
-              if (tile.id === 'shop') return profile?.is_owner === true
+              // Shop is open to all players; ShopScreen itself gates edit actions.
               return true
             }).map(tile => (
               <button
