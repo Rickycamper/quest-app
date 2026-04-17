@@ -1069,124 +1069,112 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
   )
 }
 
-// ── Digimon Memory Gauge ──────────────────────
-// Two physical-card style panels side-by-side.
-// Left = P1 (normal), Right = P2 (rotated 180° so P2 reads right-side up from the top).
-// Circles: large dark with white bold numbers, active one glows white.
-// mem <= 0 → P1's turn; mem > 0 → P2's turn.
+// ── Digimon Memory Gauge ──────────────────────────────────────────
+//
+//  HORIZONTAL layout — two cards confronted, 0 uniting them:
+//
+//   ← P2 (left, rotated 180°, reads correctly from top) │ 0 │ P1 (right, normal) →
+//      [5][4][3][2][1]                                   │   │ [5][4][3][2][1]
+//      [6][7][8][9][10]                                  │   │ [6][7][8][9][10]
+//
+//  mem <= 0 → P1's turn (stays at 0, 0 belongs to active player)
+//  mem >  0 → P2's turn
+//
 function MemoryGauge({ mem, onSet, onBack }) {
   const isP1Turn = mem <= 0
-  const P1C = PLAYER_COLORS[0]
-  const P2C = PLAYER_COLORS[1]
+  const P1C  = PLAYER_COLORS[0]
+  const P2C  = PLAYER_COLORS[1]
   const p1Val = mem <= 0 ? Math.abs(mem) : 0
-  const p2Val = mem > 0  ? mem            : 0
-
+  const p2Val = mem >  0 ? mem            : 0
   const tapP1 = (n) => onSet(mem === -n ? 0 : -n)
-  const tapP2 = (n) => onSet(mem === n  ? 0 : n)
+  const tapP2 = (n) => onSet(mem === n  ? 0 :  n)
 
-  // Both cards use the same row layout:
-  //   Row 1: 5 4 3 2 1  (1 closest to center/0)
-  //   Row 2: 6 7 8 9 10
-  // P2's card is rotated 180deg, so from P2's view they see 5 4 3 2 1 / 6 7 8 9 10.
+  // Both cards: Row1=[5,4,3,2,1]  Row2=[6,7,8,9,10]
+  // 1 is always closest to the 0 center.
+  // P2's card (left) is rotated 180° so P2 reads the layout correctly from the top.
   const ROWS = [[5,4,3,2,1],[6,7,8,9,10]]
+  const SZ   = 38   // circle px — as large as possible while fitting 5 per row
 
-  const MemCard = ({ playerVal, isActive, color, onTap, flip }) => (
+  const Card = ({ val, active, color, onTap, flip }) => (
     <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-      gap: 4, padding: '7px 4px 5px',
-      background: isActive ? `${color}1A` : 'rgba(255,255,255,0.015)',
+      flex: 1, overflow: 'hidden',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 5, padding: '8px 2px',
+      background: active
+        ? `linear-gradient(${flip ? '225deg' : '135deg'}, ${color}28, ${color}0C)`
+        : 'transparent',
       transform: flip ? 'rotate(180deg)' : 'none',
-      transition: 'background 0.35s',
+      transition: 'background 0.3s',
     }}>
-      {/* Turn / label strip */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 1 }}>
-        {isActive && (
-          <span style={{ fontSize: 7, fontWeight: 900, color, letterSpacing: '0.15em', fontFamily: 'Inter, sans-serif' }}>
-            ▶ TURNO
-          </span>
-        )}
-        <span style={{ fontSize: 7, fontWeight: 700, color: isActive ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.15)', letterSpacing: '0.1em', fontFamily: 'Inter, sans-serif' }}>
-          {flip ? 'P2' : 'P1'}
-        </span>
-        {playerVal > 0 && isActive && (
-          <span style={{ fontSize: 7, fontWeight: 700, color, fontFamily: 'Inter, sans-serif', letterSpacing: '0.08em' }}>
-            · {playerVal} MEM
-          </span>
-        )}
-      </div>
-
-      {/* Number rows */}
       {ROWS.map((row, ri) => (
-        <div key={ri} style={{ display: 'flex', gap: 3 }}>
+        <div key={ri} style={{ display: 'flex', gap: 4 }}>
           {row.map(n => {
-            const active = isActive && playerVal === n
+            const on = active && val === n
             return (
-              <button
-                key={n}
-                onPointerDown={() => onTap(n)}
-                style={{
-                  width: 34, height: 34, borderRadius: '50%',
-                  // Physical card feel: dark circle, white bold number
-                  background: active ? '#FFFFFF' : '#141414',
-                  border: active ? `2.5px solid ${color}` : '2px solid rgba(255,255,255,0.13)',
-                  color: active ? '#111' : isActive ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.3)',
-                  fontSize: n === 10 ? 11 : 14, fontWeight: 900,
-                  cursor: 'pointer', fontFamily: 'Inter, sans-serif', lineHeight: 1,
-                  boxShadow: active ? `0 0 0 3px ${color}50, 0 0 18px ${color}60` : 'none',
-                  transform: active ? 'scale(1.1)' : 'scale(1)',
-                  transition: 'all 0.12s',
-                  touchAction: 'none',
-                }}
-              >{n}</button>
+              <button key={n} onPointerDown={() => onTap(n)} style={{
+                width: SZ, height: SZ, borderRadius: '50%',
+                background: on ? '#FFFFFF' : '#101010',
+                border: on
+                  ? `3px solid ${color}`
+                  : `2px solid rgba(255,255,255,${active ? 0.18 : 0.08})`,
+                color: on ? '#0A0A0A'
+                  : active ? 'rgba(255,255,255,0.88)'
+                  : 'rgba(255,255,255,0.22)',
+                fontSize: n === 10 ? 12 : 16, fontWeight: 900,
+                cursor: 'pointer', fontFamily: 'Inter, sans-serif', lineHeight: 1,
+                boxShadow: on ? `0 0 0 4px ${color}40, 0 0 20px ${color}70` : 'none',
+                transform: on ? 'scale(1.14)' : 'scale(1)',
+                transition: 'all 0.13s', touchAction: 'none',
+              }}>{n}</button>
             )
           })}
         </div>
       ))}
+      {/* Tiny label readable by the correct player */}
+      <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', fontFamily: 'Inter, sans-serif', marginTop: 1, color: active ? color : 'rgba(255,255,255,0.15)' }}>
+        {flip ? 'P2' : 'P1'}{active && val > 0 ? ` · ${val}` : ''}
+      </div>
     </div>
   )
 
   return (
     <div style={{
-      flexShrink: 0, zIndex: 10,
+      flexShrink: 0, zIndex: 10, background: '#090909',
+      borderTop: '2px solid #000', borderBottom: '2px solid #000',
       display: 'flex', flexDirection: 'row', alignItems: 'stretch',
-      background: '#0A0A0A',
-      borderTop: '2.5px solid #000', borderBottom: '2.5px solid #000',
     }}>
-      {/* P1 card — left, normal */}
-      <MemCard playerVal={p1Val} isActive={isP1Turn}  color={P1C} onTap={tapP1} flip={false} />
+      {/* P2 card — LEFT, rotated 180° → P2 reads from top */}
+      <Card val={p2Val} active={!isP1Turn} color={P2C} onTap={tapP2} flip={true} />
 
-      {/* Center divider: 0 circle + back */}
+      {/* Center column — 0 unites both cards + back button */}
       <div style={{
-        width: 38, flexShrink: 0,
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'space-evenly',
-        borderLeft: '1px solid #1A1A1A', borderRight: '1px solid #1A1A1A',
-        background: '#080808', padding: '6px 0',
+        width: 42, flexShrink: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 8,
+        borderLeft: '1px solid #1C1C1C', borderRight: '1px solid #1C1C1C',
+        background: '#060606',
       }}>
         <button onClick={onBack} style={{
-          width: 28, height: 24, borderRadius: 6,
+          width: 30, height: 26, borderRadius: 7,
           background: 'transparent', border: '1px solid #222',
-          color: '#555', fontSize: 11, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          color: '#4B5563', fontSize: 11, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
         }}>←</button>
 
-        {/* 0 circle */}
-        <button
-          onPointerDown={() => onSet(0)}
-          style={{
-            width: 30, height: 30, borderRadius: '50%',
-            background: mem === 0 ? '#FFF' : '#141414',
-            border: mem === 0 ? '2px solid #FFF' : '2px solid rgba(255,255,255,0.18)',
-            color: mem === 0 ? '#111' : 'rgba(255,255,255,0.45)',
-            fontSize: 13, fontWeight: 900, cursor: 'pointer',
-            fontFamily: 'Inter, sans-serif', lineHeight: 1,
-            boxShadow: mem === 0 ? '0 0 12px rgba(255,255,255,0.35)' : 'none',
-            transition: 'all 0.12s', touchAction: 'none',
-          }}
-        >0</button>
+        {/* 0 — same size as number circles */}
+        <button onPointerDown={() => onSet(0)} style={{
+          width: SZ, height: SZ, borderRadius: '50%',
+          background: mem === 0 ? '#FFF' : '#101010',
+          border: mem === 0 ? '3px solid #FFF' : '2px solid rgba(255,255,255,0.2)',
+          color: mem === 0 ? '#0A0A0A' : 'rgba(255,255,255,0.4)',
+          fontSize: 16, fontWeight: 900, cursor: 'pointer',
+          fontFamily: 'Inter, sans-serif', lineHeight: 1,
+          boxShadow: mem === 0 ? '0 0 16px rgba(255,255,255,0.4)' : 'none',
+          transition: 'all 0.13s', touchAction: 'none',
+        }}>0</button>
       </div>
 
-      {/* P2 card — right, rotated so P2 reads correctly from top */}
-      <MemCard playerVal={p2Val} isActive={!isP1Turn} color={P2C} onTap={tapP2} flip={true} />
+      {/* P1 card — RIGHT, normal → P1 reads from bottom */}
+      <Card val={p1Val} active={isP1Turn}  color={P1C} onTap={tapP1} flip={false} />
     </div>
   )
 }
@@ -1324,8 +1312,6 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
     }
   }
 
-  const MEM_ROWS = [[5,4,3,2,1],[6,7,8,9,10]]
-
   const ClockPanel = ({ who, user, secs, flipped }) => {
     const isActive  = clockActive === who
     const isWinner  = winner === who
@@ -1334,9 +1320,6 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
     const color     = who === 'me' ? PLAYER_COLORS[0] : PLAYER_COLORS[1]
     const low       = secs <= 60 && secs > 0
     const urgent    = secs <= 10 && secs > 0
-    // Digimon: each player manages their own memory circles
-    const playerVal = isDigimon ? (who === 'me' ? p1Val : p2Val) : 0
-    const onTapMem  = isDigimon ? (who === 'me' ? tapP1 : tapP2) : null
 
     const bg = isWinner ? color
       : isLoser  ? `${color}22`
@@ -1359,7 +1342,6 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
           cursor: 'pointer', touchAction: 'none',
           transform: flipped ? 'rotate(180deg)' : 'none',
           userSelect: 'none', WebkitUserSelect: 'none',
-          gap: isDigimon ? 10 : 0,
         }}
       >
         {/* Active pulse ring */}
@@ -1374,78 +1356,31 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
           </div>
         )}
 
-        {/* ── DIGIMON: big memory card ── */}
-        {!isWinner && isDigimon && (
-          <div
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
-            style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center', touchAction: 'auto' }}
-          >
-            {MEM_ROWS.map((row, ri) => (
-              <div key={ri} style={{ display: 'flex', gap: 6 }}>
-                {row.map(n => {
-                  const on = isActive && playerVal === n
-                  return (
-                    <button
-                      key={n}
-                      onPointerDown={e => { e.stopPropagation(); onTapMem(n) }}
-                      onPointerUp={e => e.stopPropagation()}
-                      style={{
-                        width: 48, height: 48, borderRadius: '50%',
-                        background: on ? '#FFFFFF' : 'rgba(0,0,0,0.5)',
-                        border: on ? `3px solid ${color}` : '2px solid rgba(255,255,255,0.18)',
-                        color: on ? '#111111' : isActive ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.38)',
-                        fontSize: n === 10 ? 13 : 17, fontWeight: 900,
-                        cursor: 'pointer', fontFamily: 'Inter, sans-serif', lineHeight: 1,
-                        boxShadow: on ? `0 0 0 4px ${color}45, 0 0 22px ${color}70` : 'none',
-                        transform: on ? 'scale(1.13)' : 'scale(1)',
-                        transition: 'all 0.13s', touchAction: 'none',
-                      }}
-                    >{n}</button>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── NON-DIGIMON: avatar + name center ── */}
-        {!isWinner && !isDigimon && (
+        {/* Center: avatar + name */}
+        {!isWinner && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, pointerEvents: 'none' }}>
-            <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: `3px solid rgba(255,255,255,${isActive ? 0.6 : 0.25})`, background: 'rgba(0,0,0,0.4)', flexShrink: 0, transition: 'border-color 0.3s' }}>
+            <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: `3px solid rgba(255,255,255,${isActive ? 0.65 : 0.22})`, background: 'rgba(0,0,0,0.4)', transition: 'border-color 0.3s' }}>
               <Avatar url={user?.avatar_url} size={52} />
             </div>
-            <span style={{ fontSize: 13, fontWeight: 800, color: `rgba(255,255,255,${isActive ? 0.95 : 0.5})`, fontFamily: 'Inter, sans-serif', transition: 'color 0.3s' }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: `rgba(255,255,255,${isActive ? 0.95 : 0.45})`, fontFamily: 'Inter, sans-serif', transition: 'color 0.3s' }}>
               @{user?.username ?? '…'}
             </span>
           </div>
         )}
 
-        {/* Timer — left side (both modes) */}
+        {/* Timer — left side */}
         {!isWinner && (
-          <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', textAlign: 'left' }}>
+          <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
             <div style={{
-              fontSize: 32, fontWeight: 900, fontFamily: 'Inter, sans-serif',
+              fontSize: 34, fontWeight: 900, fontFamily: 'Inter, sans-serif',
               letterSpacing: '-1px', lineHeight: 1,
-              color: low ? '#FCA5A5' : `rgba(255,255,255,${isActive ? 1 : 0.4})`,
+              color: low ? '#FCA5A5' : `rgba(255,255,255,${isActive ? 1 : 0.38})`,
               animation: urgent && isActive ? 'pulse 0.8s infinite' : 'none',
               transition: 'color 0.3s',
             }}>{fmt(secs)}</div>
             {isActive && !winner && (
               <div style={{ fontSize: 8, fontWeight: 700, color, letterSpacing: '0.1em', marginTop: 3, fontFamily: 'Inter, sans-serif' }}>▶ TU TURNO</div>
             )}
-          </div>
-        )}
-
-        {/* Player info corner (Digimon) */}
-        {!isWinner && isDigimon && (
-          <div style={{ position: 'absolute', right: 12, bottom: 10, display: 'flex', alignItems: 'center', gap: 5, pointerEvents: 'none' }}>
-            <div style={{ width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid rgba(255,255,255,0.3)', background: 'rgba(0,0,0,0.35)', flexShrink: 0 }}>
-              <Avatar url={user?.avatar_url} size={22} />
-            </div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.65)', fontFamily: 'Inter, sans-serif' }}>
-              @{user?.username ?? '…'}
-            </span>
           </div>
         )}
 
@@ -1459,10 +1394,10 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
           </svg>
         )}
 
-        {/* Hint label (non-Digimon) */}
+        {/* Hint label (non-Digimon only) */}
         {!winner && !isDigimon && active === null && (
           <div style={{ position: 'absolute', top: 10, left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
-            <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', fontFamily: 'Inter, sans-serif' }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em', fontFamily: 'Inter, sans-serif' }}>
               TOCA AL TERMINAR TU TURNO
             </span>
           </div>
