@@ -29,40 +29,38 @@ const PencilIcon = ({ size = 12, color = 'currentColor' }) => (
 
 const PTS = { 1: 3, 2: 2, 3: 1 }
 
-// Auto-advance a date string's year to current if it's clearly stale (> ~6 months ago)
-function advanceStaleYear(dateStr) {
-  const s = (dateStr ?? '').slice(0, 10)
-  if (!s) return s
-  const d = new Date(s + 'T12:00:00')
-  if (isNaN(d)) return s
-  const now = new Date()
-  // Keep bumping by 1 year until the date is within the last 6 months relative to today
-  while (d < new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())) {
-    d.setFullYear(d.getFullYear() + 1)
-  }
-  return d.toISOString().slice(0, 10)
+// Parse a Supabase date field safely: handles full ISO strings, plain dates, stale years.
+// Returns a corrected YYYY-MM-DD string (advances year if date is clearly in the past).
+function safeDate(raw, fallback) {
+  try {
+    const s = String(raw ?? fallback ?? '').slice(0, 10)
+    if (!s || s.length < 10) return fallback ?? '2026-04-30'
+    let d = new Date(s + 'T12:00:00')
+    if (isNaN(d)) return fallback ?? '2026-04-30'
+    const now = new Date()
+    // If the date is more than 6 months in the past, advance year(s) until it isn't
+    const threshold = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())
+    while (d < threshold) d.setFullYear(d.getFullYear() + 1)
+    return d.toISOString().slice(0, 10)
+  } catch { return fallback ?? '2026-04-30' }
 }
 
 // ── Season Banner ─────────────────────────────
 function SeasonBanner({ season }) {
   if (!season) return null
 
-  // Safe parse + auto-correct stale years
-  const endStr   = advanceStaleYear(season.end_date)
-  const startStr = advanceStaleYear(season.start_date)
+  const endStr   = safeDate(season.end_date,   '2026-04-30')
+  const startStr = safeDate(season.start_date, '2026-01-01')
   const end      = new Date(endStr   + 'T23:59:59')
   const start    = new Date(startStr + 'T00:00:00')
-  // isTest derived purely from date: if today is before the day after this season ends
-  // → still in S1 test period (ignores whatever "number" the DB stores)
-  const nextSeasonStart = new Date(end); nextSeasonStart.setDate(nextSeasonStart.getDate() + 1)
-  const isTest   = new Date() < nextSeasonStart
   const now      = new Date()
-  const daysLeft = isNaN(end) ? 0 : Math.max(0, Math.ceil((end - now) / 86_400_000))
-  const pct      = (isNaN(start) || isNaN(end)) ? 0 : Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)))
+  // isTest: today is still within this season (before it ends)
+  const isTest   = now <= end
+  const daysLeft = Math.max(0, Math.ceil((end - now) / 86_400_000))
+  const pct      = Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)))
 
-  // Derive next season start/end (+1 day / +4 months) dynamically
-  const nextStart = isNaN(end) ? null : (() => { const d = new Date(end); d.setDate(d.getDate() + 1); return d })()
-  const nextEnd   = nextStart  ? (() => { const d = new Date(nextStart); d.setMonth(d.getMonth() + 4); d.setDate(d.getDate() - 1); return d })() : null
+  // Next season start = day after this season ends
+  const nextStart = (() => { const d = new Date(end); d.setDate(d.getDate() + 1); return d })()
 
   const accentColor = isTest ? '#FB923C' : '#F59E0B'
   const label       = isTest ? 'PRUEBA' : 'ACTIVA'
@@ -292,16 +290,14 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
 
       {/* ── Season announcement — adapts to current season ── */}
       {(() => {
-        // Safe date parse + auto-correct stale years (e.g. DB still has 2025)
-        const endStr   = advanceStaleYear(activeSeason?.end_date   ?? '2026-04-30')
-        const startStr = advanceStaleYear(activeSeason?.start_date ?? '2026-01-01')
-        const endDate  = new Date(endStr   + 'T23:59:59')
+        const endStr    = safeDate(activeSeason?.end_date,   '2026-04-30')
+        const startStr  = safeDate(activeSeason?.start_date, '2026-01-01')
+        const endDate   = new Date(endStr   + 'T23:59:59')
         const startDate = new Date(startStr + 'T00:00:00')
-        const now      = new Date()
-        const daysLeft = isNaN(endDate) ? 0 : Math.max(0, Math.ceil((endDate - now) / 86_400_000))
-        // isTest from date only — today before the day after this season ends = still test period
-        const s1End = new Date(endDate); s1End.setDate(s1End.getDate() + 1)
-        const isTest = !activeSeason || now < s1End
+        const now       = new Date()
+        const daysLeft  = Math.max(0, Math.ceil((endDate - now) / 86_400_000))
+        // isTest: still within S1 (today hasn't passed the end date)
+        const isTest    = !activeSeason || now <= endDate
         // Derive next season dates: starts the day after current ends, lasts 4 months
         const nextStart = isNaN(endDate) ? null : (() => { const d = new Date(endDate); d.setDate(d.getDate() + 1); return d })()
         const fmt = (d, opts) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', opts)
@@ -432,8 +428,8 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
           onClick={() => setShowRules(r => !r)}
           style={{
             width: '100%', padding: '12px 14px',
+            background: 'none', border: 'none',
             borderBottom: showRules ? '1px solid #1A1A1A' : 'none',
-            background: 'none', border: 'none', borderBottom: showRules ? '1px solid #1A1A1A' : 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             cursor: 'pointer', fontFamily: 'Inter, sans-serif',
           }}
