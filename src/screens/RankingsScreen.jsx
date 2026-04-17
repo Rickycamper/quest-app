@@ -591,10 +591,17 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
   )
 
   if (!entries.length) return (
-    <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-      <div style={{ fontSize: 40, marginBottom: 12 }}>🏆</div>
-      <div style={{ fontSize: 15, color: '#4B5563' }}>No hay rankings aún</div>
-      <div style={{ fontSize: 12, color: '#374151', marginTop: 6 }}>Reporta tus resultados de torneo para aparecer aquí</div>
+    <div style={{ padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+      <div style={{
+        width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)',
+      }}>
+        <svg width="26" height="26" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
+          <path d={HAND_MIDDLE_PATH} />
+        </svg>
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#4B5563' }}>No hay rankings aún</div>
+      <div style={{ fontSize: 12, color: '#374151' }}>Reporta tus resultados de torneo para aparecer aquí</div>
     </div>
   )
 
@@ -1196,10 +1203,17 @@ function TournamentsTab({ game, branch, onViewProfile, isAdmin }) {
   )
 
   if (!items.length) return (
-    <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-      <div style={{ fontSize: 32, marginBottom: 10 }}>🎮</div>
-      <div style={{ fontSize: 14, color: '#4B5563' }}>No hay torneos registrados</div>
-      <div style={{ fontSize: 12, color: '#374151', marginTop: 4 }}>Tocá + para reportar tu resultado</div>
+    <div style={{ padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+      <div style={{
+        width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.18)',
+      }}>
+        <svg width="26" height="26" viewBox="0 0 16 16" fill="#A78BFA" strokeWidth="0">
+          <path d="M2.5.5A.5.5 0 0 1 3 0h10a.5.5 0 0 1 .5.5c0 .538-.012 1.05-.034 1.536a3 3 0 1 1-1.133 5.89c-.79 1.865-1.878 2.777-2.833 3.011v2.173l1.54.54c.478.167.542.718.27.99A.5.5 0 0 1 11 15H5a.5.5 0 0 1-.35-.85l1.54-.54V10.44c-.955-.234-2.043-1.146-2.833-3.012a3 3 0 1 1-1.132-5.89A33.076 33.076 0 0 1 2.5.5zm.099 2.54a2 2 0 0 0 .72 3.935c-.333-1.05-.588-2.346-.72-3.935zm10.083 3.935a2 2 0 0 0 .72-3.935c-.133 1.59-.388 2.885-.72 3.935z"/>
+        </svg>
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#4B5563' }}>No hay torneos registrados</div>
+      <div style={{ fontSize: 12, color: '#374151' }}>Tocá + para reportar tu resultado</div>
     </div>
   )
 
@@ -1250,9 +1264,16 @@ function ClaimsTab({ isStaff }) {
   )
 
   if (!claims.length) return (
-    <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-      <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-      <div style={{ fontSize: 15, color: '#4B5563' }}>No hay claims pendientes</div>
+    <div style={{ padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+      <div style={{
+        width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.18)',
+      }}>
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="#4ADE80" strokeWidth="0">
+          <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/>
+        </svg>
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#4B5563' }}>No hay claims pendientes</div>
     </div>
   )
 
