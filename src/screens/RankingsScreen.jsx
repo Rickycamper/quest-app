@@ -698,11 +698,33 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
 }
 
 // ── Tournament Card (collapsible) ────────────
-function TournamentCard({ t, index, onViewProfile, isAdmin }) {
+function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
   const { profile } = useAuth()
-  const [open,    setOpen]    = useState(false)
+  const [open,    setOpen]    = useState(!!autoOpen)
   const [joining, setJoining] = useState(false)
   const [joinErr, setJoinErr] = useState('')
+  const [copied,  setCopied]  = useState(false)
+  const cardRef = useRef(null)
+
+  // Scroll into view when opened via deep link
+  useEffect(() => {
+    if (!autoOpen || !cardRef.current) return
+    const t = setTimeout(() => cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 500)
+    return () => clearTimeout(t)
+  }, [autoOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleShare = (e) => {
+    e.stopPropagation()
+    const url = `${window.location.origin}/?tournament=${t.id}`
+    if (navigator.share) {
+      navigator.share({ title: t.name, text: `¡Unite al torneo! ${t.name}`, url }).catch(() => {})
+    } else {
+      navigator.clipboard?.writeText(url).then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+    }
+  }
 
   // Editable local state (updated after admin saves)
   const [curDate,  setCurDate]  = useState(t.date)
@@ -816,7 +838,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin }) {
   }
 
   return (
-    <div style={{
+    <div ref={cardRef} style={{
       margin: '0 16px 8px',
       background: '#111111', borderRadius: 10,
       border: `1px solid ${isJoined ? bs.border : '#1F1F1F'}`,
@@ -879,6 +901,25 @@ function TournamentCard({ t, index, onViewProfile, isAdmin }) {
             </button>
           )}
           <span style={{ fontSize: 11, color: '#374151' }}>{dateStr}</span>
+          {/* Share button */}
+          <button
+            onClick={handleShare}
+            title="Compartir torneo"
+            style={{
+              background: 'none', border: 'none', padding: '2px 4px',
+              cursor: 'pointer', color: copied ? '#4ADE80' : '#374151',
+              fontSize: copied ? 10 : 13, fontWeight: copied ? 700 : 400,
+              fontFamily: 'Inter, sans-serif', lineHeight: 1,
+              transition: 'color 0.2s',
+            }}
+          >
+            {copied ? '✓' : (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            )}
+          </button>
           <span style={{
             fontSize: 10, color: '#374151',
             transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -1147,7 +1188,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin }) {
 }
 
 // ── Tournaments ──────────────────────────────
-function TournamentsTab({ game, branch, onViewProfile, isAdmin }) {
+function TournamentsTab({ game, branch, onViewProfile, isAdmin, openTournamentId }) {
   const [items,   setItems]   = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
@@ -1219,7 +1260,7 @@ function TournamentsTab({ game, branch, onViewProfile, isAdmin }) {
 
   return (
     <div style={{ padding: '8px 0' }}>
-      {items.map((t, i) => <TournamentCard key={t.id} t={t} index={i} onViewProfile={onViewProfile} isAdmin={isAdmin} />)}
+      {items.map((t, i) => <TournamentCard key={t.id} t={t} index={i} onViewProfile={onViewProfile} isAdmin={isAdmin} autoOpen={t.id === openTournamentId} />)}
     </div>
   )
 }
@@ -1361,8 +1402,9 @@ function ClaimsTab({ isStaff }) {
 }
 
 // ── Main screen ──────────────────────────────
-export default function RankingsScreen({ profile, isStaff, onReportClaim, onCreateTournament, onViewProfile }) {
-  const [tab,           setTab]          = useState('leaderboard')
+export default function RankingsScreen({ profile, isStaff, onReportClaim, onCreateTournament, onViewProfile, openTournamentId }) {
+  // Start on Torneos tab when arriving via a tournament deep link
+  const [tab,           setTab]          = useState(openTournamentId ? 'tournaments' : 'leaderboard')
   const [game,          setGame]         = useState(null)
   const [branch,        setBranch]       = useState(null)
   const [pulsing,       setPulsing]      = useState(true)  // pulse hint on first view
@@ -1499,7 +1541,7 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
       {['leaderboard', 'tournaments'].map(t => (
         <div key={t} style={{ display: t === tab ? 'block' : 'none' }}>
           {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} />}
-          {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={profile?.role === 'admin'} />}
+          {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={profile?.role === 'admin'} openTournamentId={openTournamentId} />}
         </div>
       ))}
     </div>

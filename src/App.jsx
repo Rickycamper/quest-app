@@ -180,11 +180,11 @@ function AuthFlow({ onGuest, initialScreen, onDone }) {
   return null
 }
 
-function MainApp() {
+function MainApp({ initialTab, openTournamentId } = {}) {
   const { user, profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
   const { isGuest, requireAuth } = useGuest()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
-  const [activeTab,      setActiveTab]     = useState('feed')
+  const [activeTab,      setActiveTab]     = useState(initialTab ?? 'feed')
   const [showNotifs,      setShowNotifs]     = useState(false)
   const [showSearch,      setShowSearch]     = useState(false)
   const [showPost,        setShowPost]       = useState(false)
@@ -307,14 +307,18 @@ function MainApp() {
 
   // Lazy mount: only render a screen after it has been visited for the first time.
   // FeedScreen is pre-visited so it loads immediately; all others wait until tapped.
-  const [visitedTabs, setVisitedTabs] = useState(() => new Set(['feed']))
+  const [visitedTabs, setVisitedTabs] = useState(() => {
+    const s = new Set(['feed'])
+    if (initialTab && initialTab !== 'feed') s.add(initialTab) // pre-mount deep-linked tab
+    return s
+  })
 
   const screenMap = useMemo(() => ({
     feed:     <FeedScreen     profile={profile} isStaff={isStaff} isOwner={isOwner} onViewProfile={(id) => requireAuth(() => handleViewProfile(id))} onPost={() => requireAuth(() => setShowPost(true))} refreshKey={feedRefreshKey} />,
     // Shop is visible to everyone; ShopScreen internally gates add/edit/delete
     // behind canEdit = isOwner || isStaff, so regular users see a read-only catalog.
     shop:     <ShopScreen isOwner={isOwner} isStaff={isStaff} />,
-    ranks:    <RankingsScreen profile={profile} isStaff={isStaff} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onViewProfile={handleViewProfile} />,
+    ranks:    <RankingsScreen profile={profile} isStaff={isStaff} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onViewProfile={handleViewProfile} openTournamentId={openTournamentId} />,
     folder:   <FolderScreen   profile={profile} />,
     search:   <SearchScreen   onViewProfile={handleViewProfile} />,
   }), [profile, isStaff, isOwner, handleViewProfile, feedRefreshKey])
@@ -575,7 +579,20 @@ function AppInner() {
   const { user, loading, authEvent, recoverySession } = useAuth()
   const [showReset,     setShowReset]     = useState(false)
   const [showConfirmed, setShowConfirmed] = useState(false)
-  const [isGuest,       setIsGuest]       = useState(false)
+
+  // Deep link: ?tournament=TOURNAMENT_ID
+  // Opens the app directly on that tournament, no login required.
+  // We read it once at mount and immediately clean the URL.
+  const [deepLinkTournament] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    const t = params.get('tournament')
+    if (t) window.history.replaceState(null, '', window.location.pathname)
+    return t ?? null
+  })
+
+  // Auto-enter guest mode when arriving via tournament link and not logged in.
+  // If user is already logged in (from localStorage) this stays false.
+  const [isGuest,       setIsGuest]       = useState(() => !user && !!deepLinkTournament)
   const [gateScreen,    setGateScreen]    = useState(null) // null | 'login' | 'signup'
   const [showGateModal, setShowGateModal] = useState(false)
 
@@ -591,6 +608,7 @@ function AppInner() {
     // Clean up PKCE code param from URL so it doesn't stay in the address bar
     // after Supabase exchanges it. Supabase reads it before React mounts so this
     // removal is safe to do on first render.
+    // Note: ?tournament= is already consumed above in the deepLinkTournament useState.
     const params = new URLSearchParams(window.location.search)
     if (params.has('code')) {
       window.history.replaceState(null, '', window.location.pathname)
@@ -663,7 +681,7 @@ function AppInner() {
     const guestValue = { isGuest, requireAuth }
     return (
       <GuestContext.Provider value={guestValue}>
-        <MainApp />
+        <MainApp initialTab={deepLinkTournament ? 'ranks' : undefined} openTournamentId={deepLinkTournament} />
         {showGateModal && (
           <GuestGateModal
             onClose={() => setShowGateModal(false)}
