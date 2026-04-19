@@ -1940,6 +1940,53 @@ export function subscribeToAuctionChat(auctionId, callback) {
     .subscribe()
 }
 
+// ── EMAIL CAMPAIGNS ──────────────────────────
+// Owner-only. Table: email_campaigns. RLS blocks all non-owners.
+
+export async function getEmailCampaigns() {
+  const { data, error } = await supabase
+    .from('email_campaigns')
+    .select('id, name, subject, audience, status, recipient_count, sent_at, created_at, updated_at')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function saveEmailCampaign({ id, name, subject, html_body, audience, status = 'draft' }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const row = { name, subject, html_body, audience, status }
+  if (id) {
+    const { data, error } = await supabase
+      .from('email_campaigns').update(row).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const { data, error } = await supabase
+    .from('email_campaigns')
+    .insert({ ...row, created_by: session?.user?.id })
+    .select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteEmailCampaign(id) {
+  const { error } = await supabase.from('email_campaigns').delete().eq('id', id)
+  if (error) throw error
+}
+
+/** Live recipient count for a given audience segment */
+export async function getEmailAudienceCount(audience) {
+  let q = supabase.from('profiles').select('id', { count: 'exact', head: true })
+  if (audience === 'premium') q = q.eq('role', 'premium')
+  else if (audience === 'panama') q = q.eq('branch', 'Panama')
+  else if (audience === 'david')  q = q.eq('branch', 'David')
+  else if (audience === 'chitre') q = q.eq('branch', 'Chitre')
+  // 'all' → no extra filter
+  const { count, error } = await q
+  if (error) throw error
+  return count ?? 0
+}
+
 // ─────────────────────────────────────────────
 // SHOP — Product catalog
 // ─────────────────────────────────────────────

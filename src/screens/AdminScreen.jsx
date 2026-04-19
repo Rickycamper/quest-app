@@ -8,6 +8,7 @@ import { GAME_STYLES } from '../lib/constants'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
+import EmailMarketingScreen from './EmailMarketingScreen'
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
 const PTS    = { 1: 3, 2: 2, 3: 1 }
@@ -826,6 +827,11 @@ export default function AdminScreen({ onClose }) {
         <button style={tabStyle('articles')} onClick={() => setTab('articles')}>
           📰 RSS
         </button>
+        {currentIsOwner && (
+          <button style={tabStyle('email')} onClick={() => setTab('email')}>
+            📧 Email
+          </button>
+        )}
       </div>
 
       {/* Body */}
@@ -906,6 +912,8 @@ export default function AdminScreen({ onClose }) {
         {tab === 'qpoints' && <QPointsTab />}
 
         {tab === 'articles' && <ArticlesTab />}
+
+        {tab === 'email' && currentIsOwner && <EmailMarketingScreen />}
 
       </div>
     </div>
