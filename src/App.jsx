@@ -580,19 +580,22 @@ function AppInner() {
   const [showReset,     setShowReset]     = useState(false)
   const [showConfirmed, setShowConfirmed] = useState(false)
 
-  // Deep link: ?tournament=TOURNAMENT_ID
-  // Opens the app directly on that tournament, no login required.
-  // We read it once at mount and immediately clean the URL.
-  const [deepLinkTournament] = useState(() => {
+  // Deep link: ?tournament=TOURNAMENT_ID  — opens a specific tournament as guest
+  //            ?tab=ranks                 — opens the tournaments tab as guest (e.g. from email CTA)
+  // Read both params before cleaning the URL (replaceState empties search immediately).
+  const [deepLinks] = useState(() => {
     const params = new URLSearchParams(window.location.search)
-    const t = params.get('tournament')
-    if (t) window.history.replaceState(null, '', window.location.pathname)
-    return t ?? null
+    const tournament = params.get('tournament') ?? null
+    const tab        = params.get('tab')        ?? null
+    if (tournament || tab) window.history.replaceState(null, '', window.location.pathname)
+    return { tournament, tab }
   })
+  const deepLinkTournament = deepLinks.tournament
+  const deepLinkTab        = deepLinks.tab
 
-  // Auto-enter guest mode when arriving via tournament link and not logged in.
+  // Auto-enter guest mode when arriving via tournament or tab deep-link and not logged in.
   // If user is already logged in (from localStorage) this stays false.
-  const [isGuest,       setIsGuest]       = useState(() => !user && !!deepLinkTournament)
+  const [isGuest,       setIsGuest]       = useState(() => !user && (!!deepLinkTournament || deepLinkTab === 'ranks'))
   const [gateScreen,    setGateScreen]    = useState(null) // null | 'login' | 'signup'
   const [showGateModal, setShowGateModal] = useState(false)
 
@@ -681,7 +684,10 @@ function AppInner() {
     const guestValue = { isGuest, requireAuth }
     return (
       <GuestContext.Provider value={guestValue}>
-        <MainApp initialTab={deepLinkTournament ? 'ranks' : undefined} openTournamentId={deepLinkTournament} />
+        <MainApp
+          initialTab={(deepLinkTournament || deepLinkTab === 'ranks') ? 'ranks' : undefined}
+          openTournamentId={deepLinkTournament}
+        />
         {showGateModal && (
           <GuestGateModal
             onClose={() => setShowGateModal(false)}

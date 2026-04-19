@@ -1022,6 +1022,101 @@
 
   .footer-text a:hover { color: #8b5cf6; }
 
+  /* ==========  CTA TORNEOS  ========== */
+  .cta-torneos {
+    display: block;
+    text-decoration: none;
+    margin-bottom: 24px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(135deg, #0e0820 0%, #0a1628 100%);
+    border: 1px solid rgba(139,92,246,0.5);
+    box-shadow: 0 0 40px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: all 0.3s;
+  }
+
+  .cta-torneos::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(59,130,246,0.08) 100%);
+    pointer-events: none;
+  }
+
+  .cta-torneos::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #8b5cf6, #3b82f6, #8b5cf6);
+    background-size: 200% 100%;
+    animation: slideGrad 2.5s linear infinite;
+  }
+
+  @keyframes slideGrad {
+    0%   { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
+  }
+
+  .cta-torneos:hover {
+    transform: translateY(-3px);
+    border-color: rgba(139,92,246,0.8);
+    box-shadow: 0 12px 50px rgba(139,92,246,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  .cta-torneos-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-torneos-left { flex: 1; }
+
+  .cta-torneos-label {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #8b5cf6;
+    margin-bottom: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+  }
+
+  .cta-torneos-title {
+    font-size: 34px;
+    letter-spacing: 1px;
+    line-height: 0.95;
+    color: #ffffff;
+    margin-bottom: 10px;
+  }
+
+  .cta-torneos-sub {
+    font-size: 12px;
+    color: #6b7280;
+    letter-spacing: 0px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+  }
+
+  .cta-torneos-arrow {
+    font-size: 48px;
+    color: #8b5cf6;
+    font-family: 'Bebas Neue', sans-serif;
+    line-height: 1;
+    opacity: 0.8;
+    transition: transform 0.2s, opacity 0.2s;
+    flex-shrink: 0;
+    margin-left: 20px;
+  }
+
+  .cta-torneos:hover .cta-torneos-arrow {
+    transform: translateX(6px);
+    opacity: 1;
+  }
+
   /* ========== MOBILE ========== */
   @media (max-width: 540px) {
     .hero { padding: 32px 24px; min-height: 90vh; }
@@ -1109,10 +1204,10 @@
 
   <!-- ======= TORNEOS SECTION ======= -->
   <section class="section">
-    <div class="section-label">// TORNEOS DÍA DE APERTURA</div>
-    <h2 class="section-title">TODOS LOS <span>JUEGOS.</span><br>UN MISMO DÍA.</h2>
+    <div class="section-label">// FIN DE SEMANA DE APERTURA — 2, 3 Y 4 DE MAYO</div>
+    <h2 class="section-title">TODOS LOS <span>JUEGOS.</span><br>UN FIN DE<br>SEMANA.</h2>
     <p class="section-desc">
-      Torneos oficiales desde el día 2. Trae tu mazo, tus amigos y compite por el ranking de Temporada 2.
+      Tres días, seis juegos, un solo lugar. Trae tu mazo, tus amigos y compite por el ranking de Temporada 2 desde el día uno.
     </p>
 
     <div class="tcg-grid">
@@ -1160,6 +1255,18 @@
       </div>
     </div>
 
+    <!-- CTA Torneos -->
+    <a href="https://questhobbystore.com/?tab=ranks" class="cta-torneos">
+      <div class="cta-torneos-inner">
+        <div class="cta-torneos-left">
+          <div class="cta-torneos-label">REGÍSTRATE AHORA</div>
+          <div class="cta-torneos-title">VER TORNEOS<br>DE APERTURA</div>
+          <div class="cta-torneos-sub">Disponibles en la app · sin descargas</div>
+        </div>
+        <div class="cta-torneos-arrow">→</div>
+      </div>
+    </a>
+
     <div class="season-box">
       <div class="season-icon">
         <svg width="28" height="28" viewBox="0 0 277.366 277.366" fill="#F59E0B">
@@ -1170,7 +1277,7 @@
       <div>
         <div class="season-title">TEMPORADA 2 — RANKING OFICIAL</div>
         <div class="season-sub">
-          El 2 de mayo inicia la nueva temporada. Cada torneo suma puntos. Compite, sube y marca historia en la comunidad TCG de Panamá.
+          El fin de semana de apertura arranca la nueva temporada. Cada torneo suma puntos. Compite, sube y marca historia en la comunidad TCG de Panamá.
         </div>
       </div>
     </div>
@@ -1251,8 +1358,8 @@
             <path d="M230.951,237.366H46.415c-11.046,0-20,8.954-20,20s8.954,20,20,20h184.536c11.046,0,20-8.954,20-20S241.997,237.366,230.951,237.366z"/>
           </svg>
         </div>
-        <div class="feature-title">TORNEOS DÍA 2</div>
-        <p class="feature-desc">Competitivos desde el momento que abrimos las puertas.</p>
+        <div class="feature-title">FIN DE SEMANA TCG</div>
+        <p class="feature-desc">Torneos para los 6 juegos en los 3 días de apertura.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">
