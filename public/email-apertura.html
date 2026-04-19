@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quest Hobby Store — Apertura Panamá Capital</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: #000;
+    font-family: 'Bebas Neue', sans-serif;
+    color: #ffffff;
+    overflow-x: hidden;
+    letter-spacing: 0.5px;
+  }
+
+  .email-wrapper {
+    max-width: 680px;
+    margin: 0 auto;
+    background: #0a0a0a;
+    position: relative;
+  }
+
+  /* ==========  HERO  ========== */
+  .hero {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at top right, rgba(139,92,246,0.25) 0%, transparent 60%),
+      radial-gradient(ellipse at bottom left, rgba(59,130,246,0.2) 0%, transparent 60%),
+      #050505;
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(139,92,246,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,92,246,0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    pointer-events: none;
+  }
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 48px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .logo-q {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(139,92,246,0.5);
+    animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  .logo-q img {
+    width: 38px; height: 38px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 30px rgba(139,92,246,0.5); }
+    50% { box-shadow: 0 0 50px rgba(139,92,246,0.8); }
+  }
+
+  .logo-text {
+    font-size: 26px;
+    letter-spacing: 4px;
+    color: #ffffff;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #8b5cf6;
+    margin-top: 3px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .opening-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+    color: white;
+    font-size: 13px;
+    letter-spacing: 4px;
+    padding: 8px 20px;
+    border-radius: 4px;
+    margin-bottom: 28px;
+    align-self: flex-start;
+    animation: shine 3s ease-in-out infinite;
+    position: relative;
+    z-index: 2;
+  }
+
+  @keyframes shine {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.85; }
+  }
+
+  .hero-date {
+    font-size: 160px;
+    line-height: 0.8;
+    letter-spacing: -4px;
+    background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #60a5fa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 400;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-month {
+    font-size: 72px;
+    letter-spacing: 18px;
+    color: #c4b5fd;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-city {
+    font-size: 15px;
+    letter-spacing: 5px;
+    color: #6b7280;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 2;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hero-city svg { flex-shrink: 0; opacity: 0.7; }
+
+  .hero-headline {
+    font-size: 54px;
+    line-height: 0.95;
+    letter-spacing: 1px;
+    color: #ffffff;
+    margin-bottom: 20px;
+    font-weight: 400;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-headline span {
+    background: linear-gradient(90deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 16px;
+    color: #9ca3af;
+    line-height: 1.6;
+    max-width: 480px;
+    margin-bottom: 36px;
+    letter-spacing: 0px;
+    position: relative;
+    z-index: 2;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+  }
+
+  .cta-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    padding: 18px 44px;
+    border-radius: 8px;
+    text-decoration: none;
+    box-shadow: 0 10px 40px rgba(139,92,246,0.5);
+    transition: transform 0.2s;
+    align-self: flex-start;
+    position: relative;
+    z-index: 2;
+  }
+
+  .cta-primary:hover { transform: translateY(-2px); }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #4b5563;
+    animation: bounce 2s ease-in-out infinite;
+    z-index: 2;
+  }
+
+  @keyframes bounce {
+    0%,100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(8px); }
+  }
+
+  /* ==========  GUNDAM CLASH SCENE  ========== */
+  .gundam-scene {
+    position: relative;
+    height: 520px;
+    background: radial-gradient(ellipse at center, #1a0a2e 0%, #000 80%);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gundam-stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, white, transparent),
+      radial-gradient(1px 1px at 70% 20%, white, transparent),
+      radial-gradient(1px 1px at 50% 60%, white, transparent),
+      radial-gradient(1px 1px at 80% 70%, white, transparent),
+      radial-gradient(1px 1px at 30% 80%, white, transparent),
+      radial-gradient(2px 2px at 15% 50%, #c4b5fd, transparent),
+      radial-gradient(2px 2px at 90% 40%, #60a5fa, transparent);
+    background-size: 600px 600px;
+    animation: twinkle 4s ease-in-out infinite;
+  }
+
+  @keyframes twinkle {
+    0%,100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  .gundam-left, .gundam-right {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    filter: drop-shadow(0 0 30px rgba(139,92,246,0.6));
+  }
+
+  .gundam-left {
+    width: 180px; height: 180px;
+    object-fit: contain;
+    animation: clashLeft 3s ease-in-out infinite;
+  }
+
+  .gundam-right {
+    width: 180px; height: 180px;
+    object-fit: contain;
+    animation: clashRight 3s ease-in-out infinite;
+  }
+
+  @keyframes clashLeft {
+    0%, 100% { left: 0%; transform: translateY(-50%) rotate(-5deg); }
+    45% { left: 30%; transform: translateY(-50%) rotate(5deg); }
+    50% { left: 32%; transform: translateY(-50%) rotate(8deg) scale(1.1); }
+    55% { left: 30%; transform: translateY(-50%) rotate(5deg); }
+  }
+
+  @keyframes clashRight {
+    0%, 100% { right: 0%; transform: translateY(-50%) scaleX(-1) rotate(-5deg); }
+    45% { right: 30%; transform: translateY(-50%) scaleX(-1) rotate(5deg); }
+    50% { right: 32%; transform: translateY(-50%) scaleX(-1) rotate(8deg) scale(1.1); }
+    55% { right: 30%; transform: translateY(-50%) scaleX(-1) rotate(5deg); }
+  }
+
+  .impact-flash {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fef08a 0%, #f59e0b 30%, transparent 70%);
+    opacity: 0;
+    animation: impact 3s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  @keyframes impact {
+    0%, 40%, 60%, 100% { opacity: 0; transform: translate(-50%,-50%) scale(0.5); }
+    48%, 52% { opacity: 1; transform: translate(-50%,-50%) scale(1.3); }
+  }
+
+  .impact-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 72px;
+    letter-spacing: 4px;
+    color: #fef08a;
+    text-shadow: 0 0 20px #f59e0b, 3px 3px 0 #000;
+    opacity: 0;
+    animation: textPop 3s ease-in-out infinite;
+    z-index: 3;
+    -webkit-text-stroke: 2px #000;
+  }
+
+  @keyframes textPop {
+    0%, 40%, 60%, 100% { opacity: 0; transform: translate(-50%,-50%) scale(0.5) rotate(-5deg); }
+    48%, 52% { opacity: 1; transform: translate(-50%,-50%) scale(1.1) rotate(-8deg); }
+  }
+
+  .scene-caption {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: #c4b5fd;
+    z-index: 4;
+    background: rgba(0,0,0,0.7);
+    padding: 10px 22px;
+    border-radius: 20px;
+    border: 1px solid rgba(139,92,246,0.4);
+    white-space: nowrap;
+  }
+
+  /* ==========  SECTIONS  ========== */
+  .section {
+    padding: 60px 40px;
+    border-bottom: 1px solid #1a1a1a;
+    position: relative;
+  }
+
+  .section-label {
+    font-size: 12px;
+    letter-spacing: 5px;
+    color: #8b5cf6;
+    margin-bottom: 24px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+  }
+
+  .section-title {
+    font-size: 56px;
+    letter-spacing: 1px;
+    line-height: 0.95;
+    color: white;
+    margin-bottom: 16px;
+    font-weight: 400;
+  }
+
+  .section-title span {
+    background: linear-gradient(90deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .section-desc {
+    font-size: 15px;
+    color: #9ca3af;
+    line-height: 1.6;
+    letter-spacing: 0px;
+    margin-bottom: 32px;
+    max-width: 520px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+  }
+
+  /* ==========  TCG LOGOS GRID  ========== */
+  .tcg-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  .tcg-card {
+    aspect-ratio: 1.1;
+    background: linear-gradient(135deg, #111, #0e0e1e);
+    border: 1px solid #1e1e36;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 12px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .tcg-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .tcg-card.mtg::before       { background: linear-gradient(90deg, transparent, #A78BFA, transparent); }
+  .tcg-card.pokemon::before   { background: linear-gradient(90deg, transparent, #FCD34D, transparent); }
+  .tcg-card.onepiece::before  { background: linear-gradient(90deg, transparent, #F87171, transparent); }
+  .tcg-card.riftbound::before { background: linear-gradient(90deg, transparent, #4ADE80, transparent); }
+  .tcg-card.gundam::before    { background: linear-gradient(90deg, transparent, #9CA3AF, transparent); }
+  .tcg-card.digimon::before   { background: linear-gradient(90deg, transparent, #60A5FA, transparent); }
+
+  .tcg-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(139,92,246,0.2);
+  }
+
+  .tcg-card.mtg:hover       { border-color: #A78BFA; box-shadow: 0 10px 30px rgba(167,139,250,0.25); }
+  .tcg-card.pokemon:hover   { border-color: #FCD34D; box-shadow: 0 10px 30px rgba(252,211,77,0.2); }
+  .tcg-card.onepiece:hover  { border-color: #F87171; box-shadow: 0 10px 30px rgba(248,113,113,0.2); }
+  .tcg-card.riftbound:hover { border-color: #4ADE80; box-shadow: 0 10px 30px rgba(74,222,128,0.2); }
+  .tcg-card.gundam:hover    { border-color: #9CA3AF; box-shadow: 0 10px 30px rgba(156,163,175,0.2); }
+  .tcg-card.digimon:hover   { border-color: #60A5FA; box-shadow: 0 10px 30px rgba(96,165,250,0.2); }
+
+  .tcg-logo-wrap {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    position: relative;
+  }
+
+  .tcg-logo-wrap::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    opacity: 0.15;
+    transition: opacity 0.3s;
+  }
+
+  .tcg-card:hover .tcg-logo-wrap::after { opacity: 0.3; }
+
+  .tcg-card.mtg       .tcg-logo-wrap::after { background: radial-gradient(circle, #A78BFA, transparent); }
+  .tcg-card.pokemon   .tcg-logo-wrap::after { background: radial-gradient(circle, #FCD34D, transparent); }
+  .tcg-card.onepiece  .tcg-logo-wrap::after { background: radial-gradient(circle, #F87171, transparent); }
+  .tcg-card.riftbound .tcg-logo-wrap::after { background: radial-gradient(circle, #4ADE80, transparent); }
+  .tcg-card.gundam    .tcg-logo-wrap::after { background: radial-gradient(circle, #9CA3AF, transparent); }
+  .tcg-card.digimon   .tcg-logo-wrap::after { background: radial-gradient(circle, #60A5FA, transparent); }
+
+  .tcg-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s;
+  }
+
+  .tcg-card:hover .tcg-logo { transform: scale(1.08); }
+
+  .tcg-name {
+    font-size: 17px;
+    letter-spacing: 2px;
+    color: white;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .tcg-badge {
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-top: 4px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+  }
+
+  .tcg-card.mtg       .tcg-badge { color: #A78BFA; }
+  .tcg-card.pokemon   .tcg-badge { color: #FCD34D; }
+  .tcg-card.onepiece  .tcg-badge { color: #F87171; }
+  .tcg-card.riftbound .tcg-badge { color: #4ADE80; }
+  .tcg-card.gundam    .tcg-badge { color: #9CA3AF; }
+  .tcg-card.digimon   .tcg-badge { color: #60A5FA; }
+
+  /* ==========  LUFFY PUNCH SCENE  ========== */
+  .luffy-scene {
+    position: relative;
+    height: 480px;
+    background:
+      radial-gradient(ellipse at 30% 50%, rgba(239,68,68,0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 50%, rgba(251,191,36,0.25) 0%, transparent 50%),
+      #0a0505;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .speed-lines {
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(90deg,
+        transparent 0,
+        transparent 20px,
+        rgba(255,255,255,0.04) 20px,
+        rgba(255,255,255,0.04) 22px);
+    animation: speedZoom 0.6s linear infinite;
+  }
+
+  @keyframes speedZoom {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-40px); }
+  }
+
+  .luffy-scene-logo {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+    position: relative;
+    z-index: 3;
+    animation: punch 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 40px rgba(239,68,68,0.6));
+  }
+
+  @keyframes punch {
+    0%, 100% { transform: translateX(-100px) rotate(-10deg) scale(1); }
+    40% { transform: translateX(-80px) rotate(-5deg) scale(1); }
+    50% { transform: translateX(120px) rotate(15deg) scale(1.3); }
+    60% { transform: translateX(80px) rotate(10deg) scale(1.1); }
+  }
+
+  .punch-impact {
+    position: absolute;
+    right: 8%;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 84px;
+    letter-spacing: 4px;
+    color: #fbbf24;
+    -webkit-text-stroke: 3px #000;
+    text-shadow: 4px 4px 0 #dc2626, 0 0 30px #fbbf24;
+    opacity: 0;
+    animation: bamPop 2s ease-in-out infinite;
+    z-index: 4;
+  }
+
+  @keyframes bamPop {
+    0%, 40%, 70%, 100% { opacity: 0; transform: translateY(-50%) scale(0.5) rotate(-15deg); }
+    50%, 60% { opacity: 1; transform: translateY(-50%) scale(1.2) rotate(-10deg); }
+  }
+
+  .punch-burst {
+    position: absolute;
+    right: 12%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, #fbbf24 0%, #dc2626 30%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0;
+    animation: burstOut 2s ease-in-out infinite;
+    z-index: 2;
+  }
+
+  @keyframes burstOut {
+    0%, 40%, 70%, 100% { opacity: 0; transform: translateY(-50%) scale(0.3); }
+    50% { opacity: 0.9; transform: translateY(-50%) scale(1); }
+    60% { opacity: 0.4; transform: translateY(-50%) scale(1.4); }
+  }
+
+  .punch-caption {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: #fbbf24;
+    z-index: 5;
+    background: rgba(0,0,0,0.7);
+    padding: 10px 22px;
+    border-radius: 20px;
+    border: 1px solid rgba(251,191,36,0.4);
+    white-space: nowrap;
+  }
+
+  /* ==========  SEASON BOX  ========== */
+  .season-box {
+    background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.15));
+    border: 1px solid rgba(139,92,246,0.4);
+    border-radius: 16px;
+    padding: 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .season-icon {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.1));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(245,158,11,0.3);
+  }
+
+  .season-icon svg { filter: drop-shadow(0 0 10px rgba(251,191,36,0.6)); }
+
+  .season-title {
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: white;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+
+  .season-sub {
+    font-size: 13px;
+    color: #c4b5fd;
+    line-height: 1.5;
+    letter-spacing: 0px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+  }
+
+  /* ==========  FEATURES  ========== */
+  .features-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .feature-card {
+    background: #0f0f0f;
+    border: 1px solid #1f1f1f;
+    border-radius: 14px;
+    padding: 26px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+  }
+
+  .feature-card:hover {
+    border-color: rgba(139,92,246,0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(139,92,246,0.15);
+  }
+
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    background: rgba(139,92,246,0.12);
+    border: 1px solid rgba(139,92,246,0.2);
+  }
+
+  .feature-title {
+    font-size: 20px;
+    letter-spacing: 1.5px;
+    color: #ffffff;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+
+  .feature-desc {
+    font-size: 13px;
+    color: #9ca3af;
+    line-height: 1.5;
+    letter-spacing: 0px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+  }
+
+  /* ==========  SHIPPING  ========== */
+  .shipping-card {
+    background: linear-gradient(135deg, #0a1628, #051a0a);
+    border: 1px solid #1e4a2e;
+    border-radius: 16px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shipping-title {
+    font-size: 38px;
+    letter-spacing: 2px;
+    color: #4ade80;
+    margin-bottom: 12px;
+    line-height: 1.1;
+  }
+
+  .shipping-desc {
+    font-size: 15px;
+    color: #d1d5db;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    letter-spacing: 0px;
+    max-width: 460px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+  }
+
+  .shipping-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(74,222,128,0.12);
+    border: 1px solid rgba(74,222,128,0.35);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    color: #4ade80;
+    letter-spacing: 3px;
+    margin-bottom: 24px;
+  }
+
+  /* ==========  STORES  ========== */
+  .stores-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .store-pill {
+    background: #111;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 22px 12px;
+    text-align: center;
+    position: relative;
+  }
+
+  .store-pill.capital {
+    border-color: #8b5cf6;
+    background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.15));
+    box-shadow: 0 0 30px rgba(139,92,246,0.2);
+  }
+
+  .store-name {
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: white;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .store-status {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #6b7280;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+  }
+
+  .store-pill.capital .store-status { color: #c4b5fd; }
+
+  .new-tag {
+    position: absolute;
+    top: -8px; right: 10px;
+    background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+    color: white;
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  /* ==========  APP SECTION  ========== */
+  .app-card {
+    background: #0f0f0f;
+    border: 1px solid #1f1f1f;
+    border-radius: 16px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .app-card::after {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(139,92,246,0.12), transparent 70%);
+  }
+
+  .app-features {
+    list-style: none;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .app-features li {
+    font-size: 14px;
+    color: #d1d5db;
+    padding: 11px 0;
+    border-bottom: 1px solid #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: 0px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+  }
+
+  .app-features li:last-child { border-bottom: none; }
+
+  .app-features li .bullet {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(139,92,246,0.6);
+  }
+
+  .cta-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid #8b5cf6;
+    color: #c4b5fd;
+    font-size: 15px;
+    letter-spacing: 3px;
+    padding: 14px 32px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    position: relative;
+    z-index: 2;
+  }
+
+  .cta-secondary:hover {
+    background: #8b5cf6;
+    color: white;
+  }
+
+  /* ==========  FINAL CTA  ========== */
+  .final-cta {
+    padding: 80px 40px;
+    text-align: center;
+    background:
+      radial-gradient(ellipse at center, rgba(139,92,246,0.2), transparent 70%),
+      #050505;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .final-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(139,92,246,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,92,246,0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+
+  .final-title {
+    font-size: 64px;
+    letter-spacing: 2px;
+    color: white;
+    margin-bottom: 14px;
+    line-height: 0.95;
+    position: relative;
+    z-index: 2;
+  }
+
+  .final-title span {
+    background: linear-gradient(90deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .final-sub {
+    font-size: 16px;
+    color: #9ca3af;
+    margin-bottom: 36px;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+    letter-spacing: 0px;
+    position: relative;
+    z-index: 2;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+  }
+
+  .cta-mega {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+    color: white;
+    font-size: 22px;
+    letter-spacing: 4px;
+    padding: 22px 52px;
+    border-radius: 10px;
+    text-decoration: none;
+    box-shadow: 0 10px 60px rgba(139,92,246,0.6);
+    position: relative;
+    z-index: 2;
+    animation: megaPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes megaPulse {
+    0%,100% { box-shadow: 0 10px 60px rgba(139,92,246,0.6); }
+    50% { box-shadow: 0 10px 80px rgba(139,92,246,0.9), 0 0 0 8px rgba(139,92,246,0.1); }
+  }
+
+  /* ==========  FOOTER  ========== */
+  .footer {
+    padding: 40px;
+    text-align: center;
+    background: #030303;
+    border-top: 1px solid #111;
+  }
+
+  .footer-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .footer-logo-q {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+
+  .footer-logo-q img {
+    width: 24px; height: 24px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+
+  .footer-logo-text {
+    font-size: 22px;
+    letter-spacing: 6px;
+    color: #374151;
+  }
+
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .footer-links a {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #4b5563;
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+  }
+
+  .footer-links a:hover { color: #8b5cf6; }
+
+  .footer-divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #374151, transparent);
+    margin: 0 auto 20px;
+  }
+
+  .footer-text {
+    font-size: 11px;
+    color: #374151;
+    line-height: 2;
+    letter-spacing: 1px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .footer-text a {
+    color: #4b5563;
+    text-decoration: none;
+  }
+
+  .footer-text a:hover { color: #8b5cf6; }
+
+  /* ========== MOBILE ========== */
+  @media (max-width: 540px) {
+    .hero { padding: 32px 24px; min-height: 90vh; }
+    .section, .final-cta, .footer { padding-left: 24px; padding-right: 24px; }
+    .hero-date { font-size: 110px; }
+    .hero-month { font-size: 48px; letter-spacing: 10px; }
+    .hero-headline { font-size: 38px; }
+    .section-title { font-size: 40px; }
+    .final-title { font-size: 44px; }
+    .tcg-grid { grid-template-columns: repeat(2, 1fr); }
+    .features-grid { grid-template-columns: 1fr; }
+    .stores-row { grid-template-columns: 1fr; }
+    .gundam-left, .gundam-right { width: 110px; height: 110px; }
+    .luffy-scene-logo { width: 140px; height: 140px; }
+    .impact-text { font-size: 48px; }
+    .punch-impact { font-size: 54px; }
+    .gundam-scene, .luffy-scene { height: 380px; }
+    .season-box { flex-direction: column; text-align: center; }
+    .shipping-title { font-size: 30px; }
+    .cta-mega { font-size: 18px; padding: 18px 36px; letter-spacing: 3px; }
+    .scene-caption, .punch-caption { font-size: 11px; letter-spacing: 2px; padding: 8px 14px; }
+    .tcg-logo { width: 52px; height: 52px; }
+    .tcg-logo-wrap { width: 60px; height: 60px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="email-wrapper">
+
+  <!-- ======= HERO ======= -->
+  <section class="hero">
+    <div class="logo-area">
+      <div class="logo-q">
+        <img src="https://quest-tcg.vercel.app/logos/q-logo.png" alt="Quest Q">
+      </div>
+      <div>
+        <div class="logo-text">QUEST HOBBY STORE</div>
+        <div class="logo-sub">PANAMA · TCG COMMUNITY HUB</div>
+      </div>
+    </div>
+
+    <div class="opening-badge">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M11.840239285714285 1.5261035714285713c0.18068214285714285 -0.41954642857142854 0.04593571428571428 -0.9095285714285714 -0.3246142857142857 -1.1790214285714284s-0.875842857142857 -0.24498928571428571 -1.2218928571428571 0.055125L2.4540071428571424 7.261964285714286c-0.3062392857142857 0.2694892857142857 -0.41648571428571424 0.7012857142857142 -0.27255 1.081025s0.511417857142857 0.636975 0.9187142857142857 0.636975h3.414567857142857l-2.3549785714285716 5.493932142857142c-0.18068214285714285 0.41954642857142854 -0.04593571428571428 0.9095285714285714 0.3246142857142857 1.1790214285714284s0.875842857142857 0.24498928571428571 1.2218928571428571 -0.055125L13.545992857142856 8.738035714285713c0.3062392857142857 -0.2694892857142857 0.41648214285714286 -0.7012857142857142 0.27255 -1.081025s-0.5083571428571428 -0.6339142857142858 -0.9187178571428571 -0.6339142857142858h-3.4145642857142855l2.3549785714285716 -5.496992857142857Z" strokeWidth="0"/>
+      </svg>
+      GRAN APERTURA
+    </div>
+
+    <div class="hero-date">01</div>
+    <div class="hero-month">MAYO</div>
+    <div class="hero-city">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="#6b7280" strokeWidth="0">
+        <path d="M3.59 4.57c0 -3.39482 3.6750000000000003 -5.51658 6.615000000000001 -3.8191699999999997C11.56946 1.5386 12.41 2.99446 12.41 4.57c0 3.39482 -3.6750000000000003 5.51658 -6.615000000000001 3.8191699999999997C4.43054 7.6014 3.59 6.1455400000000004 3.59 4.57ZM8 2.6100000000000003c0.2695 0 0.49000000000000005 -0.22050000000000003 0.49000000000000005 -0.49000000000000005s-0.22050000000000003 -0.49000000000000005 -0.49000000000000005 -0.49000000000000005c-1.623125 0 -2.94 1.316875 -2.94 2.94 0 0.2695 0.22050000000000003 0.49000000000000005 0.49000000000000005 0.49000000000000005s0.49000000000000005 -0.22050000000000003 0.49000000000000005 -0.49000000000000005c0 -1.0810650000000002 0.87894 -1.9600000000000002 1.9600000000000002 -1.9600000000000002Zm-0.9800000000000001 12.25v-4.988815000000001c0.3185 0.05819 0.64619 0.088815 0.9800000000000001 0.088815s0.6615000000000001 -0.030625000000000003 0.9800000000000001 -0.088815V14.86c0 0.542065 -0.43793499999999996 0.9800000000000001 -0.9800000000000001 0.9800000000000001s-0.9800000000000001 -0.43793499999999996 -0.9800000000000001 -0.9800000000000001Z" />
+      </svg>
+      PANAMÁ CAPITAL
+    </div>
+
+    <h1 class="hero-headline">
+      LA TIENDA TCG<br>
+      QUE <span>LA COMUNIDAD</span><br>
+      ESTABA ESPERANDO
+    </h1>
+
+    <p class="hero-sub">
+      Ya estamos en David y Chitré. Ahora llegamos a la capital con torneos, ranking, envíos y toda la experiencia Quest.
+    </p>
+
+    <a href="https://questhobbystore.com" class="cta-primary">
+      → ENTRAR A QUEST APP
+    </a>
+
+    <div class="scroll-indicator">↓ SCROLL ↓</div>
+  </section>
+
+  <!-- ======= GUNDAM CLASH SCENE ======= -->
+  <section class="gundam-scene">
+    <div class="gundam-stars"></div>
+    <div class="impact-flash"></div>
+    <img class="gundam-left" src="https://quest-tcg.vercel.app/logos/gundam.png" alt="Gundam">
+    <img class="gundam-right" src="https://quest-tcg.vercel.app/logos/gundam.png" alt="Gundam">
+    <div class="impact-text">CLASH!</div>
+    <div class="scene-caption">⚔ TEMPORADA 2 · RANKING ACTIVO ⚔</div>
+  </section>
+
+  <!-- ======= TORNEOS SECTION ======= -->
+  <section class="section">
+    <div class="section-label">// TORNEOS DÍA DE APERTURA</div>
+    <h2 class="section-title">TODOS LOS <span>JUEGOS.</span><br>UN MISMO DÍA.</h2>
+    <p class="section-desc">
+      Torneos oficiales desde el día 1. Trae tu mazo, tus amigos y compite por el ranking de Temporada 2.
+    </p>
+
+    <div class="tcg-grid">
+      <div class="tcg-card mtg">
+        <div class="tcg-logo-wrap">
+          <img class="tcg-logo" src="https://quest-tcg.vercel.app/logos/mtg.png" alt="Magic: The Gathering">
+        </div>
+        <div class="tcg-name">MAGIC</div>
+        <div class="tcg-badge">THE GATHERING</div>
+      </div>
+      <div class="tcg-card pokemon">
+        <div class="tcg-logo-wrap">
+          <img class="tcg-logo" src="https://quest-tcg.vercel.app/logos/pokemon.png" alt="Pokémon TCG">
+        </div>
+        <div class="tcg-name">POKÉMON</div>
+        <div class="tcg-badge">TCG</div>
+      </div>
+      <div class="tcg-card onepiece">
+        <div class="tcg-logo-wrap">
+          <img class="tcg-logo" src="https://quest-tcg.vercel.app/logos/one-piece.png" alt="One Piece Card Game">
+        </div>
+        <div class="tcg-name">ONE PIECE</div>
+        <div class="tcg-badge">CARD GAME</div>
+      </div>
+      <div class="tcg-card riftbound">
+        <div class="tcg-logo-wrap">
+          <img class="tcg-logo" src="https://quest-tcg.vercel.app/logos/riftbound.png" alt="Riftbound">
+        </div>
+        <div class="tcg-name">RIFTBOUND</div>
+        <div class="tcg-badge">LOL TCG</div>
+      </div>
+      <div class="tcg-card gundam">
+        <div class="tcg-logo-wrap">
+          <img class="tcg-logo" src="https://quest-tcg.vercel.app/logos/gundam.png" alt="Gundam Card Game">
+        </div>
+        <div class="tcg-name">GUNDAM</div>
+        <div class="tcg-badge">CARD GAME</div>
+      </div>
+      <div class="tcg-card digimon">
+        <div class="tcg-logo-wrap">
+          <img class="tcg-logo" src="https://quest-tcg.vercel.app/logos/digimon.png" alt="Digimon Card Game">
+        </div>
+        <div class="tcg-name">DIGIMON</div>
+        <div class="tcg-badge">CARD GAME</div>
+      </div>
+    </div>
+
+    <div class="season-box">
+      <div class="season-icon">
+        <svg width="28" height="28" viewBox="0 0 277.366 277.366" fill="#F59E0B">
+          <path d="M257.799,55.704c-7.706-3.866-17.016-2.36-23.111,3.734l-39.2,39.201l-38.526-86.757C153.753,4.657,146.589,0,138.683,0s-15.07,4.657-18.278,11.883L81.878,98.64l-39.2-39.201c-6.094-6.093-15.405-7.6-23.111-3.733C11.864,59.569,7.502,67.935,8.745,76.463l17.879,122.785c1.431,9.829,9.858,17.118,19.791,17.118h184.536c9.933,0,18.36-7.289,19.791-17.118l17.88-122.786C269.864,67.934,265.502,59.568,257.799,55.704z"/>
+          <path d="M230.951,237.366H46.415c-11.046,0-20,8.954-20,20s8.954,20,20,20h184.536c11.046,0,20-8.954,20-20S241.997,237.366,230.951,237.366z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="season-title">TEMPORADA 2 — RANKING OFICIAL</div>
+        <div class="season-sub">
+          El 1 de mayo inicia la nueva temporada. Cada torneo suma puntos. Compite, sube y marca historia en la comunidad TCG de Panamá.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= LUFFY / ONE PIECE PUNCH SCENE ======= -->
+  <section class="luffy-scene">
+    <div class="speed-lines"></div>
+    <div class="punch-burst"></div>
+    <img class="luffy-scene-logo" src="https://quest-tcg.vercel.app/logos/one-piece.png" alt="One Piece">
+    <div class="punch-impact">BAM!</div>
+    <div class="punch-caption">⚡ LA ACCIÓN EMPIEZA EL 1 DE MAYO ⚡</div>
+  </section>
+
+  <!-- ======= QUEST APP ======= -->
+  <section class="section">
+    <div class="section-label">// QUEST APP — PATCH 2.1</div>
+    <h2 class="section-title">TODO EN <span>UN LUGAR.</span></h2>
+    <p class="section-desc">
+      Toda la info, ranking, tiendas y comunidad centralizada en questhobbystore.com. Web app completa — sin descargas.
+    </p>
+
+    <div class="app-card">
+      <ul class="app-features">
+        <li><span class="bullet"></span>Feed de noticias TCG en tiempo real</li>
+        <li><span class="bullet"></span>Rankings por temporada y por juego</li>
+        <li><span class="bullet"></span>Contador de vida con tiempo estilo ajedrez</li>
+        <li><span class="bullet"></span>Registro automático de resultados de partidas</li>
+        <li><span class="bullet"></span>Sistema Q Points — recompensas por jugar</li>
+        <li><span class="bullet"></span>Push notifications para torneos y eventos</li>
+        <li><span class="bullet"></span>Gestión de envíos entre tiendas</li>
+      </ul>
+      <a href="https://questhobbystore.com" class="cta-secondary">→ ENTRAR A LA APP</a>
+    </div>
+  </section>
+
+  <!-- ======= ENVÍOS ======= -->
+  <section class="section">
+    <div class="section-label">// ENVÍOS ENTRE TIENDAS</div>
+    <div class="shipping-card">
+      <h2 class="shipping-title">ENVÍOS ACTIVOS<br>EN CAPITAL</h2>
+      <p class="shipping-desc">
+        Desde el 2 de mayo, Panamá Capital se integra al sistema de envíos. Envía y recibe cartas y productos entre todas nuestras tiendas.
+      </p>
+      <div class="shipping-date">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" strokeLinecap="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        DESDE EL 2 DE MAYO
+      </div>
+
+      <div class="stores-row">
+        <div class="store-pill">
+          <div class="store-name">DAVID</div>
+          <div class="store-status">CHIRIQUÍ</div>
+        </div>
+        <div class="store-pill">
+          <div class="store-name">CHITRÉ</div>
+          <div class="store-status">HERRERA</div>
+        </div>
+        <div class="store-pill capital">
+          <div class="new-tag">NEW</div>
+          <div class="store-name">PANAMÁ</div>
+          <div class="store-status">CAPITAL</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= FEATURES QUICK ======= -->
+  <section class="section">
+    <div class="section-label">// LO QUE TE ESPERA</div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 277.366 277.366" fill="#A78BFA">
+            <path d="M257.799,55.704c-7.706-3.866-17.016-2.36-23.111,3.734l-39.2,39.201l-38.526-86.757C153.753,4.657,146.589,0,138.683,0s-15.07,4.657-18.278,11.883L81.878,98.64l-39.2-39.201c-6.094-6.093-15.405-7.6-23.111-3.733C11.864,59.569,7.502,67.935,8.745,76.463l17.879,122.785c1.431,9.829,9.858,17.118,19.791,17.118h184.536c9.933,0,18.36-7.289,19.791-17.118l17.88-122.786C269.864,67.934,265.502,59.568,257.799,55.704z"/>
+            <path d="M230.951,237.366H46.415c-11.046,0-20,8.954-20,20s8.954,20,20,20h184.536c11.046,0,20-8.954,20-20S241.997,237.366,230.951,237.366z"/>
+          </svg>
+        </div>
+        <div class="feature-title">TORNEOS DÍA 1</div>
+        <p class="feature-desc">Competitivos desde el momento que abrimos las puertas.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="#FCD34D">
+            <path d="M11.840239285714285 1.5261035714285713c0.18068214285714285 -0.41954642857142854 0.04593571428571428 -0.9095285714285714 -0.3246142857142857 -1.1790214285714284s-0.875842857142857 -0.24498928571428571 -1.2218928571428571 0.055125L2.4540071428571424 7.261964285714286c-0.3062392857142857 0.2694892857142857 -0.41648571428571424 0.7012857142857142 -0.27255 1.081025s0.511417857142857 0.636975 0.9187142857142857 0.636975h3.414567857142857l-2.3549785714285716 5.493932142857142c-0.18068214285714285 0.41954642857142854 -0.04593571428571428 0.9095285714285714 0.3246142857142857 1.1790214285714284s0.875842857142857 0.24498928571428571 1.2218928571428571 -0.055125L13.545992857142856 8.738035714285713c0.3062392857142857 -0.2694892857142857 0.41648214285714286 -0.7012857142857142 0.27255 -1.081025s-0.5083571428571428 -0.6339142857142858 -0.9187178571428571 -0.6339142857142858h-3.4145642857142855l2.3549785714285716 -5.496992857142857Z" strokeWidth="0"/>
+          </svg>
+        </div>
+        <div class="feature-title">Q POINTS</div>
+        <p class="feature-desc">Gana recompensas por jugar, comprar y participar.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <div class="feature-title">COMUNIDAD</div>
+        <p class="feature-desc">La red TCG más grande de Panamá te está esperando.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="#60A5FA">
+            <path d="M13 12.465625c1.828125 -1.284375 3 -3.253125 3 -5.465625C16 3.134375 12.41875 0 8 0S0 3.134375 0 7c0 2.209375 1.171875 4.18125 3 5.465625l0 0.034375v2c0 0.828125 0.671875 1.5 1.5 1.5h1.5v-1.5c0 -0.275 0.225 -0.5 0.5 -0.5s0.5 0.225 0.5 0.5v1.5h2v-1.5c0 -0.275 0.225 -0.5 0.5 -0.5s0.5 0.225 0.5 0.5v1.5h1.5c0.828125 0 1.5 -0.671875 1.5 -1.5v-2l0 -0.034375zM3 8a2 2 0 1 1 4 0 2 2 0 1 1 -4 0zm8 -2a2 2 0 1 1 0 4 2 2 0 1 1 0 -4z"/>
+          </svg>
+        </div>
+        <div class="feature-title">COUNTER</div>
+        <p class="feature-desc">Contador de vida con timer estilo ajedrez para tus partidas.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= FINAL CTA ======= -->
+  <section class="final-cta">
+    <h2 class="final-title">¿NOS VEMOS EL<br><span>1 DE MAYO?</span></h2>
+    <p class="final-sub">
+      La apertura es solo el comienzo. Sé parte de la comunidad TCG más activa de Panamá.
+    </p>
+    <a href="https://questhobbystore.com" class="cta-mega">→ ENTRAR A QUEST APP</a>
+  </section>
+
+  <!-- ======= FOOTER ======= -->
+  <footer class="footer">
+    <div class="footer-logo">
+      <div class="footer-logo-q">
+        <img src="https://quest-tcg.vercel.app/logos/q-logo.png" alt="Q">
+      </div>
+      <div class="footer-logo-text">QUEST</div>
+    </div>
+
+    <div class="footer-links">
+      <a href="https://questhobbystore.com">APP</a>
+      <a href="https://questhobbystore.com">TIENDAS</a>
+      <a href="https://questhobbystore.com">TORNEOS</a>
+      <a href="https://questhobbystore.com">RANKING</a>
+    </div>
+
+    <div class="footer-divider"></div>
+
+    <p class="footer-text">
+      PANAMÁ · DAVID · CHITRÉ<br>
+      QUESTHOBBYSTORE.COM<br><br>
+      © 2026 QUEST HOBBY STORE · <a href="#">DESUSCRIBIRSE</a>
+    </p>
+  </footer>
+
+</div>
+
+</body>
+</html>
