@@ -3,7 +3,7 @@
 // Staff/Admin panel: review & approve claims
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase, getPendingClaims, reviewClaim, getAdminUsers, setUserPremium, getPendingArrivalPackages, confirmPackageArrival, rejectPackageArrival, updatePackageStatus, getTournaments, deleteTournament, getPackageStats, getPendingRedemptions, approveRedemption, rejectRedemption } from '../lib/supabase'
+import { supabase, getPendingClaims, reviewClaim, getAdminUsers, setUserPremium, setUserRole, logMembershipUsage, undoMembershipUsage, getMembershipUsageSummary, getPendingArrivalPackages, confirmPackageArrival, rejectPackageArrival, updatePackageStatus, getTournaments, deleteTournament, getPackageStats, getPendingRedemptions, approveRedemption, rejectRedemption } from '../lib/supabase'
 import { GAME_STYLES } from '../lib/constants'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
@@ -162,68 +162,198 @@ function ClaimCard({ claim, onReviewed }) {
 }
 
 // ── User card for the Usuarios tab ─────────────
-function UserCard({ user, onToggle, currentIsOwner, currentIsAdmin }) {
-  const [busy, setBusy] = useState(false)
-  const [err,  setErr]  = useState('')
-  const isPremium  = user.role === 'premium'
+// ── Tier config ───────────────────────────────
+const TIER_CONFIG = {
+  wizard:   { label: 'Wizard',   color: '#60A5FA', booster: 1, tournament: 1 },
+  mage:     { label: 'Mage',     color: '#A78BFA', booster: 2, tournament: 2 },
+  archmage: { label: 'Archmage', color: '#FBBF24', booster: 3, tournament: 3 },
+  premium:  { label: 'Premium',  color: '#F97316', booster: 1, tournament: 1 },
+}
+const PAID_ROLES = new Set(['wizard', 'mage', 'archmage', 'premium'])
+const TIER_ORDER = ['wizard', 'mage', 'archmage']
+
+function UsageBar({ label, used, allowed, color }) {
+  const pct = allowed > 0 ? Math.min(used / allowed, 1) : 0
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <span style={{ fontSize: 11, color: '#9CA3AF' }}>{label}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: used >= allowed ? '#F87171' : '#9CA3AF' }}>
+          {used}/{allowed}
+        </span>
+      </div>
+      <div style={{ height: 4, borderRadius: 4, background: '#1F1F1F', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: 4,
+          width: `${pct * 100}%`,
+          background: used >= allowed ? '#F87171' : color,
+          transition: 'width 0.3s ease',
+        }} />
+      </div>
+    </div>
+  )
+}
+
+function UserCard({ user, onRoleChange, adminBranch, currentIsOwner, currentIsAdmin }) {
+  const [expanded,   setExpanded]   = useState(false)
+  const [usage,      setUsage]      = useState(null)   // [{ benefit, used, allowed }]
+  const [loadingU,   setLoadingU]   = useState(false)
+  const [roleChanging, setRoleChanging] = useState(false)
+  const [logBusy,    setLogBusy]    = useState({})     // { booster: bool, tournament: bool }
+  const [err,        setErr]        = useState('')
+
+  const isPaid     = PAID_ROLES.has(user.role)
   const isStaff    = user.role === 'staff' || user.role === 'admin'
   const isOwnerAcc = user.is_owner === true
-  // Only owner can modify the owner account; admin/owner can modify everyone else
   const canModify  = (currentIsOwner || currentIsAdmin) && (!isOwnerAcc || currentIsOwner)
+  const tier       = TIER_CONFIG[user.role]
 
-  const handleToggle = async () => {
-    if (isStaff || !canModify) return
-    setBusy(true)
-    setErr('')
+  const roleColor  = isOwnerAcc ? '#F59E0B'
+                   : isStaff    ? '#3B82F6'
+                   : tier       ? tier.color
+                   : '#4B5563'
+  const roleLabel  = isOwnerAcc ? '👑 Owner'
+                   : isStaff    ? 'Admin'
+                   : tier       ? tier.label
+                   : 'Free'
+
+  // Load usage when expanded
+  useEffect(() => {
+    if (!expanded || !isPaid || usage !== null) return
+    setLoadingU(true)
+    getMembershipUsageSummary(user.id)
+      .then(setUsage)
+      .catch(() => setUsage([]))
+      .finally(() => setLoadingU(false))
+  }, [expanded])
+
+  const handleSetRole = async (newRole) => {
+    if (!canModify) return
+    setRoleChanging(true); setErr('')
     try {
-      await setUserPremium(user.id, !isPremium)
-      onToggle(user.id, !isPremium)
-    } catch (e) {
-      setErr(e.message || 'Error al actualizar')
-    }
-    setBusy(false)
+      await setUserRole(user.id, newRole)
+      onRoleChange(user.id, newRole)
+      setUsage(null) // reset usage so it reloads for new tier
+    } catch (e) { setErr(e.message || 'Error al actualizar') }
+    setRoleChanging(false)
   }
 
-  const roleLabel = isOwnerAcc ? '👑 Owner' : isStaff ? 'Admin' : isPremium ? 'Premium' : 'Free'
-  const roleColor = isOwnerAcc ? '#F59E0B' : isStaff ? '#3B82F6' : isPremium ? '#A78BFA' : '#4B5563'
+  const handleLog = async (benefit, delta) => {
+    setLogBusy(b => ({ ...b, [benefit]: true })); setErr('')
+    try {
+      if (delta > 0) await logMembershipUsage({ userId: user.id, benefit, branch: adminBranch })
+      else           await undoMembershipUsage({ userId: user.id, benefit })
+      // Refresh usage
+      const fresh = await getMembershipUsageSummary(user.id)
+      setUsage(fresh)
+    } catch (e) { setErr(e.message || 'Error') }
+    setLogBusy(b => ({ ...b, [benefit]: false }))
+  }
+
+  const getUsage = (benefit) => usage?.find(u => u.benefit === benefit) ?? { used: 0, allowed: 0 }
 
   return (
-    <div style={{ padding: '10px 0', borderBottom: '1px solid #1A1A1A' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ borderBottom: '1px solid #1A1A1A' }}>
+      {/* ── Main row ── */}
+      <div
+        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', cursor: isPaid && canModify ? 'pointer' : 'default' }}
+        onClick={() => { if (isPaid && canModify) setExpanded(e => !e) }}
+      >
+        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
           <Avatar url={user.avatar_url} size={36} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user.username}
           </div>
-          <div style={{ fontSize: 11, color: roleColor, marginTop: 1, fontWeight: 600 }}>
-            {roleLabel}
-          </div>
+          <div style={{ fontSize: 11, color: roleColor, fontWeight: 600, marginTop: 1 }}>{roleLabel}</div>
         </div>
+
+        {/* Tier selector pill — non-staff paid members */}
         {!isStaff && !isOwnerAcc && canModify && (
-          <button onClick={handleToggle} disabled={busy} style={{
-            padding: '6px 12px', borderRadius: 8,
-            border: `1px solid ${isPremium ? 'rgba(167,139,250,0.3)' : '#2A2A2A'}`,
-            background: isPremium ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.06)',
-            color: isPremium ? '#A78BFA' : '#6B7280',
-            fontSize: 12, fontWeight: 700, cursor: busy ? 'default' : 'pointer',
-            fontFamily: 'Inter, sans-serif', flexShrink: 0,
-          }}>
-            {busy ? '...' : isPremium ? '★ Premium' : 'Activar'}
-          </button>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {TIER_ORDER.map(t => (
+              <button key={t} onClick={e => { e.stopPropagation(); handleSetRole(user.role === t ? 'client' : t) }}
+                disabled={roleChanging}
+                style={{
+                  padding: '4px 8px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                  background: user.role === t ? `${TIER_CONFIG[t].color}25` : 'rgba(255,255,255,0.05)',
+                  color: user.role === t ? TIER_CONFIG[t].color : '#4B5563',
+                  fontSize: 10, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+                  transition: 'all 0.15s',
+                }}>
+                {TIER_CONFIG[t].label.slice(0, 4).toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {isPaid && canModify && (
+          <span style={{ fontSize: 12, color: '#4B5563', marginLeft: 2 }}>{expanded ? '▲' : '▼'}</span>
         )}
         {isOwnerAcc && !currentIsOwner && (
           <span style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700 }}>🔒</span>
         )}
       </div>
-      {err && <div style={{ fontSize: 11, color: '#F87171', marginTop: 4 }}>{err}</div>}
+
+      {/* ── Expanded usage panel ── */}
+      {expanded && isPaid && (
+        <div style={{ paddingBottom: 14 }}>
+          {err && <div style={{ fontSize: 11, color: '#F87171', marginBottom: 8 }}>{err}</div>}
+
+          {loadingU ? (
+            <div style={{ textAlign: 'center', padding: '12px 0' }}>
+              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: tier?.color ?? '#FFF', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+            </div>
+          ) : (
+            <div style={{ background: '#111', borderRadius: 12, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.1em' }}>USO ESTE MES</div>
+
+              {/* Boosters */}
+              {(() => { const u = getUsage('booster'); return (
+                <div>
+                  <UsageBar label="🎴 Boosters" used={u.used} allowed={u.allowed || tier?.booster || 0} color={tier?.color ?? '#A78BFA'} />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <button onClick={() => handleLog('booster', -1)} disabled={logBusy.booster || u.used === 0}
+                      style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: '1px solid #2A2A2A', background: 'transparent', color: '#6B7280', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      − Deshacer
+                    </button>
+                    <button onClick={() => handleLog('booster', 1)} disabled={logBusy.booster || u.used >= (u.allowed || tier?.booster || 0)}
+                      style={{ flex: 2, padding: '7px 0', borderRadius: 8, border: 'none', background: u.used >= (u.allowed || tier?.booster || 0) ? '#1A1A1A' : (tier?.color ?? '#A78BFA'), color: u.used >= (u.allowed || tier?.booster || 0) ? '#4B5563' : '#000', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {logBusy.booster ? '...' : '+ Registrar booster'}
+                    </button>
+                  </div>
+                </div>
+              )})()}
+
+              {/* Tournaments */}
+              {(() => { const u = getUsage('tournament'); return (
+                <div>
+                  <UsageBar label="🏆 Torneos" used={u.used} allowed={u.allowed || tier?.tournament || 0} color={tier?.color ?? '#A78BFA'} />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <button onClick={() => handleLog('tournament', -1)} disabled={logBusy.tournament || u.used === 0}
+                      style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: '1px solid #2A2A2A', background: 'transparent', color: '#6B7280', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      − Deshacer
+                    </button>
+                    <button onClick={() => handleLog('tournament', 1)} disabled={logBusy.tournament || u.used >= (u.allowed || tier?.tournament || 0)}
+                      style={{ flex: 2, padding: '7px 0', borderRadius: 8, border: 'none', background: u.used >= (u.allowed || tier?.tournament || 0) ? '#1A1A1A' : (tier?.color ?? '#A78BFA'), color: u.used >= (u.allowed || tier?.tournament || 0) ? '#4B5563' : '#000', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {logBusy.tournament ? '...' : '+ Registrar torneo'}
+                    </button>
+                  </div>
+                </div>
+              )})()}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!expanded && err && <div style={{ fontSize: 11, color: '#F87171', paddingBottom: 6 }}>{err}</div>}
     </div>
   )
 }
 
 // ── Users tab ────────────────────────────────
-function UsersTab({ currentIsOwner, adminBranch }) {
+function UsersTab({ currentIsOwner, currentIsAdmin, adminBranch }) {
   const [users,   setUsers]   = useState([])
   const [query,   setQuery]   = useState('')
   const [loading, setLoading] = useState(true)
@@ -237,7 +367,7 @@ function UsersTab({ currentIsOwner, adminBranch }) {
       .then(setUsers)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }, [query])
+  }, [query, adminBranch])
 
   useEffect(() => { load('') }, [])
 
@@ -248,8 +378,8 @@ function UsersTab({ currentIsOwner, adminBranch }) {
     searchTimer.current = setTimeout(() => load(v), 400)
   }
 
-  const handleToggle = (userId, nowPremium) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: nowPremium ? 'premium' : 'client' } : u))
+  const handleRoleChange = (userId, newRole) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
   }
 
   return (
@@ -271,7 +401,13 @@ function UsersTab({ currentIsOwner, adminBranch }) {
       )}
       {error && <div style={{ color: '#F87171', fontSize: 13 }}>{error}</div>}
       {!loading && users.map(u => (
-        <UserCard key={u.id} user={u} onToggle={handleToggle} currentIsOwner={currentIsOwner} currentIsAdmin={currentIsAdmin} />
+        <UserCard
+          key={u.id} user={u}
+          onRoleChange={handleRoleChange}
+          adminBranch={adminBranch}
+          currentIsOwner={currentIsOwner}
+          currentIsAdmin={currentIsAdmin}
+        />
       ))}
       {!loading && users.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 0', color: '#4B5563', fontSize: 13 }}>Sin resultados</div>
@@ -882,7 +1018,7 @@ export default function AdminScreen({ onClose }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
               MEMBRESÍAS Y PUNTOS
             </div>
-            <UsersTab currentIsOwner={currentIsOwner} adminBranch={adminBranch} />
+            <UsersTab currentIsOwner={currentIsOwner} currentIsAdmin={currentIsAdmin} adminBranch={adminBranch} />
           </>
         )}
 

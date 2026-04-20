@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase'
 import { getFeed, getUserLikedPosts, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost, getArticles } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
-import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, RoleBadge, BoltIcon } from '../components/Icons'
+import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, RoleBadge, BoltIcon, PAID_ROLES } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 
 const sk = (w, h, r = 6) => ({
@@ -477,7 +477,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
                 @{post.profiles?.username ?? 'user'}
               </span>
               {post.profiles?.verified && <span style={{ fontSize: 11, flexShrink: 0 }}>✓</span>}
-              {post.profiles?.role === 'premium' && <PremiumBadge size={13} />}
+              {PAID_ROLES.has(post.profiles?.role) && <PremiumBadge size={13} role={post.profiles.role} />}
               <RoleBadge isOwner={post.profiles?.is_owner} role={post.profiles?.role} size={13} />
             </div>
             <span style={{ fontSize: 11, color: '#4B5563' }}>{timeAgo(post.created_at)}</span>

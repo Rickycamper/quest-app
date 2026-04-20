@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { getProfile, getUserPosts, getFollowCounts, toggleFollow, getFollowing, getHeadToHead, resetH2H, getMyStats, redeemPoints } from '../lib/supabase'
 import { GAME_STYLES, BRANCH_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
-import { PremiumBadge, RoleBadge, MapPinIcon } from '../components/Icons'
+import { PremiumBadge, RoleBadge, MapPinIcon, PAID_ROLES } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 import H2HModal from '../components/H2HModal'
 
@@ -114,7 +114,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
         }}>‹</button>
         <span style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
           @{profile?.username ?? '...'}
-          {profile?.role === 'premium' && <PremiumBadge size={14} />}
+          {PAID_ROLES.has(profile?.role) && <PremiumBadge size={14} role={profile.role} />}
           <RoleBadge isOwner={profile?.is_owner} role={profile?.role} size={14} />
         </span>
         {isOwn && (
@@ -174,7 +174,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           <div style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             {profile?.username}
             {profile?.verified && <span style={{ fontSize: 13, color: '#60A5FA' }}>✓</span>}
-            {profile?.role === 'premium' && <PremiumBadge size={14} />}
+            {PAID_ROLES.has(profile?.role) && <PremiumBadge size={14} role={profile.role} />}
             <RoleBadge isOwner={profile?.is_owner} role={profile?.role} size={14} />
             {/* Season badges — 🥇🥈🥉 with rank-aware color */}
             {profile?.season_badges?.slice(0, 4).map(b => {

@@ -8,7 +8,7 @@ import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
-import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon } from '../components/Icons'
+import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, PAID_ROLES } from '../components/Icons'
 
 // ── Inline icons (16×16, fill, strokeWidth 0) ─────────
 const UserPlusIcon = ({ size = 14, color = 'currentColor' }) => (
@@ -635,7 +635,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   @{entry.username}
                   {entry.verified && <span style={{ fontSize: 10, color: '#60A5FA' }}>✓</span>}
-                  {entry.role === 'premium' && <PremiumBadge size={12} />}
+                  {PAID_ROLES.has(entry.role) && <PremiumBadge size={12} role={entry.role} />}
                   <RoleBadge isOwner={entry.is_owner} role={entry.role} size={12} />
                   <SeasonBadgePill badges={entry.season_badges} game={game} branch={branch} />
                 </div>

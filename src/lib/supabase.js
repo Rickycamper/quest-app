@@ -472,9 +472,14 @@ export async function getAdminUsers(query = '', branch = null) {
 }
 
 export async function setUserPremium(userId, premium) {
+  return setUserRole(userId, premium ? 'premium' : 'client')
+}
+
+/** Set any membership role: 'client' | 'wizard' | 'mage' | 'archmage' */
+export async function setUserRole(userId, role) {
   const { data, error } = await supabase
     .from('profiles')
-    .update({ role: premium ? 'premium' : 'client' })
+    .update({ role })
     .eq('id', userId)
     .select('id, role')
     .single()
@@ -485,6 +490,40 @@ export async function setUserPremium(userId, premium) {
   }
   if (!data) throw new Error('Usuario no encontrado.')
   return data
+}
+
+/** Log a benefit used this month for a member (admin action) */
+export async function logMembershipUsage({ userId, benefit, branch }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const { error } = await supabase
+    .from('membership_usage')
+    .insert({ user_id: userId, benefit, branch: branch ?? null, recorded_by: session?.user?.id ?? null })
+  if (error) throw error
+}
+
+/** Delete the most recent usage entry of a given benefit for a user this month (undo) */
+export async function undoMembershipUsage({ userId, benefit }) {
+  // Find the latest entry this month
+  const start = new Date(); start.setDate(1); start.setHours(0, 0, 0, 0)
+  const { data, error: fetchErr } = await supabase
+    .from('membership_usage')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('benefit', benefit)
+    .gte('used_at', start.toISOString())
+    .order('used_at', { ascending: false })
+    .limit(1)
+  if (fetchErr) throw fetchErr
+  if (!data?.length) return
+  const { error } = await supabase.from('membership_usage').delete().eq('id', data[0].id)
+  if (error) throw error
+}
+
+/** Get this month's usage summary for a user (used / allowed per benefit) */
+export async function getMembershipUsageSummary(userId) {
+  const { data, error } = await supabase.rpc('membership_usage_summary', { p_user_id: userId })
+  if (error) throw error
+  return data ?? []   // [{ benefit, used, allowed }]
 }
 
 export async function deletePost(postId) {
@@ -1687,7 +1726,10 @@ export async function resetH2H(opponentId) {
 /** Fire-and-forget: award Q points to a user */
 function awardPoints(userId, amount, reason) {
   supabase.rpc('award_points', { p_user_id: userId, p_amount: amount, p_reason: reason })
-    .then(() => {}).catch(() => {})
+    .then(({ error }) => {
+      if (error) console.warn(`[Q pts] award_points failed (${reason}):`, error.message ?? error)
+    })
+    .catch(e => console.warn('[Q pts] network error in award_points:', e?.message))
 }
 
 /** Request to redeem points for store credit (min 1000 = $1) */

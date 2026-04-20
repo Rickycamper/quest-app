@@ -251,7 +251,10 @@
       "WebFetch(domain:www.manatraders.com)",
       "WebFetch(domain:justtcg.com)",
       "Bash(vercel env:*)",
-      "Bash(security find-generic-password:*)"
+      "Bash(security find-generic-password:*)",
+      "Bash(node -e \"const m = { feed: 1, shop: 2, ranks: 3, folder: 4, search: 5 }; console.log\\(Object.keys\\(m\\)\\)\")",
+      "Bash(open /Users/ricardotroya/Downloads/quest-app/public/email-apertura.html)",
+      "mcp__Control_Chrome__get_current_tab"
     ]
   }
 }

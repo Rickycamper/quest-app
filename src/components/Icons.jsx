@@ -181,10 +181,20 @@ export const MailIcon = ({ size = 18 }) => (
   </svg>
 )
 
-export const PremiumBadge = ({ size = 13 }) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" fill="#F97316"
+// Color per membership tier
+const TIER_COLORS = {
+  wizard:    '#60A5FA',  // blue
+  mage:      '#A78BFA',  // purple
+  archmage:  '#FBBF24',  // gold
+  premium:   '#F97316',  // orange (legacy)
+}
+export const PAID_ROLES = new Set(['wizard', 'mage', 'archmage', 'premium'])
+export const tierColor = (role) => TIER_COLORS[role] ?? '#F97316'
+
+export const PremiumBadge = ({ size = 13, role = 'premium' }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill={tierColor(role)}
     style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
-    title="Premium">
+    title={role}>
     <path d="M15.316 0.97c2.143 3.051-1.471 20.034-5.644 8.545-2.997 10.805-7.237 11.268-7.242 6.27-4.475 4.957 2.739 13.798 5.461 15.246h3.258c-2.87-2.501-4.799-4.875-5.136-8.498 2.957 0.589 4.491 1.31 5.079-3.878 3.796 5.412 6.309-3.086 8.574-6.695-0.103 2.52-0.209 5.841 1.428 8.118 0.546 0.759 2.077 1.007 3.421 0.988-0.62 1.005-2.803 4.336-1.063 5.575s2.067-0.024 1.616 1.011c-0.829 1.305-1.437 2.461-3.692 3.379h3.504c3.715-1.17 6.988-5.729 5.913-8.471-1.376 1.166-2.736 1.931-3.831 1.846 3.070-4.505 2.365-9.119 0.922-13.834-1.264 4.524-2.093 5.156-3.411 6.22 1.819-4.291-5.34-13.403-9.157-15.822v0z"/>
   </svg>
 )

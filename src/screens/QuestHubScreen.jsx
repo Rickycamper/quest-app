@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
 import { BRANCH_STYLES } from '../lib/constants'
-import { getPointsHistory, redeemPoints } from '../lib/supabase'
+import { getPointsHistory, redeemPoints, getMembershipUsageSummary } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 
 // ── Minimal SVG icons ─────────────────────────
@@ -130,35 +130,82 @@ const BRANCH_INFO = {
 // ── Membership tiers ──────────────────────────
 const MEMBERSHIP_TIERS = [
   {
-    id:      'client',
-    label:   'MEMBER',
-    icon:    'user',
-    color:   '#9CA3AF',
-    bg:      'rgba(156,163,175,0.08)',
-    border:  'rgba(156,163,175,0.2)',
-    price:   'Gratis',
-    perks: [
-      'Acceso a torneos',
-      'Rankings y claims',
-      'Colección de cartas',
-      'Chat con la comunidad',
-      'Tracking de paquetes',
+    id:      'wizard',
+    rank:    'RANK 1',
+    name:    'WIZARD',
+    price:   '$20',
+    period:  '/mes',
+    color:   '#60A5FA',
+    bg:      'rgba(96,165,250,0.07)',
+    border:  'rgba(96,165,250,0.25)',
+    popular: false,
+    store: [
+      '1 booster gratis al mes (cualquier TCG, standard set)',
+      '1 inscripción de torneo regular gratis al mes',
+      'Tarjeta de acceso Quest',
+      '10% de descuento en tu cumpleaños',
+      'Ofertas exclusivas para miembros',
+      'Envío gratis Quest a Quest',
+    ],
+    app: [
+      'Poder subastar',
+      'Posts ilimitados',
+      'Reset de versus manual',
+      'Q Coins ×2',
     ],
   },
   {
-    id:      'premium',
-    label:   'PREMIUM',
-    icon:    'gem',
+    id:      'mage',
+    rank:    'RANK 2',
+    name:    'MAGE',
+    price:   '$30',
+    period:  '/mes',
     color:   '#A78BFA',
     bg:      'rgba(167,139,250,0.08)',
-    border:  'rgba(167,139,250,0.3)',
-    price:   'Consultar en tienda',
-    perks: [
-      'Todo lo de Member',
-      'Badge exclusivo en el perfil',
-      'Prioridad en subastas',
-      'Acceso anticipado a eventos',
-      'Descuentos en tienda',
+    border:  'rgba(167,139,250,0.35)',
+    popular: true,
+    store: [
+      '2 boosters gratis al mes (cualquier TCG, standard set)',
+      '2 inscripciones a torneos regulares gratis al mes',
+      'Tarjeta de acceso Quest',
+      'Envío gratis Quest a Quest',
+      '20% de descuento en tu cumpleaños',
+      'Ofertas exclusivas para miembros',
+      'Locker gratis',
+    ],
+    app: [
+      'Poder subastar',
+      'Posts ilimitados',
+      'Reset de versus manual',
+      'Q Coins ×3',
+      'Acceso a pre-sale, singles y Sealed antes que al público',
+    ],
+  },
+  {
+    id:      'archmage',
+    rank:    'RANK 3',
+    name:    'ARCHMAGE',
+    price:   '$40',
+    period:  '/mes',
+    color:   '#FBBF24',
+    bg:      'rgba(251,191,36,0.07)',
+    border:  'rgba(251,191,36,0.3)',
+    popular: false,
+    store: [
+      '3 boosters gratis al mes (cualquier TCG, standard set)',
+      '3 inscripciones a torneos regulares gratis al mes',
+      'Tarjeta de acceso Quest',
+      'Envío gratis Quest a Quest',
+      'Ofertas exclusivas para miembros',
+      'Locker gratis',
+      '30% de descuento en tu cumpleaños',
+    ],
+    app: [
+      'Poder subastar',
+      'Posts ilimitados',
+      'Reset de versus manual',
+      'Q Coins ×4',
+      'Acceso a pre-sale, singles y Sealed antes que al público',
     ],
   },
 ]
@@ -225,55 +272,230 @@ function SucursalesView({ onBack }) {
   )
 }
 
-// ── Membresía view ────────────────────────────
-function MembresiaView() {
+// ── Tier config (mirrors AdminScreen) ─────────
+const TIER_CONFIG_HUB = {
+  wizard:   { label: 'Wizard',   color: '#60A5FA', booster: 1, tournament: 1 },
+  mage:     { label: 'Mage',     color: '#A78BFA', booster: 2, tournament: 2 },
+  archmage: { label: 'Archmage', color: '#FBBF24', booster: 3, tournament: 3 },
+  premium:  { label: 'Premium',  color: '#F97316', booster: 1, tournament: 1 },
+}
+const HUB_PAID = new Set(['wizard', 'mage', 'archmage', 'premium'])
+
+function MiniBar({ label, used, allowed, color }) {
+  const pct = allowed > 0 ? Math.min(used / allowed, 1) : 0
+  const full = used >= allowed
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 32px' }}>
-      <div style={{ fontSize: 13, color: '#4B5563', marginBottom: 20, lineHeight: 1.5 }}>
-        Únete a la comunidad TCG de Panamá. Elige el plan que va contigo.
+    <div style={{ flex: 1 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+        <span style={{ fontSize: 11, color: '#9CA3AF' }}>{label}</span>
+        <span style={{ fontSize: 11, fontWeight: 800, color: full ? '#F87171' : color }}>
+          {used}/{allowed}
+        </span>
+      </div>
+      <div style={{ height: 5, borderRadius: 4, background: '#1F1F1F', overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: 4, width: `${pct * 100}%`, background: full ? '#F87171' : color, transition: 'width 0.4s ease' }} />
+      </div>
+      <div style={{ fontSize: 10, color: full ? '#F87171' : '#4B5563', marginTop: 3 }}>
+        {full ? 'Agotado' : `${allowed - used} disponible${(allowed - used) !== 1 ? 's' : ''}`}
+      </div>
+    </div>
+  )
+}
+
+// ── Membresía view ────────────────────────────
+function MembresiaView({ profile }) {
+  const [open,    setOpen]    = useState({})
+  const [usage,   setUsage]   = useState(null)
+  const toggle = (key) => setOpen(p => ({ ...p, [key]: !p[key] }))
+
+  const isPaid = HUB_PAID.has(profile?.role)
+  const myTier = TIER_CONFIG_HUB[profile?.role]
+
+  useEffect(() => {
+    if (!isPaid || !profile?.id) return
+    getMembershipUsageSummary(profile.id)
+      .then(setUsage)
+      .catch(() => setUsage([]))
+  }, [profile?.id, profile?.role])
+
+  const getU = (benefit) => {
+    const row = usage?.find(u => u.benefit === benefit)
+    return { used: row?.used ?? 0, allowed: row?.allowed ?? myTier?.[benefit] ?? 0 }
+  }
+
+  const monthName = new Date().toLocaleDateString('es', { month: 'long', year: 'numeric' })
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 40px' }}>
+
+      {/* ── My plan card (only when member) ── */}
+      {isPaid && myTier && (
+        <div style={{
+          background: `${myTier.color}0D`,
+          border: `1.5px solid ${myTier.color}35`,
+          borderRadius: 16, padding: '16px 18px', marginBottom: 20,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: `${myTier.color}99`, letterSpacing: '0.12em', marginBottom: 3 }}>TU PLAN</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: myTier.color }}>{myTier.label.toUpperCase()}</div>
+            </div>
+            <div style={{ fontSize: 11, color: '#4B5563', textAlign: 'right' }}>
+              <div style={{ fontWeight: 700, color: '#9CA3AF', textTransform: 'capitalize' }}>{monthName}</div>
+              <div style={{ marginTop: 2 }}>Uso mensual</div>
+            </div>
+          </div>
+
+          {usage === null ? (
+            <div style={{ textAlign: 'center', padding: '10px 0' }}>
+              <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${myTier.color}40`, borderTopColor: myTier.color, animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 16 }}>
+              <MiniBar label="🎴 Boosters"  {...getU('booster')}    color={myTier.color} />
+              <MiniBar label="🏆 Torneos"   {...getU('tournament')} color={myTier.color} />
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ fontSize: 12, color: '#4B5563', marginBottom: 20, lineHeight: 1.6 }}>
+        {isPaid ? 'Tus beneficios incluidos en el plan.' : 'Elige tu rango y actívalo en cualquier sucursal Quest.'}
       </div>
 
       {MEMBERSHIP_TIERS.map(tier => (
         <div key={tier.id} style={{
-          background: tier.bg, borderRadius: 14,
-          border: `1px solid ${tier.border}`,
-          padding: '18px 16px', marginBottom: 14,
+          background: tier.bg,
+          borderRadius: 18,
+          border: `1.5px solid ${tier.border}`,
+          marginBottom: 16,
+          overflow: 'hidden',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Icon id={tier.icon} size={24} color={tier.color} />
+          {/* ── Card header ── */}
+          <div style={{ padding: '20px 20px 18px' }}>
+            {tier.popular && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: `${tier.color}22`, border: `1px solid ${tier.color}44`,
+                borderRadius: 20, padding: '3px 10px', marginBottom: 12,
+                fontSize: 9, fontWeight: 800, color: tier.color, letterSpacing: '0.08em',
+                fontFamily: 'Inter, sans-serif',
+              }}>⭐ MÁS POPULAR</div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: tier.color, letterSpacing: '0.05em' }}>
-                  {tier.label}
+                <div style={{ fontSize: 10, fontWeight: 700, color: `${tier.color}99`, letterSpacing: '0.14em', marginBottom: 5 }}>
+                  {tier.rank}
                 </div>
-                <div style={{ fontSize: 11, color: '#4B5563', marginTop: 1 }}>{tier.price}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: tier.color, letterSpacing: '0.03em', lineHeight: 1 }}>
+                  {tier.name}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, justifyContent: 'flex-end' }}>
+                  <span style={{ fontSize: 30, fontWeight: 900, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>{tier.price}</span>
+                  <span style={{ fontSize: 12, color: '#4B5563', fontWeight: 600 }}>{tier.period}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-            {tier.perks.map((perk, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-                  background: `${tier.color}22`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 9, color: tier.color, fontWeight: 800,
-                }}>✓</div>
-                <span style={{ fontSize: 12, color: '#D1D5DB' }}>{perk}</span>
-              </div>
-            ))}
-          </div>
+          {/* ── Store benefits accordion ── */}
+          <div style={{ height: 1, background: `${tier.color}20` }} />
+          <button
+            onClick={() => toggle(`${tier.id}-store`)}
+            style={{
+              width: '100%', padding: '14px 20px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 15 }}>🏪</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#D1D5DB' }}>Beneficios en tienda</span>
+              <span style={{
+                fontSize: 10, fontWeight: 800, color: tier.color,
+                background: `${tier.color}22`, borderRadius: 10, padding: '2px 7px',
+              }}>{tier.store.length}</span>
+            </div>
+            <span style={{
+              fontSize: 11, color: '#4B5563',
+              display: 'inline-block',
+              transform: open[`${tier.id}-store`] ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}>▼</span>
+          </button>
 
-          {tier.id === 'premium' && (
-            <div style={{
-              marginTop: 14, padding: '10px 14px', borderRadius: 10,
-              background: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.15)',
-              fontSize: 12, color: '#6B7280', textAlign: 'center', lineHeight: 1.5,
-            }}>
-              Consulta en cualquier sucursal para activar tu membresía Premium
+          {open[`${tier.id}-store`] && (
+            <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {tier.store.map((perk, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                    background: `${tier.color}20`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, color: tier.color, fontWeight: 900,
+                  }}>✓</div>
+                  <span style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.55 }}>{perk}</span>
+                </div>
+              ))}
             </div>
           )}
+
+          {/* ── App benefits accordion ── */}
+          <div style={{ height: 1, background: `${tier.color}15` }} />
+          <button
+            onClick={() => toggle(`${tier.id}-app`)}
+            style={{
+              width: '100%', padding: '14px 20px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 15 }}>📱</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#D1D5DB' }}>Beneficios en la app</span>
+              <span style={{
+                fontSize: 10, fontWeight: 800, color: tier.color,
+                background: `${tier.color}22`, borderRadius: 10, padding: '2px 7px',
+              }}>{tier.app.length}</span>
+            </div>
+            <span style={{
+              fontSize: 11, color: '#4B5563',
+              display: 'inline-block',
+              transform: open[`${tier.id}-app`] ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}>▼</span>
+          </button>
+
+          {open[`${tier.id}-app`] && (
+            <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {tier.app.map((perk, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                    background: `${tier.color}20`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, color: tier.color, fontWeight: 900,
+                  }}>✓</div>
+                  <span style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.55 }}>{perk}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Footer ── */}
+          <div style={{ padding: '0 16px 16px' }}>
+            <div style={{
+              padding: '11px 14px', borderRadius: 12,
+              background: `${tier.color}0D`, border: `1px solid ${tier.color}22`,
+              fontSize: 12, color: '#4B5563', textAlign: 'center', lineHeight: 1.5,
+            }}>
+              Consulta en cualquier sucursal para activar
+            </div>
+          </div>
         </div>
       ))}
     </div>
@@ -585,7 +807,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
 
       {/* Sub-views */}
       {view === 'sucursales' && <SucursalesView onBack={() => setView(null)} />}
-      {view === 'membresia'  && <MembresiaView />}
+      {view === 'membresia'  && <MembresiaView profile={profile} />}
       {view === 'qpoints'    && <QPointsView profile={profile} />}
 
       {/* Main tiles grid */}
