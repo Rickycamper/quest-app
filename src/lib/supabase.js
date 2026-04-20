@@ -1750,37 +1750,43 @@ const Q_NOTIF = {
   shipment_confirmed: { emoji: '📦', label: 'por tu envío confirmado',   amount: 10 },
 }
 
-function awardPoints(userId, amount, reason) {
-  supabase.rpc('award_points', { p_user_id: userId, p_amount: amount, p_reason: reason })
-    .then(async ({ error }) => {
-      if (error) {
-        console.warn(`[Q pts] award_points failed (${reason}):`, error.message ?? error)
-        return
-      }
-      // Notify the user for significant Q coin events
-      const notif = Q_NOTIF[reason]
-      if (!notif || amount <= 0) return
-      try {
-        // Fetch the actual amount awarded (may be multiplied by tier)
-        const { data: log } = await supabase
-          .from('q_points_log')
-          .select('amount')
-          .eq('user_id', userId)
-          .eq('reason', reason)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
-        const awarded = log?.amount ?? (amount)
-        await createNotification(
-          userId,
-          'q_coins_earned',
-          `${notif.emoji} +${awarded} Q Coins`,
-          `Ganaste ${awarded} Q Coins ${notif.label}.`,
-          { reason, amount: awarded }
-        )
-      } catch { /* notification failure is non-fatal */ }
+async function awardPoints(userId, amount, reason) {
+  try {
+    const { error } = await supabase.rpc('award_points', {
+      p_user_id: userId, p_amount: amount, p_reason: reason,
     })
-    .catch(e => console.warn('[Q pts] network error in award_points:', e?.message))
+    if (error) {
+      // Store last error in localStorage so it's inspectable without devtools
+      localStorage.setItem('__qpts_last_error', JSON.stringify({ reason, msg: error.message, code: error.code, t: new Date().toISOString() }))
+      console.error(`[Q pts] award_points FAILED (${reason}):`, error)
+      return
+    }
+    localStorage.removeItem('__qpts_last_error')
+
+    // Notify the user for significant Q coin events
+    const notif = Q_NOTIF[reason]
+    if (!notif || amount <= 0) return
+    try {
+      const { data: log } = await supabase
+        .from('q_points_log')
+        .select('amount')
+        .eq('user_id', userId)
+        .eq('reason', reason)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      const awarded = log?.amount ?? amount
+      await createNotification(
+        userId,
+        'q_coins_earned',
+        `${notif.emoji} +${awarded} Q Coins`,
+        `Ganaste ${awarded} Q Coins ${notif.label}.`,
+        { reason, amount: awarded }
+      )
+    } catch { /* notification failure is non-fatal */ }
+  } catch (e) {
+    console.error('[Q pts] network error:', e?.message)
+  }
 }
 
 /** Request to redeem points for store credit (min 1000 = $1) */
