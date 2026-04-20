@@ -1743,10 +1743,42 @@ export async function resetH2H(opponentId) {
 // ── Q POINTS ─────────────────────────────────
 
 /** Fire-and-forget: award Q points to a user */
+// Labels and amounts for the Q coins notification per reason
+const Q_NOTIF = {
+  post_created:       { emoji: '📝', label: 'por crear un post',         amount: 10 },
+  match_won:          { emoji: '⚔️', label: 'por ganar una partida',     amount: 1  },
+  shipment_confirmed: { emoji: '📦', label: 'por tu envío confirmado',   amount: 10 },
+}
+
 function awardPoints(userId, amount, reason) {
   supabase.rpc('award_points', { p_user_id: userId, p_amount: amount, p_reason: reason })
-    .then(({ error }) => {
-      if (error) console.warn(`[Q pts] award_points failed (${reason}):`, error.message ?? error)
+    .then(async ({ error }) => {
+      if (error) {
+        console.warn(`[Q pts] award_points failed (${reason}):`, error.message ?? error)
+        return
+      }
+      // Notify the user for significant Q coin events
+      const notif = Q_NOTIF[reason]
+      if (!notif || amount <= 0) return
+      try {
+        // Fetch the actual amount awarded (may be multiplied by tier)
+        const { data: log } = await supabase
+          .from('q_points_log')
+          .select('amount')
+          .eq('user_id', userId)
+          .eq('reason', reason)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+        const awarded = log?.amount ?? (amount)
+        await createNotification(
+          userId,
+          'q_coins_earned',
+          `${notif.emoji} +${awarded} Q Coins`,
+          `Ganaste ${awarded} Q Coins ${notif.label}.`,
+          { reason, amount: awarded }
+        )
+      } catch { /* notification failure is non-fatal */ }
     })
     .catch(e => console.warn('[Q pts] network error in award_points:', e?.message))
 }
