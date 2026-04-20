@@ -776,7 +776,7 @@ export async function getTournaments({ game = null, branch = null } = {}) {
     .select(`
       id, name, game, branch, date, player_count, start_time,
       tournament_results ( position, user_id, profiles:user_id ( username ) ),
-      tournament_participants ( user_id, profiles:user_id ( id, username, avatar_url ) )
+      tournament_participants ( user_id, paid, profiles:user_id ( id, username, avatar_url ) )
     `)
     .order('date', { ascending: false })
     .limit(20)
@@ -865,6 +865,25 @@ export async function createTournament({ name, game, branch, date, playerCount, 
     .single()
   if (error) throw error
   return data
+}
+
+/** Mark a participant's payment status; sends a confirmation notification when paid */
+export async function setTournamentPayment(tournamentId, tournamentName, userId, paid) {
+  const { error } = await supabase
+    .from('tournament_participants')
+    .update({ paid })
+    .eq('tournament_id', tournamentId)
+    .eq('user_id', userId)
+  if (error) throw error
+  if (paid) {
+    await createNotification(
+      userId,
+      'tournament_paid',
+      '✅ ¡Inscripción confirmada!',
+      `Tu pago fue registrado y tu lugar en "${tournamentName}" está asegurado. ¡Nos vemos en el torneo!`,
+      { tournamentId, tournamentName }
+    )
+  }
 }
 
 /** Invite a user to a tournament — sends them a one-click join notification */

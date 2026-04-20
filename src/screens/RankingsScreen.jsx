@@ -2,7 +2,7 @@
 // QUEST — RankingsScreen
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, getActiveSeason } from '../lib/supabase'
+import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, setTournamentPayment, getActiveSeason } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
@@ -697,6 +697,83 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
   )
 }
 
+// ── Participant row with pay toggle (admin only) ──
+function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tournamentName, isAdmin, onViewProfile }) {
+  const [paid,    setPaid]    = useState(!!p.paid)
+  const [toggling,setToggling]= useState(false)
+
+  const handlePayToggle = async (e) => {
+    e.stopPropagation()
+    if (toggling) return
+    setToggling(true)
+    const next = !paid
+    try {
+      await setTournamentPayment(tournamentId, tournamentName, p.user_id, next)
+      setPaid(next)
+    } catch {}
+    setToggling(false)
+  }
+
+  return (
+    <div
+      onClick={() => onViewProfile?.(p.user_id)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '7px 0',
+        borderBottom: idx < total - 1 ? '1px solid #161616' : 'none',
+        cursor: onViewProfile ? 'pointer' : 'default',
+        borderRadius: 8, transition: 'background 0.12s',
+      }}
+      onMouseEnter={e => { if (onViewProfile) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+    >
+      <div style={{
+        width: 28, height: 28, borderRadius: '50%',
+        background: '#1F1F1F', border: '1px solid #2A2A2A',
+        overflow: 'hidden', flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12,
+      }}>
+        <Avatar url={prof.avatar_url} size={28} />
+      </div>
+      <span style={{ fontSize: 12, fontWeight: 600, color: '#D1D5DB', fontFamily: 'Inter, sans-serif', flex: 1 }}>
+        @{prof.username}
+      </span>
+      {playerMedal && <span style={{ fontSize: 14 }}>{medal(playerMedal.position)}</span>}
+
+      {/* Payment status */}
+      {isAdmin ? (
+        <button
+          onClick={handlePayToggle}
+          disabled={toggling}
+          style={{
+            flexShrink: 0,
+            padding: '3px 9px', borderRadius: 8, fontSize: 10, fontWeight: 800,
+            fontFamily: 'Inter, sans-serif', cursor: toggling ? 'default' : 'pointer',
+            border: 'none',
+            background: paid ? 'rgba(74,222,128,0.15)' : 'rgba(251,191,36,0.12)',
+            color: paid ? '#4ADE80' : '#FBBF24',
+            transition: 'all 0.15s',
+          }}
+        >
+          {toggling ? '…' : paid ? '✓ Pagó' : 'Pendiente'}
+        </button>
+      ) : (
+        paid && (
+          <span style={{
+            flexShrink: 0, fontSize: 10, fontWeight: 700,
+            color: '#4ADE80', background: 'rgba(74,222,128,0.12)',
+            borderRadius: 8, padding: '3px 8px',
+          }}>✓ Pagó</span>
+        )
+      )}
+
+      {onViewProfile && (
+        <span style={{ fontSize: 11, color: '#374151', marginLeft: 2 }}>›</span>
+      )}
+    </div>
+  )
+}
+
 // ── Tournament Card (collapsible) ────────────
 function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
   const { profile } = useAuth()
@@ -956,42 +1033,18 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
                   if (!prof) return null
                   const playerMedal = top3.find(r => r.user_id === p.user_id)
                   return (
-                    <div
+                    <ParticipantRow
                       key={p.user_id}
-                      onClick={() => onViewProfile?.(p.user_id)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '7px 0',
-                        borderBottom: idx < participants.length - 1 ? '1px solid #161616' : 'none',
-                        cursor: onViewProfile ? 'pointer' : 'default',
-                        borderRadius: 8,
-                        transition: 'background 0.12s',
-                      }}
-                      onMouseEnter={e => { if (onViewProfile) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-                    >
-                      {/* Avatar */}
-                      <div style={{
-                        width: 28, height: 28, borderRadius: '50%',
-                        background: '#1F1F1F', border: '1px solid #2A2A2A',
-                        overflow: 'hidden', flexShrink: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 12,
-                      }}>
-                        <Avatar url={prof.avatar_url} size={28} />
-                      </div>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#D1D5DB', fontFamily: 'Inter, sans-serif', flex: 1 }}>
-                        @{prof.username}
-                      </span>
-                      {playerMedal && (
-                        <span style={{ fontSize: 14 }}>
-                          {medal(playerMedal.position)}
-                        </span>
-                      )}
-                      {onViewProfile && (
-                        <span style={{ fontSize: 11, color: '#374151', marginLeft: playerMedal ? 4 : 'auto' }}>›</span>
-                      )}
-                    </div>
+                      p={p}
+                      prof={prof}
+                      idx={idx}
+                      total={participants.length}
+                      playerMedal={playerMedal}
+                      tournamentId={t.id}
+                      tournamentName={t.name}
+                      isAdmin={isAdmin}
+                      onViewProfile={onViewProfile}
+                    />
                   )
                 })}
               </div>
