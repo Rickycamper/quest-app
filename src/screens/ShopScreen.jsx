@@ -603,8 +603,15 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
-                {fmtPriceOrAsk(product.price)}
+              <div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
+                  {fmtPriceOrAsk(product.price)}
+                </div>
+                {product.price > 0 && (
+                  <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, marginTop: 2 }}>
+                    Precio sugerido
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: sl.dot }} />
@@ -781,6 +788,11 @@ function ProductCard({ product, isOwner, onSave, onDelete }) {
           <div style={{ fontSize: 15, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
             {fmtPriceOrAsk(product.price)}
           </div>
+          {product.price > 0 && (
+            <div style={{ fontSize: 9, color: '#4B5563', fontWeight: 600, letterSpacing: '0.04em' }}>
+              Precio sugerido
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
             <div style={{ width: 5, height: 5, borderRadius: '50%', background: sl.dot, flexShrink: 0 }} />
             <span style={{ fontSize: 9, fontWeight: 700, color: sl.color }}>{sl.text}</span>
@@ -1085,7 +1097,7 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
         ) : (
           <div>
             <FL>
-              {game === 'MTG'     ? 'Nombre de carta (TCGPlayer via Scryfall)' :
+              {game === 'MTG'     ? 'Nombre de carta (StarCityGames)' :
                game === 'Pokemon' ? 'Nombre de carta (TCGPlayer via PokémonTCG)' :
                'Buscar carta (opcional)'}
             </FL>
@@ -1127,9 +1139,10 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
                         {c.foil && <div style={{ marginTop: 4, display: 'inline-block', fontSize: 10, fontWeight: 700, color: '#A78BFA', background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)', borderRadius: 4, padding: '1px 6px' }}>✦ FOIL</div>}
                       </div>
                       <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                        {c.price != null
+                        {c.price != null && game !== 'MTG'
                           ? <span style={{ fontSize: 13, fontWeight: 800, color: '#4ADE80' }}>${normalizeTcgPrice(c.price).toFixed(2)}</span>
-                          : <span style={{ fontSize: 11, color: '#4B5563' }}>Sin precio</span>}
+                          : c.price == null ? <span style={{ fontSize: 11, color: '#4B5563' }}>Sin precio</span>
+                          : <span style={{ fontSize: 11, color: '#4B5563' }}>SCG →</span>}
                       </div>
                     </div>
                   ))}
