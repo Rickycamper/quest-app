@@ -355,8 +355,20 @@ function MembresiaView({ profile }) {
         </div>
       )}
 
-      <div style={{ fontSize: 12, color: '#4B5563', marginBottom: 20, lineHeight: 1.6 }}>
+      <div style={{ fontSize: 12, color: '#4B5563', marginBottom: 12, lineHeight: 1.6 }}>
         {isPaid ? 'Tus beneficios incluidos en el plan.' : 'Elige tu rango y actívalo en cualquier sucursal Quest.'}
+      </div>
+
+      {/* National coverage note */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)',
+        borderRadius: 12, padding: '10px 14px', marginBottom: 20,
+      }}>
+        <SAFlag size={14} color="#34D399" />
+        <span style={{ fontSize: 12, color: '#34D399', fontWeight: 600, lineHeight: 1.5 }}>
+          Tus beneficios de tienda aplican en cualquier sucursal Quest a nivel nacional.
+        </span>
       </div>
 
       {MEMBERSHIP_TIERS.map(tier => {
