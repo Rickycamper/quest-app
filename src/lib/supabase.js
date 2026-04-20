@@ -424,7 +424,7 @@ export async function createPost({ caption, game, imageUrls = [] }) {
   // Check post limit (unlimited for staff / admin / premium)
   const { data: prof } = await supabase
     .from('profiles').select('role').eq('id', session.user.id).single()
-  const unlimited = prof?.role === 'staff' || prof?.role === 'admin' || prof?.role === 'premium'
+  const unlimited = ['staff','admin','premium','wizard','mage','archmage'].includes(prof?.role)
   if (!unlimited) {
     const { count } = await supabase
       .from('posts')
@@ -1020,10 +1020,10 @@ export async function getCards(userId) {
 export async function addCard({ name, game, cardStatus, qty, price, note, imageUrl, folder }) {
   const { data: { session } } = await supabase.auth.getSession()
 
-  // Check card limit (unlimited for staff / admin / premium)
+  // Check card limit (unlimited for staff / admin / any paid tier)
   const { data: prof } = await supabase
     .from('profiles').select('role').eq('id', session.user.id).single()
-  const unlimited = prof?.role === 'staff' || prof?.role === 'admin' || prof?.role === 'premium'
+  const unlimited = ['staff','admin','premium','wizard','mage','archmage'].includes(prof?.role)
   if (!unlimited) {
     const { count } = await supabase
       .from('cards')

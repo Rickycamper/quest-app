@@ -870,125 +870,141 @@ function StatsTab() {
   )
 }
 
+// ── Section definitions ──────────────────────
+const ADMIN_SECTIONS = [
+  { id: 'claims',   label: 'Claims',    desc: 'Resultados de torneos',    color: '#F87171', icon: '⚔️' },
+  { id: 'packages', label: 'Envíos',    desc: 'Llegadas por confirmar',   color: '#F59E0B', icon: '📦' },
+  { id: 'users',    label: 'Miembros',  desc: 'Roles y beneficios',       color: '#60A5FA', icon: '👥' },
+  { id: 'torneos',  label: 'Torneos',   desc: 'Gestión de torneos',       color: '#4ADE80', icon: '🏆' },
+  { id: 'qpoints',  label: 'Q Coins',   desc: 'Canjes pendientes',        color: '#FBBF24', icon: '🪙' },
+  { id: 'stats',    label: 'Stats',     desc: 'Estadísticas de envíos',   color: '#A78BFA', icon: '📊' },
+  { id: 'articles', label: 'RSS',       desc: 'Artículos TCG',            color: '#6B7280', icon: '📰' },
+  { id: 'email',    label: 'Email',     desc: 'Campañas de marketing',    color: '#EC4899', icon: '📧', ownerOnly: true },
+]
+
 export default function AdminScreen({ onClose }) {
   const { isOwner: currentIsOwner, isAdmin: currentIsAdmin, profile } = useAuth()
-  // Admin role and owner both see all branches
   const adminBranch = (currentIsOwner || currentIsAdmin) ? null : (profile?.branch ?? null)
-  const [tab,     setTab]     = useState('claims')
-  const [claims,  setClaims]  = useState([])
+  const [tab,    setTab]    = useState('home')
+  const [claims, setClaims] = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
 
   const load = () => {
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     getPendingClaims(adminBranch)
       .then(setClaims)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }
-
   useEffect(() => { load() }, [])
+  const handleReviewed = (id) => setClaims(prev => prev.filter(c => c.id !== id))
 
-  const handleReviewed = (id) => {
-    setClaims(prev => prev.filter(c => c.id !== id))
-  }
-
-  const tabStyle = (t) => ({
-    flex: 1, padding: '8px 0', borderRadius: 8, border: 'none',
-    background: tab === t ? '#1F1F1F' : 'transparent',
-    color: tab === t ? '#FFF' : '#4B5563',
-    fontSize: 13, fontWeight: 700, cursor: 'pointer',
-    fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
-  })
+  const sections = ADMIN_SECTIONS.filter(s => !s.ownerOnly || currentIsOwner)
+  const current  = sections.find(s => s.id === tab)
 
   return (
     <div style={{
       position: 'absolute', inset: 0, zIndex: 100,
-      background: '#0A0A0A',
-      display: 'flex', flexDirection: 'column',
+      background: '#0A0A0A', display: 'flex', flexDirection: 'column',
       paddingTop: 'env(safe-area-inset-top, 0px)',
       animation: 'slideUp 0.22s ease',
     }}>
-      {/* Header */}
+
+      {/* ── Header ── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,
-        padding: '18px 18px 14px',
-        borderBottom: '1px solid #1A1A1A',
-        flexShrink: 0,
+        padding: '18px 18px 14px', borderBottom: '1px solid #1A1A1A', flexShrink: 0,
       }}>
-        <button onClick={onClose} style={{
+        <button onClick={tab === 'home' ? onClose : () => setTab('home')} style={{
           background: 'none', border: 'none', cursor: 'pointer',
           color: '#6B7280', fontSize: 20, padding: '0 4px 0 0', lineHeight: 1,
         }}>←</button>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <span style={{ fontSize: 16, fontWeight: 800, color: '#FFF' }}>Panel Admin</span>
-          {adminBranch && <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 600 }}>{adminBranch}</span>}
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {tab === 'home' ? (
+            <>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#FFF' }}>Panel Admin</div>
+              {adminBranch && <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{adminBranch}</div>}
+            </>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 18 }}>{current?.icon}</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#FFF' }}>{current?.label}</span>
+            </div>
+          )}
         </div>
+
         {tab === 'claims' && claims.length > 0 && (
-          <div style={{
-            marginLeft: 'auto', background: '#EF4444', color: '#FFF',
-            borderRadius: 10, fontSize: 11, fontWeight: 800,
-            padding: '2px 8px', minWidth: 22, textAlign: 'center',
-          }}>{claims.length}</div>
+          <div style={{ background: '#EF4444', color: '#FFF', borderRadius: 10, fontSize: 11, fontWeight: 800, padding: '2px 8px' }}>
+            {claims.length}
+          </div>
         )}
         {tab === 'claims' && (
-          <button onClick={load} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#4B5563', fontSize: 16, marginLeft: claims.length > 0 ? 0 : 'auto',
-          }}>🔄</button>
+          <button onClick={load} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4B5563', fontSize: 16, marginLeft: 4 }}>🔄</button>
         )}
       </div>
 
-      {/* Tab switcher */}
-      <div style={{ display: 'flex', gap: 4, padding: '10px 16px 0', flexShrink: 0 }}>
-        <button style={tabStyle('claims')} onClick={() => setTab('claims')}>
-          Claims {claims.length > 0 ? `(${claims.length})` : ''}
-        </button>
-        <button style={tabStyle('packages')} onClick={() => setTab('packages')}>
-          Envíos
-        </button>
-        <button style={tabStyle('users')} onClick={() => setTab('users')}>
-          Usuarios
-        </button>
-        <button style={tabStyle('torneos')} onClick={() => setTab('torneos')}>
-          Torneos
-        </button>
-        <button style={tabStyle('stats')} onClick={() => setTab('stats')}>
-          Stats
-        </button>
-        <button style={tabStyle('qpoints')} onClick={() => setTab('qpoints')}>
-          🪙 Q pts
-        </button>
-        <button style={tabStyle('articles')} onClick={() => setTab('articles')}>
-          📰 RSS
-        </button>
-        {currentIsOwner && (
-          <button style={tabStyle('email')} onClick={() => setTab('email')}>
-            📧 Email
-          </button>
-        )}
-      </div>
-
-      {/* Body */}
+      {/* ── Body ── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
 
-        {/* ── Claims tab ── */}
+        {/* ── Dashboard home ── */}
+        {tab === 'home' && (
+          <>
+            {/* Alert banner if claims pending */}
+            {!loading && claims.length > 0 && (
+              <button onClick={() => setTab('claims')} style={{
+                width: '100%', marginBottom: 14,
+                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+                borderLeft: '3px solid #EF4444',
+                borderRadius: 12, padding: '12px 14px',
+                display: 'flex', alignItems: 'center', gap: 10,
+                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444', flexShrink: 0, boxShadow: '0 0 6px #EF4444' }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#F87171', flex: 1, textAlign: 'left' }}>
+                  {claims.length} claim{claims.length !== 1 ? 's' : ''} pendiente{claims.length !== 1 ? 's' : ''}
+                </span>
+                <span style={{ fontSize: 13, color: '#F87171' }}>→</span>
+              </button>
+            )}
+
+            {/* Section grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {sections.map(s => (
+                <button key={s.id} onClick={() => setTab(s.id)} style={{
+                  background: '#0F0F0F',
+                  border: '1px solid #1A1A1A',
+                  borderTop: `3px solid ${s.color}`,
+                  borderRadius: 14, padding: '18px 16px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8,
+                  cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif',
+                  transition: 'background 0.15s',
+                  position: 'relative',
+                }}>
+                  <span style={{ fontSize: 26 }}>{s.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#FFF' }}>{s.label}</div>
+                    <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3, lineHeight: 1.4 }}>{s.desc}</div>
+                  </div>
+                  {s.id === 'claims' && claims.length > 0 && (
+                    <div style={{
+                      position: 'absolute', top: 12, right: 12,
+                      background: '#EF4444', color: '#FFF',
+                      borderRadius: 8, fontSize: 10, fontWeight: 800, padding: '2px 7px',
+                    }}>{claims.length}</div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ── Section content ── */}
         {tab === 'claims' && (
           <>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
-              CLAIMS PENDIENTES
-            </div>
-            {loading && (
-              <div style={{ textAlign: 'center', padding: 40 }}>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
-              </div>
-            )}
-            {error && (
-              <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13, marginBottom: 12 }}>
-                {error}
-              </div>
-            )}
+            {loading && <div style={{ textAlign: 'center', padding: 40 }}><div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} /></div>}
+            {error && <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13, marginBottom: 12 }}>{error}</div>}
             {!loading && !error && claims.length === 0 && (
               <div style={{ textAlign: 'center', padding: '60px 20px' }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
@@ -996,60 +1012,20 @@ export default function AdminScreen({ onClose }) {
                 <div style={{ fontSize: 12, color: '#374151', marginTop: 4 }}>Todo al día</div>
               </div>
             )}
-            {claims.map(c => (
-              <ClaimCard key={c.id} claim={c} onReviewed={handleReviewed} />
-            ))}
+            {claims.map(c => <ClaimCard key={c.id} claim={c} onReviewed={handleReviewed} />)}
           </>
         )}
 
-        {/* ── Packages tab ── */}
-        {tab === 'packages' && (
-          <>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
-              LLEGADAS PENDIENTES DE CONFIRMACIÓN
-            </div>
-            <PackagesTab adminBranch={adminBranch} />
-          </>
+        {tab === 'packages'  && <PackagesTab adminBranch={adminBranch} />}
+        {tab === 'users'     && <UsersTab currentIsOwner={currentIsOwner} currentIsAdmin={currentIsAdmin} adminBranch={adminBranch} />}
+        {tab === 'torneos'   && <TournamentsAdminTab adminBranch={adminBranch} />}
+        {tab === 'qpoints'   && <QPointsTab />}
+        {tab === 'stats'     && (adminBranch
+          ? <div style={{ textAlign: 'center', padding: '40px 20px', color: '#4B5563', fontSize: 13 }}>Solo disponible para administradores globales</div>
+          : <StatsTab />
         )}
-
-        {/* ── Users tab ── */}
-        {tab === 'users' && (
-          <>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
-              MEMBRESÍAS Y PUNTOS
-            </div>
-            <UsersTab currentIsOwner={currentIsOwner} currentIsAdmin={currentIsAdmin} adminBranch={adminBranch} />
-          </>
-        )}
-
-        {/* ── Torneos tab ── */}
-        {tab === 'torneos' && (
-          <>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
-              TORNEOS
-            </div>
-            <TournamentsAdminTab adminBranch={adminBranch} />
-          </>
-        )}
-
-        {/* ── Stats tab — owner only ── */}
-        {tab === 'stats' && (
-          <>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 12 }}>
-              ESTADÍSTICAS DE ENVÍOS
-            </div>
-            {adminBranch
-              ? <div style={{ textAlign: 'center', padding: '40px 20px', color: '#4B5563', fontSize: 13 }}>Solo disponible para administradores globales</div>
-              : <StatsTab />
-            }
-          </>
-        )}
-
-        {tab === 'qpoints' && <QPointsTab />}
-
-        {tab === 'articles' && <ArticlesTab />}
-
-        {tab === 'email' && currentIsOwner && <EmailMarketingScreen />}
+        {tab === 'articles'  && <ArticlesTab />}
+        {tab === 'email'     && currentIsOwner && <EmailMarketingScreen />}
 
       </div>
     </div>
