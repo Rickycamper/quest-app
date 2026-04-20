@@ -220,9 +220,25 @@ function MainApp({ initialTab, openTournamentId } = {}) {
   // were just trying to read the feed). Requiring 80px horizontal AND a
   // 2.5× dominance over vertical eliminates false positives.
   useEffect(() => {
+    // Walk up the DOM from the touch target. If any ancestor is a container
+    // that actually overflows horizontally (e.g. image carousel in a post),
+    // disable swipe-nav for this touch so the carousel can handle it instead.
+    const touchStartsInHScroller = (el) => {
+      while (el && el !== document.documentElement) {
+        const style = window.getComputedStyle(el)
+        if ((style.overflowX === 'scroll' || style.overflowX === 'auto') &&
+            el.scrollWidth > el.clientWidth + 2) return true
+        el = el.parentElement
+      }
+      return false
+    }
+
     const onStart = (e) => {
       // Ignore multi-touch (pinch-zoom, etc.) — never a swipe-nav intent
       if (e.touches.length > 1) { swipeOrigin.current = null; return }
+      // If touch starts inside a horizontally-scrollable container (image
+      // carousel, horizontal list, etc.) let that element handle it.
+      if (touchStartsInHScroller(e.target)) { swipeOrigin.current = null; return }
       const t = e.touches[0]
       swipeOrigin.current = { x: t.clientX, y: t.clientY, t: Date.now() }
     }
