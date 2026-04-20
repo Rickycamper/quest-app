@@ -209,67 +209,6 @@ function MainApp({ initialTab, openTournamentId } = {}) {
   const [navHidden,    setNavHidden]    = useState(false)
   const lastScrollY  = useRef(0)
   const scrollRef    = useRef(null)
-  const swipeOrigin  = useRef(null)
-
-  // Swipe navigation — use native window listeners so iOS Safari doesn't
-  // swallow the touch inside the scrollable screen-scroll container.
-  //
-  // Thresholds are deliberately conservative: a regular vertical scroll on
-  // mobile often has a few px of horizontal drift, and the old 30px/1.0
-  // values were firing on those (bouncing users from Feed → Shop while they
-  // were just trying to read the feed). Requiring 80px horizontal AND a
-  // 2.5× dominance over vertical eliminates false positives.
-  useEffect(() => {
-    // Walk up the DOM from the touch target. If any ancestor is a container
-    // that actually overflows horizontally (e.g. image carousel in a post),
-    // disable swipe-nav for this touch so the carousel can handle it instead.
-    const touchStartsInHScroller = (el) => {
-      while (el && el !== document.documentElement) {
-        const style = window.getComputedStyle(el)
-        if ((style.overflowX === 'scroll' || style.overflowX === 'auto') &&
-            el.scrollWidth > el.clientWidth + 2) return true
-        el = el.parentElement
-      }
-      return false
-    }
-
-    const onStart = (e) => {
-      // Ignore multi-touch (pinch-zoom, etc.) — never a swipe-nav intent
-      if (e.touches.length > 1) { swipeOrigin.current = null; return }
-      // If touch starts inside a horizontally-scrollable container (image
-      // carousel, horizontal list, etc.) let that element handle it.
-      if (touchStartsInHScroller(e.target)) { swipeOrigin.current = null; return }
-      const t = e.touches[0]
-      swipeOrigin.current = { x: t.clientX, y: t.clientY, t: Date.now() }
-    }
-    const onEnd = (e) => {
-      if (!swipeOrigin.current) return
-      const t  = e.changedTouches[0]
-      const dx = t.clientX - swipeOrigin.current.x
-      const dy = t.clientY - swipeOrigin.current.y
-      const dt = Date.now() - swipeOrigin.current.t
-      swipeOrigin.current = null
-      // Require a clear horizontal gesture: ≥ 80px horizontal, ≥ 2.5×
-      // dominance over vertical, and completed in under 600ms (real swipes
-      // are quick; longer touches are usually drags or slow scrolls).
-      if (Math.abs(dx) < 80) return
-      if (Math.abs(dx) < Math.abs(dy) * 2.5) return
-      if (dt > 600) return
-      setActiveTab(prev => {
-        const tabs = Object.keys(screenMapRef.current)
-        const idx  = tabs.indexOf(prev)
-        if (dx < 0 && idx < tabs.length - 1) return tabs[idx + 1]
-        if (dx > 0 && idx > 0)               return tabs[idx - 1]
-        return prev
-      })
-    }
-    window.addEventListener('touchstart', onStart, { passive: true })
-    window.addEventListener('touchend',   onEnd,   { passive: true })
-    return () => {
-      window.removeEventListener('touchstart', onStart)
-      window.removeEventListener('touchend',   onEnd)
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleScroll = (e) => {
     const y = e.currentTarget.scrollTop
@@ -339,11 +278,7 @@ function MainApp({ initialTab, openTournamentId } = {}) {
     search:   <SearchScreen   onViewProfile={handleViewProfile} />,
   }), [profile, isStaff, isOwner, handleViewProfile, feedRefreshKey])
 
-  // Must be declared AFTER screenMap to avoid TDZ
-  const screenMapRef = useRef(screenMap)
-  useEffect(() => { screenMapRef.current = screenMap }, [screenMap])
-
-  const needsTerms = profile && !profile.terms_accepted_at
+const needsTerms = profile && !profile.terms_accepted_at
 
   const handleAcceptTerms = async () => {
     await acceptTerms()
