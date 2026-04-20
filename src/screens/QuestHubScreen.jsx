@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
 import { BRANCH_STYLES } from '../lib/constants'
 import { getPointsHistory, redeemPoints, getMembershipUsageSummary } from '../lib/supabase'
+import { SAWizardHat, SAGem, SACrown, SATruck, SALock, SABolt, SAGavel, SAFlag, SACircleCheck, SAFire, SADungeon } from '../components/Icons'
 import Avatar from '../components/Avatar'
 
 // ── Minimal SVG icons ─────────────────────────
@@ -130,85 +131,80 @@ const BRANCH_INFO = {
 // ── Membership tiers ──────────────────────────
 const MEMBERSHIP_TIERS = [
   {
-    id:      'wizard',
-    rank:    'RANK 1',
-    name:    'WIZARD',
-    price:   '$20',
-    period:  '/mes',
-    color:   '#60A5FA',
-    bg:      'rgba(96,165,250,0.07)',
-    border:  'rgba(96,165,250,0.25)',
-    popular: false,
+    id: 'wizard', rank: 'RANK 1', name: 'WIZARD', price: '$20', color: '#60A5FA',
+    bg: 'rgba(96,165,250,0.06)', border: 'rgba(96,165,250,0.28)', popular: false,
+    Icon: SAWizardHat,
     store: [
-      '1 booster gratis al mes (cualquier TCG, standard set)',
-      '1 inscripción de torneo regular gratis al mes',
-      'Tarjeta de acceso Quest',
-      '10% de descuento en tu cumpleaños',
-      'Ofertas exclusivas para miembros',
-      'Envío gratis Quest a Quest',
+      { icon: 'fire',  text: '1 booster gratis al mes — cualquier TCG, standard set' },
+      { icon: 'flag',  text: '1 inscripción de torneo regular gratis al mes' },
+      { icon: 'gem',   text: 'Tarjeta de acceso Quest' },
+      { icon: 'bolt',  text: '10% de descuento en tu cumpleaños' },
+      { icon: 'bolt',  text: 'Ofertas exclusivas para miembros' },
+      { icon: 'truck', text: 'Envío gratis Quest a Quest' },
     ],
     app: [
-      'Poder subastar',
-      'Posts ilimitados',
-      'Reset de versus manual',
-      'Q Coins ×2',
+      { icon: 'gavel',   text: 'Poder subastar' },
+      { icon: 'fire',    text: 'Posts ilimitados' },
+      { icon: 'bolt',    text: 'Reset de versus manual' },
+      { icon: 'bolt',    text: 'Q Coins ×2' },
     ],
   },
   {
-    id:      'mage',
-    rank:    'RANK 2',
-    name:    'MAGE',
-    price:   '$30',
-    period:  '/mes',
-    color:   '#A78BFA',
-    bg:      'rgba(167,139,250,0.08)',
-    border:  'rgba(167,139,250,0.35)',
-    popular: true,
+    id: 'mage', rank: 'RANK 2', name: 'MAGE', price: '$30', color: '#A78BFA',
+    bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.38)', popular: true,
+    Icon: SAGem,
     store: [
-      '2 boosters gratis al mes (cualquier TCG, standard set)',
-      '2 inscripciones a torneos regulares gratis al mes',
-      'Tarjeta de acceso Quest',
-      'Envío gratis Quest a Quest',
-      '20% de descuento en tu cumpleaños',
-      'Ofertas exclusivas para miembros',
-      'Locker gratis',
+      { icon: 'fire',  text: '2 boosters gratis al mes — cualquier TCG, standard set' },
+      { icon: 'flag',  text: '2 inscripciones a torneos regulares gratis al mes' },
+      { icon: 'gem',   text: 'Tarjeta de acceso Quest' },
+      { icon: 'truck', text: 'Envío gratis Quest a Quest' },
+      { icon: 'bolt',  text: '20% de descuento en tu cumpleaños' },
+      { icon: 'bolt',  text: 'Ofertas exclusivas para miembros' },
+      { icon: 'lock',  text: 'Locker gratis' },
     ],
     app: [
-      'Poder subastar',
-      'Posts ilimitados',
-      'Reset de versus manual',
-      'Q Coins ×3',
-      'Acceso a pre-sale, singles y Sealed antes que al público',
+      { icon: 'gavel',   text: 'Poder subastar' },
+      { icon: 'fire',    text: 'Posts ilimitados' },
+      { icon: 'bolt',    text: 'Reset de versus manual' },
+      { icon: 'bolt',    text: 'Q Coins ×3' },
+      { icon: 'dungeon', text: 'Acceso a pre-sale, singles y Sealed antes que al público' },
     ],
   },
   {
-    id:      'archmage',
-    rank:    'RANK 3',
-    name:    'ARCHMAGE',
-    price:   '$40',
-    period:  '/mes',
-    color:   '#FBBF24',
-    bg:      'rgba(251,191,36,0.07)',
-    border:  'rgba(251,191,36,0.3)',
-    popular: false,
+    id: 'archmage', rank: 'RANK 3', name: 'ARCHMAGE', price: '$40', color: '#FBBF24',
+    bg: 'rgba(251,191,36,0.06)', border: 'rgba(251,191,36,0.32)', popular: false,
+    Icon: SACrown,
     store: [
-      '3 boosters gratis al mes (cualquier TCG, standard set)',
-      '3 inscripciones a torneos regulares gratis al mes',
-      'Tarjeta de acceso Quest',
-      'Envío gratis Quest a Quest',
-      'Ofertas exclusivas para miembros',
-      'Locker gratis',
-      '30% de descuento en tu cumpleaños',
+      { icon: 'fire',  text: '3 boosters gratis al mes — cualquier TCG, standard set' },
+      { icon: 'flag',  text: '3 inscripciones a torneos regulares gratis al mes' },
+      { icon: 'gem',   text: 'Tarjeta de acceso Quest' },
+      { icon: 'truck', text: 'Envío gratis Quest a Quest' },
+      { icon: 'bolt',  text: '30% de descuento en tu cumpleaños' },
+      { icon: 'bolt',  text: 'Ofertas exclusivas para miembros' },
+      { icon: 'lock',  text: 'Locker gratis' },
     ],
     app: [
-      'Poder subastar',
-      'Posts ilimitados',
-      'Reset de versus manual',
-      'Q Coins ×4',
-      'Acceso a pre-sale, singles y Sealed antes que al público',
+      { icon: 'gavel',   text: 'Poder subastar' },
+      { icon: 'fire',    text: 'Posts ilimitados' },
+      { icon: 'bolt',    text: 'Reset de versus manual' },
+      { icon: 'bolt',    text: 'Q Coins ×4' },
+      { icon: 'dungeon', text: 'Acceso a pre-sale, singles y Sealed antes que al público' },
     ],
   },
 ]
+
+const BENEFIT_ICON = {
+  fire:    (c) => <SAFire    size={13} color={c} />,
+  flag:    (c) => <SAFlag    size={13} color={c} />,
+  gem:     (c) => <SAGem     size={13} color={c} />,
+  bolt:    (c) => <SABolt    size={13} color={c} />,
+  truck:   (c) => <SATruck   size={13} color={c} />,
+  lock:    (c) => <SALock    size={13} color={c} />,
+  gavel:   (c) => <SAGavel   size={13} color={c} />,
+  dungeon: (c) => <SADungeon size={13} color={c} />,
+}
+
+const MEMBERSHIP_WA = '50766130548'
 
 // ── Sucursales view ───────────────────────────
 function SucursalesView({ onBack }) {
@@ -363,141 +359,149 @@ function MembresiaView({ profile }) {
         {isPaid ? 'Tus beneficios incluidos en el plan.' : 'Elige tu rango y actívalo en cualquier sucursal Quest.'}
       </div>
 
-      {MEMBERSHIP_TIERS.map(tier => (
+      {MEMBERSHIP_TIERS.map(tier => {
+        const { Icon } = tier
+        const waText = encodeURIComponent(`Hola Quest! Me interesa la membresía ${tier.name} ($${tier.price.replace('$','')}/mes). ¿Cómo la activo?`)
+        return (
         <div key={tier.id} style={{
           background: tier.bg,
-          borderRadius: 18,
+          borderRadius: 20,
           border: `1.5px solid ${tier.border}`,
-          marginBottom: 16,
+          marginBottom: 18,
           overflow: 'hidden',
+          position: 'relative',
         }}>
-          {/* ── Card header ── */}
-          <div style={{ padding: '20px 20px 18px' }}>
-            {tier.popular && (
+          {/* popular strip */}
+          {tier.popular && (
+            <div style={{
+              background: `linear-gradient(90deg, ${tier.color}CC, ${tier.color}88)`,
+              padding: '5px 0', textAlign: 'center',
+              fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', color: '#000',
+            }}>★ MÁS POPULAR</div>
+          )}
+
+          {/* ── Header ── */}
+          <div style={{ padding: '22px 20px 18px', display: 'flex', alignItems: 'center', gap: 16 }}>
+            {/* Tier icon with glow */}
+            <div style={{
+              width: 56, height: 56, borderRadius: 16, flexShrink: 0,
+              background: `${tier.color}18`,
+              border: `1.5px solid ${tier.color}40`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 0 18px ${tier.color}40`,
+            }}>
+              <Icon size={28} color={tier.color} />
+            </div>
+            {/* Name + price */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: `${tier.color}99`, letterSpacing: '0.14em', marginBottom: 2 }}>
+                {tier.rank}
+              </div>
               <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                background: `${tier.color}22`, border: `1px solid ${tier.color}44`,
-                borderRadius: 20, padding: '3px 10px', marginBottom: 12,
-                fontSize: 9, fontWeight: 800, color: tier.color, letterSpacing: '0.08em',
-                fontFamily: 'Inter, sans-serif',
-              }}>⭐ MÁS POPULAR</div>
-            )}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: `${tier.color}99`, letterSpacing: '0.14em', marginBottom: 5 }}>
-                  {tier.rank}
-                </div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: tier.color, letterSpacing: '0.03em', lineHeight: 1 }}>
-                  {tier.name}
-                </div>
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: 34, lineHeight: 1, color: tier.color,
+                textShadow: `0 0 24px ${tier.color}70`,
+                letterSpacing: '0.04em',
+              }}>
+                {tier.name}
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, justifyContent: 'flex-end' }}>
-                  <span style={{ fontSize: 30, fontWeight: 900, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>{tier.price}</span>
-                  <span style={{ fontSize: 12, color: '#4B5563', fontWeight: 600 }}>{tier.period}</span>
-                </div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 38, color: '#FFF', lineHeight: 1 }}>
+                {tier.price}
               </div>
+              <div style={{ fontSize: 11, color: '#4B5563', marginTop: 2 }}>/mes</div>
             </div>
           </div>
 
-          {/* ── Store benefits accordion ── */}
-          <div style={{ height: 1, background: `${tier.color}20` }} />
-          <button
-            onClick={() => toggle(`${tier.id}-store`)}
-            style={{
-              width: '100%', padding: '14px 20px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
-            }}
-          >
+          {/* ── Store benefits ── */}
+          <div style={{ height: 1, background: `${tier.color}18` }} />
+          <button onClick={() => toggle(`${tier.id}-store`)} style={{
+            width: '100%', padding: '13px 20px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 15 }}>🏪</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#D1D5DB' }}>Beneficios en tienda</span>
-              <span style={{
-                fontSize: 10, fontWeight: 800, color: tier.color,
-                background: `${tier.color}22`, borderRadius: 10, padding: '2px 7px',
-              }}>{tier.store.length}</span>
+              <SATruck size={14} color={tier.color} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#D1D5DB' }}>Tienda</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: tier.color, background: `${tier.color}22`, borderRadius: 10, padding: '2px 7px' }}>
+                {tier.store.length}
+              </span>
             </div>
-            <span style={{
-              fontSize: 11, color: '#4B5563',
-              display: 'inline-block',
-              transform: open[`${tier.id}-store`] ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease',
-            }}>▼</span>
+            <span style={{ fontSize: 11, color: '#4B5563', display: 'inline-block', transform: open[`${tier.id}-store`] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
           </button>
-
           {open[`${tier.id}-store`] && (
-            <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {tier.store.map((perk, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
                   <div style={{
-                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                    background: `${tier.color}20`,
+                    width: 22, height: 22, borderRadius: 8, flexShrink: 0,
+                    background: `${tier.color}18`, border: `1px solid ${tier.color}30`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 9, color: tier.color, fontWeight: 900,
-                  }}>✓</div>
-                  <span style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.55 }}>{perk}</span>
+                  }}>
+                    {BENEFIT_ICON[perk.icon]?.(tier.color)}
+                  </div>
+                  <span style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, paddingTop: 3 }}>{perk.text}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* ── App benefits accordion ── */}
-          <div style={{ height: 1, background: `${tier.color}15` }} />
-          <button
-            onClick={() => toggle(`${tier.id}-app`)}
-            style={{
-              width: '100%', padding: '14px 20px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
-            }}
-          >
+          {/* ── App benefits ── */}
+          <div style={{ height: 1, background: `${tier.color}12` }} />
+          <button onClick={() => toggle(`${tier.id}-app`)} style={{
+            width: '100%', padding: '13px 20px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 15 }}>📱</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#D1D5DB' }}>Beneficios en la app</span>
-              <span style={{
-                fontSize: 10, fontWeight: 800, color: tier.color,
-                background: `${tier.color}22`, borderRadius: 10, padding: '2px 7px',
-              }}>{tier.app.length}</span>
+              <SABolt size={14} color={tier.color} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#D1D5DB' }}>App</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: tier.color, background: `${tier.color}22`, borderRadius: 10, padding: '2px 7px' }}>
+                {tier.app.length}
+              </span>
             </div>
-            <span style={{
-              fontSize: 11, color: '#4B5563',
-              display: 'inline-block',
-              transform: open[`${tier.id}-app`] ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease',
-            }}>▼</span>
+            <span style={{ fontSize: 11, color: '#4B5563', display: 'inline-block', transform: open[`${tier.id}-app`] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
           </button>
-
           {open[`${tier.id}-app`] && (
-            <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {tier.app.map((perk, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
                   <div style={{
-                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                    background: `${tier.color}20`,
+                    width: 22, height: 22, borderRadius: 8, flexShrink: 0,
+                    background: `${tier.color}18`, border: `1px solid ${tier.color}30`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 9, color: tier.color, fontWeight: 900,
-                  }}>✓</div>
-                  <span style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.55 }}>{perk}</span>
+                  }}>
+                    {BENEFIT_ICON[perk.icon]?.(tier.color)}
+                  </div>
+                  <span style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, paddingTop: 3 }}>{perk.text}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* ── Footer ── */}
+          {/* ── WhatsApp CTA ── */}
           <div style={{ padding: '0 16px 16px' }}>
-            <div style={{
-              padding: '11px 14px', borderRadius: 12,
-              background: `${tier.color}0D`, border: `1px solid ${tier.color}22`,
-              fontSize: 12, color: '#4B5563', textAlign: 'center', lineHeight: 1.5,
-            }}>
-              Consulta en cualquier sucursal para activar
-            </div>
+            <a
+              href={`https://wa.me/${MEMBERSHIP_WA}?text=${waText}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+                padding: '13px 0', borderRadius: 12, textDecoration: 'none',
+                background: `linear-gradient(135deg, ${tier.color}22, ${tier.color}0D)`,
+                border: `1.5px solid ${tier.color}50`,
+                color: tier.color, fontFamily: 'Inter, sans-serif',
+                fontSize: 13, fontWeight: 800,
+                boxShadow: `0 4px 20px ${tier.color}25`,
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill={tier.color}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              Activar {tier.name}
+            </a>
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
