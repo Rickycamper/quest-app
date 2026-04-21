@@ -974,40 +974,34 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
           }}>▼</span>
         </div>
 
-        {/* ── Row 2: branch · count · time · date · share ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 7, paddingLeft: 42 }}>
-          {/* Branch pill */}
-          <span style={{
-            fontSize: 10, fontWeight: 700, fontFamily: 'Inter, sans-serif',
-            padding: '2px 7px', borderRadius: 6, flexShrink: 0,
-            background: bs.bg, border: `1px solid ${bs.border}`, color: bs.color,
-          }}>{t.branch}</span>
+        {/* ── Row 2: count · date · time · share ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+          {/* Participants */}
+          <span style={{ fontSize: 10, color: '#6B7280' }}>👥</span>
+          <span style={{ fontSize: 10, color: '#6B7280', fontWeight: 600 }}>{joinedCount}/{curCount} inscritos</span>
 
-          <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-          <span style={{ fontSize: 10, color: '#4B5563' }}>{joinedCount}/{curCount}p</span>
+          {curDate && (
+            <>
+              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
+              <span style={{ fontSize: 10, color: '#6B7280' }}>📅 {dateStr}</span>
+            </>
+          )}
 
           {timeStr && (
             <>
               <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-              <span style={{ fontSize: 10, color: '#4B5563' }}>🕐 {timeStr}</span>
+              <span style={{ fontSize: 10, color: '#6B7280' }}>🕐 {timeStr}</span>
             </>
           )}
 
-          {dateStr && (
-            <>
-              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-              <span style={{ fontSize: 10, color: '#4B5563' }}>{dateStr}</span>
-            </>
-          )}
-
-          {/* Share — pushed to end */}
+          {/* Share — pushed to the right */}
           <div style={{ flex: 1 }} />
           <button
             onClick={handleShare}
             title="Compartir torneo"
             style={{
               background: 'none', border: 'none', padding: '2px 0px',
-              cursor: 'pointer', color: copied ? '#4ADE80' : '#4B5563',
+              cursor: 'pointer', color: copied ? '#4ADE80' : '#6B7280',
               fontSize: copied ? 10 : 13, fontWeight: copied ? 700 : 400,
               fontFamily: 'Inter, sans-serif', lineHeight: 1,
               transition: 'color 0.2s', flexShrink: 0,
