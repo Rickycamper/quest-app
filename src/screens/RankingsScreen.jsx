@@ -8,7 +8,7 @@ import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
-import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, PAID_ROLES } from '../components/Icons'
+import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, PAID_ROLES, SACalendar, SAClock, SAUsers } from '../components/Icons'
 
 // ── Inline icons (16×16, fill, strokeWidth 0) ─────────
 const UserPlusIcon = ({ size = 14, color = 'currentColor' }) => (
@@ -977,20 +977,22 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
         {/* ── Row 2: count · date · time · share ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
           {/* Participants */}
-          <span style={{ fontSize: 10, color: '#6B7280' }}>👥</span>
+          <SAUsers size={10} color="#6B7280" />
           <span style={{ fontSize: 10, color: '#6B7280', fontWeight: 600 }}>{joinedCount}/{curCount} inscritos</span>
 
           {curDate && (
             <>
               <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-              <span style={{ fontSize: 10, color: '#6B7280' }}>📅 {dateStr}</span>
+              <SACalendar size={10} color="#6B7280" />
+              <span style={{ fontSize: 10, color: '#6B7280' }}>{dateStr}</span>
             </>
           )}
 
           {timeStr && (
             <>
               <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-              <span style={{ fontSize: 10, color: '#6B7280' }}>🕐 {timeStr}</span>
+              <SAClock size={10} color="#6B7280" />
+              <span style={{ fontSize: 10, color: '#6B7280' }}>{timeStr}</span>
             </>
           )}
 
