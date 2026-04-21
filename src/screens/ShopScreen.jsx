@@ -965,29 +965,36 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
     const foilSuffix = card.foil ? ' · Foil' : ''
     setName(card.set ? `${card.name} (${card.set})${foilSuffix}` : `${card.name}${foilSuffix}`)
     if (card.image) setImageUrl(card.image)
-    // Set initial price from Scryfall (TCGPlayer) while SCG loads
-    const fallbackPrice = card.price != null ? normalizeTcgPrice(card.price) : null
-    if (fallbackPrice != null) {
-      setPrice(String(fallbackPrice.toFixed(2)))
-      setAskPrice(false)
-      setPriceFromTcg(true)
-    } else {
-      setPriceFromTcg(false)
-    }
     setSku(card.sku)
     setCardResults([])
     setCardSearch('')
-    // Fetch SCG price asynchronously for MTG singles
+
     if (card.sku?.startsWith('SCRYFALL-')) {
+      // MTG: fetch SCG price directly — no TCGPlayer fallback
+      setPrice('')
+      setAskPrice(true)
+      setPriceFromTcg(false)
       try {
-        const r = await fetch(`/api/mtg-price?card=${encodeURIComponent(card.name)}&foil=${card.foil ?? false}`)
+        const scryId = card.sku.replace('SCRYFALL-', '').replace('-FOIL', '')
+        const r = await fetch(`/api/mtg-price?card=${encodeURIComponent(card.name)}&foil=${card.foil ?? false}&scryfall_id=${scryId}`)
         const data = await r.json()
         if (data.price && data.price > 0) {
-          setPrice(String(normalizeTcgPrice(data.price).toFixed(2)))
+          // Use SCG price as-is (retail price — no normalization)
+          setPrice(String(parseFloat(data.price).toFixed(2)))
           setAskPrice(false)
           setPriceFromTcg(true)
         }
-      } catch { /* keep Scryfall price */ }
+      } catch { /* SCG unavailable — admin sets price manually */ }
+    } else {
+      // Pokemon / JustTCG: use price from search results and normalize
+      const fallbackPrice = card.price != null ? normalizeTcgPrice(card.price) : null
+      if (fallbackPrice != null) {
+        setPrice(String(fallbackPrice.toFixed(2)))
+        setAskPrice(false)
+        setPriceFromTcg(true)
+      } else {
+        setPriceFromTcg(false)
+      }
     }
   }
 
@@ -1445,24 +1452,14 @@ export default function ShopScreen({ isOwner, isStaff }) {
       try {
         let newPrice = null
         if (p.sku.startsWith('SCRYFALL-')) {
-          // SCG price via Vercel function — pass scryfall_id so server can
-          // hit the exact product URL (set/cn/foil-specific) rather than
-          // a name-only search that returns ambiguous variants.
+          // SCG price only — no TCGPlayer fallback
           const cardName = (p.name || '').replace(' · Foil', '').replace(/\s*\([^)]+\)\s*$/, '').trim()
           const isFoil = p.sku.endsWith('-FOIL')
           const scryId = p.sku.replace('SCRYFALL-', '').replace('-FOIL', '')
           const r = await fetch(`/api/mtg-price?card=${encodeURIComponent(cardName)}&foil=${isFoil}&scryfall_id=${scryId}`)
           const d = await r.json()
-          newPrice = d.price ?? null
-          // Fallback to Scryfall/TCGPlayer if SCG didn't return a price
-          if (!newPrice) {
-            const id = p.sku.replace('SCRYFALL-', '').replace('-FOIL', '')
-            const rf = await fetch(`https://api.scryfall.com/cards/${id}`)
-            const df = await rf.json()
-            newPrice = isFoil
-              ? (df.prices?.usd_foil ? parseFloat(df.prices.usd_foil) : null)
-              : (df.prices?.usd ? parseFloat(df.prices.usd) : null)
-          }
+          // Use SCG price as-is (already retail price — no normalization needed)
+          newPrice = d.price ? parseFloat(d.price) : null
         } else {
           const id = p.sku.replace('PKMN-', '')
           const r = await fetch(`https://api.pokemontcg.io/v2/cards/${id}?select=tcgplayer`)
@@ -1471,8 +1468,9 @@ export default function ShopScreen({ isOwner, isStaff }) {
           newPrice = prices?.normal?.market ?? prices?.holofoil?.market ?? prices?.['1stEditionHolofoil']?.market ?? null
           if (newPrice) newPrice = parseFloat(newPrice)
         }
-        if (newPrice && newPrice !== Number(p.price)) {
-          const finalPrice = normalizeTcgPrice(newPrice)
+        if (newPrice && newPrice > 0 && newPrice !== Number(p.price)) {
+          // MTG: use SCG price directly; Pokemon: normalize TCGPlayer market price
+          const finalPrice = p.sku.startsWith('SCRYFALL-') ? newPrice : normalizeTcgPrice(newPrice)
           await updateShopProduct(p.id, { price: finalPrice })
           setProducts(prev => prev.map(x => x.id === p.id ? { ...x, price: finalPrice } : x))
           updated++
@@ -1480,7 +1478,7 @@ export default function ShopScreen({ isOwner, isStaff }) {
           skipped++
         }
         // Small delay to avoid rate limiting
-        await new Promise(r => setTimeout(r, 120))
+        await new Promise(r => setTimeout(r, 150))
       } catch { errors++ }
     }
     setRefreshing(false)
