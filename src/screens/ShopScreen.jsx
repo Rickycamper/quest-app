@@ -622,34 +622,36 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
               )}
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
-                  {fmtPriceOrAsk(product.price)}
-                </div>
-                {product.price > 0 && (
-                  <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, marginTop: 2 }}>
-                    Precio sujeto a revisión del mercado
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmtPriceOrAsk(product.price)}
                   </div>
-                )}
+                  {product.price > 0 && (
+                    <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, marginTop: 2 }}>
+                      Precio sujeto a revisión del mercado
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: sl.dot }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: sl.color }}>{sl.text}</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: sl.dot }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: sl.color }}>{sl.text}</span>
-              </div>
-            </div>
-            {product.price > 0 && (
-              <div style={{
-                display: 'flex', alignItems: 'flex-start', gap: 8,
-                background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.18)',
-                borderRadius: 10, padding: '9px 12px', marginBottom: 16,
-              }}>
-                <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
-                <span style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>
-                  Los precios pueden variar según el mercado. El precio final se confirma al momento de la compra en tienda.
-                </span>
-              </div>
-            )}
+              {product.price > 0 && (
+                <div style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 8,
+                  background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.18)',
+                  borderRadius: 10, padding: '9px 12px', marginBottom: 16,
+                }}>
+                  <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
+                  <span style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>
+                    Los precios pueden variar según el mercado. El precio final se confirma al momento de la compra en tienda.
+                  </span>
+                </div>
+              )}
+            </>
           )}
 
           {/* ── Coming Soon toggle (owner only) ── */}
