@@ -147,9 +147,20 @@ async function fetchPriceBySearch(card, isFoil) {
   return { price: pool[0]?.price ?? null, matched: pool[0]?.name ?? null, candidates }
 }
 
+const ALLOWED_ORIGINS = [
+  'https://questpanama.com',
+  'https://www.questpanama.com',
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+  process.env.VITE_APP_URL ?? null,
+].filter(Boolean)
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
+  const origin = req.headers.origin || ''
+  const allowed = ALLOWED_ORIGINS.includes(origin)
+    || /^https:\/\/quest-app[\w-]*\.vercel\.app$/.test(origin)
+  res.setHeader('Access-Control-Allow-Origin', allowed ? origin : ALLOWED_ORIGINS[0])
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Vary', 'Origin')
   if (req.method === 'OPTIONS') return res.status(200).end()
 
   const { card, foil, scryfall_id, debug } = req.query

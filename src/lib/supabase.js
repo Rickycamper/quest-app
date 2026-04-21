@@ -23,7 +23,9 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 const _CLIENT_V = 8
 
-if (!window.__supabase || window.__supabase.__v !== _CLIENT_V) {
+// Module-level singleton — keeps credentials off window global
+let __supabaseClient = null
+if (!__supabaseClient) {
   const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       autoRefreshToken: true,
@@ -35,7 +37,6 @@ if (!window.__supabase || window.__supabase.__v !== _CLIENT_V) {
       // some users experience when clicking reset-password links, and is more
       // resilient across all browsers and network environments.
       flowType: 'pkce',
-      lock: (_name, _timeout, fn) => fn(),
     },
     global: {
       fetch: (url, options) => {
@@ -79,11 +80,10 @@ if (!window.__supabase || window.__supabase.__v !== _CLIENT_V) {
       }
     }
   })
-  client.__v = _CLIENT_V
-  window.__supabase = client
+  __supabaseClient = client
 }
 
-export const supabase = window.__supabase
+export const supabase = __supabaseClient
 
 // ── AUTH ────────────────────────────────────
 export async function signInWithEmail(email, password) {
@@ -1756,12 +1756,9 @@ async function awardPoints(userId, amount, reason) {
       p_user_id: userId, p_amount: amount, p_reason: reason,
     })
     if (error) {
-      // Store last error in localStorage so it's inspectable without devtools
-      localStorage.setItem('__qpts_last_error', JSON.stringify({ reason, msg: error.message, code: error.code, t: new Date().toISOString() }))
       console.error(`[Q pts] award_points FAILED (${reason}):`, error)
       return
     }
-    localStorage.removeItem('__qpts_last_error')
 
     // Notify the user for significant Q coin events
     const notif = Q_NOTIF[reason]
