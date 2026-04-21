@@ -609,7 +609,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                 </div>
                 {product.price > 0 && (
                   <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, marginTop: 2 }}>
-                    Precio sugerido
+                    Precio sujeto a revisión del mercado
                   </div>
                 )}
               </div>
@@ -790,7 +790,7 @@ function ProductCard({ product, isOwner, onSave, onDelete }) {
           </div>
           {product.price > 0 && (
             <div style={{ fontSize: 9, color: '#4B5563', fontWeight: 600, letterSpacing: '0.04em' }}>
-              Precio sugerido
+              Precio sujeto a revisión del mercado
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
