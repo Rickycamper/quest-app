@@ -925,46 +925,34 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
       // Left accent bar using branch color
       borderLeft: `3px solid ${bs.dot}`,
     }}>
-      {/* Collapsed row — always visible */}
+      {/* Collapsed — 2-row layout */}
       <div
         onClick={() => setOpen(o => !o)}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', cursor: 'pointer' }}
+        style={{ padding: '10px 14px 8px', cursor: 'pointer' }}
       >
-        {/* Game icon */}
-        <div style={{
-          width: 32, height: 32, borderRadius: 8,
-          background: gs.bg, border: `1px solid ${gs.border}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}>
-          <GameIcon game={t.game} size={16} />
-        </div>
+        {/* ── Row 1: logo · name · join · chevron ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Game icon */}
+          <div style={{
+            width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+            background: gs.bg, border: `1px solid ${gs.border}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <GameIcon game={t.game} size={16} />
+          </div>
 
-        {/* Name + meta */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {/* Tournament name */}
+          <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {t.name}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3, flexWrap: 'wrap' }}>
-            {/* Branch pill */}
-            <span style={{
-              fontSize: 10, fontWeight: 700, fontFamily: 'Inter, sans-serif',
-              padding: '2px 7px', borderRadius: 6,
-              background: bs.bg, border: `1px solid ${bs.border}`, color: bs.color,
-            }}>{t.branch}</span>
-            <span style={{ fontSize: 10, color: '#374151' }}>·</span>
-            <span style={{ fontSize: 10, color: '#4B5563' }}>{joinedCount}/{curCount}p</span>
-            {timeStr && <><span style={{ fontSize: 10, color: '#374151' }}>·</span><span style={{ fontSize: 10, color: '#4B5563' }}>🕐 {timeStr}</span></>}
-          </div>
-        </div>
 
-        {/* Join button + date + chevron */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {/* Join button */}
           {!isPast && (
             <button
               onClick={handleJoin}
               disabled={joining || (!isJoined && isFull)}
               style={{
-                fontSize: 11, fontWeight: 700,
+                fontSize: 11, fontWeight: 700, flexShrink: 0,
                 padding: '4px 10px', borderRadius: 20,
                 border: isJoined ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.15)',
                 background: isJoined ? 'rgba(255,255,255,0.08)' : 'transparent',
@@ -977,31 +965,61 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
               {joining ? '…' : isJoined ? '✓ Inscripto' : isFull ? 'Lleno' : 'Unirse'}
             </button>
           )}
-          <span style={{ fontSize: 11, color: '#374151' }}>{dateStr}</span>
-          {/* Share button */}
+
+          {/* Chevron */}
+          <span style={{
+            fontSize: 10, color: '#374151', flexShrink: 0,
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s', display: 'inline-block',
+          }}>▼</span>
+        </div>
+
+        {/* ── Row 2: branch · count · time · date · share ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 7, paddingLeft: 42 }}>
+          {/* Branch pill */}
+          <span style={{
+            fontSize: 10, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+            padding: '2px 7px', borderRadius: 6, flexShrink: 0,
+            background: bs.bg, border: `1px solid ${bs.border}`, color: bs.color,
+          }}>{t.branch}</span>
+
+          <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
+          <span style={{ fontSize: 10, color: '#4B5563' }}>{joinedCount}/{curCount}p</span>
+
+          {timeStr && (
+            <>
+              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
+              <span style={{ fontSize: 10, color: '#4B5563' }}>🕐 {timeStr}</span>
+            </>
+          )}
+
+          {dateStr && (
+            <>
+              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
+              <span style={{ fontSize: 10, color: '#4B5563' }}>{dateStr}</span>
+            </>
+          )}
+
+          {/* Share — pushed to end */}
+          <div style={{ flex: 1 }} />
           <button
             onClick={handleShare}
             title="Compartir torneo"
             style={{
-              background: 'none', border: 'none', padding: '2px 4px',
-              cursor: 'pointer', color: copied ? '#4ADE80' : '#374151',
+              background: 'none', border: 'none', padding: '2px 0px',
+              cursor: 'pointer', color: copied ? '#4ADE80' : '#4B5563',
               fontSize: copied ? 10 : 13, fontWeight: copied ? 700 : 400,
               fontFamily: 'Inter, sans-serif', lineHeight: 1,
-              transition: 'color 0.2s',
+              transition: 'color 0.2s', flexShrink: 0,
             }}
           >
-            {copied ? '✓' : (
+            {copied ? '✓ copiado' : (
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                 <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
               </svg>
             )}
           </button>
-          <span style={{
-            fontSize: 10, color: '#374151',
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s', display: 'inline-block',
-          }}>▼</span>
         </div>
       </div>
 
