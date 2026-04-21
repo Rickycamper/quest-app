@@ -558,27 +558,47 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                   <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em' }}>PRECIO (USD)</div>
                   {/* Refresh from SCG (MTG) or TCGPlayer (Pokemon) */}
                   {(product.sku?.startsWith('SCRYFALL-') || product.sku?.startsWith('PKMN-')) && (
-                    <button onClick={async () => {
+                    <button onClick={async (e) => {
+                      e.currentTarget.textContent = '⏳'
                       try {
                         let newPrice = null
+                        let source = ''
                         if (product.sku.startsWith('SCRYFALL-')) {
-                          // Extract card name (before set/foil suffix)
                           const cardName = (product.name || '').replace(' · Foil', '').replace(/\s*\([^)]+\)\s*$/, '').trim()
                           const isFoil = product.sku.endsWith('-FOIL')
-                          // Pass scryfall_id so the server can hit SCG's exact product URL
                           const scryId = product.sku.replace('SCRYFALL-', '').replace('-FOIL', '')
+                          // 1. Try SCG first
                           const r = await fetch(`/api/mtg-price?card=${encodeURIComponent(cardName)}&foil=${isFoil}&scryfall_id=${scryId}`)
                           const d = await r.json()
-                          newPrice = d.price ?? null
+                          if (d.price && d.price > 0) {
+                            newPrice = parseFloat(d.price) // SCG price — use as-is, no rounding
+                            source = 'SCG'
+                          } else {
+                            // 2. Fallback to Scryfall market price
+                            const rf = await fetch(`https://api.scryfall.com/cards/${scryId}`)
+                            const df = await rf.json()
+                            const p = isFoil ? df.prices?.usd_foil : df.prices?.usd
+                            if (p) { newPrice = parseFloat(p); source = 'Scryfall' }
+                          }
                         } else {
                           const id = product.sku.replace('PKMN-', '')
                           const r = await fetch(`https://api.pokemontcg.io/v2/cards/${id}?select=tcgplayer`)
                           const d = await r.json()
-                          newPrice = d.data?.tcgplayer?.prices?.normal?.market ?? d.data?.tcgplayer?.prices?.holofoil?.market
+                          const p = d.data?.tcgplayer?.prices?.normal?.market ?? d.data?.tcgplayer?.prices?.holofoil?.market
+                          if (p) { newPrice = normalizeTcgPrice(parseFloat(p)); source = 'TCGPlayer' }
                         }
-                        if (newPrice) { setPrice(String(normalizeTcgPrice(parseFloat(newPrice)))); setAskPrice(false) }
-                        else alert('No se encontró precio en SCG')
-                      } catch { alert('Error al actualizar precio') }
+                        if (newPrice && newPrice > 0) {
+                          setPrice(String(parseFloat(newPrice).toFixed(2)))
+                          setAskPrice(false)
+                          e.currentTarget.textContent = '✓ ' + source
+                        } else {
+                          e.currentTarget.textContent = '🔄 SCG'
+                          alert('No se encontró precio')
+                        }
+                      } catch {
+                        e.currentTarget.textContent = '🔄 SCG'
+                        alert('Error al actualizar precio')
+                      }
                     }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 9, fontWeight: 700, color: '#4ADE80', padding: 0 }}>
                       🔄 {product.sku?.startsWith('SCRYFALL-') ? 'SCG' : 'TCGPlayer'}
                     </button>
