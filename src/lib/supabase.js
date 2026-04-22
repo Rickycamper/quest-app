@@ -791,6 +791,7 @@ export async function getTournaments({ game = null, branch = null } = {}) {
 
 export async function joinTournament(tournamentId) {
   const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Debes iniciar sesión para inscribirte')
   const { error } = await supabase
     .from('tournament_participants')
     .insert({ tournament_id: tournamentId, user_id: session.user.id })
@@ -799,6 +800,7 @@ export async function joinTournament(tournamentId) {
 
 export async function leaveTournament(tournamentId) {
   const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Debes iniciar sesión para realizar esta acción')
   const { error } = await supabase
     .from('tournament_participants')
     .delete()
