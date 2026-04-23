@@ -151,8 +151,10 @@ const ALLOWED_ORIGINS = [
   'https://questpanama.com',
   'https://www.questpanama.com',
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
-  process.env.VITE_APP_URL ?? null,
+  process.env.APP_URL ?? null,
 ].filter(Boolean)
+
+const RATE = new Map()
 
 export default async function handler(req, res) {
   const origin = req.headers.origin || ''
@@ -163,11 +165,18 @@ export default async function handler(req, res) {
   res.setHeader('Vary', 'Origin')
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  const { card, foil, scryfall_id, debug } = req.query
+  // Per-IP rate limit: 20 req/min
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ?? 'unknown'
+  const bucket = `${ip}:${Math.floor(Date.now() / 60000)}`
+  const count = (RATE.get(bucket) ?? 0) + 1
+  RATE.set(bucket, count)
+  if (RATE.size > 5000) RATE.clear()
+  if (count > 20) return res.status(429).json({ price: null, error: 'Too many requests' })
+
+  const { card, foil, scryfall_id } = req.query
   if (!card && !scryfall_id) return res.status(400).json({ price: null })
 
   const isFoil = foil === 'true'
-  const wantDebug = debug === '1'
 
   let cardName = (card || '').trim()
   let scgSet = ''
@@ -217,7 +226,6 @@ export default async function handler(req, res) {
     const payload = price
       ? { price, source: 'scg-search', matched, foil: isFoil }
       : { price: null, source: null, foil: isFoil }
-    if (wantDebug) payload.candidates = candidates.slice(0, 50)
     return res.json(payload)
   } catch (err) {
     return res.status(200).json({ price: null, source: null, error: err.message })

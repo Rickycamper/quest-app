@@ -1148,11 +1148,13 @@ export async function uploadPackageImage(file) {
 }
 
 export async function searchUsers(query) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return []
   let req = supabase
     .from('profiles')
     .select('id, username, avatar_url')
     .order('username', { ascending: true })
-    .limit(200)  // increased so no user gets cut off
+    .limit(200)
   if (query && query.length > 0) {
     req = req.ilike('username', `%${query}%`)
   }

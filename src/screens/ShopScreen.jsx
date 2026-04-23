@@ -971,8 +971,7 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
     setFetching(true); setCardResults([])
     try {
       const res = await fetch(
-        `https://api.justtcg.com/v1/cards?q=${encodeURIComponent(cardSearch.trim())}&game=${gameId}&condition=NM`,
-        { headers: { 'X-API-Key': import.meta.env.VITE_JUSTTCG_API_KEY } }
+        `/api/justtcg-search?q=${encodeURIComponent(cardSearch.trim())}&game=${gameId}`
       )
       const data = await res.json()
       if (data.data?.length) {
