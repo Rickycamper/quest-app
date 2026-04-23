@@ -129,7 +129,7 @@ export function EmailSignupScreen({ onBack, onDone }) {
   const handleSignup = async () => {
     if (!termsAccepted)       { setError('Debés aceptar los Términos y Condiciones'); return }
     if (password !== confirm) { setError('Las contraseñas no coinciden'); return }
-    if (password.length < 6)  { setError('Mínimo 6 caracteres'); return }
+    if (password.length < 8)  { setError('Mínimo 8 caracteres'); return }
     setLoading(true); setError('')
     try {
       const data = await signUpWithEmail(email, password, email.split('@')[0])
@@ -484,7 +484,7 @@ export function ResetPasswordScreen({ onDone, recoverySession }) {
   const [done,      setDone]      = useState(false)
 
   const handleReset = async () => {
-    if (newPw.length < 6)    { setError('Mínimo 6 caracteres'); return }
+    if (newPw.length < 8)    { setError('Mínimo 8 caracteres'); return }
     if (newPw !== confirmPw) { setError('Las contraseñas no coinciden'); return }
     setLoading(true); setError('')
     try {

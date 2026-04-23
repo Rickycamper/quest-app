@@ -1966,7 +1966,6 @@ export async function placeBid(auctionId, amount) {
   if (!session?.user?.id) throw new Error('No hay sesión activa')
   const { data, error } = await supabase.rpc('place_bid', {
     p_auction_id: auctionId,
-    p_user_id:    session.user.id,
     p_amount:     amount,
   })
   if (error) throw new Error(error.message.replace('ERROR: ', '').split('\n')[0])
