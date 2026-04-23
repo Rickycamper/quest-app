@@ -341,9 +341,11 @@ export async function uploadAvatar(file, userId = null) {
 }
 
 export async function updateProfile(userId, updates) {
+  const SAFE_FIELDS = ['username', 'phone', 'email', 'branch', 'avatar_url', 'tcg_games', 'social_links', 'terms_accepted_at']
+  const safe = Object.fromEntries(Object.entries(updates).filter(([k]) => SAFE_FIELDS.includes(k)))
   const { data, error } = await supabase
     .from('profiles')
-    .update(updates)
+    .update(safe)
     .eq('id', userId)
     .select()
     .single()
@@ -527,6 +529,8 @@ export async function getMembershipUsageSummary(userId) {
 }
 
 export async function deletePost(postId) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
   // Fetch image_url + user_id first so we can clean up storage and deduct points
   const { data: post } = await supabase
     .from('posts')
@@ -534,8 +538,8 @@ export async function deletePost(postId) {
     .eq('id', postId)
     .single()
 
-  // Delete the DB row (cascades likes/comments)
-  const { error } = await supabase.from('posts').delete().eq('id', postId)
+  // Delete the DB row (cascades likes/comments) — only own posts
+  const { error } = await supabase.from('posts').delete().eq('id', postId).eq('user_id', session.user.id)
   if (error) throw error
 
   // Deduct Q Coins for deleted post
@@ -558,10 +562,13 @@ export async function deletePost(postId) {
 }
 
 export async function updatePost(postId, { caption }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
   const { data, error } = await supabase
     .from('posts')
     .update({ caption })
     .eq('id', postId)
+    .eq('user_id', session.user.id)
     .select()
     .single()
   if (error) throw error
@@ -697,6 +704,7 @@ export async function toggleFollow(targetUserId) {
 
 export async function getFollowing() {
   const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return new Set()
   const { data } = await supabase
     .from('follows')
     .select('following_id')
@@ -725,6 +733,7 @@ export async function getFollowCounts(userId) {
 
 export async function reportPost(postId, reason) {
   const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
   const { error } = await supabase
     .from('post_reports')
     .insert({ post_id: postId, reported_by: session.user.id, reason })
@@ -1063,10 +1072,13 @@ export async function addCard({ name, game, cardStatus, qty, price, note, imageU
 }
 
 export async function updateCard(cardId, updates) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
   const { data, error } = await supabase
     .from('cards')
     .update(updates)
     .eq('id', cardId)
+    .eq('user_id', session.user.id)
     .select()
     .single()
   if (error) throw error
@@ -1074,7 +1086,9 @@ export async function updateCard(cardId, updates) {
 }
 
 export async function deleteCard(cardId) {
-  const { error } = await supabase.from('cards').delete().eq('id', cardId)
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
+  const { error } = await supabase.from('cards').delete().eq('id', cardId).eq('user_id', session.user.id)
   if (error) throw error
 }
 
@@ -1113,9 +1127,19 @@ export async function getAllPackages() {
   return data
 }
 
+const ALLOWED_IMAGE_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' }
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024 // 10 MB
+
+function validateImageFile(file) {
+  if (!ALLOWED_IMAGE_TYPES[file.type]) throw new Error('Solo se permiten imágenes JPG, PNG, WebP o GIF.')
+  if (file.size > MAX_UPLOAD_BYTES) throw new Error('La imagen no puede superar 10 MB.')
+  return ALLOWED_IMAGE_TYPES[file.type]
+}
+
 export async function uploadPackageImage(file) {
   const { data: { session } } = await supabase.auth.getSession()
-  const ext  = file.name.split('.').pop()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
+  const ext  = validateImageFile(file)
   const path = `${session.user.id}/${Date.now()}.${ext}`
   const { error } = await supabase.storage.from('packages').upload(path, file, { upsert: true })
   if (error) throw error
@@ -1423,7 +1447,9 @@ export async function getNotifications() {
 }
 
 export async function markNotificationRead(id) {
-  await supabase.from('notifications').update({ read: true }).eq('id', id)
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return
+  await supabase.from('notifications').update({ read: true }).eq('id', id).eq('user_id', session.user.id)
 }
 
 export async function markAllNotificationsRead() {
@@ -1925,7 +1951,7 @@ export async function createAuction({ title, game, imageUrl, minBid, startTime }
 }
 
 export async function uploadAuctionImage(file, userId) {
-  const ext  = file.name.split('.').pop()
+  const ext  = validateImageFile(file)
   const path = `${userId}/${Date.now()}.${ext}`
   const { error } = await supabase.storage.from('auctions').upload(path, file, { upsert: true })
   if (error) throw error
@@ -2011,9 +2037,11 @@ export async function getAuctionChat(auctionId) {
 export async function sendAuctionChat(auctionId, message) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) throw new Error('No hay sesión activa')
+  const trimmed = (message ?? '').trim()
+  if (!trimmed || trimmed.length > 500) throw new Error('El mensaje debe tener entre 1 y 500 caracteres.')
   const { data, error } = await supabase
     .from('auction_chat')
-    .insert({ auction_id: auctionId, user_id: session.user.id, message: message.trim() })
+    .insert({ auction_id: auctionId, user_id: session.user.id, message: trimmed })
     .select('id, message, created_at, user_id')
     .single()
   if (error) throw error
