@@ -116,7 +116,7 @@ CREATE FUNCTION public.reject_redemption(p_id uuid, p_note text DEFAULT NULL)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
-DECLARE v_r q_redemptions;
+DECLARE v_r public.q_redemptions;
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM profiles
