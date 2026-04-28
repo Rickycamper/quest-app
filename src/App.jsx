@@ -85,7 +85,7 @@ const globalCSS = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { height: 100%; }
-  body { height: 100%; background: #1A1A1A; font-family: 'Inter', sans-serif; overflow: hidden; }
+  body { height: 100%; background: #1A1A1A; font-family: 'Inter', sans-serif; overflow: hidden; font-variant-numeric: tabular-nums; }
   .phone-wrap { display:flex; justify-content:center; align-items:center; height:100vh; padding:20px; overflow:hidden; }
   .phone { width:390px; height:844px; border-radius:44px; overflow:hidden; position:relative; background:#0A0A0A; box-shadow:0 30px 80px rgba(0,0,0,0.6), 0 0 0 6px #111111; display:flex; flex-direction:column; }
   @media (max-width: 480px) {
@@ -418,7 +418,12 @@ const needsTerms = profile && !profile.terms_accepted_at
         opacity: headerHidden ? 0 : 1,
         transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease',
         willChange: 'transform',
-        background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)',
+        background: `
+          radial-gradient(ellipse 180px 70px at 15% 70%, rgba(167,139,250,0.035), transparent 75%),
+          rgba(10,10,10,0.95)
+        `,
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
         paddingBottom: 0,
       }}>
@@ -458,11 +463,13 @@ const needsTerms = profile && !profile.terms_accepted_at
                   style={{
                     display: 'flex', alignItems: 'center', gap: 7,
                     padding: '6px 12px 6px 10px', borderRadius: 8,
-                    background: '#111111', border: '1px solid #1E1E1E',
+                    background: 'linear-gradient(135deg, #1C1500 0%, #111111 100%)',
+                    border: '1px solid rgba(251,191,36,0.28)',
+                    boxShadow: '0 0 10px rgba(251,191,36,0.08), inset 0 1px 0 rgba(251,191,36,0.06)',
                     cursor: 'pointer', minWidth: 76,
                   }}
                 >
-                  <DiamondIcon size={16} color={profile?.role === 'premium' ? '#A78BFA' : '#FFFFFF'} />
+                  <DiamondIcon size={16} color={profile?.role === 'premium' ? '#A78BFA' : '#FBBF24'} />
                   <span style={{ fontSize: 13, fontWeight: 800, color: '#FBBF24', fontFamily: 'Inter, sans-serif', letterSpacing: '0.01em' }}>
                     {(profile?.q_points ?? 0).toLocaleString()}
                   </span>
@@ -474,10 +481,17 @@ const needsTerms = profile && !profile.terms_accepted_at
                 onClick={() => requireAuth(() => setShowPost(true))}
                 style={{
                   width: 32, height: 32, borderRadius: 10,
-                  background: '#FFFFFF', border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #FFFFFF 0%, #E8E8E8 100%)',
+                  border: 'none', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6)',
+                  transition: 'transform 0.12s ease, box-shadow 0.12s ease',
                 }}
+                onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.92)' }}
+                onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+                onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.92)' }}
+                onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M7 1v12M1 7h12" stroke="#111" strokeWidth="2" strokeLinecap="round"/>

@@ -906,7 +906,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
             }}
           >
             <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
-              <Avatar url={profile?.avatar_url} size={36} />
+              <Avatar url={profile?.avatar_url} size={36} role={profile?.role} isOwner={profile?.is_owner} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF' }}>

@@ -112,7 +112,7 @@ export default function LogMatchModal({ opponent: preselected, onClose, onLogged
               borderRadius: 10, padding: '8px 12px',
             }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', background: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Avatar url={opponent.avatar_url} size={28} />
+                <Avatar url={opponent.avatar_url} size={28} role={opponent.role} isOwner={opponent.is_owner} />
               </div>
               <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: '#FFFFFF', fontFamily: 'Inter, sans-serif' }}>@{opponent.username}</span>
               <button onClick={clearOpponent} style={{
@@ -159,7 +159,7 @@ export default function LogMatchModal({ opponent: preselected, onClose, onLogged
                     onMouseLeave={e => e.currentTarget.style.background = 'none'}
                     >
                       <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', background: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <Avatar url={u.avatar_url} size={28} />
+                        <Avatar url={u.avatar_url} size={28} role={u.role} isOwner={u.is_owner} />
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', fontFamily: 'Inter, sans-serif' }}>@{u.username}</span>
                     </button>

@@ -9,6 +9,7 @@ import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
 import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, PAID_ROLES, SACalendar, SAClock, SAUsers } from '../components/Icons'
+import { useToast } from '../components/Toast'
 
 // ── Inline icons (16×16, fill, strokeWidth 0) ─────────
 const UserPlusIcon = ({ size = 14, color = 'currentColor' }) => (
@@ -630,7 +631,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
                 background: '#1F1F1F', border: '1.5px solid #2A2A2A',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 15, flexShrink: 0, overflow: 'hidden',
-              }}><Avatar url={entry.avatar_url} size={34} /></div>
+              }}><Avatar url={entry.avatar_url} size={34} role={entry.role} isOwner={entry.is_owner} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   @{entry.username}
@@ -777,6 +778,7 @@ function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tourna
 // ── Tournament Card (collapsible) ────────────
 function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
   const { profile } = useAuth()
+  const toast = useToast()
   const [open,    setOpen]    = useState(!!autoOpen)
   const [joining, setJoining] = useState(false)
   const [joinErr, setJoinErr] = useState('')
@@ -897,8 +899,11 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
     try {
       if (isJoined) {
         await leaveTournament(t.id)
+        toast?.('Te diste de baja del torneo', { type: 'info' })
       } else {
         await joinTournament(t.id)
+        toast?.(`¡Inscripto en ${t.name}!`, { type: 'success' })
+        navigator.vibrate?.(20)
       }
       // Optimistic update — parent will refetch on next mount, for now flip locally
       const uid = profile?.id
@@ -909,6 +914,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
       }
     } catch (e) {
       setJoinErr(e.message || 'Error al actualizar inscripción')
+      toast?.(e.message || 'Error al actualizar inscripción', { type: 'error' })
     } finally {
       setJoining(false)
     }
@@ -922,6 +928,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
       animation: 'fadeUp 0.3s ease both',
       animationDelay: `${index * 0.04}s`,
       overflow: 'hidden',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
       // Left accent bar using branch color
       borderLeft: `3px solid ${bs.dot}`,
     }}>
@@ -954,15 +961,35 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
               style={{
                 fontSize: 11, fontWeight: 700, flexShrink: 0,
                 padding: '4px 10px', borderRadius: 20,
-                border: isJoined ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.15)',
-                background: isJoined ? 'rgba(255,255,255,0.08)' : 'transparent',
-                color: isJoined ? '#E5E5E5' : '#9CA3AF',
+                minWidth: 78,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                border: isJoined
+                  ? '1px solid rgba(34,197,94,0.45)'
+                  : '1px solid rgba(255,255,255,0.15)',
+                background: isJoined
+                  ? 'linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0.08) 100%)'
+                  : 'transparent',
+                color: isJoined ? '#86EFAC' : '#9CA3AF',
+                boxShadow: isJoined ? '0 0 8px rgba(34,197,94,0.15)' : 'none',
                 cursor: (joining || (!isJoined && isFull)) ? 'default' : 'pointer',
-                opacity: joining ? 0.5 : 1,
-                transition: 'all 0.15s',
+                transition: 'all 0.2s',
               }}
             >
-              {joining ? '…' : isJoined ? '✓ Inscripto' : isFull ? 'Lleno' : 'Unirse'}
+              {joining ? (
+                <span style={{
+                  width: 11, height: 11, borderRadius: '50%',
+                  border: '1.5px solid rgba(255,255,255,0.2)',
+                  borderTopColor: '#FFF',
+                  animation: 'spin 0.7s linear infinite', display: 'inline-block',
+                }} />
+              ) : isJoined ? (
+                <>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Inscripto</span>
+                </>
+              ) : isFull ? 'Lleno' : 'Unirse'}
             </button>
           )}
 
@@ -1589,8 +1616,9 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
                     color: active ? (bStyle?.color ?? '#FFFFFF') : '#4B5563',
                     fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                    transition: 'background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.15s ease',
+                    transition: 'background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease',
                     transform: active ? 'scale(1.04)' : 'scale(1)',
+                    boxShadow: active && bStyle ? `0 0 12px ${bStyle.border}66` : 'none',
                   }}>
                     {bStyle && <span style={{ width: 5, height: 5, borderRadius: '50%', background: active ? bStyle.dot : '#374151', flexShrink: 0, transition: 'background 0.2s ease' }} />}
                     {b || 'Global'}

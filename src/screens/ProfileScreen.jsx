@@ -9,6 +9,7 @@ import Avatar from '../components/Avatar'
 import { PremiumBadge, RoleBadge, MapPinIcon, PAID_ROLES } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 import H2HModal from '../components/H2HModal'
+import Spinner from '../components/Spinner'
 
 const POST_TYPE_COLORS = {
   quiero: '#F59E0B',
@@ -89,7 +90,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
 
   if (loading) return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0A0A0A', minHeight: '100%' }}>
-      <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite' }} />
+      <Spinner size="lg" />
     </div>
   )
 
@@ -139,7 +140,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 32, flexShrink: 0, overflow: 'hidden',
           }}>
-            <Avatar url={profile?.avatar_url} size={72} />
+            <Avatar url={profile?.avatar_url} size={72} role={profile?.role} isOwner={profile?.is_owner} />
           </div>
 
           {/* Stats row */}
@@ -644,7 +645,7 @@ function PostModal({ post, profile, onClose }) {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
-            <Avatar url={profile?.avatar_url} size={36} />
+            <Avatar url={profile?.avatar_url} size={36} role={profile?.role} isOwner={profile?.is_owner} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>@{profile?.username}</div>

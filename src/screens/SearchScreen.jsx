@@ -6,6 +6,9 @@ import { useState, useEffect, useRef } from 'react'
 import { searchUsers, toggleFollow, getFollowing } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
+import { SearchIcon } from '../components/Icons'
+import EmptyState from '../components/EmptyState'
+import Spinner from '../components/Spinner'
 
 export default function SearchScreen({ onViewProfile }) {
   const { profile } = useAuth()
@@ -90,19 +93,20 @@ export default function SearchScreen({ onViewProfile }) {
 
       {/* Loading */}
       {loading && (
-        <div style={{ padding: 40, display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite' }} />
+        <div style={{ padding: 40 }}>
+          <Spinner size="md" centered />
         </div>
       )}
 
       {/* Empty */}
       {!loading && results.length === 0 && (
-        <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>🔍</div>
-          <div style={{ fontSize: 14, color: '#4B5563', fontFamily: 'Inter, sans-serif' }}>
-            {q ? `Sin resultados para "${query}"` : 'No hay jugadores aún'}
-          </div>
-        </div>
+        <EmptyState
+          icon={<SearchIcon size={28} />}
+          title={q ? 'Sin resultados' : 'Aún no hay jugadores'}
+          subtitle={q
+            ? `Nadie coincide con "${query}". Probá con otro nombre.`
+            : 'Cuando otros jugadores se registren, los vas a ver acá.'}
+        />
       )}
 
       {/* User list */}
@@ -126,7 +130,7 @@ export default function SearchScreen({ onViewProfile }) {
               >
                 {/* Avatar */}
                 <div style={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#1F1F1F' }}>
-                  <Avatar url={u.avatar_url} size={44} />
+                  <Avatar url={u.avatar_url} size={44} role={u.role} isOwner={u.is_owner} />
                 </div>
 
                 {/* Info */}

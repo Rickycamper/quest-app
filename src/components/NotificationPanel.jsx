@@ -94,6 +94,67 @@ const NOTIF_TAB = {
   match_result:       'feed',
 }
 
+// Group similar notifications:
+//   - post_like / post_comment by postId
+//   - new_follower (recent burst, within 24h)
+// Returns array where each group is either a single notif or { isGroup: true, items, ...summary }
+function groupNotifications(notifs) {
+  const groupable = new Set(['post_like', 'post_comment', 'new_follower'])
+  const out = []
+  const groups = new Map() // key → array
+
+  for (const n of notifs) {
+    if (!groupable.has(n.type)) {
+      out.push(n)
+      continue
+    }
+    const meta = n.meta || {}
+    let key
+    if (n.type === 'post_like' || n.type === 'post_comment') {
+      if (!meta.postId) { out.push(n); continue }
+      key = `${n.type}:${meta.postId}`
+    } else {
+      // new_follower — group all unread (or recent) into one bucket
+      key = `${n.type}:${n.read ? 'read' : 'unread'}`
+    }
+    const arr = groups.get(key) || []
+    arr.push(n)
+    groups.set(key, arr)
+  }
+
+  for (const [, arr] of groups) {
+    if (arr.length === 1) { out.push(arr[0]); continue }
+    // Sort newest first within group
+    arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    const head = arr[0]
+    const others = arr.length - 1
+    const actorMeta = arr.find(x => (x.meta?.actorUsername || x.meta?.username))?.meta || head.meta || {}
+    const actorName = actorMeta.actorUsername || actorMeta.username || 'Alguien'
+    let title, body
+    if (head.type === 'post_like') {
+      title = '¡Tu post está recibiendo amor!'
+      body  = `${actorName} y ${others} ${others === 1 ? 'persona más' : 'personas más'} dieron like a tu post`
+    } else if (head.type === 'post_comment') {
+      title = 'Comentarios en tu post'
+      body  = `${actorName} y ${others} ${others === 1 ? 'persona más' : 'personas más'} comentaron tu post`
+    } else {
+      title = 'Nuevos seguidores'
+      body  = `${actorName} y ${others} ${others === 1 ? 'persona más' : 'personas más'} te siguen ahora`
+    }
+    out.push({
+      ...head,
+      title, body,
+      isGroup: true,
+      groupItems: arr,
+      groupCount: arr.length,
+    })
+  }
+
+  // Re-sort all by created_at desc
+  out.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  return out
+}
+
 function MatchActions({ notif, onResponded }) {
   const [busy,   setBusy]   = useState(false)
   const [done,   setDone]   = useState(null)  // 'accepted' | 'rejected'
@@ -232,7 +293,13 @@ function NotifCard({ notif, onRead, onNavigate, onOpenChat, onMatchResponded, on
 
   const handleClick = () => {
     if (isPendingMatch || isPendingInvite) return   // don't navigate — user must respond first
-    if (!notif.read) onRead(notif.id)
+    if (!notif.read) {
+      if (notif.isGroup && notif.groupItems) {
+        notif.groupItems.forEach(it => { if (!it.read) onRead(it.id) })
+      } else {
+        onRead(notif.id)
+      }
+    }
 
     // Message notifications → open chat directly with the sender
     if (notif.type === 'new_message' && meta.senderId) {
@@ -281,8 +348,22 @@ function NotifCard({ notif, onRead, onNavigate, onOpenChat, onMatchResponded, on
           width: 36, height: 36, borderRadius: 10,
           background: cfg.bg, display: 'flex',
           alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          position: 'relative',
         }}>
           <NotifIcon type={notif.type} color={cfg.color} />
+          {notif.isGroup && notif.groupCount > 1 && (
+            <div style={{
+              position: 'absolute', bottom: -4, right: -4,
+              minWidth: 16, height: 16, borderRadius: 8,
+              background: cfg.color, color: '#0A0A0A',
+              fontSize: 9, fontWeight: 800,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0 4px', border: '2px solid #111111',
+              fontFamily: 'Inter, sans-serif',
+            }}>
+              {notif.groupCount > 9 ? '9+' : notif.groupCount}
+            </div>
+          )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', marginBottom: 3 }}>{title}</div>
@@ -336,8 +417,10 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
       : { ...n, meta: m }
   })
 
-  const unreadList = augmented.filter(n => !n.read)
-  const readList   = augmented.filter(n =>  n.read)
+  // Group like/comment/follower bursts before splitting unread/read
+  const grouped     = groupNotifications(augmented)
+  const unreadList  = grouped.filter(n => !n.read)
+  const readList    = grouped.filter(n =>  n.read)
   const unread = unreadList.length
   const rc = ROLE_CONFIG[profile?.role] || ROLE_CONFIG.client
   const isStaff = profile?.role === 'staff' || profile?.role === 'admin'
@@ -427,9 +510,29 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
           </>
         )}
         {notifications.length === 0 && (
-          <div style={{ padding: '60px 0', textAlign: 'center' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🔔</div>
-            <div style={{ fontSize: 14, color: '#4B5563' }}>Sin notificaciones</div>
+          <div style={{
+            padding: '64px 24px', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', textAlign: 'center', gap: 6,
+            animation: 'fadeUp 0.35s ease both',
+          }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: 20,
+              background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 70%)',
+              border: '1px solid #1F1F1F',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 14, color: '#4B5563',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.3)',
+            }}>
+              <svg width="28" height="28" viewBox="0 0 16 16" fill="currentColor" strokeWidth="0">
+                <path d="M7.999325 0.16c-0.542 0-0.98 0.438-0.98 0.98v0.588c-2.236 0.453-3.92 2.432-3.92 4.802v0.576c0 1.439-0.53 2.83-1.485 3.908l-0.227 0.254c-0.257 0.288-0.318 0.701-0.162 1.053s0.505 0.579 0.891 0.579h11.76c0.386 0 0.735-0.227 0.894-0.579s0.095-0.765-0.162-1.053l-0.227-0.254c-0.956-1.078-1.485-2.465-1.485-3.908V6.53c0-2.37-1.684-4.349-3.92-4.802V1.14c0-0.542-0.438-0.98-0.98-0.98Zm1.387 15.107c0.368-0.368 0.573-0.867 0.573-1.387h-3.92c0 0.521 0.205 1.02 0.573 1.387s0.867 0.573 1.387 0.573 1.02-0.205 1.387-0.573Z"/>
+              </svg>
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#E5E5E5', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.01em' }}>
+              Todo al día
+            </div>
+            <div style={{ fontSize: 12.5, color: '#6B7280', fontFamily: 'Inter, sans-serif', maxWidth: 240, lineHeight: 1.5 }}>
+              No tenés notificaciones nuevas. Cuando algo pase te avisamos acá.
+            </div>
           </div>
         )}
       </div>

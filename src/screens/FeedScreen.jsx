@@ -8,8 +8,10 @@ import { supabase } from '../lib/supabase'
 import { getFeed, getUserLikedPosts, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost, getArticles } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
-import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, RoleBadge, BoltIcon, PAID_ROLES } from '../components/Icons'
+import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, RoleBadge, BoltIcon, PAID_ROLES, HomeIcon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
+import EmptyState from '../components/EmptyState'
+import Spinner from '../components/Spinner'
 
 const sk = (w, h, r = 6) => ({
   width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
@@ -455,6 +457,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
       border: '1px solid #1E1E1E',
       borderRadius: 16,
       padding: '14px 16px',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.45)',
       animation: 'fadeUp 0.3s ease both',
       animationDelay: `${animDelay}ms`,
     }}>
@@ -465,7 +468,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           background: '#1F1F1F', border: '1.5px solid #2A2A2A',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0,
           cursor: authorId ? 'pointer' : 'default', overflow: 'hidden',
-        }}><Avatar url={post.profiles?.avatar_url} size={36} /></div>
+        }}><Avatar url={post.profiles?.avatar_url} size={36} role={post.profiles?.role} isOwner={post.profiles?.is_owner} /></div>
 
         {/* Info col + follow + ··· */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'stretch', gap: 8 }}>
@@ -555,8 +558,14 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
         if (imgs.length === 0) return null
         if (imgs.length === 1 && IS_VIDEO_URL.test(imgs[0])) return <VideoPlayer src={imgs[0]} />
         if (imgs.length === 1) return (
-          <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 12, background: '#0A0A0A', maxHeight: 450 }}>
+          <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 12, background: '#0A0A0A', maxHeight: 450 }}>
             <img src={imgs[0]} alt="" style={{ width: '100%', height: '100%', maxHeight: 450, objectFit: 'cover', display: 'block' }} />
+            {/* Subtle bottom fade — image blends with card */}
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
+              background: 'linear-gradient(to bottom, transparent 0%, rgba(17,17,17,0.4) 100%)',
+              pointerEvents: 'none',
+            }} />
           </div>
         )
         return <ImageCarousel images={imgs} />
@@ -636,8 +645,8 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
       {showComments && (
         <div style={{ borderTop: '1px solid #1A1A1A', paddingTop: 12, animation: 'fadeUp 0.2s ease' }}>
           {loadingCmts && (
-            <div style={{ textAlign: 'center', padding: '10px 0' }}>
-              <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+            <div style={{ padding: '10px 0' }}>
+              <Spinner size="sm" centered />
             </div>
           )}
           {!loadingCmts && comments.length === 0 && (
@@ -646,7 +655,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           {comments.map(c => (
             <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Avatar url={c.profiles?.avatar_url} size={28} />
+                <Avatar url={c.profiles?.avatar_url} size={28} role={c.profiles?.role} isOwner={c.profiles?.is_owner} />
               </div>
               <div style={{ flex: 1, background: '#111', borderRadius: 8, padding: '6px 10px' }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#FFF', marginRight: 6 }}>@{c.profiles?.username ?? 'user'}</span>
@@ -1070,10 +1079,11 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
       )}
 
       {!loading && !error && posts.length === 0 && (
-        <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🃏</div>
-          <div style={{ fontSize: 15, color: '#4B5563' }}>No hay posts aún</div>
-        </div>
+        <EmptyState
+          icon={<HomeIcon active />}
+          title="Aún nadie publicó nada"
+          subtitle="Sé el primero en compartir un mazo, una colección o tu última partida."
+        />
       )}
 
       <div key={game ?? '__all'} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 14px 0' }}>
@@ -1103,11 +1113,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
       <div ref={sentinelRef} style={{ height: 1 }} />
 
       {/* Load more indicator */}
-      {loadingMore && (
-        <div style={{ padding: '16px 0', textAlign: 'center' }}>
-          <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
-        </div>
-      )}
+      {loadingMore && <Spinner size="md" centered />}
       {!hasMore && posts.length > 0 && (
         <div style={{ padding: '20px 0 80px', textAlign: 'center', fontSize: 12, color: '#374151' }}>
           · · ·

@@ -12,6 +12,7 @@ import {
   subscribeToMessages,
 } from '../lib/supabase'
 import Avatar from '../components/Avatar'
+import Spinner from '../components/Spinner'
 
 const PAGE = 300 // messages per page
 
@@ -114,7 +115,7 @@ export default function ChatScreen({ otherUser, onBack }) {
       {/* ── Header ── */}
       <div style={s.header}>
         <button onClick={onBack} style={s.backBtn}>←</button>
-        <Avatar url={otherUser.avatar_url} size={32} />
+        <Avatar url={otherUser.avatar_url} size={32} role={otherUser.role} isOwner={otherUser.is_owner} />
         <span style={s.username}>@{otherUser.username}</span>
       </div>
 
@@ -140,8 +141,8 @@ export default function ChatScreen({ otherUser, onBack }) {
         )}
 
         {loading && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite' }} />
+          <div style={{ marginTop: 32 }}>
+            <Spinner size="md" centered />
           </div>
         )}
         {!loading && messages.length === 0 && (

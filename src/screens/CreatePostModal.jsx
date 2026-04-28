@@ -7,6 +7,7 @@ import { useToast } from '../components/Toast'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import { CameraIcon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
+import Spinner from '../components/Spinner'
 
 const TARGET_RATIO = 4 / 5  // width / height — portrait, great for TCG cards
 
@@ -370,8 +371,15 @@ export default function CreatePostModal({ onClose }) {
           border: 'none', color: caption.trim() && captchaOk ? '#111111' : '#4B5563',
           fontSize: 13, fontWeight: 700, cursor: caption.trim() && captchaOk ? 'pointer' : 'default',
           padding: '6px 14px', borderRadius: 8, fontFamily: 'Inter, sans-serif',
+          minWidth: 76, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          transition: 'all 0.15s',
         }}>
-          {loading ? '...' : 'Publicar'}
+          {loading ? (
+            <>
+              <Spinner size="xs" color="#111" trackColor="rgba(0,0,0,0.15)" inline />
+              <span>Publicando</span>
+            </>
+          ) : 'Publicar'}
         </button>
       </div>
 

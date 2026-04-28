@@ -6,6 +6,7 @@ import { getCards, addCard, deleteCard, updateCard, createPost, uploadPostImage 
 import { GAMES, GAME_STYLES, CARD_STATUS } from '../lib/constants'
 import { CameraIcon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
+import Spinner from '../components/Spinner'
 
 const sk = (w, h, r = 6) => ({
   width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
@@ -168,7 +169,7 @@ function AddCardModal({ onClose, onAdded, folders }) {
           {imgPreview ? (
             <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden' }}>
               <img src={imgPreview} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} />
-              {uploading && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite' }} /></div>}
+              {uploading && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Spinner size="md" /></div>}
               <button onClick={() => { setImageFile(null); setImgPreview(null) }} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: 6, color: '#FFFFFF', fontSize: 12, fontWeight: 700, padding: '4px 8px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>✕ Quitar</button>
             </div>
           ) : (

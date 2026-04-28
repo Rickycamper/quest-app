@@ -415,7 +415,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
-                      <Avatar url={topBid.profiles?.avatar_url} size={24} />
+                      <Avatar url={topBid.profiles?.avatar_url} size={24} role={topBid.profiles?.role} isOwner={topBid.profiles?.is_owner} />
                     </div>
                     <span style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>
                       @{topBid.profiles?.username ?? '…'}
@@ -510,7 +510,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
             >
               <span style={{ fontSize: 14 }}>👑</span>
               <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
-                <Avatar url={topBid.profiles?.avatar_url} size={26} />
+                <Avatar url={topBid.profiles?.avatar_url} size={26} role={topBid.profiles?.role} isOwner={topBid.profiles?.is_owner} />
               </div>
               <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#FFF' }}>
                 @{topBid.profiles?.username ?? '…'}
@@ -536,7 +536,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
                     borderBottom: i < sortedBids.length - 2 ? '1px solid #161616' : 'none',
                   }}>
                     <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0 }}>
-                      <Avatar url={bid.profiles?.avatar_url} size={24} />
+                      <Avatar url={bid.profiles?.avatar_url} size={24} role={bid.profiles?.role} isOwner={bid.profiles?.is_owner} />
                     </div>
                     <span style={{ flex: 1, fontSize: 12, color: '#9CA3AF' }}>
                       @{bid.profiles?.username ?? '…'}

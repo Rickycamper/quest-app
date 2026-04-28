@@ -7,6 +7,7 @@ import { useToast } from '../components/Toast'
 import { BRANCHES, GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
 import { CameraIcon, MailIcon as MailIconShared } from '../components/Icons'
+import Spinner from '../components/Spinner'
 
 function PhoneIcon() {
   return (
@@ -183,14 +184,16 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
           fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
         }}>Cancelar</button>
         <span style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>Editar perfil</span>
-        <button onClick={handleSave} disabled={saving} style={{
-          background: saving ? '#1A1A1A' : '#FFFFFF',
-          border: 'none', color: saving ? '#555' : '#111',
-          fontSize: 13, fontWeight: 700, cursor: saving ? 'default' : 'pointer',
+        <button onClick={handleSave} disabled={saving || uploadingImg} style={{
+          background: (saving || uploadingImg) ? '#1A1A1A' : '#FFFFFF',
+          border: 'none', color: (saving || uploadingImg) ? '#9CA3AF' : '#111',
+          fontSize: 13, fontWeight: 700, cursor: (saving || uploadingImg) ? 'default' : 'pointer',
           padding: '7px 16px', borderRadius: 8, fontFamily: 'Inter, sans-serif',
           transition: 'all 0.15s',
+          display: 'inline-flex', alignItems: 'center', gap: 6,
         }}>
-          {uploadingImg ? 'Subiendo...' : saving ? 'Guardando...' : 'Guardar'}
+          {(saving || uploadingImg) && <Spinner size="xs" inline />}
+          {uploadingImg ? 'Subiendo' : saving ? 'Guardando' : 'Guardar'}
         </button>
       </div>
 

@@ -9,6 +9,8 @@ import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduc
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
+import { ShopIcon, SearchIcon } from '../components/Icons'
+import EmptyState from '../components/EmptyState'
 
 const STORE_WHATSAPP = '50766130548'
 // Branch-specific WhatsApp numbers.
@@ -1648,14 +1650,13 @@ export default function ShopScreen({ isOwner, isStaff }) {
         )}
 
         {!loading && filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 48, color: '#374151' }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>
-              {search ? '🔍' : category === 'accessory' ? '🎲' : '📦'}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#6B7280' }}>
-              {search ? `Sin resultados para "${search}"` : 'Sin productos aquí todavía'}
-            </div>
-          </div>
+          <EmptyState
+            icon={search ? <SearchIcon size={28} /> : <ShopIcon active />}
+            title={search ? `Sin resultados para "${search}"` : 'Catálogo vacío'}
+            subtitle={search
+              ? 'Probá con otro nombre o cambiá de categoría.'
+              : 'Pronto vas a ver productos disponibles en esta categoría.'}
+          />
         )}
 
         {!loading && filtered.length > 0 && (
