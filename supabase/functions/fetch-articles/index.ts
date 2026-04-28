@@ -1,6 +1,12 @@
 // fetch-articles — pulls from RSS feeds + TCGPlayer Infinite API
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
 // ── RSS sources ───────────────────────────────────────────────────
 const RSS_SOURCES = [
   { game: 'MTG',       name: 'MTGGoldfish',          url: 'https://www.mtggoldfish.com/feed' },
@@ -112,7 +118,9 @@ async function fetchTCGPlayer(game: string, tcgGame: string) {
     }))
 }
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
   const sb = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -158,6 +166,6 @@ Deno.serve(async (_req) => {
   }
 
   return new Response(JSON.stringify({ ok: true, results }), {
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 })
