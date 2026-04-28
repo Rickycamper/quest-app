@@ -2143,9 +2143,9 @@ export async function upsertShopProduct(product) {
     .from('shop_products')
     .upsert(product, { onConflict: 'sku' })
     .select()
-    .single()
   if (error) throw error
-  return data
+  // upsert returns an array — take first row
+  return Array.isArray(data) ? data[0] : data
 }
 
 export async function updateShopProduct(id, fields) {
@@ -2154,9 +2154,8 @@ export async function updateShopProduct(id, fields) {
     .update(fields)
     .eq('id', id)
     .select()
-    .single()
   if (error) throw error
-  return data
+  return Array.isArray(data) ? data[0] : data
 }
 
 export async function deleteShopProduct(id) {
