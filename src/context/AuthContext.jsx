@@ -3,7 +3,7 @@
 // Provides: user, profile, role, loading
 // ─────────────────────────────────────────────
 import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase, getProfile, getQPoints } from '../lib/supabase'
+import { supabase, getProfile, getQPoints, acceptTerms } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
@@ -41,6 +41,22 @@ export function AuthProvider({ children }) {
     if (!authUser) { setProfile(null); return }
     try {
       const p = await getProfile(authUser.id)
+
+      // OAuth users (Discord, Twitch, Facebook) never go through the email
+      // sign-up flow that sets terms_accepted_at, so they get stuck on the
+      // full-screen TermsModal after every login. Auto-accept for them:
+      // the OAuth provider itself is the consent gate, not our terms screen.
+      if (p && !p.terms_accepted_at) {
+        const provider = authUser?.app_metadata?.provider
+        if (provider && provider !== 'email') {
+          // Fire-and-forget — don't block profile render on this write
+          acceptTerms().then(() => {
+            setProfile(prev => prev ? { ...prev, terms_accepted_at: new Date().toISOString() } : prev)
+          }).catch(() => {})
+          p.terms_accepted_at = new Date().toISOString()
+        }
+      }
+
       setProfile(p)
       // Separately fetch q_points so a failure there can't block/null the
       // main profile (keeps isOwner/role stable if the q_points column has
