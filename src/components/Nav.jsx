@@ -51,15 +51,6 @@ function OwnerBottomNav({ active, hidden, tabs }) {
             <span style={{ fontSize: 9, fontWeight: 600, color: isActive ? '#FFFFFF' : '#4B5563', fontFamily: 'Inter, sans-serif' }}>
               {tab.label}
             </span>
-            {/* Active indicator pill */}
-            <div style={{
-              height: 2, borderRadius: 2,
-              width: isActive ? 18 : 0,
-              background: '#FFFFFF',
-              boxShadow: isActive ? '0 0 6px rgba(255,255,255,0.5)' : 'none',
-              transition: 'width 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease',
-              marginTop: 1,
-            }} />
           </button>
         )
       })}
