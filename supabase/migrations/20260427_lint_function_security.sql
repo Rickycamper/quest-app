@@ -143,7 +143,8 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.reject_redemption(uuid, text) FROM anon, public;
 
 -- adjust_user_points / set_user_points: admin/owner only
-CREATE OR REPLACE FUNCTION public.adjust_user_points(target_id uuid, delta integer)
+DROP FUNCTION IF EXISTS public.adjust_user_points(uuid, integer);
+CREATE FUNCTION public.adjust_user_points(target_id uuid, delta integer)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
@@ -162,7 +163,8 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.set_user_points(target_id uuid, pts integer)
+DROP FUNCTION IF EXISTS public.set_user_points(uuid, integer);
+CREATE FUNCTION public.set_user_points(target_id uuid, pts integer)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
