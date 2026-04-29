@@ -143,6 +143,8 @@ export function EmailSignupScreen({ onBack, onDone }) {
     } catch (e) {
       if (e?.isNetworkError || e?.name === 'AbortError' || /fetch|network|load failed/i.test(e?.message)) {
         setError('Sin conexión. Verificá tu internet e intentá de nuevo.')
+      } else if (/already registered|user_already_exists|already exists/i.test(e?.message || e?.code || '')) {
+        setError('Ya tenés una cuenta con ese email. Iniciá sesión en vez de registrarte.')
       } else {
         setError(e.message || 'No se pudo crear la cuenta. Intentá de nuevo.')
       }
