@@ -35,6 +35,12 @@ export function AuthProvider({ children }) {
   const [authEvent, setAuthEvent]         = useState(null)
   const [recoverySession, setRecoverySession] = useState(null)
 
+  // If the URL has ?code= we're returning from an OAuth/PKCE redirect.
+  // The code exchange is an async network call that can easily exceed 2 s —
+  // keep loading=true until Supabase fires SIGNED_IN or INITIAL_SESSION.
+  const isOAuthCallback = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).has('code')
+
   // Load profile after auth. Logs errors (so slow/failed network shows up
   // in console) and retries once with a short delay before giving up.
   const loadProfile = async (authUser, attempt = 1) => {
@@ -80,28 +86,30 @@ export function AuthProvider({ children }) {
     let ready = false
     const done = () => { if (!ready) { ready = true; setLoading(false) } }
 
-    // Fallback: never stay stuck on loading > 2s
-    const timeout = setTimeout(done, 2000)
+    // OAuth callbacks (Discord, Twitch, etc.) need a network round-trip to exchange
+    // the ?code= for a session. Give up to 30 s before falling back to opening screen.
+    // Normal loads (no code in URL) keep the original 2 s fallback.
+    const timeout = setTimeout(done, isOAuthCallback ? 30_000 : 2_000)
 
-    // INITIAL_SESSION fires synchronously from localStorage — no network hang.
-    // Call done() immediately after setting user so the app renders right away.
-    // Profile loads in the background — components read it once it arrives.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setAuthEvent(event)
         setUser(session?.user ?? null)
-        // Capture recovery session tokens directly from the event so
-        // ResetPasswordScreen can use them even if getSession() returns null
         if (event === 'PASSWORD_RECOVERY' && session) {
           setRecoverySession({ access_token: session.access_token, refresh_token: session.refresh_token })
         }
-        done() // unblock the app immediately — don't wait for profile network call
-        loadProfile(session?.user ?? null) // load profile in background
+        // For OAuth callbacks: hold loading until Supabase tells us the outcome.
+        // SIGNED_IN = exchange succeeded. INITIAL_SESSION = exchange failed or no code.
+        // For all other loads: unblock immediately on any event.
+        if (!isOAuthCallback || event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          done()
+        }
+        loadProfile(session?.user ?? null)
       }
     )
 
     return () => { subscription.unsubscribe(); clearTimeout(timeout) }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Realtime: keep q_points (and profile) in sync ──────────────
   // When award_points RPC updates the profiles row, push the new

@@ -601,8 +601,13 @@ function AppInner() {
   }, [isGuest])
 
   if (loading) return (
-    <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', background:'#0A0A0A' }}>
+    <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#0A0A0A', gap: 16 }}>
       <img src={questLogo} alt="Quest" style={{ width: 110, animation: 'bounce 0.9s ease infinite' }} />
+      {new URLSearchParams(window.location.search).has('code') && (
+        <span style={{ fontSize: 13, color: '#4B5563', fontFamily: 'Inter, sans-serif' }}>
+          Conectando con Discord…
+        </span>
+      )}
     </div>
   )
 
