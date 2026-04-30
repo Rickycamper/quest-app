@@ -10,6 +10,7 @@ import {
   sendMessage,
   markMessagesRead,
   subscribeToMessages,
+  supabase,
 } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
@@ -59,7 +60,7 @@ export default function ChatScreen({ otherUser, onBack }) {
 
     return () => {
       cancelled = true
-      channel?.unsubscribe()
+      if (channel) supabase.removeChannel(channel)
     }
   }, [otherUser.id])
 

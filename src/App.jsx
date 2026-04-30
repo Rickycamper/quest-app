@@ -74,7 +74,7 @@ class ErrorBoundary extends Component {
   }
 }
 
-import { acceptTerms, subscribeToPush } from './lib/supabase'
+import { acceptTerms, subscribeToPush, supabase } from './lib/supabase'
 import { BottomNav, NotifBell } from './components/Nav'
 import { ShieldIcon, SearchIcon, DiamondIcon } from './components/Icons'
 import NotificationPanel from './components/NotificationPanel'
@@ -611,8 +611,7 @@ function AppInner() {
       recoverySession={recoverySession}
       onDone={async () => {
         setShowReset(false)
-        const { supabase: sb } = await import('./lib/supabase')
-        await sb.auth.signOut()
+        await supabase.auth.signOut()
       }}
     />
   )

@@ -9,11 +9,19 @@ export default defineConfig({
   build: {
     target: 'es2020',
     minify: 'esbuild',
-    // Keep identifiers readable to prevent minified-name TDZ collisions
-    // (esbuild reuses short names like _t, Xe across scopes in single-file bundles)
+    chunkSizeWarningLimit: 800,
+    // Keep identifiers readable to prevent minified-name TDZ collisions.
+    // manualChunks splits vendors into separate files so the main bundle
+    // stays under 500 kB and the browser can cache React/Supabase independently.
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks(id) {
+          if (!id.includes('/node_modules/')) return
+          if (id.includes('@supabase'))        return 'supabase'
+          if (id.includes('react-dom'))        return 'react-dom'
+          if (id.includes('react'))            return 'react'
+          return 'vendor'
+        },
       },
     },
   },

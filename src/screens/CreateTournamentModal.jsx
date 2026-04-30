@@ -13,6 +13,7 @@ export default function CreateTournamentModal({ onClose, defaultBranch }) {
   const [date,        setDate]        = useState(new Date().toISOString().slice(0, 10))
   const [playerCount, setPlayerCount] = useState('')
   const [startTime,   setStartTime]   = useState('')
+  const [entryFee,    setEntryFee]    = useState('')
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState('')
   const [done,        setDone]        = useState(false)
@@ -28,6 +29,7 @@ export default function CreateTournamentModal({ onClose, defaultBranch }) {
         name: name.trim(), game, branch, date,
         playerCount: parseInt(playerCount),
         startTime: startTime || null,
+        entryFee: entryFee !== '' ? parseFloat(entryFee) : 0,
       })
       setDone(true)
     } catch (e) { setError(e.message) }
@@ -148,7 +150,7 @@ export default function CreateTournamentModal({ onClose, defaultBranch }) {
             </div>
 
             {/* Jugadores + Hora */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
               <div style={{ flex: 1 }}>
                 <span style={labelStyle}>JUGADORES</span>
                 <input type="number" min="2" value={playerCount} onChange={e => setPlayerCount(e.target.value)}
@@ -158,6 +160,24 @@ export default function CreateTournamentModal({ onClose, defaultBranch }) {
                 <span style={labelStyle}>HORA DE INICIO</span>
                 <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
                   style={{ ...inputStyle, colorScheme: 'dark' }} />
+              </div>
+            </div>
+
+            {/* Costo de entrada */}
+            <div style={{ marginBottom: 24 }}>
+              <span style={labelStyle}>COSTO DE ENTRADA (opcional)</span>
+              <div style={{ position: 'relative' }}>
+                <span style={{
+                  position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
+                  color: '#4B5563', fontSize: 14, fontWeight: 600, pointerEvents: 'none',
+                }}>$</span>
+                <input
+                  type="number" min="0" step="0.01"
+                  value={entryFee}
+                  onChange={e => setEntryFee(e.target.value)}
+                  placeholder="0.00"
+                  style={{ ...inputStyle, paddingLeft: 26 }}
+                />
               </div>
             </div>
 

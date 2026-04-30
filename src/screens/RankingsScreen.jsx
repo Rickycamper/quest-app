@@ -809,12 +809,14 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
   const [curDate,  setCurDate]  = useState(t.date)
   const [curTime,  setCurTime]  = useState(t.start_time?.slice(0, 5) ?? '')
   const [curCount, setCurCount] = useState(t.player_count)
+  const [curFee,   setCurFee]   = useState(t.entry_fee ?? 0)
 
   // Edit mode state
   const [editingSched, setEditingSched] = useState(false)
   const [editDate,     setEditDate]     = useState('')
   const [editTime,     setEditTime]     = useState('')
   const [editCount,    setEditCount]    = useState('')
+  const [editFee,      setEditFee]      = useState('')
   const [savingSched,  setSavingSched]  = useState(false)
   const [schedErr,     setSchedErr]     = useState('')
 
@@ -871,6 +873,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
     setEditDate(curDate)
     setEditTime(curTime)
     setEditCount(String(curCount))
+    setEditFee(curFee > 0 ? String(curFee) : '')
     setSchedErr('')
     setEditingSched(true)
   }
@@ -880,10 +883,16 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
     if (!editCount || isNaN(editCount) || +editCount < 2) { setSchedErr('Jugadores debe ser ≥ 2'); return }
     setSavingSched(true); setSchedErr('')
     try {
-      await updateTournament(t.id, { date: editDate, startTime: editTime || null, playerCount: parseInt(editCount) })
+      await updateTournament(t.id, {
+        date: editDate,
+        startTime: editTime || null,
+        playerCount: parseInt(editCount),
+        entryFee: editFee !== '' ? parseFloat(editFee) : 0,
+      })
       setCurDate(editDate)
       setCurTime(editTime)
       setCurCount(parseInt(editCount))
+      setCurFee(editFee !== '' ? parseFloat(editFee) : 0)
       setEditingSched(false)
     } catch (e) {
       setSchedErr(e.message || 'Error al guardar')
@@ -1020,6 +1029,13 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
               <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
               <SAClock size={10} color="#6B7280" />
               <span style={{ fontSize: 10, color: '#6B7280' }}>{timeStr}</span>
+            </>
+          )}
+
+          {curFee > 0 && (
+            <>
+              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
+              <span style={{ fontSize: 10, color: '#FBBF24', fontWeight: 700 }}>${curFee % 1 === 0 ? curFee : curFee.toFixed(2)}</span>
             </>
           )}
 
@@ -1252,6 +1268,11 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
                       <div style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 4 }}>CUPOS</div>
                       <input type="number" min="2" value={editCount} onChange={e => setEditCount(e.target.value)}
                         style={{ width: '100%', padding: '7px 9px', background: '#111', border: '1px solid #2A2A2A', borderRadius: 8, color: '#FFF', fontSize: 12, outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 4 }}>COSTO $</div>
+                      <input type="number" min="0" step="0.01" value={editFee} onChange={e => setEditFee(e.target.value)}
+                        placeholder="0" style={{ width: '100%', padding: '7px 9px', background: '#111', border: '1px solid #2A2A2A', borderRadius: 8, color: '#FFF', fontSize: 12, outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }} />
                     </div>
                   </div>
                   {schedErr && <div style={{ fontSize: 11, color: '#F87171', marginBottom: 6 }}>{schedErr}</div>}

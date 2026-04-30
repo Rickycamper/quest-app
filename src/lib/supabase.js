@@ -783,7 +783,7 @@ export async function getTournaments({ game = null, branch = null } = {}) {
   let query = supabase
     .from('tournaments')
     .select(`
-      id, name, game, branch, date, player_count, start_time,
+      id, name, game, branch, date, player_count, start_time, entry_fee,
       tournament_results ( position, user_id, profiles:user_id ( username ) ),
       tournament_participants ( user_id, paid, profiles:user_id ( id, username, avatar_url ) )
     `)
@@ -858,20 +858,31 @@ export async function rejectUserGameClaims(userId, game) {
   if (error) throw error
 }
 
-export async function updateTournament(id, { date, startTime, playerCount }) {
+export async function updateTournament(id, { date, startTime, playerCount, entryFee }) {
   const { error } = await supabase
     .from('tournaments')
-    .update({ date, start_time: startTime || null, player_count: parseInt(playerCount) })
+    .update({
+      date,
+      start_time: startTime || null,
+      player_count: parseInt(playerCount),
+      entry_fee: entryFee != null ? parseFloat(entryFee) : 0,
+    })
     .eq('id', id)
   if (error) throw error
 }
 
-export async function createTournament({ name, game, branch, date, playerCount, startTime }) {
+export async function createTournament({ name, game, branch, date, playerCount, startTime, entryFee }) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) throw new Error('No hay sesión activa')
   const { data, error } = await supabase
     .from('tournaments')
-    .insert({ name, game, branch, date, player_count: playerCount, start_time: startTime || null, created_by: session.user.id })
+    .insert({
+      name, game, branch, date,
+      player_count: playerCount,
+      start_time: startTime || null,
+      entry_fee: entryFee != null ? parseFloat(entryFee) : 0,
+      created_by: session.user.id,
+    })
     .select()
     .single()
   if (error) throw error

@@ -4,7 +4,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   getNotifications, markNotificationRead,
-  markAllNotificationsRead, subscribeToNotifications
+  markAllNotificationsRead, subscribeToNotifications, supabase
 } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -40,7 +40,7 @@ export function useNotifications() {
       }
       setNotifications(prev => [notif, ...prev])
     })
-    return () => channel.unsubscribe()
+    return () => supabase.removeChannel(channel)
   }, [user])
 
   const markRead = async (id) => {
