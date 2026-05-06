@@ -1482,6 +1482,21 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
   const [enrolled,    setEnrolled]    = useState(league.enrolled)
   const [partCount,   setPartCount]   = useState(Number(league.participant_count))
 
+  const [copied, setCopied] = useState(false)
+
+  const handleShare = (e) => {
+    e.stopPropagation()
+    const url = `${window.location.origin}/?tab=ranks&liga=${league.id}`
+    if (navigator.share) {
+      navigator.share({ title: league.name, text: `¡Unite a la liga! ${league.name}`, url }).catch(() => {})
+    } else {
+      navigator.clipboard?.writeText(url).then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+    }
+  }
+
   // Staff panels
   const [activeFechaId, setActiveFechaId] = useState(null)   // fecha open for positions entry
   const [positionMap,   setPositionMap]   = useState({})      // userId → position string
@@ -1695,20 +1710,25 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
           <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {league.name}
           </span>
-          {/* Copy invite link */}
+          {/* Share league */}
           <button
-            onClick={e => {
-              e.stopPropagation()
-              const url = `${window.location.origin}/?tab=ranks&liga=${league.id}`
-              navigator.clipboard?.writeText(url).then(() => toast?.('Link copiado', { type: 'success' })).catch(() => {})
-            }}
+            onClick={handleShare}
+            title="Compartir liga"
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#4B5563', padding: '0 2px', lineHeight: 1, flexShrink: 0,
-              display: 'flex', alignItems: 'center',
+              background: 'none', border: 'none', padding: '2px 0px',
+              cursor: 'pointer', color: copied ? '#4ADE80' : '#6B7280',
+              fontSize: copied ? 10 : 13, fontWeight: copied ? 700 : 400,
+              fontFamily: 'Inter, sans-serif', lineHeight: 1,
+              transition: 'color 0.2s', flexShrink: 0,
             }}
-            title="Copiar link de invitación"
-          ><ShareIcon size={13} color="#4B5563" /></button>
+          >
+            {copied ? '✓ copiado' : (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            )}
+          </button>
           <span style={{
             fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 5, flexShrink: 0,
             background: ss.bg, border: `1px solid ${ss.border}`, color: ss.color,
