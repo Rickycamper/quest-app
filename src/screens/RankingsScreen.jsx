@@ -1514,7 +1514,8 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
   const [newFechaDate,  setNewFechaDate]  = useState('')
   const [newFechaTime,  setNewFechaTime]  = useState('')
   const [savingFecha,   setSavingFecha]   = useState(false)
-  const [showAllFechas, setShowAllFechas] = useState(false)
+  const [showAllFechas,  setShowAllFechas]  = useState(false)
+  const [showResultados, setShowResultados] = useState(false)
   // Search + add participant
   const [showSearch,    setShowSearch]    = useState(false)
   const [searchQ,       setSearchQ]       = useState('')
@@ -1970,13 +1971,20 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                 </div>
               )}
 
-              {/* ── RESULTADOS section — always visible when league is expanded ── */}
+              {/* ── RESULTADOS section ── */}
               {fechas.length > 0 && (
                 <div style={{ borderTop: '1px solid #1A1A1A', padding: '14px 16px 16px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 12 }}>
-                    RESULTADOS
+                  {/* Header toggle */}
+                  <div
+                    onClick={() => setShowResultados(v => !v)}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showResultados ? 12 : 0, cursor: 'pointer' }}
+                  >
+                    <span style={{ fontSize: 10, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      {showResultados ? '▲ ocultar' : `▼ ver resultados`}
+                    </span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em' }}>RESULTADOS</span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {showResultados && <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {fechas.map(f => {
                       const fss = STATUS_STYLES[f.status] ?? STATUS_STYLES.upcoming
                       const isStaffOpen = activeFechaId === f.id
@@ -2038,14 +2046,16 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                                     <span style={{ flex: 1, fontSize: 12, color: '#E5E5E5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                       @{p.profiles?.username}
                                     </span>
-                                    <input
-                                      type="number" min="1"
+                                    <select
                                       value={positionMap[p.user_id] ?? ''}
                                       onChange={e => setPositionMap(prev => ({ ...prev, [p.user_id]: e.target.value }))}
-                                      placeholder="pos"
-                                      style={{ ...inputSm, width: 60, textAlign: 'center' }}
-                                    />
-                                    <span style={{ fontSize: 11, color: '#4B5563' }}>°</span>
+                                      style={{ ...inputSm, width: 72, textAlign: 'center', colorScheme: 'dark' }}
+                                    >
+                                      <option value="">—</option>
+                                      {Array.from({ length: maxPlayers > 0 ? maxPlayers : 24 }, (_, i) => i + 1).map(n => (
+                                        <option key={n} value={n}>{n}°</option>
+                                      ))}
+                                    </select>
                                   </div>
                                 ))}
                               </div>
@@ -2140,7 +2150,7 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                         </div>
                       )
                     })}
-                  </div>
+                  </div>}
                 </div>
               )}
 
