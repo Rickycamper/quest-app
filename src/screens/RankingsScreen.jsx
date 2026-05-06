@@ -1686,8 +1686,8 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
 
   return (
     <div style={{
-      margin: '0 16px 8px',
-      background: '#111111', borderRadius: 10,
+      margin: '0 16px 10px',
+      background: '#111111', borderRadius: 14,
       border: `1px solid ${enrolled ? (bs?.border ?? 'rgba(167,139,250,0.3)') : '#1F1F1F'}`,
       animation: 'fadeUp 0.3s ease both',
       animationDelay: `${index * 0.04}s`,
@@ -1696,18 +1696,18 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
       borderLeft: `3px solid ${bs?.dot ?? '#374151'}`,
     }}>
       {/* Collapsed row */}
-      <div onClick={() => setOpen(o => !o)} style={{ padding: '13px 14px 10px', cursor: 'pointer' }}>
+      <div onClick={() => setOpen(o => !o)} style={{ padding: '16px 16px 14px', cursor: 'pointer' }}>
         {/* Row 1: name + status + chevron */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           {gs && (
             <span style={{
-              padding: '2px 7px', borderRadius: 5, flexShrink: 0,
+              padding: '3px 8px', borderRadius: 6, flexShrink: 0,
               background: gs.bg, border: `1px solid ${gs.border}`,
-              color: gs.color, fontSize: 10, fontWeight: 700,
-              display: 'inline-flex', alignItems: 'center', gap: 3,
-            }}><GameIcon game={league.game} size={10} />{league.game}</span>
+              color: gs.color, fontSize: 11, fontWeight: 700,
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+            }}><GameIcon game={league.game} size={11} />{league.game}</span>
           )}
-          <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {league.name}
           </span>
           {/* Share league */}
@@ -1730,26 +1730,26 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
             )}
           </button>
           <span style={{
-            fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 5, flexShrink: 0,
+            fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 6, flexShrink: 0,
             background: ss.bg, border: `1px solid ${ss.border}`, color: ss.color,
           }}>{ss.label}</span>
           <span style={{ color: '#4B5563', fontSize: 14, marginLeft: 2, flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
         </div>
         {/* Row 2: branch · fechas count · participants · entry fee */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           {league.branch && bs && (
-            <span style={{ fontSize: 10, color: bs.color, display: 'flex', alignItems: 'center', gap: 3 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: bs.dot, display: 'inline-block' }} />{league.branch}
+            <span style={{ fontSize: 11, color: bs.color, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: bs.dot, display: 'inline-block' }} />{league.branch}
             </span>
           )}
-          <span style={{ fontSize: 10, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
-            <SACalendar size={10} /> {fechas.length} fecha{fechas.length !== 1 ? 's' : ''}
+          <span style={{ fontSize: 11, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <SACalendar size={11} /> {fechas.length} fecha{fechas.length !== 1 ? 's' : ''}
           </span>
-          <span style={{ fontSize: 10, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
-            <SAUsers size={10} /> {partCount}{maxPlayers > 0 ? `/${maxPlayers}` : ''}
+          <span style={{ fontSize: 11, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <SAUsers size={11} /> {partCount}{maxPlayers > 0 ? `/${maxPlayers}` : ''}
           </span>
           {entryFee > 0 && (
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B' }}>${entryFee}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B' }}>${entryFee}</span>
           )}
           {/* Join button */}
           {profile && (canJoin || enrolled) && (
@@ -1757,11 +1757,11 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
               onClick={handleJoin}
               disabled={joining || (isFull && !enrolled)}
               style={{
-                marginLeft: 'auto', padding: '4px 12px', borderRadius: 7,
+                marginLeft: 'auto', padding: '7px 16px', borderRadius: 9,
                 border: `1px solid ${enrolled ? 'rgba(239,68,68,0.35)' : 'rgba(167,139,250,0.4)'}`,
                 background: enrolled ? 'rgba(239,68,68,0.08)' : 'rgba(167,139,250,0.1)',
                 color: enrolled ? '#F87171' : '#A78BFA',
-                fontSize: 11, fontWeight: 700, cursor: joining ? 'default' : 'pointer',
+                fontSize: 12, fontWeight: 700, cursor: joining ? 'default' : 'pointer',
                 fontFamily: 'Inter, sans-serif', flexShrink: 0,
               }}
             >
@@ -1792,17 +1792,17 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
               )}
 
               {/* Fechas list */}
-              <div style={{ padding: '10px 14px 4px' }}>
+              <div style={{ padding: '14px 16px 6px' }}>
                 <div
                   onClick={() => fechas.length > 1 && setShowAllFechas(v => !v)}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    marginBottom: 6, cursor: fechas.length > 1 ? 'pointer' : 'default',
+                    marginBottom: 10, cursor: fechas.length > 1 ? 'pointer' : 'default',
                   }}
                 >
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em' }}>FECHAS</span>
                   {fechas.length > 1 && (
-                    <span style={{ fontSize: 9, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ fontSize: 10, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
                       {showAllFechas ? `▲ ver menos` : `▼ ver todas (${fechas.length})`}
                     </span>
                   )}
@@ -1826,28 +1826,28 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                       <div key={f.id}
                         onClick={() => isStaff && setActiveFechaId(isActive ? null : f.id)}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-                          borderRadius: 10, background: isActive ? 'rgba(167,139,250,0.06)' : '#141414',
+                          display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                          borderRadius: 11, background: isActive ? 'rgba(167,139,250,0.06)' : '#141414',
                           border: `1px solid ${isActive ? 'rgba(167,139,250,0.3)' : '#1F1F1F'}`,
                           cursor: isStaff ? 'pointer' : 'default',
                         }}
                       >
                         <div style={{
-                          width: 20, height: 20, borderRadius: '50%',
+                          width: 26, height: 26, borderRadius: '50%',
                           background: '#1A1A1A', border: '1px solid #2A2A2A',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 9, fontWeight: 800, color: '#6B7280', flexShrink: 0,
+                          fontSize: 11, fontWeight: 800, color: '#6B7280', flexShrink: 0,
                         }}>{f.number}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#E5E5E5' }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#E5E5E5' }}>
                             Fecha {f.number}
                           </span>
                           {dateStr && (
-                            <span style={{ fontSize: 10, color: '#4B5563', marginLeft: 6 }}>{dateStr}{f.start_time ? ` · ${f.start_time.slice(0, 5)}` : ''}</span>
+                            <span style={{ fontSize: 11, color: '#4B5563', marginLeft: 8 }}>{dateStr}{f.start_time ? ` · ${f.start_time.slice(0, 5)}` : ''}</span>
                           )}
                         </div>
                         <span style={{
-                          fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                          fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
                           background: fs.bg, border: `1px solid ${fs.border}`, color: fs.color,
                         }}>{fs.label}</span>
                         {/* Staff: status changer */}
@@ -1949,29 +1949,29 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
 
               {/* Overall standings */}
               {standings.length > 0 && (
-                <div style={{ padding: '8px 14px 12px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 6 }}>TABLA GENERAL</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ padding: '12px 16px 16px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 10 }}>TABLA GENERAL</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {standings.map((s, i) => (
                       <div key={s.userId} style={{
-                        display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
-                        borderRadius: 8,
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                        borderRadius: 10,
                         background: i === 0 ? 'rgba(245,158,11,0.06)' : i === 1 ? 'rgba(156,163,175,0.05)' : i === 2 ? 'rgba(184,115,51,0.05)' : 'transparent',
                         border: `1px solid ${i === 0 ? 'rgba(245,158,11,0.15)' : i === 1 ? 'rgba(156,163,175,0.1)' : i === 2 ? 'rgba(184,115,51,0.1)' : 'transparent'}`,
                       }}>
                         <span style={{
-                          width: 18, fontSize: 11, fontWeight: 800, textAlign: 'center', flexShrink: 0,
+                          width: 20, fontSize: 12, fontWeight: 800, textAlign: 'center', flexShrink: 0,
                           color: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : i === 2 ? '#B87333' : '#374151',
                         }}>{i + 1}</span>
-                        <Avatar url={s.avatar_url} size={24} />
+                        <Avatar url={s.avatar_url} size={28} />
                         <TierBadge tier={s.tier} />
                         <span
                           onClick={() => onViewProfile && onViewProfile(s.userId)}
-                          style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#E5E5E5', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                          style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#E5E5E5', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                         >@{s.username}</span>
                         {isStaff && (
                           <span style={{
-                            fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                            fontSize: 11, padding: '3px 8px', borderRadius: 6,
                             background: s.paid ? 'rgba(74,222,128,0.1)' : 'rgba(239,68,68,0.1)',
                             border: `1px solid ${s.paid ? 'rgba(74,222,128,0.25)' : 'rgba(239,68,68,0.25)'}`,
                             color: s.paid ? '#4ADE80' : '#F87171', cursor: 'pointer',
@@ -1985,8 +1985,8 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                             }}
                           >{s.paid ? '✓ Pagó' : 'Pend.'}</span>
                         )}
-                        <span style={{ fontSize: 13, fontWeight: 800, color: i < 3 ? ['#F59E0B','#9CA3AF','#B87333'][i] : '#6B7280', flexShrink: 0 }}>
-                          {s.total}<span style={{ fontSize: 9, fontWeight: 600, color: '#4B5563', marginLeft: 2 }}>pts</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: i < 3 ? ['#F59E0B','#9CA3AF','#B87333'][i] : '#6B7280', flexShrink: 0 }}>
+                          {s.total}<span style={{ fontSize: 10, fontWeight: 600, color: '#4B5563', marginLeft: 3 }}>pts</span>
                         </span>
                       </div>
                     ))}
