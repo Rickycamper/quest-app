@@ -37,7 +37,7 @@ export default function Avatar({ url, size = 36, fontSize, role, isOwner }) {
       src={getAvatarSrc(url, size)}
       alt=""
       onError={() => setImgError(true)}
-      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
+      style={{ width: size, height: size, objectFit: 'cover', borderRadius: '50%', display: 'block', flexShrink: 0 }}
     />
   ) : (
     <span style={{ fontSize: fs, lineHeight: 1 }}>👤</span>
