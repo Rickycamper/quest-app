@@ -2,7 +2,7 @@
 // QUEST — RankingsScreen
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, setTournamentPayment, getActiveSeason } from '../lib/supabase'
+import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, setTournamentPayment, getActiveSeason, staffAwardRankingPoints, staffSetGamePoints, getLeagues, getLeagueDetails, joinLeague, leaveLeague, updateLeagueStatus, updateFechaStatus, upsertLeagueResult, submitMyResult, addLeagueFecha, addLeagueParticipant, setLeaguePayment, deleteLeague } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
@@ -55,43 +55,28 @@ function SeasonBanner({ season }) {
   const end      = new Date(endStr   + 'T23:59:59')
   const start    = new Date(startStr + 'T00:00:00')
   const now      = new Date()
-  // isTest: today is still within this season (before it ends)
-  const isTest   = now <= end
   const daysLeft = Math.max(0, Math.ceil((end - now) / 86_400_000))
   const pct      = Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)))
-
-  // Next season start = day after this season ends
-  const nextStart = (() => { const d = new Date(end); d.setDate(d.getDate() + 1); return d })()
-
-  const accentColor = isTest ? '#FB923C' : '#F59E0B'
-  const label       = isTest ? 'PRUEBA' : 'ACTIVA'
-  const labelBg     = isTest ? 'rgba(251,146,60,0.12)' : 'rgba(74,222,128,0.12)'
-  const labelBorder = isTest ? 'rgba(251,146,60,0.3)'  : 'rgba(74,222,128,0.25)'
-  const labelColor  = isTest ? '#FB923C'               : '#4ADE80'
-  const monthFmt    = (d) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
-  const rangeStr    = `${monthFmt(start)} – ${monthFmt(end)}`
+  const monthFmt = (d) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
+  const rangeStr = `${monthFmt(start)} – ${monthFmt(end)}`
 
   return (
     <div style={{
       margin: '6px 14px 0',
       padding: '9px 12px',
       borderRadius: 12,
-      background: `${accentColor}08`,
-      border: `1px solid ${accentColor}22`,
+      background: '#F59E0B08',
+      border: '1px solid #F59E0B22',
       display: 'flex', flexDirection: 'column', gap: 6,
       animation: 'slideDown 0.22s cubic-bezier(0.34,1.3,0.64,1)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* Icon */}
-        <svg width="13" height="13" viewBox="0 0 16 16" fill={accentColor} strokeWidth="0">
-          {isTest
-            ? <path d="M2 1.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-1v1a4.5 4.5 0 0 1-2.557 4.06c-.29.139-.443.377-.443.59v.7c0 .213.154.451.443.59A4.5 4.5 0 0 1 12.5 13v1h1a.5.5 0 0 1 0 1h-11a.5.5 0 1 1 0-1h1v-1a4.5 4.5 0 0 1 2.557-4.06c.29-.139.443-.377.443-.59v-.7c0-.213-.154-.451-.443-.59A4.5 4.5 0 0 1 3.5 3V2h-1a.5.5 0 0 1-.5-.5z"/>
-            : <path d={HAND_MIDDLE_PATH} />
-          }
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
+          <path d={HAND_MIDDLE_PATH} />
         </svg>
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: accentColor }}>
-            {isTest ? 'Temporada de Prueba' : season.name}
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B' }}>
+            {season.name}
           </span>
           <span style={{ fontSize: 10, color: '#4B5563', marginLeft: 6 }}>{rangeStr}</span>
         </div>
@@ -101,35 +86,15 @@ function SeasonBanner({ season }) {
           </span>
           <div style={{
             fontSize: 8, fontWeight: 800, padding: '2px 6px', borderRadius: 5,
-            background: labelBg, border: `1px solid ${labelBorder}`, color: labelColor, letterSpacing: '0.05em',
-          }}>{label}</div>
+            background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)',
+            color: '#4ADE80', letterSpacing: '0.05em',
+          }}>ACTIVA</div>
         </div>
       </div>
       {/* Progress bar */}
       <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: `${accentColor}60`, transition: 'width 0.6s ease' }} />
+        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: '#F59E0B60', transition: 'width 0.6s ease' }} />
       </div>
-      {/* Next season strip — only during test season, dates derived dynamically */}
-      {isTest && nextStart && (
-        <div style={{
-          marginTop: 2,
-          padding: '7px 10px',
-          borderRadius: 8,
-          background: 'rgba(245,158,11,0.07)',
-          border: '1px solid rgba(245,158,11,0.2)',
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
-            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-          </svg>
-          <div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: '#F59E0B' }}>
-              Temporada 2 — comienza el {nextStart.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </span>
-            <div style={{ fontSize: 9, color: '#78716C', marginTop: 1 }}>Esos puntos sí cuentan para el Season Championship</div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -238,6 +203,7 @@ function SeasonBadgePill({ badges, game, branch }) {
 
 // ── Leaderboard ──────────────────────────────
 function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
+  const toast = useToast()
   const [showRules, setShowRules] = useState(false)
   const [entries,   setEntries]   = useState([])
   const [loading,   setLoading]   = useState(true)
@@ -247,6 +213,16 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
   const [ptsVal,    setPtsVal]    = useState('')
   const [saving,    setSaving]    = useState(false)
   const [editErr,   setEditErr]   = useState('')
+  // Staff: award points panel
+  const [showAward,      setShowAward]      = useState(false)
+  const [awardQuery,     setAwardQuery]     = useState('')
+  const [awardResults,   setAwardResults]   = useState([])
+  const [awardLoading,   setAwardLoading]   = useState(false)
+  const [awardUser,      setAwardUser]      = useState(null)   // selected user
+  const [awardPosition,  setAwardPosition]  = useState(1)
+  const [awardTournament,setAwardTournament]= useState('')
+  const [awardSaving,    setAwardSaving]    = useState(false)
+  const [awardErr,       setAwardErr]       = useState('')
 
   useEffect(() => {
     // A TCG must always be selected — Global means all branches, not all games
@@ -271,11 +247,17 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
     setSaving(true)
     setEditErr('')
     try {
-      if (n === 0 && game) {
-        // Reject all approved claims for this user+game so they disappear from ranking
-        await rejectUserGameClaims(userId, game)
-        setEntries(prev => prev.filter(e => e.id !== userId))
+      if (game) {
+        // Game-specific view: use override table so edits survive refresh
+        if (n === 0) {
+          await rejectUserGameClaims(userId, game)
+          setEntries(prev => prev.filter(e => e.id !== userId))
+        } else {
+          const saved = await staffSetGamePoints(userId, game, branch, n)
+          setEntries(prev => prev.map(e => e.id === userId ? { ...e, points: saved } : e))
+        }
       } else {
+        // Overall ranking: update profiles.points directly
         const saved = await setUserPoints(userId, n)
         setEntries(prev => prev.map(e => e.id === userId ? { ...e, points: saved } : e))
       }
@@ -288,92 +270,57 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
 
   const canEdit = isAdmin
 
+  // Staff award panel: search users
+  useEffect(() => {
+    if (!showAward || !isAdmin) return
+    const t = setTimeout(async () => {
+      setAwardLoading(true)
+      try { setAwardResults(await searchUsers(awardQuery)) }
+      catch { setAwardResults([]) }
+      setAwardLoading(false)
+    }, 250)
+    return () => clearTimeout(t)
+  }, [awardQuery, showAward, isAdmin])
+
+  const handleAwardPoints = async () => {
+    if (!awardUser || !game) return
+    setAwardSaving(true); setAwardErr('')
+    try {
+      const { ptsAdded } = await staffAwardRankingPoints(awardUser.id, {
+        game,
+        branch: branch ?? null,
+        position: awardPosition,
+        tournamentName: awardTournament.trim() || 'Asignado por staff',
+      })
+      toast?.(`+${ptsAdded}pts agregado a @${awardUser.username}`, { type: 'success' })
+      // Refresh leaderboard
+      const fresh = await getLeaderboard({ branch: branch || null, game })
+      setEntries(fresh)
+      // Reset panel
+      setAwardUser(null); setAwardQuery(''); setAwardResults([]); setAwardTournament(''); setAwardPosition(1)
+      setShowAward(false)
+    } catch (e) {
+      setAwardErr(e.message || 'Error al asignar puntos')
+    }
+    setAwardSaving(false)
+  }
+
   // No TCG selected yet — show season info + rules
   if (!game) return (
     <div style={{ padding: '12px 14px 32px', display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.25s ease' }}>
 
       {/* ── Season announcement — adapts to current season ── */}
       {(() => {
-        const endStr    = safeDate(activeSeason?.end_date,   '2026-04-30')
-        const startStr  = safeDate(activeSeason?.start_date, '2026-01-01')
+        const endStr    = safeDate(activeSeason?.end_date,   '2026-08-31')
+        const startStr  = safeDate(activeSeason?.start_date, '2026-05-01')
         const endDate   = new Date(endStr   + 'T23:59:59')
         const startDate = new Date(startStr + 'T00:00:00')
         const now       = new Date()
         const daysLeft  = Math.max(0, Math.ceil((endDate - now) / 86_400_000))
         // isTest: still within S1 (today hasn't passed the end date)
-        const isTest    = !activeSeason || now <= endDate
-        // Derive next season dates: starts the day after current ends, lasts 4 months
-        const nextStart = isNaN(endDate) ? null : (() => { const d = new Date(endDate); d.setDate(d.getDate() + 1); return d })()
         const fmt = (d, opts) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', opts)
-        const endFmt  = fmt(endDate,  { day: 'numeric', month: 'long', year: 'numeric' })
-        const nextFmt = nextStart ? fmt(nextStart, { day: 'numeric', month: 'long', year: 'numeric' }) : '?'
+        const endFmt = fmt(endDate, { day: 'numeric', month: 'long', year: 'numeric' })
 
-        if (isTest) {
-          // S1 still active — show "ending soon + next season coming" card
-          return (
-            <div style={{
-              borderRadius: 14, overflow: 'hidden',
-              background: 'linear-gradient(135deg, rgba(251,146,60,0.10) 0%, rgba(245,158,11,0.05) 100%)',
-              border: '1px solid rgba(251,146,60,0.25)',
-            }}>
-              <div style={{
-                padding: '10px 14px 8px',
-                borderBottom: '1px solid rgba(251,146,60,0.12)',
-                display: 'flex', alignItems: 'center', gap: 10,
-              }}>
-                {/* Hourglass SVG */}
-                <div style={{
-                  width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-                  background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.25)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="#FB923C" strokeWidth="0">
-                    <path d="M2 1.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-1v1a4.5 4.5 0 0 1-2.557 4.06c-.29.139-.443.377-.443.59v.7c0 .213.154.451.443.59A4.5 4.5 0 0 1 12.5 13v1h1a.5.5 0 0 1 0 1h-11a.5.5 0 1 1 0-1h1v-1a4.5 4.5 0 0 1 2.557-4.06c.29-.139.443-.377.443-.59v-.7c0-.213-.154-.451-.443-.59A4.5 4.5 0 0 1 3.5 3V2h-1a.5.5 0 0 1-.5-.5z"/>
-                  </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#FB923C', letterSpacing: '-0.01em' }}>
-                    Temporada de Prueba — en curso
-                  </div>
-                  <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>
-                    Termina el {endFmt} · {daysLeft}d restantes
-                  </div>
-                </div>
-                <div style={{
-                  fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 6,
-                  background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.3)',
-                  color: '#FB923C', letterSpacing: '0.05em', flexShrink: 0,
-                }}>PRUEBA</div>
-              </div>
-              <div style={{ padding: '10px 14px 0' }}>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#D1D5DB', lineHeight: 1.55 }}>
-                  Estamos en la temporada de prueba. Los puntos de esta temporada <strong style={{ color: '#FB923C' }}>no cuentan para el ranking final</strong> — es para que todos aprendan cómo funciona el sistema.
-                </p>
-              </div>
-              {/* Next season coming soon strip */}
-              {nextStart && (
-                <div style={{
-                  margin: '0 14px 12px',
-                  padding: '9px 12px',
-                  borderRadius: 10,
-                  background: 'rgba(245,158,11,0.07)',
-                  border: '1px solid rgba(245,158,11,0.2)',
-                  display: 'flex', alignItems: 'center', gap: 10,
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
-                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-                  </svg>
-                  <div>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B' }}>Temporada 2 oficial — comienza el {nextFmt}</span>
-                    <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>Esos puntos sí cuentan para el Season Championship</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        }
-
-        // S2+ active — show official season card
         return (
           <div style={{
             borderRadius: 14, overflow: 'hidden',
@@ -399,7 +346,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
                   {activeSeason?.name ?? 'Temporada 2'} — Oficial
                 </div>
                 <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>
-                  {fmt(startDate, { day: 'numeric', month: 'long' })} – {fmt(endDate, { day: 'numeric', month: 'long', year: 'numeric' })} · {daysLeft}d restantes
+                  {fmt(startDate, { day: 'numeric', month: 'long' })} – {endFmt} · {daysLeft}d restantes
                 </div>
               </div>
               <div style={{
@@ -410,7 +357,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
             </div>
             <div style={{ padding: '10px 14px 12px' }}>
               <p style={{ margin: '0 0 6px', fontSize: 12, color: '#D1D5DB', lineHeight: 1.55 }}>
-                La temporada de prueba terminó. La <strong style={{ color: '#F59E0B' }}>{activeSeason?.name ?? 'Temporada 2'} es oficial</strong> — los puntos que acumules <strong style={{ color: '#FFFFFF' }}>cuentan para el ranking final</strong> y el Season Championship.
+                La <strong style={{ color: '#F59E0B' }}>{activeSeason?.name ?? 'Temporada 2'} es oficial</strong> — los puntos que acumules <strong style={{ color: '#FFFFFF' }}>cuentan para el ranking final</strong> y el Season Championship.
               </p>
               <p style={{ margin: 0, fontSize: 11, color: '#6B7280', lineHeight: 1.5 }}>
                 Top 2 por ciudad clasifica al Season Championship.
@@ -591,24 +538,158 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
     <div style={{ margin: '16px 20px', padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13 }}>{error}</div>
   )
 
-  if (!entries.length) return (
-    <div style={{ padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-      <div style={{
-        width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)',
-      }}>
-        <svg width="26" height="26" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
-          <path d={HAND_MIDDLE_PATH} />
-        </svg>
-      </div>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#4B5563' }}>No hay rankings aún</div>
-      <div style={{ fontSize: 12, color: '#374151' }}>Reporta tus resultados de torneo para aparecer aquí</div>
-    </div>
-  )
+  const PTS_MAP = { 1: 3, 2: 2, 3: 1 }
 
   return (
     <div style={{ padding: '8px 0' }}>
-      {entries.map((entry, i) => {
+      {/* Staff: award points panel */}
+      {isAdmin && game && (
+        <div style={{ margin: '0 16px 10px', borderRadius: 10, overflow: 'hidden', border: '1px solid #1F1F1F' }}>
+          <button
+            onClick={() => { setShowAward(o => !o); setAwardErr('') }}
+            style={{
+              width: '100%', padding: '9px 14px',
+              background: showAward ? 'rgba(167,139,250,0.08)' : '#111111',
+              border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              display: 'flex', alignItems: 'center', gap: 8,
+              borderBottom: showAward ? '1px solid #1F1F1F' : 'none',
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="#A78BFA" strokeWidth="0">
+              <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </svg>
+            <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: '#A78BFA', textAlign: 'left', letterSpacing: '0.04em' }}>
+              ASIGNAR PUNTOS A JUGADOR
+            </span>
+            <span style={{ fontSize: 14, color: '#4B5563' }}>{showAward ? '▲' : '▼'}</span>
+          </button>
+          {showAward && (
+            <div style={{ padding: '12px 14px 14px', background: '#0D0D0D', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {/* Step 1: search user */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 6 }}>
+                  1. BUSCAR JUGADOR
+                </div>
+                {awardUser ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'rgba(167,139,250,0.08)', borderRadius: 8, border: '1px solid rgba(167,139,250,0.25)' }}>
+                    <Avatar url={awardUser.avatar_url} size={26} />
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#E5E5E5' }}>@{awardUser.username}</span>
+                    <button onClick={() => { setAwardUser(null); setAwardQuery('') }} style={{
+                      background: 'none', border: 'none', color: '#4B5563', fontSize: 18, cursor: 'pointer', lineHeight: 1,
+                    }}>×</button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      value={awardQuery}
+                      onChange={e => setAwardQuery(e.target.value)}
+                      placeholder="@usuario..."
+                      style={{
+                        width: '100%', padding: '8px 11px',
+                        background: '#111', border: '1px solid #222', borderRadius: 8,
+                        color: '#FFF', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none',
+                      }}
+                    />
+                    {awardLoading && <div style={{ fontSize: 11, color: '#4B5563', marginTop: 4 }}>Buscando...</div>}
+                    {!awardLoading && awardResults.slice(0, 5).map(u => (
+                      <div key={u.id} onClick={() => { setAwardUser(u); setAwardResults([]) }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
+                          cursor: 'pointer', borderBottom: '1px solid #161616',
+                          borderRadius: 6, marginTop: 2,
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <Avatar url={u.avatar_url} size={24} />
+                        <span style={{ fontSize: 12, color: '#E5E5E5' }}>@{u.username}</span>
+                        {u.branch && <span style={{ fontSize: 10, color: '#4B5563', marginLeft: 'auto' }}>{u.branch}</span>}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+
+              {/* Step 2: position */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 6 }}>
+                  2. POSICIÓN
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[1, 2, 3].map(pos => {
+                    const pts = PTS_MAP[pos]
+                    const active = awardPosition === pos
+                    const colors = { 1: '#F59E0B', 2: '#9CA3AF', 3: '#B87333' }
+                    const c = colors[pos]
+                    return (
+                      <button key={pos} onClick={() => setAwardPosition(pos)} style={{
+                        flex: 1, padding: '8px 4px', borderRadius: 8, cursor: 'pointer',
+                        border: `1px solid ${active ? `${c}55` : '#2A2A2A'}`,
+                        background: active ? `${c}12` : 'transparent',
+                        fontFamily: 'Inter, sans-serif',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                      }}>
+                        <RankIcon rank={pos} size={16} />
+                        <span style={{ fontSize: 10, fontWeight: 700, color: active ? c : '#4B5563' }}>{pts}pts</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Step 3: tournament name (optional) */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 6 }}>
+                  3. TORNEO (opcional)
+                </div>
+                <input
+                  value={awardTournament}
+                  onChange={e => setAwardTournament(e.target.value)}
+                  placeholder="Nombre del torneo..."
+                  style={{
+                    width: '100%', padding: '8px 11px',
+                    background: '#111', border: '1px solid #222', borderRadius: 8,
+                    color: '#FFF', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none',
+                  }}
+                />
+              </div>
+
+              {awardErr && (
+                <div style={{ fontSize: 11, color: '#F87171', padding: '6px 10px', background: 'rgba(239,68,68,0.08)', borderRadius: 6 }}>{awardErr}</div>
+              )}
+
+              <button
+                onClick={handleAwardPoints}
+                disabled={!awardUser || awardSaving}
+                style={{
+                  width: '100%', padding: '10px', borderRadius: 9, border: 'none',
+                  background: (!awardUser || awardSaving) ? '#1A1A1A' : '#A78BFA',
+                  color: (!awardUser || awardSaving) ? '#4B5563' : '#111',
+                  fontSize: 13, fontWeight: 700, cursor: (!awardUser || awardSaving) ? 'default' : 'pointer',
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                {awardSaving ? 'Guardando...' : `Asignar +${PTS_MAP[awardPosition]}pts${awardUser ? ` a @${awardUser.username}` : ''}`}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!entries.length ? (
+        <div style={{ padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)',
+          }}>
+            <svg width="26" height="26" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
+              <path d={HAND_MIDDLE_PATH} />
+            </svg>
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#4B5563' }}>No hay rankings aún</div>
+          <div style={{ fontSize: 12, color: '#374151' }}>Reporta tus resultados de torneo para aparecer aquí</div>
+        </div>
+      ) : entries.map((entry, i) => {
         const rank = i + 1
         const m    = medal(rank)
         return (
@@ -1380,6 +1461,748 @@ function TournamentsTab({ game, branch, onViewProfile, isAdmin, openTournamentId
   )
 }
 
+// ── Liga ─────────────────────────────────────
+
+const STATUS_STYLES = {
+  upcoming: { label: 'Próxima',   bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.3)', color: '#A78BFA' },
+  active:   { label: 'Activa',    bg: 'rgba(74,222,128,0.1)',  border: 'rgba(74,222,128,0.3)',  color: '#4ADE80' },
+  finished: { label: 'Finalizada',bg: 'rgba(107,114,128,0.1)', border: 'rgba(107,114,128,0.3)', color: '#6B7280' },
+}
+
+function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpen = false }) {
+  const toast  = useToast()
+  const [open,        setOpen]        = useState(defaultOpen)
+  const [details,     setDetails]     = useState(null)   // { participants, results }
+  const [loadingDet,  setLoadingDet]  = useState(false)
+  const [detErr,      setDetErr]      = useState('')
+  const [joining,     setJoining]     = useState(false)
+
+  // Local mutable copies
+  const [curStatus,   setCurStatus]   = useState(league.status)
+  const [enrolled,    setEnrolled]    = useState(league.enrolled)
+  const [partCount,   setPartCount]   = useState(Number(league.participant_count))
+
+  // Staff panels
+  const [activeFechaId, setActiveFechaId] = useState(null)   // fecha open for positions entry
+  const [positionMap,   setPositionMap]   = useState({})      // userId → position string
+  const [savingPts,     setSavingPts]     = useState(false)
+  const [ptsErr,        setPtsErr]        = useState('')
+  const [addingFecha,   setAddingFecha]   = useState(false)
+  const [newFechaDate,  setNewFechaDate]  = useState('')
+  const [newFechaTime,  setNewFechaTime]  = useState('')
+  const [savingFecha,   setSavingFecha]   = useState(false)
+  // Search + add participant
+  const [showSearch,    setShowSearch]    = useState(false)
+  const [searchQ,       setSearchQ]       = useState('')
+  const [searchRes,     setSearchRes]     = useState([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [addedIds,      setAddedIds]      = useState({})
+  const [addTier,       setAddTier]       = useState({})      // userId → 'A'|'B'|'C'
+  // Player self-report
+  const [selfPosInput,  setSelfPosInput]  = useState('')
+  const [selfSubmitting,setSelfSubmitting]= useState(false)
+
+  const gs = league.game ? (GAME_STYLES[league.game] ?? GAME_STYLES['MTG']) : null
+  const bs = league.branch ? (BRANCH_STYLES[league.branch] ?? null) : null
+  const ss = STATUS_STYLES[curStatus] ?? STATUS_STYLES.upcoming
+
+  const fechas = league.fechas ?? []
+
+  // Load details on open
+  useEffect(() => {
+    if (!open) return
+    setLoadingDet(true); setDetErr('')
+    getLeagueDetails(league.id)
+      .then(d => {
+        setDetails(d)
+        // Pre-fill positionMap from existing results for the active fecha
+        if (activeFechaId) {
+          const m = {}
+          d.results.filter(r => r.fecha_id === activeFechaId).forEach(r => { m[r.user_id] = String(r.position ?? '') })
+          setPositionMap(m)
+        }
+      })
+      .catch(e => setDetErr(e.message))
+      .finally(() => setLoadingDet(false))
+  }, [open, league.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When switching active fecha, pre-fill positions from loaded results
+  useEffect(() => {
+    if (!details || !activeFechaId) return
+    const m = {}
+    details.results.filter(r => r.fecha_id === activeFechaId).forEach(r => { m[r.user_id] = String(r.position ?? '') })
+    setPositionMap(m)
+  }, [activeFechaId, details])
+
+  // Search users debounced
+  useEffect(() => {
+    if (!showSearch) return
+    const t = setTimeout(async () => {
+      setSearchLoading(true)
+      try {
+        const all = await searchUsers(searchQ)
+        const enrolledSet = new Set((details?.participants ?? []).map(p => p.user_id))
+        setSearchRes(all.filter(u => !enrolledSet.has(u.id)))
+      } catch { setSearchRes([]) }
+      setSearchLoading(false)
+    }, 250)
+    return () => clearTimeout(t)
+  }, [searchQ, showSearch, details])
+
+  const handleJoin = async (e) => {
+    e.stopPropagation()
+    if (joining) return
+    setJoining(true)
+    try {
+      if (enrolled) {
+        await leaveLeague(league.id)
+        setEnrolled(false)
+        setPartCount(c => c - 1)
+        toast?.('Te diste de baja de la liga', { type: 'info' })
+      } else {
+        await joinLeague(league.id)
+        setEnrolled(true)
+        setPartCount(c => c + 1)
+        toast?.(`¡Inscripto en ${league.name}!`, { type: 'success' })
+        navigator.vibrate?.(20)
+      }
+    } catch (e) {
+      toast?.(e.message || 'Error al actualizar inscripción', { type: 'error' })
+    } finally {
+      setJoining(false)
+    }
+  }
+
+  const handleStatusChange = async (newStatus) => {
+    try {
+      await updateLeagueStatus(league.id, newStatus)
+      setCurStatus(newStatus)
+      toast?.('Estado actualizado', { type: 'success' })
+    } catch (e) {
+      toast?.(e.message || 'Error al cambiar estado', { type: 'error' })
+    }
+  }
+
+  const handleSavePoints = async () => {
+    if (!activeFechaId || !details) return
+    setSavingPts(true); setPtsErr('')
+    try {
+      const toSave = details.participants.filter(p => positionMap[p.user_id] && parseInt(positionMap[p.user_id]) > 0)
+      if (toSave.length === 0) { setPtsErr('Ingresá al menos una posición'); setSavingPts(false); return }
+      await Promise.all(
+        toSave.map(p => upsertLeagueResult({
+          fechaId: activeFechaId, leagueId: league.id,
+          userId: p.user_id, tier: p.tier ?? 'A',
+          position: parseInt(positionMap[p.user_id]),
+        }))
+      )
+      const d = await getLeagueDetails(league.id)
+      setDetails(d)
+      toast?.('Posiciones guardadas ✓', { type: 'success' })
+    } catch (e) {
+      setPtsErr(e.message || 'Error al guardar posiciones')
+    }
+    setSavingPts(false)
+  }
+
+  const handleAddFecha = async () => {
+    setSavingFecha(true)
+    try {
+      await addLeagueFecha(league.id, {
+        number: fechas.length + 1,
+        date: newFechaDate,
+        startTime: newFechaTime,
+      })
+      // Reload league (optimistic update)
+      league.fechas = [...fechas, { id: `tmp-${Date.now()}`, number: fechas.length + 1, date: newFechaDate, start_time: newFechaTime, status: 'upcoming' }]
+      setAddingFecha(false)
+      setNewFechaDate('')
+      setNewFechaTime('')
+      toast?.('Fecha agregada', { type: 'success' })
+    } catch (e) {
+      toast?.(e.message || 'Error al agregar fecha', { type: 'error' })
+    }
+    setSavingFecha(false)
+  }
+
+  const handleAddParticipant = async (user) => {
+    if (addedIds[user.id]) return
+    setAddedIds(prev => ({ ...prev, [user.id]: 'adding' }))
+    try {
+      await addLeagueParticipant(league.id, user.id, addTier[user.id] || null)
+      setAddedIds(prev => ({ ...prev, [user.id]: 'added' }))
+      setPartCount(c => c + 1)
+      const d = await getLeagueDetails(league.id)
+      setDetails(d)
+    } catch {
+      setAddedIds(prev => ({ ...prev, [user.id]: false }))
+    }
+  }
+
+  // Build overall standings from results
+  const standings = (() => {
+    if (!details) return []
+    const totals = {}
+    details.results.forEach(r => {
+      totals[r.user_id] = (totals[r.user_id] ?? 0) + r.points
+    })
+    return details.participants
+      .map(p => ({
+        ...p.profiles,
+        userId: p.user_id,
+        paid: p.paid,
+        tier: p.tier,
+        total: totals[p.user_id] ?? 0,
+      }))
+      .sort((a, b) => b.total - a.total)
+  })()
+
+  const canJoin = curStatus === 'upcoming' && !isStaff
+  const entryFee = Number(league.entry_fee ?? 0)
+  const maxPlayers = Number(league.max_players ?? 0)
+  const isFull = maxPlayers > 0 && partCount >= maxPlayers
+
+  const inputSm = {
+    background: '#0F0F0F', border: '1px solid #222', borderRadius: 8,
+    color: '#FFF', fontSize: 13, fontFamily: 'Inter, sans-serif',
+    outline: 'none', padding: '7px 10px',
+  }
+
+  return (
+    <div style={{
+      margin: '0 16px 8px',
+      background: '#111111', borderRadius: 10,
+      border: `1px solid ${enrolled ? (bs?.border ?? 'rgba(167,139,250,0.3)') : '#1F1F1F'}`,
+      animation: 'fadeUp 0.3s ease both',
+      animationDelay: `${index * 0.04}s`,
+      overflow: 'hidden',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+      borderLeft: `3px solid ${bs?.dot ?? '#374151'}`,
+    }}>
+      {/* Collapsed row */}
+      <div onClick={() => setOpen(o => !o)} style={{ padding: '10px 14px 8px', cursor: 'pointer' }}>
+        {/* Row 1: name + status + chevron */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          {gs && (
+            <span style={{
+              padding: '2px 7px', borderRadius: 5, flexShrink: 0,
+              background: gs.bg, border: `1px solid ${gs.border}`,
+              color: gs.color, fontSize: 10, fontWeight: 700,
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+            }}><GameIcon game={league.game} size={10} />{league.game}</span>
+          )}
+          <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {league.name}
+          </span>
+          {/* Copy invite link */}
+          <button
+            onClick={e => {
+              e.stopPropagation()
+              const url = `${window.location.origin}/?tab=ranks&liga=${league.id}`
+              navigator.clipboard?.writeText(url).then(() => toast?.('Link copiado 🔗', { type: 'success' })).catch(() => {})
+            }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 14, color: '#4B5563', padding: '0 2px', lineHeight: 1, flexShrink: 0,
+            }}
+            title="Copiar link de invitación"
+          >🔗</button>
+          <span style={{
+            fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 5, flexShrink: 0,
+            background: ss.bg, border: `1px solid ${ss.border}`, color: ss.color,
+          }}>{ss.label}</span>
+          <span style={{ color: '#4B5563', fontSize: 14, marginLeft: 2, flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
+        </div>
+        {/* Row 2: branch · fechas count · participants · entry fee */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {league.branch && bs && (
+            <span style={{ fontSize: 10, color: bs.color, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: bs.dot, display: 'inline-block' }} />{league.branch}
+            </span>
+          )}
+          <span style={{ fontSize: 10, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <SACalendar size={10} /> {fechas.length} fecha{fechas.length !== 1 ? 's' : ''}
+          </span>
+          <span style={{ fontSize: 10, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <SAUsers size={10} /> {partCount}{maxPlayers > 0 ? `/${maxPlayers}` : ''}
+          </span>
+          {entryFee > 0 && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B' }}>${entryFee}</span>
+          )}
+          {/* Join button */}
+          {profile && (canJoin || enrolled) && (
+            <button
+              onClick={handleJoin}
+              disabled={joining || (isFull && !enrolled)}
+              style={{
+                marginLeft: 'auto', padding: '4px 12px', borderRadius: 7,
+                border: `1px solid ${enrolled ? 'rgba(239,68,68,0.35)' : 'rgba(167,139,250,0.4)'}`,
+                background: enrolled ? 'rgba(239,68,68,0.08)' : 'rgba(167,139,250,0.1)',
+                color: enrolled ? '#F87171' : '#A78BFA',
+                fontSize: 11, fontWeight: 700, cursor: joining ? 'default' : 'pointer',
+                fontFamily: 'Inter, sans-serif', flexShrink: 0,
+              }}
+            >
+              {joining ? '...' : enrolled ? 'Salir' : isFull ? 'Lleno' : 'Inscribirme'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Expanded content */}
+      {open && (
+        <div style={{ borderTop: '1px solid #1A1A1A' }}>
+          {loadingDet && (
+            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[...Array(3)].map((_, i) => <span key={i} style={sk('80%', 12, 5)} />)}
+            </div>
+          )}
+          {detErr && (
+            <div style={{ padding: '10px 14px', color: '#F87171', fontSize: 12 }}>{detErr}</div>
+          )}
+          {details && !loadingDet && (
+            <>
+              {/* Description */}
+              {league.description && (
+                <div style={{ padding: '10px 14px 0', fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
+                  {league.description}
+                </div>
+              )}
+
+              {/* Fechas list */}
+              <div style={{ padding: '10px 14px 4px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 6 }}>FECHAS</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {fechas.map(f => {
+                    const fs = STATUS_STYLES[f.status] ?? STATUS_STYLES.upcoming
+                    const isActive = activeFechaId === f.id
+                    const dateStr = f.date ? new Date(f.date + 'T12:00:00').toLocaleDateString('es', { day: '2-digit', month: 'short' }) : null
+                    return (
+                      <div key={f.id}
+                        onClick={() => isStaff && setActiveFechaId(isActive ? null : f.id)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
+                          borderRadius: 8, background: isActive ? 'rgba(167,139,250,0.06)' : '#141414',
+                          border: `1px solid ${isActive ? 'rgba(167,139,250,0.3)' : '#1F1F1F'}`,
+                          cursor: isStaff ? 'pointer' : 'default',
+                        }}
+                      >
+                        <div style={{
+                          width: 20, height: 20, borderRadius: '50%',
+                          background: '#1A1A1A', border: '1px solid #2A2A2A',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 9, fontWeight: 800, color: '#6B7280', flexShrink: 0,
+                        }}>{f.number}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#E5E5E5' }}>
+                            Fecha {f.number}
+                          </span>
+                          {dateStr && (
+                            <span style={{ fontSize: 10, color: '#4B5563', marginLeft: 6 }}>{dateStr}{f.start_time ? ` · ${f.start_time.slice(0, 5)}` : ''}</span>
+                          )}
+                        </div>
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                          background: fs.bg, border: `1px solid ${fs.border}`, color: fs.color,
+                        }}>{fs.label}</span>
+                        {/* Staff: status changer */}
+                        {isStaff && isActive && (
+                          <select
+                            value={f.status}
+                            onClick={e => e.stopPropagation()}
+                            onChange={async e => {
+                              const s = e.target.value
+                              try {
+                                await updateFechaStatus(f.id, s)
+                                f.status = s
+                                toast?.('Estado de fecha actualizado', { type: 'success' })
+                                setActiveFechaId(f.id) // force re-render
+                              } catch(ex) { toast?.(ex.message, { type: 'error' }) }
+                            }}
+                            style={{
+                              ...inputSm, fontSize: 10, padding: '3px 6px',
+                              flexShrink: 0, maxWidth: 80,
+                            }}
+                          >
+                            <option value="upcoming">Próxima</option>
+                            <option value="active">Activa</option>
+                            <option value="finished">Fin.</option>
+                          </select>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Staff: add new fecha */}
+                {isStaff && (
+                  <div style={{ marginTop: 6 }}>
+                    {addingFecha ? (
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <input type="date" value={newFechaDate} onChange={e => setNewFechaDate(e.target.value)}
+                          style={{ ...inputSm, flex: 1.5, colorScheme: 'dark' }} />
+                        <input type="time" value={newFechaTime} onChange={e => setNewFechaTime(e.target.value)}
+                          style={{ ...inputSm, flex: 1, colorScheme: 'dark' }} />
+                        <button onClick={handleAddFecha} disabled={savingFecha} style={{
+                          padding: '7px 10px', borderRadius: 7, border: 'none',
+                          background: '#FFFFFF', color: '#111', fontSize: 11, fontWeight: 700,
+                          cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0,
+                        }}>{savingFecha ? '...' : 'OK'}</button>
+                        <button onClick={() => setAddingFecha(false)} style={{
+                          background: 'none', border: 'none', color: '#4B5563',
+                          fontSize: 18, cursor: 'pointer', lineHeight: 1, flexShrink: 0,
+                        }}>×</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setAddingFecha(true)} style={{
+                        fontSize: 10, fontWeight: 700, color: '#6B7280',
+                        background: 'transparent', border: '1px dashed #2A2A2A',
+                        borderRadius: 7, padding: '5px 12px', cursor: 'pointer',
+                        fontFamily: 'Inter, sans-serif', width: '100%', marginTop: 2,
+                      }}>+ Nueva fecha</button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Staff: position entry for selected fecha (points auto-calc) */}
+              {isStaff && activeFechaId && details.participants.length > 0 && (
+                <div style={{ padding: '8px 14px 10px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#A78BFA', letterSpacing: '0.07em', marginBottom: 6 }}>
+                    POSICIONES — FECHA {fechas.find(f => f.id === activeFechaId)?.number}
+                    <span style={{ fontWeight: 400, color: '#4B5563', marginLeft: 6 }}>(puntos se calculan solos)</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {details.participants.map(p => (
+                      <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Avatar url={p.profiles?.avatar_url} size={22} />
+                        <TierBadge tier={p.tier} />
+                        <span style={{ flex: 1, fontSize: 12, color: '#E5E5E5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          @{p.profiles?.username}
+                        </span>
+                        <input
+                          type="number" min="1"
+                          value={positionMap[p.user_id] ?? ''}
+                          onChange={e => setPositionMap(prev => ({ ...prev, [p.user_id]: e.target.value }))}
+                          placeholder="pos"
+                          style={{ ...inputSm, width: 56, textAlign: 'center' }}
+                        />
+                        <span style={{ fontSize: 10, color: '#4B5563', flexShrink: 0 }}>°</span>
+                      </div>
+                    ))}
+                  </div>
+                  {ptsErr && <div style={{ fontSize: 11, color: '#F87171', marginTop: 6 }}>{ptsErr}</div>}
+                  <button onClick={handleSavePoints} disabled={savingPts} style={{
+                    marginTop: 8, width: '100%', padding: '8px', borderRadius: 8, border: 'none',
+                    background: savingPts ? '#1A1A1A' : '#A78BFA',
+                    color: savingPts ? '#555' : '#111',
+                    fontSize: 12, fontWeight: 700, cursor: savingPts ? 'default' : 'pointer',
+                    fontFamily: 'Inter, sans-serif',
+                  }}>{savingPts ? 'Guardando...' : 'Guardar posiciones'}</button>
+                </div>
+              )}
+
+              {/* Overall standings */}
+              {standings.length > 0 && (
+                <div style={{ padding: '8px 14px 12px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 6 }}>TABLA GENERAL</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {standings.map((s, i) => (
+                      <div key={s.userId} style={{
+                        display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
+                        borderRadius: 8,
+                        background: i === 0 ? 'rgba(245,158,11,0.06)' : i === 1 ? 'rgba(156,163,175,0.05)' : i === 2 ? 'rgba(184,115,51,0.05)' : 'transparent',
+                        border: `1px solid ${i === 0 ? 'rgba(245,158,11,0.15)' : i === 1 ? 'rgba(156,163,175,0.1)' : i === 2 ? 'rgba(184,115,51,0.1)' : 'transparent'}`,
+                      }}>
+                        <span style={{
+                          width: 18, fontSize: 11, fontWeight: 800, textAlign: 'center', flexShrink: 0,
+                          color: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : i === 2 ? '#B87333' : '#374151',
+                        }}>{i + 1}</span>
+                        <Avatar url={s.avatar_url} size={24} />
+                        <TierBadge tier={s.tier} />
+                        <span
+                          onClick={() => onViewProfile && onViewProfile(s.userId)}
+                          style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#E5E5E5', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                        >@{s.username}</span>
+                        {isStaff && (
+                          <span style={{
+                            fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                            background: s.paid ? 'rgba(74,222,128,0.1)' : 'rgba(239,68,68,0.1)',
+                            border: `1px solid ${s.paid ? 'rgba(74,222,128,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                            color: s.paid ? '#4ADE80' : '#F87171', cursor: 'pointer',
+                          }}
+                            onClick={async () => {
+                              try {
+                                await setLeaguePayment(league.id, s.userId, !s.paid)
+                                const d = await getLeagueDetails(league.id)
+                                setDetails(d)
+                              } catch(ex) { toast?.(ex.message, { type: 'error' }) }
+                            }}
+                          >{s.paid ? '✓ Pagó' : 'Pend.'}</span>
+                        )}
+                        <span style={{ fontSize: 13, fontWeight: 800, color: i < 3 ? ['#F59E0B','#9CA3AF','#B87333'][i] : '#6B7280', flexShrink: 0 }}>
+                          {s.total}<span style={{ fontSize: 9, fontWeight: 600, color: '#4B5563', marginLeft: 2 }}>pts</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {standings.length === 0 && details.participants.length === 0 && (
+                <div style={{ padding: '12px 14px', fontSize: 12, color: '#374151', textAlign: 'center' }}>
+                  Aún no hay participantes inscriptos.
+                </div>
+              )}
+
+              {/* Player self-report: visible when enrolled, not staff, and a fecha is active */}
+              {!isStaff && enrolled && (() => {
+                const activeFecha = fechas.find(f => f.status === 'active')
+                if (!activeFecha) return null
+                const myResult = details.results.find(r => r.fecha_id === activeFecha.id && r.user_id === profile?.id)
+                return (
+                  <div style={{ padding: '8px 14px 14px', borderTop: '1px solid #1A1A1A' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#4ADE80', letterSpacing: '0.07em', marginBottom: 8 }}>
+                      MI RESULTADO — FECHA {activeFecha.number}
+                    </div>
+                    {myResult ? (
+                      <div style={{ fontSize: 12, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        Reportaste posición
+                        <span style={{ color: '#E5E5E5', fontWeight: 700 }}>{myResult.position}°</span>
+                        →
+                        <span style={{ color: '#4ADE80', fontWeight: 700 }}>{myResult.points} pts</span>
+                        <span style={{ fontSize: 10, color: '#374151', marginLeft: 4 }}>(Tier {myResult.tier})</span>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span style={{ fontSize: 12, color: '#6B7280', flexShrink: 0 }}>Tu posición:</span>
+                        <input
+                          type="number" min="1" max="24"
+                          value={selfPosInput}
+                          onChange={e => setSelfPosInput(e.target.value)}
+                          placeholder="ej. 3"
+                          style={{ ...inputSm, width: 60, textAlign: 'center' }}
+                        />
+                        <button
+                          onClick={async () => {
+                            if (!selfPosInput || parseInt(selfPosInput) < 1) return
+                            setSelfSubmitting(true)
+                            try {
+                              await submitMyResult({ fechaId: activeFecha.id, leagueId: league.id, position: parseInt(selfPosInput) })
+                              setSelfPosInput('')
+                              const d = await getLeagueDetails(league.id)
+                              setDetails(d)
+                              toast?.('Posición reportada ✓', { type: 'success' })
+                            } catch(e) { toast?.(e.message, { type: 'error' }) }
+                            setSelfSubmitting(false)
+                          }}
+                          disabled={selfSubmitting || !selfPosInput}
+                          style={{
+                            padding: '7px 14px', borderRadius: 8, border: 'none', flexShrink: 0,
+                            background: selfSubmitting || !selfPosInput ? '#1A1A1A' : '#4ADE80',
+                            color: selfSubmitting || !selfPosInput ? '#555' : '#111',
+                            fontSize: 12, fontWeight: 700, cursor: selfSubmitting || !selfPosInput ? 'default' : 'pointer',
+                            fontFamily: 'Inter, sans-serif',
+                          }}
+                        >
+                          {selfSubmitting ? '...' : 'Confirmar'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* Staff: add participants search */}
+              {isStaff && (
+                <div style={{ padding: '0 14px 12px' }}>
+                  {!showSearch ? (
+                    <button onClick={() => setShowSearch(true)} style={{
+                      fontSize: 11, fontWeight: 700, color: '#A78BFA',
+                      background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.25)',
+                      borderRadius: 8, padding: '7px 14px', cursor: 'pointer',
+                      fontFamily: 'Inter, sans-serif', width: '100%',
+                    }}>+ Agregar participante</button>
+                  ) : (
+                    <div>
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                        <input value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                          placeholder="Buscar usuario..." style={{ ...inputSm, flex: 1 }} />
+                        <button onClick={() => { setShowSearch(false); setSearchQ(''); setSearchRes([]) }} style={{
+                          background: 'none', border: 'none', color: '#4B5563',
+                          fontSize: 18, cursor: 'pointer', lineHeight: 1,
+                        }}>×</button>
+                      </div>
+                      {searchLoading && <div style={{ fontSize: 11, color: '#4B5563', padding: '4px 0' }}>Buscando...</div>}
+                      {searchRes.map(u => (
+                        <div key={u.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0',
+                          borderBottom: '1px solid #1A1A1A',
+                        }}>
+                          <Avatar url={u.avatar_url} size={26} />
+                          <span style={{ flex: 1, fontSize: 12, color: '#E5E5E5' }}>@{u.username}</span>
+                          {addedIds[u.id] !== 'added' && (
+                            <select
+                              value={addTier[u.id] ?? ''}
+                              onChange={e => setAddTier(prev => ({ ...prev, [u.id]: e.target.value }))}
+                              style={{ ...inputSm, fontSize: 10, padding: '3px 6px', width: 62, flexShrink: 0 }}
+                            >
+                              <option value="">Tier</option>
+                              <option value="A">Tier A</option>
+                              <option value="B">Tier B</option>
+                              <option value="C">Tier C</option>
+                            </select>
+                          )}
+                          <button
+                            onClick={() => handleAddParticipant(u)}
+                            disabled={addedIds[u.id] === 'adding' || addedIds[u.id] === 'added'}
+                            style={{
+                              padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                              background: addedIds[u.id] === 'added' ? 'rgba(74,222,128,0.15)' : '#2A2A2A',
+                              color: addedIds[u.id] === 'added' ? '#4ADE80' : '#9CA3AF',
+                              fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                            }}
+                          >
+                            {addedIds[u.id] === 'adding' ? '...' : addedIds[u.id] === 'added' ? '✓' : 'Agregar'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Staff: league status + delete */}
+              {isStaff && (
+                <div style={{ padding: '0 14px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ flex: 1, fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em' }}>ESTADO LIGA</div>
+                  {['upcoming', 'active', 'finished'].map(s => {
+                    const ss2 = STATUS_STYLES[s]
+                    return (
+                      <button key={s} onClick={() => handleStatusChange(s)} style={{
+                        padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
+                        border: `1px solid ${curStatus === s ? ss2.border : '#2A2A2A'}`,
+                        background: curStatus === s ? ss2.bg : 'transparent',
+                        color: curStatus === s ? ss2.color : '#4B5563',
+                        fontSize: 10, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                      }}>{ss2.label}</button>
+                    )
+                  })}
+                  <button onClick={async () => {
+                    if (!confirm(`¿Eliminar la liga "${league.name}"?`)) return
+                    try {
+                      await deleteLeague(league.id)
+                      toast?.('Liga eliminada', { type: 'info' })
+                      // Parent re-fetch is needed; simple page reload as fallback
+                      window.dispatchEvent(new CustomEvent('league-deleted', { detail: league.id }))
+                    } catch(e) { toast?.(e.message, { type: 'error' }) }
+                  }} style={{
+                    padding: '4px 8px', borderRadius: 6, cursor: 'pointer',
+                    border: '1px solid rgba(239,68,68,0.25)',
+                    background: 'rgba(239,68,68,0.06)',
+                    color: '#F87171', fontSize: 11, fontWeight: 700,
+                    fontFamily: 'Inter, sans-serif', flexShrink: 0,
+                  }}>✗</button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const TIER_STYLE = {
+  A: { color: '#FBB924', bg: 'rgba(251,185,36,0.12)', border: 'rgba(251,185,36,0.3)' },
+  B: { color: '#A78BFA', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.3)' },
+  C: { color: '#22D3EE', bg: 'rgba(34,211,238,0.12)', border: 'rgba(34,211,238,0.3)' },
+}
+function TierBadge({ tier }) {
+  if (!tier) return null
+  const s = TIER_STYLE[tier] ?? {}
+  return (
+    <span style={{
+      fontSize: 9, fontWeight: 800, padding: '1px 5px', borderRadius: 4,
+      background: s.bg, border: `1px solid ${s.border}`, color: s.color,
+      letterSpacing: '0.05em', flexShrink: 0,
+    }}>T{tier}</span>
+  )
+}
+
+function LeagueTab({ game, branch, profile, isStaff, onViewProfile, onCreateLeague, openLeagueId }) {
+  const [leagues,  setLeagues]  = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState('')
+
+  const load = useCallback(() => {
+    setLoading(true); setError('')
+    getLeagues({ game, branch })
+      .then(setLeagues)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [game, branch])
+
+  useEffect(() => { load() }, [load])
+
+  // Listen for delete events to refresh list
+  useEffect(() => {
+    const handler = () => load()
+    window.addEventListener('league-deleted', handler)
+    return () => window.removeEventListener('league-deleted', handler)
+  }, [load])
+
+  if (loading) return (
+    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {[...Array(2)].map((_, i) => (
+        <div key={i} style={{ borderRadius: 10, background: '#111', border: '1px solid #1F1F1F', padding: '12px 14px' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <span style={sk(50, 16, 5)} /><span style={sk('50%', 16, 5)} />
+          </div>
+          <span style={sk('70%', 12, 5)} />
+        </div>
+      ))}
+    </div>
+  )
+
+  if (error) return (
+    <div style={{ padding: '20px 16px', color: '#F87171', fontSize: 13 }}>{error}</div>
+  )
+
+  if (!leagues.length) return (
+    <div style={{ padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+      <div style={{
+        width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.18)',
+        fontSize: 28,
+      }}>🏅</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#4B5563' }}>No hay ligas{game ? ` de ${game}` : ''}</div>
+      {isStaff && (
+        <button onClick={onCreateLeague} style={{
+          marginTop: 8, padding: '10px 24px', borderRadius: 10, border: 'none',
+          background: '#FFFFFF', color: '#111', fontSize: 13, fontWeight: 700,
+          cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+        }}>Crear primera liga</button>
+      )}
+    </div>
+  )
+
+  return (
+    <div style={{ paddingTop: 4, paddingBottom: 8 }}>
+      {leagues.map((l, i) => (
+        <LeagueCard
+          key={l.id}
+          league={l}
+          profile={profile}
+          isStaff={isStaff}
+          onViewProfile={onViewProfile}
+          index={i}
+          defaultOpen={l.id === openLeagueId}
+        />
+      ))}
+    </div>
+  )
+}
+
 // ── Claims (staff) ───────────────────────────
 function ClaimsTab({ isStaff }) {
   const [claims,  setClaims]  = useState([])
@@ -1517,7 +2340,7 @@ function ClaimsTab({ isStaff }) {
 }
 
 // ── Main screen ──────────────────────────────
-export default function RankingsScreen({ profile, isStaff, onReportClaim, onCreateTournament, onViewProfile, openTournamentId }) {
+export default function RankingsScreen({ profile, isStaff, onReportClaim, onCreateTournament, onCreateLeague, onViewProfile, openTournamentId, openLeagueId }) {
   // Start on Torneos tab when arriving via a tournament deep link
   const [tab,           setTab]          = useState(openTournamentId ? 'tournaments' : 'leaderboard')
   const [game,          setGame]         = useState(null)
@@ -1543,12 +2366,14 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
     setPulsing(false)
     clearTimeout(pulseTimer.current)
     if (tab === 'tournaments') onCreateTournament()
+    else if (tab === 'liga') onCreateLeague?.()
     else onReportClaim()
   }
 
   const tabs = [
     { id: 'leaderboard', label: 'Rankings' },
     { id: 'tournaments', label: 'Torneos' },
+    { id: 'liga',        label: 'Liga' },
   ]
 
   return (
@@ -1566,10 +2391,10 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
             }}>{t.label}</button>
           ))}
         </div>
-        {tab === 'leaderboard' || (tab === 'tournaments' && isStaff) ? (
+        {tab === 'leaderboard' || (tab === 'tournaments' && isStaff) || (tab === 'liga' && isStaff) ? (
           <button
             onClick={handlePlusClick}
-            title={tab === 'tournaments' ? 'Crear torneo' : 'Reportar resultado'}
+            title={tab === 'tournaments' ? 'Crear torneo' : tab === 'liga' ? 'Crear liga' : 'Reportar resultado'}
             style={{
               flexShrink: 0, width: 34, height: 34, borderRadius: 9,
               border: `1.5px solid ${pulsing ? 'rgba(167,139,250,0.6)' : '#2A2A2A'}`,
@@ -1654,10 +2479,11 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
       {/* Season banner — compact version, only when a game is selected (empty state has its own full version) */}
       {tab === 'leaderboard' && game && <SeasonBanner season={activeSeason} />}
 
-      {['leaderboard', 'tournaments'].map(t => (
+      {['leaderboard', 'tournaments', 'liga'].map(t => (
         <div key={t} style={{ display: t === tab ? 'block' : 'none' }}>
           {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} />}
           {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={profile?.role === 'admin'} openTournamentId={openTournamentId} />}
+          {t === 'liga' && <LeagueTab key={`${game}-${branch}`} game={game} branch={branch} profile={profile} isStaff={isStaff} onViewProfile={onViewProfile} onCreateLeague={onCreateLeague} openLeagueId={openLeagueId} />}
         </div>
       ))}
     </div>

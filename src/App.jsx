@@ -17,6 +17,7 @@ import TrackingScreen, { CreatePackageModal } from './screens/TrackingScreen'
 import CreatePostModal       from './screens/CreatePostModal'
 import ClaimModal            from './screens/ClaimModal'
 import CreateTournamentModal from './screens/CreateTournamentModal'
+import CreateLeagueModal     from './screens/CreateLeagueModal'
 import AdminScreen           from './screens/AdminScreen'
 import AuctionScreen         from './screens/AuctionScreen'
 import QuestHubScreen        from './screens/QuestHubScreen'
@@ -169,18 +170,18 @@ function GuestGateModal({ onLogin, onSignup, onClose }) {
   )
 }
 
-function AuthFlow({ onGuest, initialScreen, onDone }) {
+function AuthFlow({ onGuest, initialScreen, onDone, oauthError }) {
   const [screen, setScreen] = useState(initialScreen ?? 'opening')
   const back = onDone ? onDone : () => setScreen('opening')
-  if (screen === 'opening')        return <OpeningScreen        onSignIn={() => setScreen('login')}   onSignUp={() => setScreen('signup')} onGuest={onGuest} />
+  if (screen === 'opening')        return <OpeningScreen        onSignIn={() => setScreen('login')}   onSignUp={() => setScreen('signup')} onGuest={onGuest} oauthError={oauthError} />
   if (screen === 'signup')         return <SignupScreen         onEmail={() => setScreen('email-signup')} onLogin={() => setScreen('login')} />
   if (screen === 'email-signup')   return <EmailSignupScreen    onBack={() => setScreen('signup')}   onDone={() => setScreen('login')} />
-  if (screen === 'login')          return <LoginScreen          onBack={back}  onSignUp={() => setScreen('signup')} onForgot={() => setScreen('forgot')} />
+  if (screen === 'login')          return <LoginScreen          onBack={back}  onSignUp={() => setScreen('signup')} onForgot={() => setScreen('forgot')} oauthError={oauthError} />
   if (screen === 'forgot')         return <ForgotPasswordScreen onBack={() => setScreen('login')}    onDone={() => setScreen('login')} />
   return null
 }
 
-function MainApp({ initialTab, openTournamentId } = {}) {
+function MainApp({ initialTab, openTournamentId, openLeagueId } = {}) {
   const { user, profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
   const { isGuest, requireAuth } = useGuest()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
@@ -190,6 +191,7 @@ function MainApp({ initialTab, openTournamentId } = {}) {
   const [showPost,        setShowPost]       = useState(false)
   const [showClaim,       setShowClaim]      = useState(false)
   const [showTournament,  setShowTournament] = useState(false)
+  const [showLeague,      setShowLeague]     = useState(false)
   const [showAdmin,       setShowAdmin]      = useState(false)
   const [viewingUserId,   setViewingUserId]  = useState(null)
   const [showEditProfile, setShowEditProfile]= useState(false)
@@ -273,7 +275,7 @@ function MainApp({ initialTab, openTournamentId } = {}) {
     // Shop is visible to everyone; ShopScreen internally gates add/edit/delete
     // behind canEdit = isOwner || isStaff, so regular users see a read-only catalog.
     shop:     <ShopScreen isOwner={isOwner} isStaff={isStaff} />,
-    ranks:    <RankingsScreen profile={profile} isStaff={isStaff} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onViewProfile={handleViewProfile} openTournamentId={openTournamentId} />,
+    ranks:    <RankingsScreen profile={profile} isStaff={isStaff} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onCreateLeague={() => setShowLeague(true)} onViewProfile={handleViewProfile} openTournamentId={openTournamentId} openLeagueId={openLeagueId} />,
     folder:   <FolderScreen   profile={profile} />,
     search:   <SearchScreen   onViewProfile={handleViewProfile} />,
   }), [profile, isStaff, isOwner, handleViewProfile, feedRefreshKey])
@@ -316,6 +318,7 @@ const needsTerms = profile && !profile.terms_accepted_at
       )}
       {showClaim      && <ClaimModal            onClose={() => setShowClaim(false)} isStaff={isStaff} />}
       {showTournament && <CreateTournamentModal onClose={() => setShowTournament(false)} defaultBranch={(isOwner || isAdmin) ? null : (profile?.branch ?? null)} />}
+      {showLeague     && <CreateLeagueModal     onClose={() => setShowLeague(false)}     defaultBranch={(isOwner || isAdmin) ? null : (profile?.branch ?? null)} />}
       {showAdmin && <AdminScreen     onClose={() => setShowAdmin(false)} />}
       {showAuction && <AuctionScreen isStaff={isStaff} onClose={() => setShowAuction(false)} />}
       {showHub && (
@@ -547,20 +550,29 @@ function AppInner() {
 
   // Deep link: ?tournament=TOURNAMENT_ID  — opens a specific tournament as guest
   //            ?tab=ranks                 — opens the tournaments tab as guest (e.g. from email CTA)
-  // Read both params before cleaning the URL (replaceState empties search immediately).
+  // Also captures ?error= / ?error_description= from failed OAuth redirects (Discord, etc.)
+  // Read all params before cleaning the URL (replaceState empties search immediately).
   const [deepLinks] = useState(() => {
     const params = new URLSearchParams(window.location.search)
     const tournament = params.get('tournament') ?? null
+    const liga       = params.get('liga')       ?? null
     const tab        = params.get('tab')        ?? null
-    if (tournament || tab) window.history.replaceState(null, '', window.location.pathname)
-    return { tournament, tab }
+    // Capture OAuth error from failed redirect (e.g. Discord email conflict)
+    const oauthErr   = params.get('error_description') ?? params.get('error') ?? null
+    // Track whether we arrived via a Discord/OAuth redirect (?code=).
+    // Used to show "Conectando con Discord…" in the loading state and to
+    // detect when the exchange timed out (arrived via OAuth but ended up with no session).
+    const wasOAuthCallback = params.has('code')
+    if (tournament || tab || liga) window.history.replaceState(null, '', window.location.pathname)
+    return { tournament, liga, tab, oauthErr, wasOAuthCallback }
   })
   const deepLinkTournament = deepLinks.tournament
+  const deepLinkLeagueId   = deepLinks.liga
   const deepLinkTab        = deepLinks.tab
 
   // Auto-enter guest mode when arriving via tournament or tab deep-link and not logged in.
   // If user is already logged in (from localStorage) this stays false.
-  const [isGuest,       setIsGuest]       = useState(() => !user && (!!deepLinkTournament || deepLinkTab === 'ranks'))
+  const [isGuest,       setIsGuest]       = useState(() => !user && (!!deepLinkTournament || !!deepLinkLeagueId || deepLinkTab === 'ranks'))
   const [gateScreen,    setGateScreen]    = useState(null) // null | 'login' | 'signup'
   const [showGateModal, setShowGateModal] = useState(false)
 
@@ -578,7 +590,7 @@ function AppInner() {
     // removal is safe to do on first render.
     // Note: ?tournament= is already consumed above in the deepLinkTournament useState.
     const params = new URLSearchParams(window.location.search)
-    if (params.has('code')) {
+    if (params.has('code') || params.has('error') || params.has('error_description')) {
       window.history.replaceState(null, '', window.location.pathname)
     }
   }, [])
@@ -603,7 +615,7 @@ function AppInner() {
   if (loading) return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#0A0A0A', gap: 16 }}>
       <img src={questLogo} alt="Quest" style={{ width: 110, animation: 'bounce 0.9s ease infinite' }} />
-      {new URLSearchParams(window.location.search).has('code') && (
+      {deepLinks.wasOAuthCallback && (
         <span style={{ fontSize: 13, color: '#4B5563', fontFamily: 'Inter, sans-serif' }}>
           Conectando con Discord…
         </span>
@@ -654,8 +666,9 @@ function AppInner() {
     return (
       <GuestContext.Provider value={guestValue}>
         <MainApp
-          initialTab={(deepLinkTournament || deepLinkTab === 'ranks') ? 'ranks' : undefined}
+          initialTab={(deepLinkTournament || deepLinkLeagueId || deepLinkTab === 'ranks') ? 'ranks' : undefined}
           openTournamentId={deepLinkTournament}
+          openLeagueId={deepLinkLeagueId}
         />
         {showGateModal && (
           <GuestGateModal
@@ -675,7 +688,16 @@ function AppInner() {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-      <AuthFlow onGuest={() => setIsGuest(true)} />
+      <AuthFlow
+        onGuest={() => setIsGuest(true)}
+        oauthError={
+          // Explicit error from Supabase redirect (?error= in URL) takes priority.
+          // If we came via Discord (?code=) but still ended up without a session,
+          // the PKCE exchange silently failed — show a generic retry message.
+          deepLinks.oauthErr
+            ?? (deepLinks.wasOAuthCallback ? 'No se pudo conectar con Discord. Intentá de nuevo o ingresá con tu email.' : null)
+        }
+      />
     </div>
   )
 }

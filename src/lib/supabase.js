@@ -2338,11 +2338,11 @@ export async function getLeagues({ game = null, branch = null } = {}) {
   const { data: { session } } = await supabase.auth.getSession()
   const uid = session?.user?.id ?? null
 
+  // Fetch leagues + fechas (no embedded participants to avoid schema-cache FK issues)
   let q = supabase
     .from('leagues')
     .select(`
       id, name, game, branch, description, entry_fee, max_players, status, created_at,
-      league_participants(count),
       league_fechas(id, number, date, start_time, status)
     `)
     .order('created_at', { ascending: false })
@@ -2352,42 +2352,48 @@ export async function getLeagues({ game = null, branch = null } = {}) {
 
   const { data, error } = await q
   if (error) throw error
+  if (!data?.length) return []
 
-  // Attach user's own enrollment if logged in
-  let enrolled = new Set()
-  if (uid && data?.length) {
-    const ids = data.map(l => l.id)
-    const { data: parts } = await supabase
-      .from('league_participants')
-      .select('league_id, paid')
-      .eq('user_id', uid)
-      .in('league_id', ids)
-    parts?.forEach(p => enrolled.add(p.league_id))
-  }
+  const ids = data.map(l => l.id)
 
-  return (data ?? []).map(l => ({
+  // Get participant counts + own enrollment in parallel
+  const [{ data: allParts }, { data: myParts }] = await Promise.all([
+    supabase.from('league_participants').select('league_id').in('league_id', ids),
+    uid
+      ? supabase.from('league_participants').select('league_id').eq('user_id', uid).in('league_id', ids)
+      : Promise.resolve({ data: [] }),
+  ])
+
+  const countMap = {}
+  allParts?.forEach(r => { countMap[r.league_id] = (countMap[r.league_id] ?? 0) + 1 })
+  const enrolledSet = new Set((myParts ?? []).map(r => r.league_id))
+
+  return data.map(l => ({
     ...l,
-    participant_count: l.league_participants?.[0]?.count ?? 0,
+    participant_count: countMap[l.id] ?? 0,
     fechas: (l.league_fechas ?? []).sort((a, b) => a.number - b.number),
-    enrolled: enrolled.has(l.id),
+    enrolled: enrolledSet.has(l.id),
   }))
 }
 
 /** Fetch participants + results for a single league (for standings). */
 export async function getLeagueDetails(leagueId) {
-  const [{ data: parts, error: pe }, { data: results, error: re }] = await Promise.all([
+  const [partsRes, resultsRes] = await Promise.all([
     supabase
       .from('league_participants')
-      .select('user_id, paid, joined_at, profiles:user_id(id, username, avatar_url, role, is_owner)')
+      .select('user_id, paid, joined_at, tier, profiles:user_id(id, username, avatar_url, role, is_owner)')
       .eq('league_id', leagueId),
     supabase
-      .from('league_results')
-      .select('id, fecha_id, user_id, points, position')
+      .from('league_fecha_results')
+      .select('id, fecha_id, user_id, tier, points, position')
       .eq('league_id', leagueId),
   ])
-  if (pe) throw pe
-  if (re) throw re
-  return { participants: parts ?? [], results: results ?? [] }
+  if (partsRes.error) throw partsRes.error
+  // Results table might not be cached yet — return empty array instead of crashing
+  return {
+    participants: partsRes.data ?? [],
+    results: resultsRes.error ? [] : (resultsRes.data ?? []),
+  }
 }
 
 /** Create a league + initial fechas in one call. */
@@ -2464,14 +2470,41 @@ export async function updateFechaStatus(fechaId, status) {
   if (error) throw error
 }
 
-/** Upsert a result row (staff enters points for a user in a fecha). */
-export async function upsertLeagueResult({ fechaId, leagueId, userId, points, position = null }) {
+/** Upsert a result row (staff enters position for a user → points auto-calculated). */
+export async function upsertLeagueResult({ fechaId, leagueId, userId, tier, position }) {
   const { data: { session } } = await supabase.auth.getSession()
   const { error } = await supabase
-    .from('league_results')
+    .from('league_fecha_results')
     .upsert(
       { fecha_id: fechaId, league_id: leagueId, user_id: userId,
-        points, position, recorded_by: session?.user?.id ?? null },
+        tier: tier ?? 'A', position: parseInt(position) || 1,
+        recorded_by: session?.user?.id ?? null },
+      { onConflict: 'fecha_id,user_id' }
+    )
+  if (error) throw error
+}
+
+/** Player self-reports their finishing position for a fecha.
+ *  Tier is looked up from league_participants. Points auto-calculated by trigger. */
+export async function submitMyResult({ fechaId, leagueId, position }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
+  const uid = session.user.id
+
+  const { data: part, error: pe } = await supabase
+    .from('league_participants')
+    .select('tier')
+    .eq('league_id', leagueId)
+    .eq('user_id', uid)
+    .single()
+  if (pe) throw pe
+  if (!part?.tier) throw new Error('Tu tier no está asignado aún. Consultá al staff.')
+
+  const { error } = await supabase
+    .from('league_fecha_results')
+    .upsert(
+      { fecha_id: fechaId, league_id: leagueId, user_id: uid,
+        tier: part.tier, position: parseInt(position) || 1, recorded_by: uid },
       { onConflict: 'fecha_id,user_id' }
     )
   if (error) throw error
@@ -2485,11 +2518,14 @@ export async function addLeagueFecha(leagueId, { number, date, startTime }) {
   if (error) throw error
 }
 
-/** Staff adds a user to a league (even while active). */
-export async function addLeagueParticipant(leagueId, userId) {
+/** Staff adds a user to a league with optional tier assignment. */
+export async function addLeagueParticipant(leagueId, userId, tier = null) {
   const { error } = await supabase
     .from('league_participants')
-    .upsert({ league_id: leagueId, user_id: userId }, { onConflict: 'league_id,user_id', ignoreDuplicates: true })
+    .upsert(
+      { league_id: leagueId, user_id: userId, tier: tier || null },
+      { onConflict: 'league_id,user_id' }
+    )
   if (error) throw error
 }
 
