@@ -1681,9 +1681,9 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
       borderLeft: `3px solid ${bs?.dot ?? '#374151'}`,
     }}>
       {/* Collapsed row */}
-      <div onClick={() => setOpen(o => !o)} style={{ padding: '10px 14px 8px', cursor: 'pointer' }}>
+      <div onClick={() => setOpen(o => !o)} style={{ padding: '13px 14px 10px', cursor: 'pointer' }}>
         {/* Row 1: name + status + chevron */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           {gs && (
             <span style={{
               padding: '2px 7px', borderRadius: 5, flexShrink: 0,
@@ -1806,8 +1806,8 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                       <div key={f.id}
                         onClick={() => isStaff && setActiveFechaId(isActive ? null : f.id)}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
-                          borderRadius: 8, background: isActive ? 'rgba(167,139,250,0.06)' : '#141414',
+                          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                          borderRadius: 10, background: isActive ? 'rgba(167,139,250,0.06)' : '#141414',
                           border: `1px solid ${isActive ? 'rgba(167,139,250,0.3)' : '#1F1F1F'}`,
                           cursor: isStaff ? 'pointer' : 'default',
                         }}
@@ -1991,46 +1991,52 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                     </div>
                     {myResult ? (
                       <div style={{ fontSize: 12, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        Reportaste posición
+                        Terminaste
                         <span style={{ color: '#E5E5E5', fontWeight: 700 }}>{myResult.position}°</span>
                         →
                         <span style={{ color: '#4ADE80', fontWeight: 700 }}>{myResult.points} pts</span>
-                        <span style={{ fontSize: 10, color: '#374151', marginLeft: 4 }}>(Tier {myResult.tier})</span>
+                        <span style={{ fontSize: 10, color: '#374151', marginLeft: 2 }}>Tier {myResult.tier}</span>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span style={{ fontSize: 12, color: '#6B7280', flexShrink: 0 }}>Tu posición:</span>
-                        <input
-                          type="number" min="1" max="24"
-                          value={selfPosInput}
-                          onChange={e => setSelfPosInput(e.target.value)}
-                          placeholder="ej. 3"
-                          style={{ ...inputSm, width: 60, textAlign: 'center' }}
-                        />
-                        <button
-                          onClick={async () => {
-                            if (!selfPosInput || parseInt(selfPosInput) < 1) return
-                            setSelfSubmitting(true)
-                            try {
-                              await submitMyResult({ fechaId: activeFecha.id, leagueId: league.id, position: parseInt(selfPosInput) })
-                              setSelfPosInput('')
-                              const d = await getLeagueDetails(league.id)
-                              setDetails(d)
-                              toast?.('Posición reportada ✓', { type: 'success' })
-                            } catch(e) { toast?.(e.message, { type: 'error' }) }
-                            setSelfSubmitting(false)
-                          }}
-                          disabled={selfSubmitting || !selfPosInput}
-                          style={{
-                            padding: '7px 14px', borderRadius: 8, border: 'none', flexShrink: 0,
-                            background: selfSubmitting || !selfPosInput ? '#1A1A1A' : '#4ADE80',
-                            color: selfSubmitting || !selfPosInput ? '#555' : '#111',
-                            fontSize: 12, fontWeight: 700, cursor: selfSubmitting || !selfPosInput ? 'default' : 'pointer',
-                            fontFamily: 'Inter, sans-serif',
-                          }}
-                        >
-                          {selfSubmitting ? '...' : 'Confirmar'}
-                        </button>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 10 }}>
+                          ¿En qué posición terminaste?
+                        </div>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(6, 1fr)',
+                          gap: 6,
+                        }}>
+                          {Array.from({ length: maxPlayers > 0 ? maxPlayers : 24 }, (_, i) => i + 1).map(pos => (
+                            <button
+                              key={pos}
+                              disabled={selfSubmitting}
+                              onClick={async () => {
+                                setSelfSubmitting(true)
+                                setSelfPosInput(String(pos))
+                                try {
+                                  await submitMyResult({ fechaId: activeFecha.id, leagueId: league.id, position: pos })
+                                  setSelfPosInput('')
+                                  const d = await getLeagueDetails(league.id)
+                                  setDetails(d)
+                                  toast?.('Posición reportada ✓', { type: 'success' })
+                                } catch(e) { toast?.(e.message, { type: 'error' }) }
+                                setSelfSubmitting(false)
+                              }}
+                              style={{
+                                padding: '9px 4px', borderRadius: 8, border: '1px solid #2A2A2A',
+                                background: selfSubmitting && selfPosInput === String(pos) ? '#4ADE80' : '#141414',
+                                color: selfSubmitting && selfPosInput === String(pos) ? '#111' : '#E5E5E5',
+                                fontSize: 13, fontWeight: 700, cursor: selfSubmitting ? 'default' : 'pointer',
+                                fontFamily: 'Inter, sans-serif', textAlign: 'center',
+                                opacity: selfSubmitting && selfPosInput !== String(pos) ? 0.4 : 1,
+                                transition: 'background 0.15s',
+                              }}
+                            >
+                              {pos}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
