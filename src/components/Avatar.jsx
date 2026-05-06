@@ -43,8 +43,16 @@ export default function Avatar({ url, size = 36, fontSize, role, isOwner }) {
     <span style={{ fontSize: fs, lineHeight: 1 }}>👤</span>
   )
 
-  // No ring → return content directly (parent controls size)
-  if (!ring) return inner
+  // No ring → wrap in a size-constrained circle so the image can't overflow
+  if (!ring) return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      overflow: 'hidden', flexShrink: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {inner}
+    </div>
+  )
 
   // With ring: wrap in a gradient halo. Parent already sets the size box,
   // so we fill it and use a 1.5px ring (slightly more for larger avatars).
