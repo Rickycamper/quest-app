@@ -8,7 +8,7 @@ import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
-import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, PAID_ROLES, SACalendar, SAClock, SAUsers } from '../components/Icons'
+import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, ShareIcon, PAID_ROLES, SACalendar, SAClock, SAUsers } from '../components/Icons'
 import { useToast } from '../components/Toast'
 
 // ── Inline icons (16×16, fill, strokeWidth 0) ─────────
@@ -1491,6 +1491,7 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
   const [newFechaDate,  setNewFechaDate]  = useState('')
   const [newFechaTime,  setNewFechaTime]  = useState('')
   const [savingFecha,   setSavingFecha]   = useState(false)
+  const [showAllFechas, setShowAllFechas] = useState(false)
   // Search + add participant
   const [showSearch,    setShowSearch]    = useState(false)
   const [searchQ,       setSearchQ]       = useState('')
@@ -1699,14 +1700,15 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
             onClick={e => {
               e.stopPropagation()
               const url = `${window.location.origin}/?tab=ranks&liga=${league.id}`
-              navigator.clipboard?.writeText(url).then(() => toast?.('Link copiado 🔗', { type: 'success' })).catch(() => {})
+              navigator.clipboard?.writeText(url).then(() => toast?.('Link copiado', { type: 'success' })).catch(() => {})
             }}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 14, color: '#4B5563', padding: '0 2px', lineHeight: 1, flexShrink: 0,
+              color: '#4B5563', padding: '0 2px', lineHeight: 1, flexShrink: 0,
+              display: 'flex', alignItems: 'center',
             }}
             title="Copiar link de invitación"
-          >🔗</button>
+          ><ShareIcon size={13} color="#4B5563" /></button>
           <span style={{
             fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 5, flexShrink: 0,
             background: ss.bg, border: `1px solid ${ss.border}`, color: ss.color,
@@ -1771,9 +1773,32 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
 
               {/* Fechas list */}
               <div style={{ padding: '10px 14px 4px' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 6 }}>FECHAS</div>
+                <div
+                  onClick={() => fechas.length > 1 && setShowAllFechas(v => !v)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    marginBottom: 6, cursor: fechas.length > 1 ? 'pointer' : 'default',
+                  }}
+                >
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em' }}>FECHAS</span>
+                  {fechas.length > 1 && (
+                    <span style={{ fontSize: 9, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      {showAllFechas ? `▲ ver menos` : `▼ ver todas (${fechas.length})`}
+                    </span>
+                  )}
+                </div>
+                {/* Compute visible fechas inline */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {fechas.map(f => {
+                  {(showAllFechas
+                    ? fechas
+                    : (() => {
+                        const nf =
+                          fechas.find(f => f.status === 'active') ??
+                          fechas.find(f => f.status === 'upcoming') ??
+                          fechas[fechas.length - 1]
+                        return nf ? [nf] : fechas
+                      })()
+                  ).map(f => {
                     const fs = STATUS_STYLES[f.status] ?? STATUS_STYLES.upcoming
                     const isActive = activeFechaId === f.id
                     const dateStr = f.date ? new Date(f.date + 'T12:00:00').toLocaleDateString('es', { day: '2-digit', month: 'short' }) : null
