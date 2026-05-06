@@ -1918,43 +1918,6 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                 )}
               </div>
 
-              {/* Staff: position entry for selected fecha (points auto-calc) */}
-              {isStaff && activeFechaId && details.participants.length > 0 && (
-                <div style={{ padding: '8px 14px 10px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#A78BFA', letterSpacing: '0.07em', marginBottom: 6 }}>
-                    POSICIONES — FECHA {fechas.find(f => f.id === activeFechaId)?.number}
-                    <span style={{ fontWeight: 400, color: '#4B5563', marginLeft: 6 }}>(puntos se calculan solos)</span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    {details.participants.map(p => (
-                      <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Avatar url={p.profiles?.avatar_url} size={22} />
-                        <TierBadge tier={p.tier} />
-                        <span style={{ flex: 1, fontSize: 12, color: '#E5E5E5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          @{p.profiles?.username}
-                        </span>
-                        <input
-                          type="number" min="1"
-                          value={positionMap[p.user_id] ?? ''}
-                          onChange={e => setPositionMap(prev => ({ ...prev, [p.user_id]: e.target.value }))}
-                          placeholder="pos"
-                          style={{ ...inputSm, width: 56, textAlign: 'center' }}
-                        />
-                        <span style={{ fontSize: 10, color: '#4B5563', flexShrink: 0 }}>°</span>
-                      </div>
-                    ))}
-                  </div>
-                  {ptsErr && <div style={{ fontSize: 11, color: '#F87171', marginTop: 6 }}>{ptsErr}</div>}
-                  <button onClick={handleSavePoints} disabled={savingPts} style={{
-                    marginTop: 8, width: '100%', padding: '8px', borderRadius: 8, border: 'none',
-                    background: savingPts ? '#1A1A1A' : '#A78BFA',
-                    color: savingPts ? '#555' : '#111',
-                    fontSize: 12, fontWeight: 700, cursor: savingPts ? 'default' : 'pointer',
-                    fontFamily: 'Inter, sans-serif',
-                  }}>{savingPts ? 'Guardando...' : 'Guardar posiciones'}</button>
-                </div>
-              )}
-
               {/* Overall standings */}
               {standings.length > 0 && (
                 <div style={{ padding: '12px 16px 16px' }}>
@@ -2007,140 +1970,179 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                 </div>
               )}
 
-              {/* ── RESULTADOS section ── */}
-              {(() => {
-                // Fechas that have results OR are active (player can report)
-                const relevantFechas = fechas.filter(f =>
-                  f.status === 'active' || f.status === 'finished' ||
-                  details.results.some(r => r.fecha_id === f.id)
-                )
-                if (relevantFechas.length === 0) return null
-                return (
-                  <div style={{ borderTop: '1px solid #1A1A1A', padding: '14px 16px 16px' }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 12 }}>
-                      RESULTADOS
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {relevantFechas.map(f => {
-                        const fss = STATUS_STYLES[f.status] ?? STATUS_STYLES.upcoming
-                        const fechaResults = details.results
-                          .filter(r => r.fecha_id === f.id)
-                          .sort((a, b) => (a.position ?? 99) - (b.position ?? 99))
-                        const myResult = profile ? fechaResults.find(r => r.user_id === profile.id) : null
-                        const canSelfReport = !isStaff && enrolled && f.status === 'active' && !myResult
-                        const dateStr = f.date ? new Date(f.date + 'T12:00:00').toLocaleDateString('es', { day: '2-digit', month: 'short' }) : null
+              {/* ── RESULTADOS section — always visible when league is expanded ── */}
+              {fechas.length > 0 && (
+                <div style={{ borderTop: '1px solid #1A1A1A', padding: '14px 16px 16px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 12 }}>
+                    RESULTADOS
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {fechas.map(f => {
+                      const fss = STATUS_STYLES[f.status] ?? STATUS_STYLES.upcoming
+                      const isStaffOpen = activeFechaId === f.id
+                      const fechaResults = details.results
+                        .filter(r => r.fecha_id === f.id)
+                        .sort((a, b) => (a.position ?? 99) - (b.position ?? 99))
+                      const myResult = profile ? fechaResults.find(r => r.user_id === profile.id) : null
+                      const canSelfReport = !isStaff && enrolled && f.status === 'active' && !myResult
+                      const hasContent = fechaResults.length > 0 || canSelfReport || isStaffOpen
+                      const dateStr = f.date ? new Date(f.date + 'T12:00:00').toLocaleDateString('es', { day: '2-digit', month: 'short' }) : null
 
-                        return (
-                          <div key={f.id} style={{
-                            background: '#0D0D0D', borderRadius: 12,
-                            border: `1px solid ${f.status === 'active' ? 'rgba(74,222,128,0.2)' : '#1A1A1A'}`,
-                            overflow: 'hidden',
-                          }}>
-                            {/* Fecha header */}
-                            <div style={{
+                      return (
+                        <div key={f.id} style={{
+                          background: '#0D0D0D', borderRadius: 12,
+                          border: `1px solid ${isStaffOpen ? 'rgba(167,139,250,0.3)' : f.status === 'active' ? 'rgba(74,222,128,0.2)' : '#1A1A1A'}`,
+                          overflow: 'hidden',
+                        }}>
+                          {/* Fecha header — staff can tap to toggle position entry */}
+                          <div
+                            onClick={() => isStaff && setActiveFechaId(isStaffOpen ? null : f.id)}
+                            style={{
                               display: 'flex', alignItems: 'center', gap: 10,
-                              padding: '10px 14px',
-                              borderBottom: (fechaResults.length > 0 || canSelfReport) ? '1px solid #1A1A1A' : 'none',
-                            }}>
-                              <div style={{
-                                width: 24, height: 24, borderRadius: '50%',
-                                background: '#1A1A1A', border: '1px solid #2A2A2A',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 11, fontWeight: 800, color: '#6B7280', flexShrink: 0,
-                              }}>{f.number}</div>
+                              padding: '11px 14px',
+                              borderBottom: hasContent ? '1px solid #1A1A1A' : 'none',
+                              cursor: isStaff ? 'pointer' : 'default',
+                            }}
+                          >
+                            <div style={{
+                              width: 26, height: 26, borderRadius: '50%',
+                              background: '#1A1A1A', border: '1px solid #2A2A2A',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 11, fontWeight: 800, color: '#6B7280', flexShrink: 0,
+                            }}>{f.number}</div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
                               <span style={{ fontSize: 13, fontWeight: 600, color: '#E5E5E5' }}>Fecha {f.number}</span>
-                              {dateStr && <span style={{ fontSize: 11, color: '#4B5563' }}>{dateStr}</span>}
-                              <div style={{ flex: 1 }} />
-                              <span style={{
-                                fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
-                                background: fss.bg, border: `1px solid ${fss.border}`, color: fss.color,
-                              }}>{fss.label}</span>
+                              {dateStr && <span style={{ fontSize: 11, color: '#4B5563', marginLeft: 8 }}>{dateStr}</span>}
                             </div>
-
-                            {/* Player self-report grid */}
-                            {canSelfReport && (
-                              <div style={{ padding: '12px 14px' }}>
-                                <div style={{ fontSize: 11, color: '#4ADE80', fontWeight: 700, marginBottom: 10 }}>
-                                  ¿En qué posición terminaste?
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
-                                  {Array.from({ length: maxPlayers > 0 ? maxPlayers : 24 }, (_, i) => i + 1).map(pos => (
-                                    <button
-                                      key={pos}
-                                      disabled={selfSubmitting}
-                                      onClick={async () => {
-                                        setSelfSubmitting(true)
-                                        setSelfPosInput(String(pos))
-                                        try {
-                                          await submitMyResult({ fechaId: f.id, leagueId: league.id, position: pos })
-                                          setSelfPosInput('')
-                                          const d = await getLeagueDetails(league.id)
-                                          setDetails(d)
-                                          toast?.('Posición reportada ✓', { type: 'success' })
-                                        } catch(e) { toast?.(e.message, { type: 'error' }) }
-                                        setSelfSubmitting(false)
-                                      }}
-                                      style={{
-                                        padding: '10px 4px', borderRadius: 8, border: '1px solid #2A2A2A',
-                                        background: selfSubmitting && selfPosInput === String(pos) ? '#4ADE80' : '#141414',
-                                        color: selfSubmitting && selfPosInput === String(pos) ? '#111' : '#E5E5E5',
-                                        fontSize: 13, fontWeight: 700, cursor: selfSubmitting ? 'default' : 'pointer',
-                                        fontFamily: 'Inter, sans-serif', textAlign: 'center',
-                                        opacity: selfSubmitting && selfPosInput !== String(pos) ? 0.4 : 1,
-                                        transition: 'background 0.15s',
-                                      }}
-                                    >{pos}</button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Results list */}
-                            {fechaResults.length > 0 && (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                                {fechaResults.map((r, idx) => {
-                                  const participant = details.participants.find(p => p.user_id === r.user_id)
-                                  const username = participant?.profiles?.username ?? '—'
-                                  const avatarUrl = participant?.profiles?.avatar_url
-                                  const isMe = profile?.id === r.user_id
-                                  const posColor = r.position === 1 ? '#F59E0B' : r.position === 2 ? '#9CA3AF' : r.position === 3 ? '#B87333' : '#4B5563'
-                                  return (
-                                    <div key={r.user_id} style={{
-                                      display: 'flex', alignItems: 'center', gap: 10,
-                                      padding: '9px 14px',
-                                      borderTop: idx > 0 ? '1px solid #141414' : 'none',
-                                      background: isMe ? 'rgba(74,222,128,0.04)' : 'transparent',
-                                    }}>
-                                      <span style={{ width: 22, fontSize: 12, fontWeight: 800, color: posColor, textAlign: 'center', flexShrink: 0 }}>
-                                        {r.position}°
-                                      </span>
-                                      <Avatar url={avatarUrl} size={26} />
-                                      <TierBadge tier={r.tier} />
-                                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: isMe ? '#E5E5E5' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        @{username}{isMe ? ' (yo)' : ''}
-                                      </span>
-                                      <span style={{ fontSize: 13, fontWeight: 800, color: '#4ADE80', flexShrink: 0 }}>
-                                        {r.points}<span style={{ fontSize: 10, color: '#374151', marginLeft: 2 }}>pts</span>
-                                      </span>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            )}
-
-                            {/* Empty state */}
-                            {fechaResults.length === 0 && !canSelfReport && (
-                              <div style={{ padding: '12px 14px', fontSize: 11, color: '#374151', textAlign: 'center' }}>
-                                Sin resultados aún
-                              </div>
+                            <span style={{
+                              fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                              background: fss.bg, border: `1px solid ${fss.border}`, color: fss.color,
+                            }}>{fss.label}</span>
+                            {isStaff && (
+                              <span style={{ fontSize: 11, color: '#4B5563', marginLeft: 2 }}>{isStaffOpen ? '▲' : '▼'}</span>
                             )}
                           </div>
-                        )
-                      })}
-                    </div>
+
+                          {/* Staff: inline position entry */}
+                          {isStaff && isStaffOpen && details.participants.length > 0 && (
+                            <div style={{ padding: '12px 14px', borderBottom: fechaResults.length > 0 ? '1px solid #1A1A1A' : 'none' }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: '#A78BFA', letterSpacing: '0.07em', marginBottom: 10 }}>
+                                INGRESAR POSICIONES
+                                <span style={{ fontWeight: 400, color: '#374151', marginLeft: 6 }}>· puntos se calculan solos</span>
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {details.participants.map(p => (
+                                  <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <Avatar url={p.profiles?.avatar_url} size={26} />
+                                    <TierBadge tier={p.tier} />
+                                    <span style={{ flex: 1, fontSize: 12, color: '#E5E5E5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      @{p.profiles?.username}
+                                    </span>
+                                    <input
+                                      type="number" min="1"
+                                      value={positionMap[p.user_id] ?? ''}
+                                      onChange={e => setPositionMap(prev => ({ ...prev, [p.user_id]: e.target.value }))}
+                                      placeholder="pos"
+                                      style={{ ...inputSm, width: 60, textAlign: 'center' }}
+                                    />
+                                    <span style={{ fontSize: 11, color: '#4B5563' }}>°</span>
+                                  </div>
+                                ))}
+                              </div>
+                              {ptsErr && <div style={{ fontSize: 11, color: '#F87171', marginTop: 8 }}>{ptsErr}</div>}
+                              <button onClick={handleSavePoints} disabled={savingPts} style={{
+                                marginTop: 10, width: '100%', padding: '9px', borderRadius: 9, border: 'none',
+                                background: savingPts ? '#1A1A1A' : '#A78BFA',
+                                color: savingPts ? '#555' : '#111',
+                                fontSize: 12, fontWeight: 700, cursor: savingPts ? 'default' : 'pointer',
+                                fontFamily: 'Inter, sans-serif',
+                              }}>{savingPts ? 'Guardando...' : 'Guardar posiciones'}</button>
+                            </div>
+                          )}
+
+                          {/* Player self-report grid (active fecha only) */}
+                          {canSelfReport && (
+                            <div style={{ padding: '12px 14px', borderBottom: fechaResults.length > 0 ? '1px solid #1A1A1A' : 'none' }}>
+                              <div style={{ fontSize: 11, color: '#4ADE80', fontWeight: 700, marginBottom: 10 }}>
+                                ¿En qué posición terminaste?
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
+                                {Array.from({ length: maxPlayers > 0 ? maxPlayers : 24 }, (_, i) => i + 1).map(pos => (
+                                  <button
+                                    key={pos}
+                                    disabled={selfSubmitting}
+                                    onClick={async () => {
+                                      setSelfSubmitting(true)
+                                      setSelfPosInput(String(pos))
+                                      try {
+                                        await submitMyResult({ fechaId: f.id, leagueId: league.id, position: pos })
+                                        setSelfPosInput('')
+                                        const d = await getLeagueDetails(league.id)
+                                        setDetails(d)
+                                        toast?.('Posición reportada ✓', { type: 'success' })
+                                      } catch(e) { toast?.(e.message, { type: 'error' }) }
+                                      setSelfSubmitting(false)
+                                    }}
+                                    style={{
+                                      padding: '10px 4px', borderRadius: 8, border: '1px solid #2A2A2A',
+                                      background: selfSubmitting && selfPosInput === String(pos) ? '#4ADE80' : '#141414',
+                                      color: selfSubmitting && selfPosInput === String(pos) ? '#111' : '#E5E5E5',
+                                      fontSize: 13, fontWeight: 700, cursor: selfSubmitting ? 'default' : 'pointer',
+                                      fontFamily: 'Inter, sans-serif', textAlign: 'center',
+                                      opacity: selfSubmitting && selfPosInput !== String(pos) ? 0.4 : 1,
+                                      transition: 'background 0.15s',
+                                    }}
+                                  >{pos}</button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Results list */}
+                          {fechaResults.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              {fechaResults.map((r, idx) => {
+                                const participant = details.participants.find(p => p.user_id === r.user_id)
+                                const username = participant?.profiles?.username ?? '—'
+                                const avatarUrl = participant?.profiles?.avatar_url
+                                const isMe = profile?.id === r.user_id
+                                const posColor = r.position === 1 ? '#F59E0B' : r.position === 2 ? '#9CA3AF' : r.position === 3 ? '#B87333' : '#4B5563'
+                                return (
+                                  <div key={r.user_id} style={{
+                                    display: 'flex', alignItems: 'center', gap: 10,
+                                    padding: '9px 14px',
+                                    borderTop: idx > 0 ? '1px solid #141414' : 'none',
+                                    background: isMe ? 'rgba(74,222,128,0.04)' : 'transparent',
+                                  }}>
+                                    <span style={{ width: 24, fontSize: 12, fontWeight: 800, color: posColor, textAlign: 'center', flexShrink: 0 }}>
+                                      {r.position}°
+                                    </span>
+                                    <Avatar url={avatarUrl} size={26} />
+                                    <TierBadge tier={r.tier} />
+                                    <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: isMe ? '#E5E5E5' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      @{username}{isMe ? ' (yo)' : ''}
+                                    </span>
+                                    <span style={{ fontSize: 13, fontWeight: 800, color: '#4ADE80', flexShrink: 0 }}>
+                                      {r.points}<span style={{ fontSize: 10, color: '#374151', marginLeft: 2 }}>pts</span>
+                                    </span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+
+                          {/* Empty state */}
+                          {!hasContent && (
+                            <div style={{ padding: '11px 14px', fontSize: 11, color: '#2A2A2A', textAlign: 'center' }}>
+                              Sin resultados aún
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
-                )
-              })()}
+                </div>
+              )}
 
               {/* Staff: add participants search */}
               {isStaff && (
