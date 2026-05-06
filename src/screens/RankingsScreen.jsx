@@ -1808,12 +1808,12 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                     marginBottom: 10, cursor: fechas.length > 1 ? 'pointer' : 'default',
                   }}
                 >
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em' }}>FECHAS</span>
-                  {fechas.length > 1 && (
+                  {fechas.length > 1 ? (
                     <span style={{ fontSize: 10, color: '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
                       {showAllFechas ? `▲ ver menos` : `▼ ver todas (${fechas.length})`}
                     </span>
-                  )}
+                  ) : <span />}
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em' }}>FECHAS</span>
                 </div>
                 {/* Compute visible fechas inline */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
