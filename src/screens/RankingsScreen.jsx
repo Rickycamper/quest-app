@@ -2,7 +2,7 @@
 // QUEST — RankingsScreen
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, setTournamentPayment, getActiveSeason, staffAwardRankingPoints, staffSetGamePoints, getLeagues, getLeagueDetails, joinLeague, leaveLeague, updateLeagueStatus, updateFechaStatus, upsertLeagueResult, submitMyResult, addLeagueFecha, addLeagueParticipant, setLeaguePayment, deleteLeague } from '../lib/supabase'
+import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, setTournamentPayment, getActiveSeason, staffAwardRankingPoints, staffSetGamePoints, getLeagues, getLeagueDetails, joinLeague, leaveLeague, updateLeagueStatus, updateFechaStatus, upsertLeagueResult, submitMyResult, addLeagueFecha, addLeagueParticipant, setLeaguePayment, setParticipantTier, deleteLeague } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
@@ -1469,6 +1469,12 @@ const STATUS_STYLES = {
   finished: { label: 'Finalizada',bg: 'rgba(107,114,128,0.1)', border: 'rgba(107,114,128,0.3)', color: '#6B7280' },
 }
 
+const TIER_STYLE = {
+  A: { color: '#FBB924', bg: 'rgba(251,185,36,0.12)', border: 'rgba(251,185,36,0.3)' },
+  B: { color: '#A78BFA', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.3)' },
+  C: { color: '#22D3EE', bg: 'rgba(34,211,238,0.12)', border: 'rgba(34,211,238,0.3)' },
+}
+
 function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpen = false }) {
   const toast  = useToast()
   const cardRef = useRef(null)
@@ -1936,7 +1942,34 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                           color: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : i === 2 ? '#B87333' : '#374151',
                         }}>{i + 1}</span>
                         <Avatar url={s.avatar_url} size={28} />
-                        <TierBadge tier={s.tier} />
+                        {isStaff ? (
+                          <select
+                            value={s.tier ?? ''}
+                            onClick={e => e.stopPropagation()}
+                            onChange={async e => {
+                              const t = e.target.value
+                              try {
+                                await setParticipantTier(league.id, s.userId, t || null)
+                                const d = await getLeagueDetails(league.id)
+                                setDetails(d)
+                              } catch(ex) { toast?.(ex.message, { type: 'error' }) }
+                            }}
+                            style={{
+                              background: '#1A1A1A', border: '1px solid #2A2A2A',
+                              borderRadius: 6, color: s.tier ? TIER_STYLE[s.tier]?.color ?? '#6B7280' : '#4B5563',
+                              fontSize: 11, fontWeight: 700, padding: '3px 6px',
+                              fontFamily: 'Inter, sans-serif', cursor: 'pointer',
+                              colorScheme: 'dark', flexShrink: 0,
+                            }}
+                          >
+                            <option value="">—</option>
+                            <option value="A">T·A</option>
+                            <option value="B">T·B</option>
+                            <option value="C">T·C</option>
+                          </select>
+                        ) : (
+                          <TierBadge tier={s.tier} />
+                        )}
                         <span
                           onClick={() => onViewProfile && onViewProfile(s.userId)}
                           style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#E5E5E5', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
@@ -1948,7 +1981,8 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                             border: `1px solid ${s.paid ? 'rgba(74,222,128,0.25)' : 'rgba(239,68,68,0.25)'}`,
                             color: s.paid ? '#4ADE80' : '#F87171', cursor: 'pointer',
                           }}
-                            onClick={async () => {
+                            onClick={async (e) => {
+                              e.stopPropagation()
                               try {
                                 await setLeaguePayment(league.id, s.userId, !s.paid)
                                 const d = await getLeagueDetails(league.id)
@@ -2254,11 +2288,6 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
   )
 }
 
-const TIER_STYLE = {
-  A: { color: '#FBB924', bg: 'rgba(251,185,36,0.12)', border: 'rgba(251,185,36,0.3)' },
-  B: { color: '#A78BFA', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.3)' },
-  C: { color: '#22D3EE', bg: 'rgba(34,211,238,0.12)', border: 'rgba(34,211,238,0.3)' },
-}
 function TierBadge({ tier }) {
   if (!tier) return null
   const s = TIER_STYLE[tier] ?? {}

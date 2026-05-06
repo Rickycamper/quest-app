@@ -2529,6 +2529,16 @@ export async function addLeagueParticipant(leagueId, userId, tier = null) {
   if (error) throw error
 }
 
+/** Update tier for a participant (staff). */
+export async function setParticipantTier(leagueId, userId, tier) {
+  const { error } = await supabase
+    .from('league_participants')
+    .update({ tier })
+    .eq('league_id', leagueId)
+    .eq('user_id', userId)
+  if (error) throw error
+}
+
 /** Toggle paid status for a participant (staff). */
 export async function setLeaguePayment(leagueId, userId, paid) {
   const { error } = await supabase
