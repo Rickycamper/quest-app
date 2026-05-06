@@ -41,10 +41,11 @@ export default function LogMatchModal({ opponent: preselected, onClose, onLogged
   }, [profile?.id])
 
   // Client-side filter — instant, no debounce needed
+  // Guard against null/undefined usernames (profiles created without username set)
   const q = query.trim().toLowerCase()
   const results = q.length === 0
     ? allUsers
-    : allUsers.filter(u => u.username?.toLowerCase().includes(q))
+    : allUsers.filter(u => (u.username ?? '').toLowerCase().includes(q))
 
   const selectOpponent = (u) => {
     setOpponent(u)

@@ -35,7 +35,10 @@ export default function SearchScreen({ onViewProfile }) {
 
   const q = query.trim().toLowerCase()
   const results = q
-    ? allUsers.filter(u => u.username?.toLowerCase().includes(q) || u.full_name?.toLowerCase().includes(q))
+    ? allUsers.filter(u =>
+        (u.username ?? '').toLowerCase().includes(q) ||
+        (u.full_name ?? '').toLowerCase().includes(q)
+      )
     : allUsers
 
   const handleFollow = async (e, userId) => {

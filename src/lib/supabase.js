@@ -823,6 +823,71 @@ export async function deleteTournament(id) {
   if (error) throw error
 }
 
+/**
+ * Staff-only: create an already-approved ranking_claim for any user.
+ * Immediately adds points to their profile so they appear in the leaderboard.
+ */
+export async function staffAwardRankingPoints(targetUserId, { game, branch, position, tournamentName = 'Asignado por staff' }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
+
+  const pts = RANKING_PTS[position] ?? 1
+
+  // Insert approved claim for the target user
+  const { data: claim, error: ce } = await supabase
+    .from('ranking_claims')
+    .insert({
+      user_id:         targetUserId,
+      tournament_name: tournamentName,
+      game, branch, position,
+      status:          'approved',
+      reviewed_by:     session.user.id,
+      reviewed_at:     new Date().toISOString(),
+    })
+    .select('id')
+    .single()
+  if (ce) throw ce
+
+  // Add points to their profile
+  await adjustUserPoints(targetUserId, pts)
+
+  return { claimId: claim?.id, ptsAdded: pts }
+}
+
+/**
+ * Staff-only: set exact per-game points for a user via ranking_points_override.
+ * The updated get_game_leaderboard RPC gives this row priority over claim-sum.
+ */
+export async function staffSetGamePoints(userId, game, branch, points) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
+
+  const n = Math.max(0, Math.round(Number(points) || 0))
+
+  if (n === 0) {
+    // Remove override — delete so the claim-sum takes back over (or user disappears)
+    const { error } = await supabase
+      .from('ranking_points_override')
+      .delete()
+      .eq('user_id', userId)
+      .eq('game', game)
+      .eq('branch', branch ?? '')
+    if (error) throw error
+    return 0
+  }
+
+  const { data, error } = await supabase
+    .from('ranking_points_override')
+    .upsert(
+      { user_id: userId, game, branch: branch ?? '', points: n, set_by: session.user.id },
+      { onConflict: 'user_id,game,branch' }
+    )
+    .select('points')
+    .single()
+  if (error) throw error
+  return data?.points ?? n
+}
+
 export async function adjustUserPoints(userId, delta) {
   const { data: prof, error: fetchErr } = await supabase
     .from('profiles').select('points').eq('id', userId).single()
@@ -1163,7 +1228,9 @@ export async function searchUsers(query) {
   if (!session?.user?.id) return []
   let req = supabase
     .from('profiles')
-    .select('id, username, avatar_url')
+    .select('id, username, avatar_url, role, is_owner')
+    .not('username', 'is', null)          // exclude profiles without a username set
+    .neq('username', '')                  // exclude empty-string usernames
     .order('username', { ascending: true })
     .limit(200)
   if (query && query.length > 0) {
@@ -2259,6 +2326,187 @@ export async function getPastSeasons() {
     .order('number', { ascending: false })
   if (error) throw error
   return data ?? []
+}
+
+// ── LEAGUES ──────────────────────────────────────────────────────
+
+/**
+ * Fetch all leagues (optionally filtered by game/branch).
+ * Returns participants count, user's own enrollment, and all fechas.
+ */
+export async function getLeagues({ game = null, branch = null } = {}) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const uid = session?.user?.id ?? null
+
+  let q = supabase
+    .from('leagues')
+    .select(`
+      id, name, game, branch, description, entry_fee, max_players, status, created_at,
+      league_participants(count),
+      league_fechas(id, number, date, start_time, status)
+    `)
+    .order('created_at', { ascending: false })
+
+  if (game)   q = q.eq('game',   game)
+  if (branch) q = q.eq('branch', branch)
+
+  const { data, error } = await q
+  if (error) throw error
+
+  // Attach user's own enrollment if logged in
+  let enrolled = new Set()
+  if (uid && data?.length) {
+    const ids = data.map(l => l.id)
+    const { data: parts } = await supabase
+      .from('league_participants')
+      .select('league_id, paid')
+      .eq('user_id', uid)
+      .in('league_id', ids)
+    parts?.forEach(p => enrolled.add(p.league_id))
+  }
+
+  return (data ?? []).map(l => ({
+    ...l,
+    participant_count: l.league_participants?.[0]?.count ?? 0,
+    fechas: (l.league_fechas ?? []).sort((a, b) => a.number - b.number),
+    enrolled: enrolled.has(l.id),
+  }))
+}
+
+/** Fetch participants + results for a single league (for standings). */
+export async function getLeagueDetails(leagueId) {
+  const [{ data: parts, error: pe }, { data: results, error: re }] = await Promise.all([
+    supabase
+      .from('league_participants')
+      .select('user_id, paid, joined_at, profiles:user_id(id, username, avatar_url, role, is_owner)')
+      .eq('league_id', leagueId),
+    supabase
+      .from('league_results')
+      .select('id, fecha_id, user_id, points, position')
+      .eq('league_id', leagueId),
+  ])
+  if (pe) throw pe
+  if (re) throw re
+  return { participants: parts ?? [], results: results ?? [] }
+}
+
+/** Create a league + initial fechas in one call. */
+export async function createLeague({ name, game, branch, entryFee, maxPlayers, description, fechas = [] }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
+
+  const { data: league, error } = await supabase
+    .from('leagues')
+    .insert({
+      name: name.trim(),
+      game: game || null,
+      branch: branch || null,
+      description: description?.trim() || null,
+      entry_fee: entryFee != null ? parseFloat(entryFee) : 0,
+      max_players: maxPlayers ? parseInt(maxPlayers) : 0,
+      created_by: session.user.id,
+    })
+    .select('id')
+    .single()
+  if (error) throw error
+
+  if (fechas.length > 0) {
+    const rows = fechas.map((f, i) => ({
+      league_id: league.id,
+      number: i + 1,
+      date: f.date || null,
+      start_time: f.start_time || null,
+    }))
+    const { error: fe } = await supabase.from('league_fechas').insert(rows)
+    if (fe) throw fe
+  }
+
+  return league
+}
+
+/** Self-enroll current user in a league. */
+export async function joinLeague(leagueId) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Debés iniciar sesión para inscribirte')
+  const { error } = await supabase
+    .from('league_participants')
+    .insert({ league_id: leagueId, user_id: session.user.id })
+  if (error) throw error
+}
+
+/** Self-unenroll current user from a league. */
+export async function leaveLeague(leagueId) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('No hay sesión activa')
+  const { error } = await supabase
+    .from('league_participants')
+    .delete()
+    .eq('league_id', leagueId)
+    .eq('user_id', session.user.id)
+  if (error) throw error
+}
+
+/** Update league status (staff). */
+export async function updateLeagueStatus(leagueId, status) {
+  const { error } = await supabase
+    .from('leagues')
+    .update({ status })
+    .eq('id', leagueId)
+  if (error) throw error
+}
+
+/** Update a fecha's status (staff). */
+export async function updateFechaStatus(fechaId, status) {
+  const { error } = await supabase
+    .from('league_fechas')
+    .update({ status })
+    .eq('id', fechaId)
+  if (error) throw error
+}
+
+/** Upsert a result row (staff enters points for a user in a fecha). */
+export async function upsertLeagueResult({ fechaId, leagueId, userId, points, position = null }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const { error } = await supabase
+    .from('league_results')
+    .upsert(
+      { fecha_id: fechaId, league_id: leagueId, user_id: userId,
+        points, position, recorded_by: session?.user?.id ?? null },
+      { onConflict: 'fecha_id,user_id' }
+    )
+  if (error) throw error
+}
+
+/** Add a new fecha to a league (staff). */
+export async function addLeagueFecha(leagueId, { number, date, startTime }) {
+  const { error } = await supabase
+    .from('league_fechas')
+    .insert({ league_id: leagueId, number, date: date || null, start_time: startTime || null })
+  if (error) throw error
+}
+
+/** Staff adds a user to a league (even while active). */
+export async function addLeagueParticipant(leagueId, userId) {
+  const { error } = await supabase
+    .from('league_participants')
+    .upsert({ league_id: leagueId, user_id: userId }, { onConflict: 'league_id,user_id', ignoreDuplicates: true })
+  if (error) throw error
+}
+
+/** Toggle paid status for a participant (staff). */
+export async function setLeaguePayment(leagueId, userId, paid) {
+  const { error } = await supabase
+    .from('league_participants')
+    .update({ paid })
+    .eq('league_id', leagueId)
+    .eq('user_id', userId)
+  if (error) throw error
+}
+
+/** Delete a league entirely (staff). */
+export async function deleteLeague(leagueId) {
+  const { error } = await supabase.from('leagues').delete().eq('id', leagueId)
+  if (error) throw error
 }
 
 /** Returns top-N season snapshot for a given season, game, and branch */
