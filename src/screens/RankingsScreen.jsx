@@ -1999,66 +1999,137 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                 </div>
               )}
 
-              {/* Player self-report: visible when enrolled, not staff, and a fecha is active */}
-              {!isStaff && enrolled && (() => {
-                const activeFecha = fechas.find(f => f.status === 'active')
-                if (!activeFecha) return null
-                const myResult = details.results.find(r => r.fecha_id === activeFecha.id && r.user_id === profile?.id)
+              {/* ── RESULTADOS section ── */}
+              {(() => {
+                // Fechas that have results OR are active (player can report)
+                const relevantFechas = fechas.filter(f =>
+                  f.status === 'active' || f.status === 'finished' ||
+                  details.results.some(r => r.fecha_id === f.id)
+                )
+                if (relevantFechas.length === 0) return null
                 return (
-                  <div style={{ padding: '8px 14px 14px', borderTop: '1px solid #1A1A1A' }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#4ADE80', letterSpacing: '0.07em', marginBottom: 8 }}>
-                      MI RESULTADO — FECHA {activeFecha.number}
+                  <div style={{ borderTop: '1px solid #1A1A1A', padding: '14px 16px 16px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 12 }}>
+                      RESULTADOS
                     </div>
-                    {myResult ? (
-                      <div style={{ fontSize: 12, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        Terminaste
-                        <span style={{ color: '#E5E5E5', fontWeight: 700 }}>{myResult.position}°</span>
-                        →
-                        <span style={{ color: '#4ADE80', fontWeight: 700 }}>{myResult.points} pts</span>
-                        <span style={{ fontSize: 10, color: '#374151', marginLeft: 2 }}>Tier {myResult.tier}</span>
-                      </div>
-                    ) : (
-                      <div>
-                        <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 10 }}>
-                          ¿En qué posición terminaste?
-                        </div>
-                        <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(6, 1fr)',
-                          gap: 6,
-                        }}>
-                          {Array.from({ length: maxPlayers > 0 ? maxPlayers : 24 }, (_, i) => i + 1).map(pos => (
-                            <button
-                              key={pos}
-                              disabled={selfSubmitting}
-                              onClick={async () => {
-                                setSelfSubmitting(true)
-                                setSelfPosInput(String(pos))
-                                try {
-                                  await submitMyResult({ fechaId: activeFecha.id, leagueId: league.id, position: pos })
-                                  setSelfPosInput('')
-                                  const d = await getLeagueDetails(league.id)
-                                  setDetails(d)
-                                  toast?.('Posición reportada ✓', { type: 'success' })
-                                } catch(e) { toast?.(e.message, { type: 'error' }) }
-                                setSelfSubmitting(false)
-                              }}
-                              style={{
-                                padding: '9px 4px', borderRadius: 8, border: '1px solid #2A2A2A',
-                                background: selfSubmitting && selfPosInput === String(pos) ? '#4ADE80' : '#141414',
-                                color: selfSubmitting && selfPosInput === String(pos) ? '#111' : '#E5E5E5',
-                                fontSize: 13, fontWeight: 700, cursor: selfSubmitting ? 'default' : 'pointer',
-                                fontFamily: 'Inter, sans-serif', textAlign: 'center',
-                                opacity: selfSubmitting && selfPosInput !== String(pos) ? 0.4 : 1,
-                                transition: 'background 0.15s',
-                              }}
-                            >
-                              {pos}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {relevantFechas.map(f => {
+                        const fss = STATUS_STYLES[f.status] ?? STATUS_STYLES.upcoming
+                        const fechaResults = details.results
+                          .filter(r => r.fecha_id === f.id)
+                          .sort((a, b) => (a.position ?? 99) - (b.position ?? 99))
+                        const myResult = profile ? fechaResults.find(r => r.user_id === profile.id) : null
+                        const canSelfReport = !isStaff && enrolled && f.status === 'active' && !myResult
+                        const dateStr = f.date ? new Date(f.date + 'T12:00:00').toLocaleDateString('es', { day: '2-digit', month: 'short' }) : null
+
+                        return (
+                          <div key={f.id} style={{
+                            background: '#0D0D0D', borderRadius: 12,
+                            border: `1px solid ${f.status === 'active' ? 'rgba(74,222,128,0.2)' : '#1A1A1A'}`,
+                            overflow: 'hidden',
+                          }}>
+                            {/* Fecha header */}
+                            <div style={{
+                              display: 'flex', alignItems: 'center', gap: 10,
+                              padding: '10px 14px',
+                              borderBottom: (fechaResults.length > 0 || canSelfReport) ? '1px solid #1A1A1A' : 'none',
+                            }}>
+                              <div style={{
+                                width: 24, height: 24, borderRadius: '50%',
+                                background: '#1A1A1A', border: '1px solid #2A2A2A',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 11, fontWeight: 800, color: '#6B7280', flexShrink: 0,
+                              }}>{f.number}</div>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: '#E5E5E5' }}>Fecha {f.number}</span>
+                              {dateStr && <span style={{ fontSize: 11, color: '#4B5563' }}>{dateStr}</span>}
+                              <div style={{ flex: 1 }} />
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                                background: fss.bg, border: `1px solid ${fss.border}`, color: fss.color,
+                              }}>{fss.label}</span>
+                            </div>
+
+                            {/* Player self-report grid */}
+                            {canSelfReport && (
+                              <div style={{ padding: '12px 14px' }}>
+                                <div style={{ fontSize: 11, color: '#4ADE80', fontWeight: 700, marginBottom: 10 }}>
+                                  ¿En qué posición terminaste?
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
+                                  {Array.from({ length: maxPlayers > 0 ? maxPlayers : 24 }, (_, i) => i + 1).map(pos => (
+                                    <button
+                                      key={pos}
+                                      disabled={selfSubmitting}
+                                      onClick={async () => {
+                                        setSelfSubmitting(true)
+                                        setSelfPosInput(String(pos))
+                                        try {
+                                          await submitMyResult({ fechaId: f.id, leagueId: league.id, position: pos })
+                                          setSelfPosInput('')
+                                          const d = await getLeagueDetails(league.id)
+                                          setDetails(d)
+                                          toast?.('Posición reportada ✓', { type: 'success' })
+                                        } catch(e) { toast?.(e.message, { type: 'error' }) }
+                                        setSelfSubmitting(false)
+                                      }}
+                                      style={{
+                                        padding: '10px 4px', borderRadius: 8, border: '1px solid #2A2A2A',
+                                        background: selfSubmitting && selfPosInput === String(pos) ? '#4ADE80' : '#141414',
+                                        color: selfSubmitting && selfPosInput === String(pos) ? '#111' : '#E5E5E5',
+                                        fontSize: 13, fontWeight: 700, cursor: selfSubmitting ? 'default' : 'pointer',
+                                        fontFamily: 'Inter, sans-serif', textAlign: 'center',
+                                        opacity: selfSubmitting && selfPosInput !== String(pos) ? 0.4 : 1,
+                                        transition: 'background 0.15s',
+                                      }}
+                                    >{pos}</button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Results list */}
+                            {fechaResults.length > 0 && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                                {fechaResults.map((r, idx) => {
+                                  const participant = details.participants.find(p => p.user_id === r.user_id)
+                                  const username = participant?.profiles?.username ?? '—'
+                                  const avatarUrl = participant?.profiles?.avatar_url
+                                  const isMe = profile?.id === r.user_id
+                                  const posColor = r.position === 1 ? '#F59E0B' : r.position === 2 ? '#9CA3AF' : r.position === 3 ? '#B87333' : '#4B5563'
+                                  return (
+                                    <div key={r.user_id} style={{
+                                      display: 'flex', alignItems: 'center', gap: 10,
+                                      padding: '9px 14px',
+                                      borderTop: idx > 0 ? '1px solid #141414' : 'none',
+                                      background: isMe ? 'rgba(74,222,128,0.04)' : 'transparent',
+                                    }}>
+                                      <span style={{ width: 22, fontSize: 12, fontWeight: 800, color: posColor, textAlign: 'center', flexShrink: 0 }}>
+                                        {r.position}°
+                                      </span>
+                                      <Avatar url={avatarUrl} size={26} />
+                                      <TierBadge tier={r.tier} />
+                                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: isMe ? '#E5E5E5' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        @{username}{isMe ? ' (yo)' : ''}
+                                      </span>
+                                      <span style={{ fontSize: 13, fontWeight: 800, color: '#4ADE80', flexShrink: 0 }}>
+                                        {r.points}<span style={{ fontSize: 10, color: '#374151', marginLeft: 2 }}>pts</span>
+                                      </span>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+
+                            {/* Empty state */}
+                            {fechaResults.length === 0 && !canSelfReport && (
+                              <div style={{ padding: '12px 14px', fontSize: 11, color: '#374151', textAlign: 'center' }}>
+                                Sin resultados aún
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 )
               })()}
