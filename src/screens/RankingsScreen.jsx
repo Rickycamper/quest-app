@@ -1471,11 +1471,19 @@ const STATUS_STYLES = {
 
 function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpen = false }) {
   const toast  = useToast()
+  const cardRef = useRef(null)
   const [open,        setOpen]        = useState(defaultOpen)
   const [details,     setDetails]     = useState(null)   // { participants, results }
   const [loadingDet,  setLoadingDet]  = useState(false)
   const [detErr,      setDetErr]      = useState('')
   const [joining,     setJoining]     = useState(false)
+
+  // Scroll into view when opened via deep link
+  useEffect(() => {
+    if (!defaultOpen || !cardRef.current) return
+    const t = setTimeout(() => cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 500)
+    return () => clearTimeout(t)
+  }, [defaultOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Local mutable copies
   const [curStatus,   setCurStatus]   = useState(league.status)
@@ -1685,7 +1693,7 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
   }
 
   return (
-    <div style={{
+    <div ref={cardRef} style={{
       margin: '0 16px 10px',
       background: '#111111', borderRadius: 14,
       border: `1px solid ${enrolled ? (bs?.border ?? 'rgba(167,139,250,0.3)') : '#1F1F1F'}`,
@@ -2463,10 +2471,11 @@ function ClaimsTab({ isStaff }) {
 
 // ── Main screen ──────────────────────────────
 export default function RankingsScreen({ profile, isStaff, onReportClaim, onCreateTournament, onCreateLeague, onViewProfile, openTournamentId, openLeagueId }) {
-  // Start on Torneos tab when arriving via a tournament deep link
-  const [tab,           setTab]          = useState(openTournamentId ? 'tournaments' : 'leaderboard')
+  // Start on the right tab when arriving via a deep link
+  const [tab,           setTab]          = useState(openTournamentId ? 'tournaments' : openLeagueId ? 'liga' : 'leaderboard')
   const [game,          setGame]         = useState(null)
-  const [branch,        setBranch]       = useState(null)
+  // Reset branch to Global when arriving via a league deep link so the card is always visible
+  const [branch,        setBranch]       = useState(openLeagueId ? null : null)
   const [pulsing,       setPulsing]      = useState(true)  // pulse hint on first view
   const [activeSeason,  setActiveSeason] = useState(null)
   const pulseTimer = useRef(null)
