@@ -673,6 +673,8 @@ export default function TrackingScreen({ profile, isStaff, onNewPackage, refresh
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState('')
   const [activeTab,   setActiveTab]   = useState('mine') // mine | all (staff)
+  const [filterBranch, setFilterBranch] = useState(null)   // null = all
+  const [searchUser,   setSearchUser]   = useState('')
   const dismissedIds = useRef(new Set())
 
   const load = () => {
@@ -705,6 +707,25 @@ export default function TrackingScreen({ profile, isStaff, onNewPackage, refresh
     }
   }
 
+  const visiblePackages = (() => {
+    let list = packages
+    if (isStaff && activeTab === 'all') {
+      if (filterBranch) {
+        list = list.filter(p =>
+          p.origin_branch === filterBranch || p.destination_branch === filterBranch
+        )
+      }
+      if (searchUser.trim()) {
+        const q = searchUser.trim().toLowerCase().replace(/^@/, '')
+        list = list.filter(p =>
+          p.sender?.username?.toLowerCase().includes(q) ||
+          p.recipient?.username?.toLowerCase().includes(q)
+        )
+      }
+    }
+    return list
+  })()
+
   return (
     <div style={{ position: 'relative' }}>
       {/* Header */}
@@ -734,6 +755,53 @@ export default function TrackingScreen({ profile, isStaff, onNewPackage, refresh
           cursor: 'pointer', fontFamily: 'Inter, sans-serif',
         }}>+ Nuevo</button>
       </div>
+
+      {/* Staff filters — only on "Todos" tab */}
+      {isStaff && activeTab === 'all' && (
+        <div style={{ padding: '0 16px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Branch pills */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[null, ...BRANCHES].map(b => (
+              <button
+                key={b ?? 'all'}
+                onClick={() => setFilterBranch(b)}
+                style={{
+                  padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                  background: filterBranch === b ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  border: `1.5px solid ${filterBranch === b ? 'rgba(255,255,255,0.25)' : '#2A2A2A'}`,
+                  color: filterBranch === b ? '#FFFFFF' : '#4B5563',
+                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}
+              >{b ?? 'Todas'}</button>
+            ))}
+          </div>
+          {/* User search */}
+          <div style={{ position: 'relative' }}>
+            <input
+              value={searchUser}
+              onChange={e => setSearchUser(e.target.value)}
+              placeholder="Buscar por usuario..."
+              style={{
+                width: '100%', padding: '8px 12px 8px 34px',
+                background: '#111111', border: '1px solid #2A2A2A',
+                borderRadius: 9, color: '#FFF', fontSize: 12,
+                fontFamily: 'Inter, sans-serif', outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#4B5563" strokeWidth="1.5" strokeLinecap="round" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+              <circle cx="6.5" cy="6.5" r="4.5"/><path d="M11 11l3 3"/>
+            </svg>
+            {searchUser && (
+              <button onClick={() => setSearchUser('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>
+            )}
+          </div>
+          {/* Result count */}
+          <span style={{ fontSize: 11, color: '#374151' }}>
+            {visiblePackages.length} paquete{visiblePackages.length !== 1 ? 's' : ''}{(filterBranch || searchUser) ? ' encontrado' + (visiblePackages.length !== 1 ? 's' : '') : ''}
+          </span>
+        </div>
+      )}
 
       {/* How it works banner */}
       <div style={{ margin: '0 16px 12px', padding: '10px 14px', background: '#111111', borderRadius: 8, border: '1px solid #1F1F1F' }}>
@@ -781,17 +849,19 @@ export default function TrackingScreen({ profile, isStaff, onNewPackage, refresh
         <div style={{ margin: '12px 16px', padding: '12px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13 }}>{error}</div>
       )}
 
-      {!loading && !error && packages.length === 0 && (
+      {!loading && !error && visiblePackages.length === 0 && (
         <div style={{ padding: '50px 20px', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
             <BoxIcon size={44} color="#333" />
           </div>
-          <div style={{ fontSize: 15, color: '#4B5563', marginBottom: 6 }}>No hay paquetes activos</div>
-          <div style={{ fontSize: 12, color: '#374151' }}>Tocá "+ Nuevo" para enviar cartas a otra sucursal</div>
+          <div style={{ fontSize: 15, color: '#4B5563', marginBottom: 6 }}>
+            {packages.length > 0 ? 'Sin resultados para ese filtro' : 'No hay paquetes activos'}
+          </div>
+          {packages.length === 0 && <div style={{ fontSize: 12, color: '#374151' }}>Tocá "+ Nuevo" para enviar cartas a otra sucursal</div>}
         </div>
       )}
 
-      {packages.map(pkg => (
+      {visiblePackages.map(pkg => (
         <PackageCard
           key={pkg.id}
           pkg={pkg}
