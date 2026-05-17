@@ -23,6 +23,57 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 const _CLIENT_V = 8
 
+// ── PKCE-resilient storage ────────────────────────────────────────────────────
+// Problem: when users arrive via an in-app browser (WhatsApp, Instagram, etc.),
+// clicking "Continue with Discord" opens Discord in the system browser (Safari/
+// Chrome). After auth, Discord redirects back to the app, but now the system
+// browser's localStorage is empty — the PKCE code_verifier is gone → exchange
+// fails → "no se pudo conectar" error.
+//
+// Fix: store the PKCE verifier (and only that key) in BOTH localStorage AND a
+// short-lived cookie. Cookies survive cross-context navigation; localStorage is
+// kept as the primary store for everything else (sessions, etc.).
+// ─────────────────────────────────────────────────────────────────────────────
+const _cookieOpts = `path=/;SameSite=Lax${location.protocol === 'https:' ? ';Secure' : ''}`
+
+function _getCookie(name) {
+  try {
+    const m = document.cookie.match(new RegExp(`(?:^|;\\s*)${encodeURIComponent(name)}=([^;]*)`))
+    return m ? decodeURIComponent(m[1]) : null
+  } catch { return null }
+}
+function _setCookie(name, value, maxAgeSec = 600) {
+  try {
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)};max-age=${maxAgeSec};${_cookieOpts}`
+  } catch {}
+}
+function _delCookie(name) {
+  try { document.cookie = `${encodeURIComponent(name)}=;max-age=0;${_cookieOpts}` } catch {}
+}
+
+const _pkceStorage = {
+  getItem(key) {
+    try {
+      const ls = localStorage.getItem(key)
+      if (ls != null) return ls
+      // Fallback: cookie (helps when localStorage was cleared by a context switch)
+      return _getCookie(key)
+    } catch { return _getCookie(key) }
+  },
+  setItem(key, value) {
+    try { localStorage.setItem(key, value) } catch {}
+    // Mirror PKCE verifier + state to a short-lived cookie so cross-context
+    // redirects (in-app browser → system browser) can still find them.
+    if (key.includes('code-verifier') || key.includes('-pkce-')) {
+      _setCookie(key, value, 600) // 10 min is plenty for an OAuth round-trip
+    }
+  },
+  removeItem(key) {
+    try { localStorage.removeItem(key) } catch {}
+    _delCookie(key)
+  },
+}
+
 // Module-level singleton — keeps credentials off window global
 let __supabaseClient = null
 if (!__supabaseClient) {
@@ -31,12 +82,17 @@ if (!__supabaseClient) {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      // PKCE flow: email links (reset-password, signup confirmation) go directly
-      // to the app URL as ?code=XXX instead of routing through the Supabase
-      // verify endpoint (supabase.co/auth/v1/verify). This avoids DNS failures
-      // some users experience when clicking reset-password links, and is more
-      // resilient across all browsers and network environments.
-      flowType: 'pkce',
+      // Switched from 'pkce' → 'implicit' on 2026-05-14 because PKCE was
+      // failing intermittently for Discord OAuth: the code_verifier stored
+      // in localStorage was getting lost between request and callback in
+      // certain Safari / in-app-browser conditions, leaving users with a
+      // "ghost" auth.users row but no session (last_sign_in_at NULL forever).
+      //
+      // Implicit returns tokens directly in the URL fragment so there's no
+      // verifier to lose — bullet-proof for OAuth at the cost of slightly
+      // less security against XSS-style token theft (acceptable for our
+      // community-TCG-app threat model).
+      flowType: 'implicit',
     },
     global: {
       fetch: (url, options) => {
@@ -130,6 +186,104 @@ export async function signInWithDiscord() {
   if (error) throw error
 }
 
+// ── Email OTP code fallback ──────────────────────────────────────────────────
+// IMPORTANT: deliberately does NOT use a magic link — because our client has
+// flowType='pkce', a magic link would ALSO go through PKCE and hit the same
+// failure path that's blocking Discord users. Instead, by OMITTING
+// emailRedirectTo, Supabase sends a 6-digit code by email; the user types it
+// in, we call verifyOtp directly, the session is established without any
+// browser redirect or PKCE exchange. Bullet-proof recovery for stuck users.
+export async function sendOtpCode(email) {
+  const trimmed = (email ?? '').trim().toLowerCase()
+  if (!trimmed) throw new Error('Ingresá un email válido.')
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    throw new Error('Ese email no parece válido.')
+  }
+  const { error } = await supabase.auth.signInWithOtp({
+    email: trimmed,
+    options: {
+      // NO emailRedirectTo — triggers 6-digit code instead of magic link.
+      // shouldCreateUser:false → only allow EXISTING users (no random signups).
+      shouldCreateUser: false,
+    },
+  })
+  if (error) {
+    if (/user not found|signup.*not allowed|user_not_found/i.test(error.message)) {
+      throw new Error('No encontramos ninguna cuenta con ese email.')
+    }
+    if (/rate limit|too many/i.test(error.message)) {
+      throw new Error('Demasiados intentos. Esperá unos minutos.')
+    }
+    throw error
+  }
+}
+
+// Verify the 6-digit code the user typed. On success Supabase creates the
+// session right here — onAuthStateChange fires SIGNED_IN and the app moves
+// on. No redirect, no PKCE.
+export async function verifyOtpCode(email, code) {
+  const trimmedEmail = (email ?? '').trim().toLowerCase()
+  const trimmedCode  = (code  ?? '').trim().replace(/\s/g, '')
+  if (!trimmedCode) throw new Error('Escribí el código que llegó al email.')
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: trimmedEmail,
+    token: trimmedCode,
+    type:  'email',
+  })
+  if (error) {
+    if (/expired|invalid|otp_expired|otp_invalid/i.test(error.message)) {
+      throw new Error('Código incorrecto o expirado. Pedí uno nuevo.')
+    }
+    throw error
+  }
+  return data
+}
+
+// Back-compat alias — older calls to `sendMagicLink` keep working.
+export const sendMagicLink = sendOtpCode
+
+// ── Identity linking (for users already authenticated) ────────────────────────
+// Used when a regular email-signup user wants to ADD Discord as another login
+// method. Without this, hitting "Sign in with Discord" while having an existing
+// email account triggers Supabase's "user already registered" rejection.
+// linkIdentity bypasses that — it attaches Discord to the current session.
+export async function linkDiscordIdentity() {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Tu sesión expiró. Volvé a iniciar sesión.')
+  const { error } = await supabase.auth.linkIdentity({
+    provider: 'discord',
+    options: { redirectTo: window.location.origin },
+  })
+  if (error) {
+    if (/manual linking is disabled/i.test(error.message)) {
+      throw new Error('La vinculación de cuentas no está habilitada. Avisale al admin que prenda "Manual linking" en Supabase Auth.')
+    }
+    if (/identity is already linked/i.test(error.message)) {
+      throw new Error('Tu Discord ya está vinculado a esta cuenta.')
+    }
+    throw error
+  }
+}
+
+// Returns the list of providers (email, discord, google, etc.) currently
+// linked to the signed-in user — used by the profile UI to decide whether
+// to show "Conectar Discord" or "Desconectar Discord".
+export async function getMyIdentities() {
+  const { data, error } = await supabase.auth.getUserIdentities()
+  if (error) throw error
+  return (data?.identities ?? []).map(i => i.provider)
+}
+
+// Unlink a provider from the current account. Safe — Supabase refuses if
+// it's the user's only remaining identity (so they don't get locked out).
+export async function unlinkIdentity(provider) {
+  const { data: { user } } = await supabase.auth.getUser()
+  const ident = user?.identities?.find(i => i.provider === provider)
+  if (!ident) throw new Error('Esa cuenta no está vinculada.')
+  const { error } = await supabase.auth.unlinkIdentity(ident)
+  if (error) throw error
+}
+
 export async function signInWithFacebook() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'facebook',
@@ -203,7 +357,26 @@ export async function getProfile(userId) {
     // NOTE: q_points is intentionally NOT selected here — some DBs may not
     // have the column; the realtime profile-sync channel fills it in from
     // UPDATE payloads after award_points / redeem_points run.
-    .select('id, username, role, branch, avatar_url, points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, social_links, season_badges')
+    .select('id, username, role, branch, avatar_url, points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, tcg_usernames, social_links, season_badges')
+    .eq('id', userId)
+    .single()
+  if (error) throw error
+  return data
+}
+
+/**
+ * Public profile fetch — same as getProfile() but WITHOUT PII fields
+ * (email, phone, terms_accepted_at). Use this whenever you're rendering
+ * SOMEONE ELSE'S profile so we don't transmit their contact info over
+ * the wire.
+ *
+ * Use getProfile() only for the *own* user's profile (settings, edit,
+ * AuthContext bootstrap).
+ */
+export async function getPublicProfile(userId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, role, branch, avatar_url, points, verified, is_owner, tcg_games, social_links, season_badges')
     .eq('id', userId)
     .single()
   if (error) throw error
@@ -315,14 +488,15 @@ function compressVideo(file, { maxWidth = 1280, bitrate = 2_500_000 } = {}) {
 // we skip the extra /auth/v1/user round-trip that can hang on slow networks.
 // Falls back to getSession() which reads from localStorage (no network).
 export async function uploadAvatar(file, userId = null) {
-  let uid = userId
-  if (!uid) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      uid = session?.user?.id ?? null
-    } catch {}
-  }
-  if (!uid) throw new Error('Sesión expirada. Vuelve a iniciar sesión.')
+  // ALWAYS resolve from the live session — ignore stale userId props.
+  // Same reasoning as updateProfile: stale frontend state was causing
+  // RLS rejections in storage that surfaced as confusing errors.
+  let uid = null
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    uid = session?.user?.id ?? null
+  } catch {}
+  if (!uid) throw new Error('Tu sesión expiró. Volvé a iniciar sesión para subir tu foto.')
 
   // Always compress to JPEG — drastically reduces upload size and time
   const compressed = await compressImage(file)
@@ -332,7 +506,15 @@ export async function uploadAvatar(file, userId = null) {
     .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' })
   if (error) {
     console.warn('[uploadAvatar] storage error:', error)
-    throw new Error(error.message || 'No se pudo subir la foto. Revisa tu conexión.')
+    // Friendlier error mapping for common storage failures.
+    const msg = error.message || ''
+    if (/row-level security|new row violates/i.test(msg)) {
+      throw new Error('No se pudo subir la foto. Tu sesión pudo haber expirado — volvé a iniciar sesión.')
+    }
+    if (/payload too large|file too large/i.test(msg)) {
+      throw new Error('La foto es muy pesada. Probá con una imagen más chica.')
+    }
+    throw new Error(msg || 'No se pudo subir la foto. Revisá tu conexión.')
   }
   const { data } = supabase.storage.from('avatars').getPublicUrl(path)
   if (!data?.publicUrl) throw new Error('No se pudo obtener la URL de la foto.')
@@ -341,15 +523,44 @@ export async function uploadAvatar(file, userId = null) {
 }
 
 export async function updateProfile(userId, updates) {
-  const SAFE_FIELDS = ['username', 'phone', 'email', 'branch', 'avatar_url', 'tcg_games', 'social_links', 'terms_accepted_at']
+  // Always pull the *live* session user id rather than trusting whatever was
+  // passed in. If a token silently expired and the UI is still mounted with
+  // the old profile, the WITH CHECK on profiles_update was rejecting the
+  // request with the cryptic "new row violates row-level security policy"
+  // error. By verifying the session first we surface a clear error instead.
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) {
+    throw new Error('Tu sesión expiró. Volvé a iniciar sesión para guardar los cambios.')
+  }
+  const actualUserId = session.user.id
+  // If the caller passed a different id (stale prop, race condition), prefer
+  // the session id — they always update their own profile through this path.
+  if (userId && userId !== actualUserId) {
+    // Don't throw — just realign silently. Owners/admins use a different RPC.
+    userId = actualUserId
+  }
+
+  const SAFE_FIELDS = ['username', 'phone', 'email', 'branch', 'avatar_url', 'tcg_games', 'tcg_usernames', 'social_links', 'terms_accepted_at']
   const safe = Object.fromEntries(Object.entries(updates).filter(([k]) => SAFE_FIELDS.includes(k)))
   const { data, error } = await supabase
     .from('profiles')
     .update(safe)
-    .eq('id', userId)
+    .eq('id', actualUserId)
     .select()
     .single()
-  if (error) throw error
+  if (error) {
+    // Map common Supabase error codes to friendly Spanish messages.
+    if (error.code === '23505' && /username/i.test(error.message)) {
+      throw new Error('Ese nombre de usuario ya está tomado. Elegí otro.')
+    }
+    if (error.code === '42501' || /row-level security/i.test(error.message)) {
+      throw new Error('Tu sesión expiró. Volvé a iniciar sesión para guardar los cambios.')
+    }
+    if (error.code === '23514' && /username/i.test(error.message)) {
+      throw new Error('El nombre de usuario tiene caracteres no permitidos.')
+    }
+    throw error
+  }
   return data
 }
 
@@ -742,29 +953,78 @@ export async function reportPost(postId, reason) {
 
 // ── RANKINGS ────────────────────────────────
 export async function getLeaderboard({ branch = null, game = null } = {}) {
-  // ── Per-game: use DB RPC (single query, server-side aggregation) ──
+  // ── Per-game branch filtering (Option B + fallback) ─────────────────────
+  // The RPC is always called with branch=null so we get every user's TOTAL
+  // points across all branches. When filtering by a branch, we then keep:
+  //   1. Users whose profile.branch matches the selected branch
+  //   2. Users with NO home branch set, but who have an approved claim or
+  //      tournament result in this branch (so they don't disappear from the
+  //      city where they actually played).
   if (game) {
     const { data, error } = await supabase.rpc('get_game_leaderboard', {
       p_game:   game,
-      p_branch: branch ?? null,
+      p_branch: null,
     })
     if (error) throw error
-    return (data ?? []).map(r => ({ ...r, points: Number(r.points) }))
+    const normalized = (data ?? []).map(r => ({ ...r, points: Number(r.points) }))
+
+    if (!branch) return normalized                                   // global view
+
+    const homeMatch  = normalized.filter(r => r.branch === branch)   // step 1
+    const noBranch   = normalized.filter(r => !r.branch)
+    if (noBranch.length === 0) return homeMatch
+
+    // Step 2 — find which of the no-branch users earned points in this
+    // city (via approved claim for this game). One round-trip; we limit
+    // the IN list to the users we actually care about.
+    const { data: claims } = await supabase
+      .from('ranking_claims')
+      .select('user_id')
+      .eq('status', 'approved')
+      .eq('game',   game)
+      .eq('branch', branch)
+      .in('user_id', noBranch.map(u => u.id))
+    const earnedHere = new Set((claims ?? []).map(c => c.user_id))
+    const noBranchEarnedHere = noBranch.filter(u => earnedHere.has(u.id))
+
+    return [...homeMatch, ...noBranchEarnedHere].sort((a, b) => b.points - a.points)
   }
 
-  // ── Global (no game): read profiles.points directly ──
-  let query = supabase
+  // ── Non-game (general ranking) ─────────────────────────────────────────
+  // profiles.points is the global total. Without a branch filter we just
+  // return the top of the list. With a branch filter we apply the same
+  // fallback rule used for the per-game path: home-branch match OR proven
+  // activity (any approved claim) in the city.
+  const baseQ = supabase
     .from('profiles')
     .select('id, username, avatar_url, branch, verified, role, points, is_owner')
     .gt('points', 0)
     .order('points', { ascending: false })
     .limit(50)
 
-  if (branch) query = query.eq('branch', branch)
+  if (!branch) {
+    const { data, error } = await baseQ
+    if (error) throw error
+    return data
+  }
 
-  const { data, error } = await query
+  // Branch filter: pull everyone with pts>0, then filter as above.
+  const { data: all, error } = await baseQ
   if (error) throw error
-  return data
+  const homeMatch = all.filter(r => r.branch === branch)
+  const noBranch  = all.filter(r => !r.branch)
+  if (noBranch.length === 0) return homeMatch
+
+  const { data: claims } = await supabase
+    .from('ranking_claims')
+    .select('user_id')
+    .eq('status', 'approved')
+    .eq('branch', branch)
+    .in('user_id', noBranch.map(u => u.id))
+  const earnedHere = new Set((claims ?? []).map(c => c.user_id))
+  const noBranchEarnedHere = noBranch.filter(u => earnedHere.has(u.id))
+
+  return [...homeMatch, ...noBranchEarnedHere].sort((a, b) => b.points - a.points)
 }
 
 export async function searchTournamentsByName(query) {
@@ -783,9 +1043,9 @@ export async function getTournaments({ game = null, branch = null } = {}) {
   let query = supabase
     .from('tournaments')
     .select(`
-      id, name, game, branch, date, player_count, start_time, entry_fee,
+      id, name, game, branch, date, player_count, start_time, entry_fee, external_url,
       tournament_results ( position, user_id, profiles:user_id ( username ) ),
-      tournament_participants ( user_id, paid, profiles:user_id ( id, username, avatar_url ) )
+      tournament_participants ( user_id, paid, profiles:user_id ( id, username, avatar_url, tcg_usernames ) )
     `)
     .order('date', { ascending: false })
     .limit(20)
@@ -864,24 +1124,32 @@ export async function staffSetGamePoints(userId, game, branch, points) {
 
   const n = Math.max(0, Math.round(Number(points) || 0))
 
+  // Admin edits are FINAL — they represent the user's total for that game,
+  // not a per-branch detail. So:
+  //   1. Wipe every existing override for this user+game (any branch)
+  //   2. If n === 0, also reject approved claims so claim-sum is 0
+  //   3. Otherwise insert ONE override row with branch='' = N
+  //
+  // This guarantees a single source of truth: the RPC's branch='' override
+  // wins whether we query global or per-branch. Before this change, an edit
+  // in the Panama view wrote (user, game, 'Panama'), but the global view
+  // read the older (user, game, '') row → the admin's change looked like
+  // it "reset" after a refresh.
+  await supabase
+    .from('ranking_points_override')
+    .delete()
+    .eq('user_id', userId)
+    .eq('game', game)
+
   if (n === 0) {
-    // Remove override — delete so the claim-sum takes back over (or user disappears)
-    const { error } = await supabase
-      .from('ranking_points_override')
-      .delete()
-      .eq('user_id', userId)
-      .eq('game', game)
-      .eq('branch', branch ?? '')
-    if (error) throw error
+    // Wipe claim-sum too so the user truly ends at 0
+    await rejectUserGameClaims(userId, game)
     return 0
   }
 
   const { data, error } = await supabase
     .from('ranking_points_override')
-    .upsert(
-      { user_id: userId, game, branch: branch ?? '', points: n, set_by: session.user.id },
-      { onConflict: 'user_id,game,branch' }
-    )
+    .insert({ user_id: userId, game, branch: '', points: n, set_by: session.user.id })
     .select('points')
     .single()
   if (error) throw error
@@ -923,22 +1191,30 @@ export async function rejectUserGameClaims(userId, game) {
   if (error) throw error
 }
 
-export async function updateTournament(id, { date, startTime, playerCount, entryFee }) {
+export async function updateTournament(id, { date, startTime, playerCount, entryFee, externalUrl }) {
+  // Build the update patch — `externalUrl === undefined` means "don't touch
+  // the field"; null/empty means "clear it"; a string trims & saves it.
+  const patch = {
+    date,
+    start_time: startTime || null,
+    player_count: parseInt(playerCount),
+    entry_fee: entryFee != null ? parseFloat(entryFee) : 0,
+  }
+  if (externalUrl !== undefined) {
+    const trimmed = (externalUrl ?? '').trim()
+    patch.external_url = trimmed || null
+  }
   const { error } = await supabase
     .from('tournaments')
-    .update({
-      date,
-      start_time: startTime || null,
-      player_count: parseInt(playerCount),
-      entry_fee: entryFee != null ? parseFloat(entryFee) : 0,
-    })
+    .update(patch)
     .eq('id', id)
   if (error) throw error
 }
 
-export async function createTournament({ name, game, branch, date, playerCount, startTime, entryFee }) {
+export async function createTournament({ name, game, branch, date, playerCount, startTime, entryFee, externalUrl }) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) throw new Error('No hay sesión activa')
+  const trimmedUrl = (externalUrl ?? '').trim()
   const { data, error } = await supabase
     .from('tournaments')
     .insert({
@@ -946,6 +1222,7 @@ export async function createTournament({ name, game, branch, date, playerCount, 
       player_count: playerCount,
       start_time: startTime || null,
       entry_fee: entryFee != null ? parseFloat(entryFee) : 0,
+      external_url: trimmedUrl || null,
       created_by: session.user.id,
     })
     .select()
@@ -2381,7 +2658,7 @@ export async function getLeagueDetails(leagueId) {
   const [partsRes, resultsRes] = await Promise.all([
     supabase
       .from('league_participants')
-      .select('user_id, paid, joined_at, tier, profiles:user_id(id, username, avatar_url, role, is_owner)')
+      .select('id, user_id, guest_name, paid, joined_at, tier, profiles:user_id(id, username, avatar_url, role, is_owner)')
       .eq('league_id', leagueId),
     supabase
       .from('league_fecha_results')
@@ -2471,16 +2748,27 @@ export async function updateFechaStatus(fechaId, status) {
 }
 
 /** Upsert a result row (staff enters position for a user → points auto-calculated). */
-export async function upsertLeagueResult({ fechaId, leagueId, userId, tier, position }) {
+export async function upsertLeagueResult({ fechaId, leagueId, userId, participantId, tier, position }) {
   const { data: { session } } = await supabase.auth.getSession()
   const { error } = await supabase
     .from('league_fecha_results')
     .upsert(
-      { fecha_id: fechaId, league_id: leagueId, user_id: userId,
-        tier: tier ?? 'A', position: parseInt(position) || 1,
-        recorded_by: session?.user?.id ?? null },
-      { onConflict: 'fecha_id,user_id' }
+      {
+        fecha_id: fechaId, league_id: leagueId,
+        user_id: userId || null,
+        participant_id: participantId,
+        tier: tier, position: parseInt(position) || 1,
+        recorded_by: session?.user?.id ?? null,
+      },
+      { onConflict: 'fecha_id,participant_id' }
     )
+  if (error) throw error
+}
+
+/** Recalculates points for ALL results in a fecha using the cross-row tier rules.
+ *  Must be called after all positions for a fecha have been upserted. */
+export async function recalcFechaPoints(fechaId) {
+  const { error } = await supabase.rpc('recalc_fecha_points', { p_fecha_id: fechaId })
   if (error) throw error
 }
 
@@ -2519,33 +2807,40 @@ export async function addLeagueFecha(leagueId, { number, date, startTime }) {
 }
 
 /** Staff adds a user to a league with optional tier assignment. */
-export async function addLeagueParticipant(leagueId, userId, tier = null) {
-  const { error } = await supabase
-    .from('league_participants')
-    .upsert(
-      { league_id: leagueId, user_id: userId, tier: tier || null },
-      { onConflict: 'league_id,user_id' }
-    )
-  if (error) throw error
+export async function addLeagueParticipant(leagueId, userId, tier = null, guestName = null) {
+  if (guestName) {
+    // Guest (no account) — insert only, no upsert
+    const { error } = await supabase
+      .from('league_participants')
+      .insert({ league_id: leagueId, user_id: null, guest_name: guestName.trim(), tier: tier || null })
+    if (error) throw error
+  } else {
+    // Registered user — upsert by league+user unique index
+    const { error } = await supabase
+      .from('league_participants')
+      .upsert(
+        { league_id: leagueId, user_id: userId, tier: tier || null },
+        { onConflict: 'league_id,user_id' }
+      )
+    if (error) throw error
+  }
 }
 
-/** Update tier for a participant (staff). */
-export async function setParticipantTier(leagueId, userId, tier) {
+/** Update tier for a participant by their row PK (works for both registered and guests). */
+export async function setParticipantTier(participantId, tier) {
   const { error } = await supabase
     .from('league_participants')
     .update({ tier })
-    .eq('league_id', leagueId)
-    .eq('user_id', userId)
+    .eq('id', participantId)
   if (error) throw error
 }
 
-/** Toggle paid status for a participant (staff). */
-export async function setLeaguePayment(leagueId, userId, paid) {
+/** Toggle paid status for a participant by their row PK. */
+export async function setLeaguePayment(participantId, paid) {
   const { error } = await supabase
     .from('league_participants')
     .update({ paid })
-    .eq('league_id', leagueId)
-    .eq('user_id', userId)
+    .eq('id', participantId)
   if (error) throw error
 }
 

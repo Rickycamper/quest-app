@@ -3,13 +3,16 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getProfile, getUserPosts, getFollowCounts, toggleFollow, getFollowing, getHeadToHead, resetH2H, getMyStats, redeemPoints } from '../lib/supabase'
+import { getProfile, getPublicProfile, getUserPosts, getFollowCounts, toggleFollow, getFollowing, getHeadToHead, resetH2H, getMyStats, redeemPoints } from '../lib/supabase'
 import { GAME_STYLES, BRANCH_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import { PremiumBadge, RoleBadge, MapPinIcon, PAID_ROLES } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 import H2HModal from '../components/H2HModal'
 import Spinner from '../components/Spinner'
+import { useToast } from '../components/Toast'
+import { HAPTIC } from '../lib/design-tokens'
+import { shareOrCopy } from '../lib/share'
 
 const POST_TYPE_COLORS = {
   quiero: '#F59E0B',
@@ -30,6 +33,7 @@ function EditIcon() {
 
 export default function ProfileScreen({ userId, currentUserId, onBack, onEditProfile, onMessage, onVs }) {
   const { profile: myProfile } = useAuth()
+  const toast = useToast()
   const isPremium = myProfile?.role === 'premium' || myProfile?.role === 'admin'
   const [profile,   setProfile]   = useState(null)
   const [posts,     setPosts]     = useState([])
@@ -55,7 +59,10 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
     setLoading(true)
     setLoadError('')
     Promise.all([
-      getProfile(userId),
+      // PII-aware fetch: getProfile (with email/phone) only for OWN profile.
+      // For other users use getPublicProfile so contact info never travels
+      // over the wire to viewers who can't see it anyway.
+      isOwn ? getProfile(userId) : getPublicProfile(userId),
       getUserPosts(userId),
       getFollowCounts(userId),
       !isOwn ? getFollowing() : Promise.resolve(new Set()),
@@ -79,6 +86,7 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
   const handleFollow = async () => {
     if (fBusy) return
     setFBusy(true)
+    HAPTIC.tap()    // tiny vibration so the action feels physical
     try {
       await toggleFollow(userId)
       const now = !isFollowing
@@ -88,11 +96,49 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
     setFBusy(false)
   }
 
-  if (loading) return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0A0A0A', minHeight: '100%' }}>
-      <Spinner size="lg" />
-    </div>
-  )
+  if (loading) {
+    // Skeleton mirrors the real ProfileScreen layout so the page doesn't
+    // visibly shift when content lands — perceived load feels 2× faster
+    // than a centered spinner.
+    const sk = (w, h, r = 6) => ({
+      display: 'inline-block', width: w, height: h, borderRadius: r,
+      background: 'linear-gradient(90deg, #161616 0%, #1F1F1F 50%, #161616 100%)',
+      backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite',
+    })
+    return (
+      <div style={{ background: '#0A0A0A', minHeight: '100%', display: 'flex', flexDirection: 'column', padding: '14px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <span style={sk(24, 24, 12)} />
+          <span style={sk(120, 14)} />
+        </div>
+        {/* Avatar + name */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
+          <span style={sk(78, 78, 39)} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={sk('60%', 16)} />
+            <span style={sk('40%', 12)} />
+          </div>
+        </div>
+        {/* Stats row */}
+        <div style={{ display: 'flex', justifyContent: 'space-around', gap: 12, marginBottom: 22 }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <span style={sk(36, 18)} />
+              <span style={sk(48, 10)} />
+            </div>
+          ))}
+        </div>
+        {/* Tab bar */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {[0, 1, 2].map(i => <span key={i} style={sk(72, 28, 14)} />)}
+        </div>
+        {/* Content grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+          {[...Array(9)].map((_, i) => <span key={i} style={{ ...sk('100%', undefined, 4), aspectRatio: '1' }} />)}
+        </div>
+      </div>
+    )
+  }
 
   if (loadError) return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0A0A0A', minHeight: '100%', padding: 32, gap: 12 }}>
@@ -114,10 +160,44 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           cursor: 'pointer', color: '#FFFFFF', fontSize: 18, flexShrink: 0,
         }}>‹</button>
         <span style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
-          @{profile?.username ?? '...'}
+          {profile?.username ?? '...'}
           {PAID_ROLES.has(profile?.role) && <PremiumBadge size={14} role={profile.role} />}
           <RoleBadge isOwner={profile?.is_owner} role={profile?.role} size={14} />
         </span>
+        {/* Share button — viral growth: anyone can share any profile */}
+        <button
+          onClick={async () => {
+            const url = `${window.location.origin}?u=${encodeURIComponent(profile?.username ?? '')}`
+            const text = `Mirá el perfil de @${profile?.username ?? 'user'} en Quest TCG`
+            // Robust share with 3-tier fallback (native share → clipboard API
+            // → legacy execCommand). The legacy path saves us in WhatsApp /
+            // Instagram in-app browsers + older Safari + private mode.
+            const res = await shareOrCopy({ title: 'Quest TCG', text, url })
+            if (res.method === 'clipboard' || res.method === 'legacy') {
+              toast?.('Link copiado al portapapeles', { type: 'success' })
+            } else if (res.method === 'cancelled') {
+              // User dismissed the share sheet — silent
+            } else if (!res.ok) {
+              toast?.('No se pudo copiar el link', { type: 'error' })
+            }
+            // method === 'share' → native sheet IS the feedback, no toast needed
+          }}
+          title="Compartir perfil"
+          style={{
+            width: 36, height: 36, borderRadius: 10,
+            border: '1.5px solid #2A2A2A', background: '#1A1A1A',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: '#9CA3AF', flexShrink: 0,
+          }}
+        >
+          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+        </button>
         {isOwn && (
           <button onClick={onEditProfile} style={{
             width: 36, height: 36, borderRadius: 10,
@@ -648,7 +728,7 @@ function PostModal({ post, profile, onClose }) {
             <Avatar url={profile?.avatar_url} size={36} role={profile?.role} isOwner={profile?.is_owner} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>@{profile?.username}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>{profile?.username}</div>
             <div style={{ fontSize: 11, color: '#4B5563' }}>{timeAgo(post.created_at)}</div>
           </div>
           <div style={{ padding: '3px 10px', borderRadius: 8, background: gs.bg, border: `1px solid ${gs.border}`, color: gs.color, fontSize: 11, fontWeight: 600 }}>

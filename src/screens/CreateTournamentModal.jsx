@@ -14,6 +14,7 @@ export default function CreateTournamentModal({ onClose, defaultBranch }) {
   const [playerCount, setPlayerCount] = useState('')
   const [startTime,   setStartTime]   = useState('')
   const [entryFee,    setEntryFee]    = useState('')
+  const [externalUrl, setExternalUrl] = useState('')
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState('')
   const [done,        setDone]        = useState(false)
@@ -23,6 +24,16 @@ export default function CreateTournamentModal({ onClose, defaultBranch }) {
     if (!branch)        { setError('Selecciona la sucursal'); return }
     if (!playerCount || isNaN(playerCount) || +playerCount < 2) { setError('Ingresa el número de jugadores'); return }
 
+    // Basic URL sanity check (only when something was entered). We don't
+    // force HTTPS in case organizers paste app deep-links like
+    // "bandai-tcg+://event/123" — but we do require a colon to weed out
+    // accidental text in the field.
+    const trimmedUrl = externalUrl.trim()
+    if (trimmedUrl && !trimmedUrl.includes(':')) {
+      setError('El link externo no es válido (debe empezar con https:// o similar)')
+      return
+    }
+
     setSaving(true); setError('')
     try {
       await createTournament({
@@ -30,6 +41,7 @@ export default function CreateTournamentModal({ onClose, defaultBranch }) {
         playerCount: parseInt(playerCount),
         startTime: startTime || null,
         entryFee: entryFee !== '' ? parseFloat(entryFee) : 0,
+        externalUrl: trimmedUrl || null,
       })
       setDone(true)
     } catch (e) { setError(e.message) }
@@ -179,6 +191,28 @@ export default function CreateTournamentModal({ onClose, defaultBranch }) {
                   style={{ ...inputStyle, paddingLeft: 26 }}
                 />
               </div>
+            </div>
+
+            {/* External registration URL — appears under entry fee. After a
+                user joins on Quest, we show this link so they can also
+                register on the official platform (Bandai TCG+, MTG Companion,
+                etc.). Optional — leave blank if it's a pure in-store event. */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+              <span style={labelStyle}>LINK DE INSCRIPCIÓN EXTERNA (opcional)</span>
+              <input
+                type="url"
+                value={externalUrl}
+                onChange={e => setExternalUrl(e.target.value)}
+                placeholder="https://..."
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                style={inputStyle}
+              />
+              <span style={{ fontSize: 10, color: '#4B5563', lineHeight: 1.4 }}>
+                Después de inscribirse en Quest, el jugador ve este link para
+                completar su registro en el sistema oficial.
+              </span>
             </div>
 
             <button onClick={handleSubmit} disabled={saving} style={{

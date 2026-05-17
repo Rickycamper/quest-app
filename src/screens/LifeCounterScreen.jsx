@@ -375,7 +375,7 @@ function SetupStep({ profile, onStart }) {
                             <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', background: '#2A2A2A', flexShrink: 0 }}>
                               <Avatar url={u.avatar_url} size={28} />
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>@{u.username}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>{u.username}</span>
                           </button>
                         ))}
                         {!loadingU && filteredResults.length === 0 && !query.trim() && (
@@ -471,7 +471,7 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
         </div>
         {!compact && (
           <span style={{ fontSize: 14, fontWeight: 800, color: '#FFFFFF', fontFamily: 'Inter, sans-serif', letterSpacing: '0.01em' }}>
-            @{user?.username ?? '…'}
+            {user?.username ?? '…'}
           </span>
         )}
       </div>
@@ -1363,7 +1363,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
               <Avatar url={user?.avatar_url} size={52} />
             </div>
             <span style={{ fontSize: 13, fontWeight: 800, color: `rgba(255,255,255,${isActive ? 0.95 : 0.45})`, fontFamily: 'Inter, sans-serif', transition: 'color 0.3s' }}>
-              @{user?.username ?? '…'}
+              {user?.username ?? '…'}
             </span>
           </div>
         )}
@@ -1543,7 +1543,7 @@ function DoneScreen({ winner, me, opponent, onClose, onViewProfile }) {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: '#FFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              @{opponent.username}
+              {opponent.username}
             </div>
             <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 600, marginTop: 2 }}>
               Ver win rate H2H →

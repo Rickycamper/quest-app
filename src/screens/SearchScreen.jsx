@@ -73,6 +73,11 @@ export default function SearchScreen({ onViewProfile }) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Buscar jugadores…"
+            type="search"
+            enterKeyHint="search"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             style={{
               flex: 1, background: 'none', border: 'none', outline: 'none',
               color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter, sans-serif',
@@ -139,7 +144,7 @@ export default function SearchScreen({ onViewProfile }) {
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', fontFamily: 'Inter, sans-serif' }}>
-                    @{u.username}
+                    {u.username}
                   </div>
                   {u.full_name && (
                     <div style={{ fontSize: 12, color: '#4B5563', fontFamily: 'Inter, sans-serif', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

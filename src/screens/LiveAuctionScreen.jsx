@@ -247,9 +247,13 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
       setBids(fresh)
       setBidSuccess(true)
       setCustomAmt('')
+      // Success haptic — bid landed. Pattern: tap, short pause, longer tap.
+      try { if (navigator?.vibrate) navigator.vibrate([0, 15, 50, 25]) } catch {}
       setTimeout(() => setBidSuccess(false), 2000)
     } catch (e) {
       setBidErr(e.message || 'Error al pujar')
+      // Error haptic — long double buzz so the user feels the rejection.
+      try { if (navigator?.vibrate) navigator.vibrate([0, 60, 30, 60]) } catch {}
     }
     setBidding(false)
   }, [auction.id, isActive, minNext, startTimeMs])
@@ -369,7 +373,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
             }}>
               <div style={{ fontSize: 40 }}>🏆</div>
               <div style={{ fontSize: 22, fontWeight: 800, color: '#4ADE80' }}>{fmtAmt(topBid.amount)}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>@{topBid.profiles?.username ?? '…'} ganó</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>{topBid.profiles?.username ?? '…'} ganó</div>
               <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Admin te contactará para coordinar</div>
             </div>
           )}
@@ -418,7 +422,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
                       <Avatar url={topBid.profiles?.avatar_url} size={24} role={topBid.profiles?.role} isOwner={topBid.profiles?.is_owner} />
                     </div>
                     <span style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>
-                      @{topBid.profiles?.username ?? '…'}
+                      {topBid.profiles?.username ?? '…'}
                     </span>
                   </div>
                 </>
@@ -449,7 +453,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
                     gap: 2, maxWidth: '80%',
                   }}>
                     <span style={{ fontSize: 10, fontWeight: 800, color: isMe ? 'rgba(255,255,255,0.6)' : '#A78BFA', paddingLeft: 4, paddingRight: 4 }}>
-                      @{m.profiles?.username ?? '…'}
+                      {m.profiles?.username ?? '…'}
                     </span>
                     <div style={{
                       background: isMe ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.6)',
@@ -513,7 +517,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
                 <Avatar url={topBid.profiles?.avatar_url} size={26} role={topBid.profiles?.role} isOwner={topBid.profiles?.is_owner} />
               </div>
               <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#FFF' }}>
-                @{topBid.profiles?.username ?? '…'}
+                {topBid.profiles?.username ?? '…'}
               </span>
               <span style={{ fontSize: 15, fontWeight: 800, color: '#4ADE80', fontVariantNumeric: 'tabular-nums' }}>
                 {fmtAmt(topBid.amount)}
@@ -539,7 +543,7 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
                       <Avatar url={bid.profiles?.avatar_url} size={24} role={bid.profiles?.role} isOwner={bid.profiles?.is_owner} />
                     </div>
                     <span style={{ flex: 1, fontSize: 12, color: '#9CA3AF' }}>
-                      @{bid.profiles?.username ?? '…'}
+                      {bid.profiles?.username ?? '…'}
                     </span>
                     <span style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', fontVariantNumeric: 'tabular-nums' }}>
                       {fmtAmt(bid.amount)}

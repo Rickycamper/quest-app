@@ -11,6 +11,7 @@ import { GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
 import { ShopIcon, SearchIcon } from '../components/Icons'
 import EmptyState from '../components/EmptyState'
+import { useToast } from '../components/Toast'
 
 const STORE_WHATSAPP = '50766130548'
 // Branch-specific WhatsApp numbers.
@@ -125,8 +126,18 @@ function ProductImage({ src, game, ratio = '1/1', detail = false }) {
           <GameIcon game={game} size={24} />
         </div>
       )}
-      <img src={src} alt="" onLoad={() => setLoaded(true)} onError={() => setErr(true)}
-        style={{ width: '100%', height: '100%', objectFit: 'contain', display: loaded ? 'block' : 'none', padding: detail ? '12px' : '8px', boxSizing: 'border-box' }} />
+      {/* IMPORTANT: don't combine loading="lazy" with display:none — the
+          browser's lazy-load skips elements with no rendered box, so onLoad
+          never fires and the card stays blank forever. Fade with opacity
+          instead so the <img> keeps its layout box and the intersection
+          observer can trigger correctly. */}
+      <img src={src} alt="" loading="lazy" decoding="async" onLoad={() => setLoaded(true)} onError={() => setErr(true)}
+        style={{
+          width: '100%', height: '100%', objectFit: 'contain',
+          padding: detail ? '12px' : '8px', boxSizing: 'border-box',
+          opacity: loaded ? 1 : 0,
+          transition: 'opacity 0.2s ease',
+        }} />
     </div>
   )
 }
@@ -159,6 +170,7 @@ const BRANCHES_RES = [
 
 // ── Reservations section (owner only) ────────
 function ReservationsSection({ product, onQtyChange }) {
+  const toast = useToast()
   const [reservations, setReservations] = useState([])
   const [loading,      setLoading]      = useState(true)
   const [showForm,     setShowForm]     = useState(false)
@@ -197,7 +209,7 @@ function ReservationsSection({ product, onQtyChange }) {
       setReservations(prev => [reservation, ...prev])
       onQtyChange?.(qtyUpdate)
       setShowForm(false); setQuery(''); setSelected(null); setQty('1'); setNotes(''); setPaidPct(50); setBranch('david')
-    } catch (e) { alert('Error: ' + (e?.message || 'intentá de nuevo')) }
+    } catch (e) { toast?.('Error: ' + (e?.message || 'intentá de nuevo'), { type: 'error' }) }
     setSaving(false)
   }
 
@@ -206,7 +218,7 @@ function ReservationsSection({ product, onQtyChange }) {
       const { qtyUpdate } = await deleteReservation(r)
       setReservations(prev => prev.filter(x => x.id !== r.id))
       onQtyChange?.(qtyUpdate)
-    } catch (e) { alert('Error al eliminar') }
+    } catch (e) { toast?.('Error al eliminar', { type: 'error' }) }
   }
 
   const totalReserved = reservations.reduce((s, r) => s + (r.qty || 0), 0)
@@ -243,7 +255,7 @@ function ReservationsSection({ product, onQtyChange }) {
                 ? <img src={selected.avatar_url} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }} />
                 : <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>👤</div>
               }
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#A78BFA', flex: 1 }}>@{selected.username}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#A78BFA', flex: 1 }}>{selected.username}</span>
               <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: 14 }}>✕</button>
             </div>
           ) : (
@@ -258,7 +270,7 @@ function ReservationsSection({ product, onQtyChange }) {
                       style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', cursor: 'pointer', borderBottom: '1px solid #222' }}>
                       {u.avatar_url ? <img src={u.avatar_url} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
                         : <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2A2A2A' }} />}
-                      <span style={{ fontSize: 13, color: '#FFF', fontWeight: 600 }}>@{u.username}</span>
+                      <span style={{ fontSize: 13, color: '#FFF', fontWeight: 600 }}>{u.username}</span>
                     </div>
                   ))}
                 </div>
@@ -340,7 +352,7 @@ function ReservationsSection({ product, onQtyChange }) {
                   : <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2A2A2A', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>👤</div>
                 }
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>@{u?.username ?? '—'}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>{u?.username ?? '—'}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2, flexWrap: 'wrap' }}>
                     {br && (
                       <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 5, background: br.bg, color: br.color, border: `1px solid ${br.border}` }}>{br.label}</span>
@@ -368,6 +380,7 @@ function ReservationsSection({ product, onQtyChange }) {
 // ── Product detail sheet (customers read / owners edit inline) ──
 function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelete }) {
   const { profile } = useAuth()
+  const toast = useToast()
   const [name,       setName]       = useState(product.name ?? '')
   const [david,      setDavid]      = useState(String(product.qty_david  ?? 0))
   const [panama,     setPanama]     = useState(String(product.qty_panama ?? 0))
@@ -445,7 +458,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
       const msg = e?.name === 'AbortError'
         ? 'Tiempo de espera agotado. Verificá tu conexión e intentá de nuevo.'
         : (e?.message || 'Error al guardar, intentá de nuevo.')
-      alert(msg)
+      toast?.(msg, { type: 'error' })
     } finally {
       setSaving(false)
     }
@@ -595,11 +608,11 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                           e.currentTarget.textContent = '✓ ' + source
                         } else {
                           e.currentTarget.textContent = '🔄 SCG'
-                          alert('No se encontró precio')
+                          toast?.('No se encontró precio', { type: 'error' })
                         }
                       } catch {
                         e.currentTarget.textContent = '🔄 SCG'
-                        alert('Error al actualizar precio')
+                        toast?.('Error al actualizar precio', { type: 'error' })
                       }
                     }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 9, fontWeight: 700, color: '#4ADE80', padding: 0 }}>
                       🔄 {product.sku?.startsWith('SCRYFALL-') ? 'SCG' : 'TCGPlayer'}
@@ -850,6 +863,7 @@ function ProductCard({ product, isOwner, onSave, onDelete }) {
 
 // ── Add Product Modal ─────────────────────────
 function AddProductModal({ onClose, onAdded, defaultCategory }) {
+  const toast = useToast()
   const [sku,      setSku]      = useState('')
   const [name,     setName]     = useState('')
   const [category, setCategory] = useState(defaultCategory ?? 'sealed')
@@ -929,9 +943,9 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
         })
         setCardResults(entries)
       } else {
-        alert('Carta no encontrada en Scryfall')
+        toast?.('Carta no encontrada en Scryfall', { type: 'error' })
       }
-    } catch { alert('Error al buscar en Scryfall') }
+    } catch { toast?.('Error al buscar en Scryfall', { type: 'error' }) }
     setFetching(false)
   }
 
@@ -959,9 +973,9 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
           }
         }))
       } else {
-        alert('Carta no encontrada')
+        toast?.('Carta no encontrada', { type: 'error' })
       }
-    } catch { alert('Error al buscar Pokémon') }
+    } catch { toast?.('Error al buscar Pokémon', { type: 'error' }) }
     setFetching(false)
   }
 
@@ -990,9 +1004,9 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
           }
         }))
       } else {
-        alert('Carta no encontrada en JustTCG')
+        toast?.('Carta no encontrada en JustTCG', { type: 'error' })
       }
-    } catch { alert('Error al buscar carta') }
+    } catch { toast?.('Error al buscar carta', { type: 'error' }) }
     setFetching(false)
   }
 
@@ -1384,6 +1398,7 @@ function SkeletonCard() {
 // ── Main screen ───────────────────────────────
 export default function ShopScreen({ isOwner, isStaff }) {
   const { profile } = useAuth()
+  const toast = useToast()
   const canEdit = isOwner || isStaff
   // Initialize from cache so pre-fetched data shows instantly (no loading flash)
   const [products,   setProducts]   = useState(() => _shopCache ?? [])
@@ -1479,7 +1494,7 @@ export default function ShopScreen({ isOwner, isStaff }) {
       (p.category || 'sealed') === 'single' &&
       (p.sku?.startsWith('SCRYFALL-') || p.sku?.startsWith('PKMN-'))
     )
-    if (!singles.length) { alert('No hay singles de MTG o Pokémon para actualizar.'); return }
+    if (!singles.length) { toast?.('No hay singles de MTG o Pokémon para actualizar.', { type: 'info' }); return }
     setRefreshing(true)
     setRefreshLog(null)
     let updated = 0, skipped = 0, errors = 0

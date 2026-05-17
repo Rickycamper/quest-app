@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback } from 'react'
 import { getEmailCampaigns, saveEmailCampaign, deleteEmailCampaign, getEmailAudienceCount } from '../lib/supabase'
+import { useConfirm } from '../components/Confirm'
 
 // ── Constants ────────────────────────────────
 const AUDIENCES = [
@@ -49,10 +50,15 @@ function AudiencePill({ audience }) {
 // ── Campaign card (list view) ─────────────────
 function CampaignCard({ campaign, onEdit, onDelete }) {
   const [deleting, setDeleting] = useState(false)
+  const confirmAction = useConfirm()
   const st = STATUS_STYLE[campaign.status] ?? STATUS_STYLE.draft
 
   const handleDelete = async () => {
-    if (!confirm(`¿Eliminar campaña "${campaign.name}"?`)) return
+    const ok = await confirmAction(
+      `Esta acción no se puede deshacer.`,
+      { title: `¿Eliminar campaña "${campaign.name}"?`, confirmLabel: 'Eliminar', destructive: true }
+    )
+    if (!ok) return
     setDeleting(true)
     try { await onDelete(campaign.id) }
     finally { setDeleting(false) }

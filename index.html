@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Quest TCG</title>
+    <title>Quest TCG — La comunidad TCG de Panamá</title>
+
+    <!-- LCP optimization — preload the loading-screen logo so it paints in <1 s.
+         Without this, the logo URL is only known after the JS bundle parses,
+         pushing LCP to 3-5 s. With fetchpriority=high the browser kicks it off
+         before the bundle even arrives. Stable filename in /public/ (no hash). -->
+    <link rel="preload" as="image" href="/quest-logo-loading.png" fetchpriority="high" type="image/png" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -15,14 +21,45 @@
     <meta name="apple-mobile-web-app-title" content="Quest" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
-    <!-- Fonts -->
+    <!-- Speed up first API call to Supabase (saves ~100-200 ms on first request) -->
+    <link rel="preconnect" href="https://qattyrdmlbolocnzczos.supabase.co" crossorigin />
+
+    <!-- Fonts — Bebas Neue loaded async so it doesn't block render. The print
+         media trick: link loads as non-render-blocking, then onload swaps to all. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" /></noscript>
 
-    <!-- Meta -->
-    <meta name="description" content="La comunidad TCG de Panamá — compite, colecciona y conecta." />
+    <!-- SEO -->
+    <meta name="description" content="La comunidad TCG de Panamá — competí en torneos de Magic, Pokémon, One Piece y más. Coleccioná, tradeá y conectá con jugadores cerca tuyo." />
+    <meta name="keywords" content="TCG Panamá, Magic the Gathering Panamá, Pokémon TCG, One Piece TCG, torneos cartas Panamá, hobby store Panamá" />
+    <meta name="author" content="Quest TCG" />
+    <link rel="canonical" href="https://questhobbystore.com" />
     <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Open Graph (WhatsApp, Discord, Facebook, LinkedIn previews) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://questhobbystore.com" />
+    <meta property="og:title" content="Quest TCG — La comunidad TCG de Panamá" />
+    <meta property="og:description" content="Competí en torneos, coleccioná y tradeá cartas. Magic, Pokémon, One Piece, Digimon y más." />
+    <meta property="og:image" content="https://questhobbystore.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Quest TCG - La comunidad TCG de Panamá" />
+    <meta property="og:site_name" content="Quest TCG" />
+    <meta property="og:locale" content="es_PA" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://questhobbystore.com" />
+    <meta name="twitter:title" content="Quest TCG — La comunidad TCG de Panamá" />
+    <meta name="twitter:description" content="Competí en torneos, coleccioná y tradeá cartas. Magic, Pokémon, One Piece, Digimon y más." />
+    <meta name="twitter:image" content="https://questhobbystore.com/og-image.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="shortcut icon" href="/icons/icon-192.png" />
     <!-- Prevent white flash before React mounts -->
     <!-- Disable text selection & callout globally — prevents iOS "Copy/Look Up" popup on long-press -->
     <style>

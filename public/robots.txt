@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://questhobbystore.com/sitemap.xml
+
+# Block private endpoints (none today, kept for future-proofing)
+Disallow: /api/

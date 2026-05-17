@@ -3,6 +3,7 @@
 // Provides: user, profile, role, loading
 // ─────────────────────────────────────────────
 import { createContext, useContext, useEffect, useState } from 'react'
+import * as Sentry from '@sentry/react'
 import { supabase, getProfile, getQPoints, acceptTerms } from '../lib/supabase'
 
 const AuthContext = createContext(null)
@@ -87,21 +88,37 @@ export function AuthProvider({ children }) {
     const done = () => { if (!ready) { ready = true; setLoading(false) } }
 
     // OAuth callbacks (Discord, Twitch, etc.) need a network round-trip to exchange
-    // the ?code= for a session. Give up to 30 s before falling back to opening screen.
+    // the ?code= for a session. Give up to 12 s before falling back to opening screen.
     // Normal loads (no code in URL) keep the original 2 s fallback.
-    const timeout = setTimeout(done, isOAuthCallback ? 30_000 : 2_000)
+    const timeout = setTimeout(done, isOAuthCallback ? 12_000 : 2_000)
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setAuthEvent(event)
         setUser(session?.user ?? null)
+        // Tie Sentry events to the current user (or clear it on sign-out)
+        try {
+          if (session?.user?.id) Sentry.setUser({ id: session.user.id })
+          else if (event === 'SIGNED_OUT') Sentry.setUser(null)
+        } catch {}
         if (event === 'PASSWORD_RECOVERY' && session) {
           setRecoverySession({ access_token: session.access_token, refresh_token: session.refresh_token })
         }
-        // For OAuth callbacks: hold loading until Supabase tells us the outcome.
-        // SIGNED_IN = exchange succeeded. INITIAL_SESSION = exchange failed or no code.
-        // For all other loads: unblock immediately on any event.
-        if (!isOAuthCallback || event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        // For OAuth callbacks: hold loading until we have a definitive result.
+        //   SIGNED_IN                    → exchange succeeded, session ready → unblock
+        //   INITIAL_SESSION + session    → session was already restored → unblock
+        //   INITIAL_SESSION + no session → exchange still in progress; do NOT unblock here.
+        //     The 12-second timeout will eventually call done() if exchange never fires SIGNED_IN.
+        //     This prevents the opening screen from briefly appearing while Discord is still
+        //     completing the PKCE code exchange, which caused users to see a "loop".
+        // For non-OAuth loads: unblock on any event.
+        if (!isOAuthCallback) {
+          done()
+        } else if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && !!session)) {
+          done()
+        } else if (event === 'SIGNED_OUT') {
+          // PKCE code exchange failed (invalid_grant, code reuse, etc.) — don't
+          // wait the full 12 s; unblock immediately so the error screen shows fast.
           done()
         }
         loadProfile(session?.user ?? null)

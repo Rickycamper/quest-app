@@ -10,6 +10,37 @@ import digimonIcon from '../assets/digimon.png'
 
 export const GAMES = ['MTG', 'Pokemon', 'One Piece', 'Digimon', 'Riftbound', 'Gundam']
 
+// Every game maps to a "platform" — the actual online system (MTG Arena,
+// Pokémon TCG Live, Bandai TCG+) where the user has a separate username.
+// One Piece, Digimon, Gundam, Riftbound all share Bandai TCG+.
+// EditProfile shows ONE input per platform (3 total), not 6.
+export const GAME_TO_PLATFORM = {
+  'MTG':       'MTG',
+  'Pokemon':   'Pokemon',
+  'One Piece': 'Bandai',
+  'Digimon':   'Bandai',
+  'Gundam':    'Bandai',
+  'Riftbound': 'Bandai',
+}
+
+// Friendly platform names for labels in profile + tournament hints.
+export const PLATFORM_LABEL = {
+  MTG:     'MTG Arena / Companion',
+  Pokemon: 'Pokémon TCG Live',
+  Bandai:  'Bandai TCG+ (One Piece · Digimon · Gundam · Riftbound)',
+}
+
+// Given a profile + game, return the user's per-platform username (e.g. their
+// Bandai TCG+ ID for a One Piece tournament). Returns null if not set so
+// callers can fall back to the Quest username.
+export function getGameUsername(profile, game) {
+  if (!profile?.tcg_usernames || !game) return null
+  const platform = GAME_TO_PLATFORM[game]
+  if (!platform) return null
+  const v = profile.tcg_usernames[platform]
+  return (typeof v === 'string' && v.trim()) ? v.trim() : null
+}
+
 export const GAME_STYLES = {
   'MTG':       { color: '#A78BFA', bg: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.25)', emoji: '⚔️', icon: mtgIcon },
   'Pokemon':   { color: '#FCD34D', bg: 'rgba(251,191,36,0.12)', border: 'rgba(251,191,36,0.25)', emoji: '⚡',  icon: pokemonIcon },

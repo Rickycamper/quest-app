@@ -1,31 +1,86 @@
 // ─────────────────────────────────────────────
 // QUEST — App.jsx  (main router)
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback, useMemo, Component } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, Component, lazy, Suspense } from 'react'
+import * as Sentry from '@sentry/react'
 import questLogo from './assets/quest-logo-sm.png'
 import { GuestContext, useGuest } from './context/GuestContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './components/Toast'
+import { ConfirmProvider } from './components/Confirm'
 import { useNotifications } from './hooks/useNotifications'
-import { OpeningScreen, SignupScreen, EmailSignupScreen, LoginScreen, ForgotPasswordScreen, ResetPasswordScreen, TermsModal } from './screens/AuthScreens'
+import { OpeningScreen, SignupScreen, EmailSignupScreen, LoginScreen, ForgotPasswordScreen, ResetPasswordScreen, TermsModal, friendlyOAuthError } from './screens/AuthScreens'
 import FeedScreen            from './screens/FeedScreen'
-import ProfileScreen         from './screens/ProfileScreen'
-import EditProfileScreen     from './screens/EditProfileScreen'
-import RankingsScreen        from './screens/RankingsScreen'
-import FolderScreen          from './screens/FolderScreen'
-import TrackingScreen, { CreatePackageModal } from './screens/TrackingScreen'
-import CreatePostModal       from './screens/CreatePostModal'
-import ClaimModal            from './screens/ClaimModal'
-import CreateTournamentModal from './screens/CreateTournamentModal'
-import CreateLeagueModal     from './screens/CreateLeagueModal'
-import AdminScreen           from './screens/AdminScreen'
-import AuctionScreen         from './screens/AuctionScreen'
-import QuestHubScreen        from './screens/QuestHubScreen'
-import LifeCounterScreen     from './screens/LifeCounterScreen'
-import ChatScreen            from './screens/ChatScreen'
-import LogMatchModal         from './screens/LogMatchModal'
-import SearchScreen          from './screens/SearchScreen'
-import ShopScreen, { prefetchShopProducts } from './screens/ShopScreen'
+
+// ── Lazy-loaded screens & modals ──────────────────────────────────────────────
+// Each of these becomes its own JS chunk that's only downloaded when needed.
+// Cuts the initial bundle from ~776 KB → ~200 KB.
+const ProfileScreen         = lazy(() => import('./screens/ProfileScreen'))
+const EditProfileScreen     = lazy(() => import('./screens/EditProfileScreen'))
+const RankingsScreen        = lazy(() => import('./screens/RankingsScreen'))
+const FolderScreen          = lazy(() => import('./screens/FolderScreen'))
+const TrackingScreen        = lazy(() => import('./screens/TrackingScreen'))
+const CreatePackageModal    = lazy(() => import('./screens/TrackingScreen').then(m => ({ default: m.CreatePackageModal })))
+const CreatePostModal       = lazy(() => import('./screens/CreatePostModal'))
+const ClaimModal            = lazy(() => import('./screens/ClaimModal'))
+const CreateTournamentModal = lazy(() => import('./screens/CreateTournamentModal'))
+const CreateLeagueModal     = lazy(() => import('./screens/CreateLeagueModal'))
+const AdminScreen           = lazy(() => import('./screens/AdminScreen'))
+const AuctionScreen         = lazy(() => import('./screens/AuctionScreen'))
+const QuestHubScreen        = lazy(() => import('./screens/QuestHubScreen'))
+const LifeCounterScreen     = lazy(() => import('./screens/LifeCounterScreen'))
+const ChatScreen            = lazy(() => import('./screens/ChatScreen'))
+const LogMatchModal         = lazy(() => import('./screens/LogMatchModal'))
+const SearchScreen          = lazy(() => import('./screens/SearchScreen'))
+const ShopScreen            = lazy(() => import('./screens/ShopScreen'))
+
+// Fallback shown while a chunk is being downloaded. Dark background so it
+// blends with the app; spinner is intentionally minimal — most chunks load
+// in <300 ms on 4G so a heavy skeleton would flash unpleasantly.
+function ScreenFallback() {
+  return (
+    <div style={{
+      minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: '#0A0A0A',
+    }}>
+      <div style={{
+        width: 22, height: 22, borderRadius: '50%',
+        border: '2px solid #2A2A2A', borderTopColor: '#A78BFA',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+    </div>
+  )
+}
+
+// ── Chunk-load error detection ────────────────────────────────────────────────
+// When a new deploy lands, users on an old bundle may request lazy chunks that
+// no longer exist on the server. React surfaces this as "ChunkLoadError" or as
+// a "failed to fetch dynamically imported module" error. Without recovery, the
+// user gets a permanent crash card. Cheap fix without paid Skew Protection:
+// detect the chunk-load case and auto-reload once (so they get the fresh bundle).
+function isChunkLoadError(e) {
+  const msg = (e?.message || e?.name || '').toLowerCase()
+  return (
+    e?.name === 'ChunkLoadError' ||
+    msg.includes('chunkloaderror') ||
+    msg.includes('failed to fetch dynamically imported module') ||
+    msg.includes('importing a module script failed') ||
+    msg.includes('error loading chunk')
+  )
+}
+// One-shot guard so a chunk load that keeps failing (real outage, offline) doesn't
+// reload-loop the page. Stored in sessionStorage so it resets per browser tab session.
+const RELOAD_FLAG = 'quest_chunk_reload_at'
+function reloadOncePerSession() {
+  try {
+    const last = parseInt(sessionStorage.getItem(RELOAD_FLAG) || '0', 10)
+    // If we reloaded for this reason in the last 15s, don't loop — show the error.
+    if (Date.now() - last < 15_000) return false
+    sessionStorage.setItem(RELOAD_FLAG, String(Date.now()))
+    window.location.reload()
+    return true
+  } catch { return false }
+}
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null } }
@@ -33,6 +88,18 @@ class ErrorBoundary extends Component {
   componentDidCatch(error, info) {
     // Surface to console so the user can screenshot it if needed
     console.error('[ErrorBoundary]', this.props.label || 'root', error, info?.componentStack)
+    // Chunk-load errors after a deploy: silently reload to fetch the new bundle.
+    // This handles the common case where lazy-loaded screens go 404 mid-session.
+    if (isChunkLoadError(error) && reloadOncePerSession()) return
+    // Report to Sentry with the boundary label (which tab/screen crashed)
+    try {
+      Sentry.withScope(scope => {
+        scope.setTag('error_boundary', this.props.label || 'root')
+        scope.setTag('error_type', isChunkLoadError(error) ? 'chunk_load' : 'runtime')
+        scope.setContext('componentStack', { stack: info?.componentStack || '' })
+        Sentry.captureException(error)
+      })
+    } catch {}
   }
   componentDidUpdate(prevProps) {
     // Auto-reset when the resetKey changes (e.g. user switches tab).
@@ -78,15 +145,32 @@ class ErrorBoundary extends Component {
 import { acceptTerms, subscribeToPush, supabase } from './lib/supabase'
 import { BottomNav, NotifBell } from './components/Nav'
 import { ShieldIcon, SearchIcon, DiamondIcon } from './components/Icons'
-import NotificationPanel from './components/NotificationPanel'
-import OnboardingModal   from './components/OnboardingModal'
+// NotificationPanel + OnboardingModal + FeatureTour lazy-loaded — none shows on first render
+const NotificationPanel = lazy(() => import('./components/NotificationPanel'))
+const OnboardingModal   = lazy(() => import('./components/OnboardingModal'))
+const FeatureTour       = lazy(() => import('./components/FeatureTour'))
 import Avatar from './components/Avatar'
+import InstallPrompt from './components/InstallPrompt'
+import OfflineBanner from './components/OfflineBanner'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 const globalCSS = `
+  /* Inter is the fallback when SF Pro isn't available (Android, Windows).
+     The system font stack below resolves to SF Pro Display/Text on Apple
+     devices automatically — that's why questhobbystore.com feels noticeably
+     more native on iPhone Safari now. */
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { height: 100%; }
-  body { height: 100%; background: #1A1A1A; font-family: 'Inter', sans-serif; overflow: hidden; font-variant-numeric: tabular-nums; }
+  body {
+    height: 100%; background: #1A1A1A;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+    overflow: hidden; font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
   .phone-wrap { display:flex; justify-content:center; align-items:center; height:100vh; padding:20px; overflow:hidden; }
   .phone { width:390px; height:844px; border-radius:44px; overflow:hidden; position:relative; background:#0A0A0A; box-shadow:0 30px 80px rgba(0,0,0,0.6), 0 0 0 6px #111111; display:flex; flex-direction:column; }
   @media (max-width: 480px) {
@@ -110,12 +194,28 @@ const globalCSS = `
   .screen-scroll::-webkit-scrollbar { display:none; }
   .filter-scroll { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; touch-action:pan-x; -webkit-overflow-scrolling:touch; }
   .filter-scroll::-webkit-scrollbar { display:none; }
-  @keyframes fadeUp   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes slideUp  { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes slideDown{ from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+  /* Animations — built-in spring overshoot so every callsite gets the "Apple
+     bounce" without needing to edit each animation: ... line. The overshoot
+     keyframe at ~65% travels PAST the destination, then settles back. This
+     is how iOS UIKit springs work under the hood. */
+  @keyframes fadeUp   {
+    0%   { opacity: 0; transform: translateY(8px); }
+    65%  { opacity: 1; transform: translateY(-2px); }   /* gentle overshoot */
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideUp  {
+    0%   { opacity: 0; transform: translateY(30px); }
+    65%  { opacity: 1; transform: translateY(-6px); }   /* bouncy entrance */
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideDown{
+    0%   { opacity: 0; transform: translateY(-20px); }
+    65%  { opacity: 1; transform: translateY(4px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
   @keyframes spin     { to{transform:rotate(360deg)} }
   @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  @keyframes bounce   { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-18px)} 60%{transform:translateY(-10px)} }
+  @keyframes bounce   { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-14px)} 60%{transform:translateY(-7px)} }
   @keyframes fadeInOut{ 0%{opacity:0;transform:translateX(-50%) translateY(-6px)} 20%,80%{opacity:1;transform:translateX(-50%) translateY(0)} 100%{opacity:0;transform:translateX(-50%) translateY(-6px)} }
   @keyframes likePop  { 0%{transform:scale(1)} 20%{transform:scale(1.55)} 45%{transform:scale(0.88)} 70%{transform:scale(1.22)} 100%{transform:scale(1.15)} }
   @keyframes tabBounce{ 0%{transform:scale(1) translateY(0)} 30%{transform:scale(1.32) translateY(-4px)} 65%{transform:scale(0.91) translateY(0)} 100%{transform:scale(1) translateY(0)} }
@@ -181,7 +281,7 @@ function AuthFlow({ onGuest, initialScreen, onDone, oauthError }) {
   return null
 }
 
-function MainApp({ initialTab, openTournamentId, openLeagueId } = {}) {
+function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername } = {}) {
   const { user, profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
   const { isGuest, requireAuth } = useGuest()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
@@ -194,6 +294,24 @@ function MainApp({ initialTab, openTournamentId, openLeagueId } = {}) {
   const [showLeague,      setShowLeague]     = useState(false)
   const [showAdmin,       setShowAdmin]      = useState(false)
   const [viewingUserId,   setViewingUserId]  = useState(null)
+  // Resolve deep-linked ?u=username → user id and open the profile overlay once.
+  // Runs on mount only; if the username doesn't exist we silently no-op
+  // (no point flashing an error for a stale share link).
+  useEffect(() => {
+    if (!openUsername) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', openUsername)
+          .maybeSingle()
+        if (!cancelled && data?.id) setViewingUserId(data.id)
+      } catch {}
+    })()
+    return () => { cancelled = true }
+  }, [openUsername])
   const [showEditProfile, setShowEditProfile]= useState(false)
   const [chatUser,        setChatUser]       = useState(null)   // { id, username }
   const [vsUser,          setVsUser]         = useState(null)   // { id, username } | null = no preselect
@@ -207,17 +325,28 @@ function MainApp({ initialTab, openTournamentId, openLeagueId } = {}) {
   const [showLifeCounter,   setShowLifeCounter]   = useState(false)
   const [feedRefreshKey,    setFeedRefreshKey]    = useState(0)
   const [showOnboarding,    setShowOnboarding]    = useState(false)
+  const [showFeatureTour,   setShowFeatureTour]   = useState(false)
   const [headerHidden, setHeaderHidden] = useState(false)
   const [navHidden,    setNavHidden]    = useState(false)
   const lastScrollY  = useRef(0)
   const scrollRef    = useRef(null)
+  const scrollTickRef = useRef(false)
 
+  // Scroll fires ~60+ times per second. Each setHeaderHidden/setNavHidden
+  // call re-renders the entire MainApp subtree, which is expensive on the
+  // feed. rAF-throttle so we only run the logic ONCE per frame.
   const handleScroll = (e) => {
-    const y = e.currentTarget.scrollTop
-    const delta = y - lastScrollY.current
-    if (delta > 16 && y > 60) { setHeaderHidden(true);  setNavHidden(true)  }
-    else if (delta < -12)     { setHeaderHidden(false); setNavHidden(false) }
-    lastScrollY.current = y
+    if (scrollTickRef.current) return
+    scrollTickRef.current = true
+    const target = e.currentTarget
+    requestAnimationFrame(() => {
+      const y = target.scrollTop
+      const delta = y - lastScrollY.current
+      if (delta > 16 && y > 60) { setHeaderHidden(true);  setNavHidden(true)  }
+      else if (delta < -12)     { setHeaderHidden(false); setNavHidden(false) }
+      lastScrollY.current = y
+      scrollTickRef.current = false
+    })
   }
 
   // Register push notifications once per user session
@@ -226,11 +355,14 @@ function MainApp({ initialTab, openTournamentId, openLeagueId } = {}) {
     subscribeToPush(profile.id)
   }, [profile?.id])
 
-  // Pre-warm the shop product cache 2 s after the feed settles, so the first
-  // time the user opens the Shop tab the products are already in memory.
+  // Pre-warm the Shop chunk + product cache 2 s after the feed settles, so
+  // tapping the Shop tab for the first time feels instant. Pulls the lazy
+  // chunk early and calls the named prefetch helper from it.
   useEffect(() => {
     if (!profile?.id) return
-    const t = setTimeout(prefetchShopProducts, 2000)
+    const t = setTimeout(() => {
+      import('./screens/ShopScreen').then(m => m.prefetchShopProducts?.()).catch(() => {})
+    }, 2000)
     return () => clearTimeout(t)
   }, [profile?.id])
 
@@ -255,6 +387,53 @@ function MainApp({ initialTab, openTournamentId, openLeagueId } = {}) {
     if (profile?.id) localStorage.setItem(`quest_ob2_${profile.id}`, '1')
     setShowOnboarding(false)
   }
+
+  // FeatureTour — actionable walkthrough for returning users (one-shot).
+  // Fires ONLY when the legacy onboarding is finished/dismissed AND the tour
+  // hasn't been completed yet — never shows back-to-back with onboarding.
+  // Delay 2.5 s so the app settles, the feed renders, etc.
+  useEffect(() => {
+    if (!profile?.id) return
+    if (showOnboarding) return  // legacy onboarding takes priority on first signup
+    const t = setTimeout(() => {
+      const key = `quest_feature_tour_done_v1_${profile.id}`
+      if (!localStorage.getItem(key)) setShowFeatureTour(true)
+    }, 2500)
+    return () => clearTimeout(t)
+  }, [profile?.id, showOnboarding])
+
+  // Owner profile (RickyQuest) — used as the demo recipient in the tracking
+  // step so the owner can clean up the test packages later.
+  const DEMO_OWNER = {
+    id: '3efec9b5-35ab-4b91-b3d7-38631ab13cbb',
+    username: 'RickyQuest',
+    avatar_url: null,
+  }
+
+  // FeatureTour action callback: open the relevant flow for the step the
+  // user tapped "Probar ahora" on. After this fires, the tour closes itself
+  // and the flag is set so it never shows again.
+  const handleTourAction = useCallback((action) => {
+    setShowFeatureTour(false)
+    if (action === 'profile') {
+      // Open own profile → then Edit overlay
+      const id = profile?.id ?? user?.id
+      if (id) { setViewingUserId(id); setShowEditProfile(true) }
+    } else if (action === 'match') {
+      setVsUser(null); setShowMatchModal(true)
+    } else if (action === 'tracking') {
+      // Pre-fill recipient = owner so any demo packages land on RickyQuest's
+      // dashboard and can be deleted afterwards.
+      window.__questDemoRecipient = DEMO_OWNER
+      setShowPackageCreate(true)
+    } else if (action === 'rankings') {
+      setActiveTab('ranks')
+      setVisitedTabs(prev => { if (prev.has('ranks')) return prev; const next = new Set(prev); next.add('ranks'); return next })
+    } else if (action === 'tournaments') {
+      setActiveTab('ranks')
+      setVisitedTabs(prev => { if (prev.has('ranks')) return prev; const next = new Set(prev); next.add('ranks'); return next })
+    }
+  }, [profile?.id, user?.id])
 
   const handleViewProfile = useCallback((userId) => setViewingUserId(userId), [])
   const handleOwnProfile  = useCallback(() => {
@@ -288,13 +467,22 @@ const needsTerms = profile && !profile.terms_accepted_at
   }
 
   return (
-    <>
+    <Suspense fallback={<ScreenFallback />}>
       {needsTerms && (
         <TermsModal acceptOnly onAccept={handleAcceptTerms} />
       )}
       {/* Onboarding shown once per user. TermsModal (z:9999) overlaps it if terms are pending. */}
       {showOnboarding && (
         <OnboardingModal onDone={handleOnboardingDone} />
+      )}
+      {/* Feature Tour — actionable walkthrough for returning users (one-shot).
+          Closes itself + flags done on either skip or any "Probar ahora" tap. */}
+      {showFeatureTour && profile?.id && (
+        <FeatureTour
+          userId={profile.id}
+          onSkip={() => setShowFeatureTour(false)}
+          onAction={handleTourAction}
+        />
       )}
       {showNotifs && (
         <NotificationPanel profile={profile} notifications={notifications}
@@ -400,12 +588,20 @@ const needsTerms = profile && !profile.terms_accepted_at
         />
       )}
 
-      {/* Create Package modal — app-level so it fills full screen without clipping */}
+      {/* Create Package modal — app-level so it fills full screen without clipping.
+          `initialRecipient` is pulled from a window-global the FeatureTour sets
+          when the user taps "Probar tracking" — pre-fills RickyQuest so the demo
+          packages can be cleaned up later. Cleared on close. */}
       {showPackageCreate && (
         <CreatePackageModal
           currentUserId={profile?.id}
-          onClose={() => setShowPackageCreate(false)}
+          initialRecipient={window.__questDemoRecipient ?? null}
+          onClose={() => {
+            window.__questDemoRecipient = null
+            setShowPackageCreate(false)
+          }}
           onCreated={() => {
+            window.__questDemoRecipient = null
             setShowPackageCreate(false)
             setPackageRefreshKey(k => k + 1)
           }}
@@ -419,7 +615,7 @@ const needsTerms = profile && !profile.terms_accepted_at
         zIndex: 20,
         transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)',
         opacity: headerHidden ? 0 : 1,
-        transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease',
+        transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 350ms ease',
         willChange: 'transform',
         background: `
           radial-gradient(ellipse 180px 70px at 15% 70%, rgba(167,139,250,0.035), transparent 75%),
@@ -437,8 +633,13 @@ const needsTerms = profile && !profile.terms_accepted_at
           paddingLeft: 20, paddingRight: 20,
         }}>
           <img
-            src={questLogo} alt="Quest"
+            src={questLogo} alt="Abrir Quest Hub"
             onClick={() => setShowHub(true)}
+            role="button"
+            aria-label="Abrir Quest Hub"
+            width={80}
+            height={80}
+            decoding="async"
             style={{ width: 80, height: 'auto', cursor: 'pointer' }}
           />
           {/* ── Header right side ── */}
@@ -447,10 +648,11 @@ const needsTerms = profile && !profile.terms_accepted_at
               <span style={{ fontSize: 20, fontWeight: 900, color: '#FFF', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.02em' }}>Shop</span>
             )}
             {isStaff && activeTab !== 'shop' && (
-              <button onClick={() => setShowAdmin(true)} style={{
+              <button onClick={() => setShowAdmin(true)} aria-label="Panel de admin" style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                color: '#9CA3AF', padding: 2, lineHeight: 1,
-                display: 'flex', alignItems: 'center',
+                color: '#9CA3AF',
+                width: 36, height: 36, padding: 8, lineHeight: 1, // bigger touch target
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}><ShieldIcon size={20} /></button>
             )}
             {activeTab !== 'shop' && (
@@ -473,7 +675,14 @@ const needsTerms = profile && !profile.terms_accepted_at
                   }}
                 >
                   <DiamondIcon size={16} color={profile?.role === 'premium' ? '#A78BFA' : '#FBBF24'} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#FBBF24', fontFamily: 'Inter, sans-serif', letterSpacing: '0.01em' }}>
+                  {/* Bold Inter — heavy weight reads as "currency value".
+                      Bebas Neue here looked like a movie title, not coins.
+                      Keep only a subtle gold glow for the premium hint. */}
+                  <span style={{
+                    fontSize: 13, fontWeight: 800, color: '#FBBF24',
+                    letterSpacing: '0.01em',
+                    textShadow: '0 0 8px rgba(251,191,36,0.25)',
+                  }}>
                     {(profile?.q_points ?? 0).toLocaleString()}
                   </span>
                 </button>
@@ -482,13 +691,15 @@ const needsTerms = profile && !profile.terms_accepted_at
             {activeTab !== 'shop' && (
               <button
                 onClick={() => requireAuth(() => setShowPost(true))}
+                aria-label="Crear post"
                 style={{
-                  width: 32, height: 32, borderRadius: 10,
+                  width: 36, height: 36, borderRadius: 12,             // bigger + 4pt-grid radius
                   background: 'linear-gradient(135deg, #FFFFFF 0%, #E8E8E8 100%)',
                   border: 'none', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0 2px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6)',
-                  transition: 'transform 0.12s ease, box-shadow 0.12s ease',
+                  // Spring press feedback (overshoot easing).
+                  transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
                 onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.92)' }}
                 onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
@@ -509,12 +720,15 @@ const needsTerms = profile && !profile.terms_accepted_at
       {/* Per-screen ErrorBoundary: if one tab crashes (stale bundle, bad data, etc.)   */}
       {/* the user gets a "Reintentar / Recargar" card instead of a silent black screen */}
       {/* and the other tabs keep working.                                              */}
+      {/* Suspense wraps the screen container so each lazy chunk shows a spinner while loading. */}
       <div ref={scrollRef} className="screen-scroll" onScroll={handleScroll}>
         {Object.keys(screenMap).map(tab => (
           visitedTabs.has(tab) ? (
             <div key={tab} style={{ display: tab === activeTab ? 'block' : 'none', minHeight: '100%' }}>
               <ErrorBoundary label={tab} compact resetKey={activeTab}>
-                {screenMap[tab]}
+                <Suspense fallback={<ScreenFallback />}>
+                  {screenMap[tab]}
+                </Suspense>
               </ErrorBoundary>
             </div>
           ) : null
@@ -539,7 +753,9 @@ const needsTerms = profile && !profile.terms_accepted_at
         onPost={() => requireAuth(() => setShowPost(true))}
         onLifeCounter={() => setShowLifeCounter(true)}
       />
-    </>
+      {/* PWA install prompt — auto-shows on Android Chrome and iOS Safari (with a tip). */}
+      <InstallPrompt />
+    </Suspense>
   )
 }
 
@@ -550,6 +766,7 @@ function AppInner() {
 
   // Deep link: ?tournament=TOURNAMENT_ID  — opens a specific tournament as guest
   //            ?tab=ranks                 — opens the tournaments tab as guest (e.g. from email CTA)
+  //            ?u=username                — opens a specific user profile (shared link)
   // Also captures ?error= / ?error_description= from failed OAuth redirects (Discord, etc.)
   // Read all params before cleaning the URL (replaceState empties search immediately).
   const [deepLinks] = useState(() => {
@@ -557,22 +774,24 @@ function AppInner() {
     const tournament = params.get('tournament') ?? null
     const liga       = params.get('liga')       ?? null
     const tab        = params.get('tab')        ?? null
+    const username   = params.get('u')          ?? null
     // Capture OAuth error from failed redirect (e.g. Discord email conflict)
     const oauthErr   = params.get('error_description') ?? params.get('error') ?? null
     // Track whether we arrived via a Discord/OAuth redirect (?code=).
     // Used to show "Conectando con Discord…" in the loading state and to
     // detect when the exchange timed out (arrived via OAuth but ended up with no session).
     const wasOAuthCallback = params.has('code')
-    if (tournament || tab || liga) window.history.replaceState(null, '', window.location.pathname)
-    return { tournament, liga, tab, oauthErr, wasOAuthCallback }
+    if (tournament || tab || liga || username) window.history.replaceState(null, '', window.location.pathname)
+    return { tournament, liga, tab, username, oauthErr, wasOAuthCallback }
   })
   const deepLinkTournament = deepLinks.tournament
   const deepLinkLeagueId   = deepLinks.liga
   const deepLinkTab        = deepLinks.tab
+  const deepLinkUsername   = deepLinks.username
 
   // Auto-enter guest mode when arriving via tournament or tab deep-link and not logged in.
   // If user is already logged in (from localStorage) this stays false.
-  const [isGuest,       setIsGuest]       = useState(() => !user && (!!deepLinkTournament || !!deepLinkLeagueId || deepLinkTab === 'ranks'))
+  const [isGuest,       setIsGuest]       = useState(() => !user && (!!deepLinkTournament || !!deepLinkLeagueId || deepLinkTab === 'ranks' || !!deepLinkUsername))
   const [gateScreen,    setGateScreen]    = useState(null) // null | 'login' | 'signup'
   const [showGateModal, setShowGateModal] = useState(false)
 
@@ -614,9 +833,20 @@ function AppInner() {
 
   if (loading) return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#0A0A0A', gap: 16 }}>
-      <img src={questLogo} alt="Quest" style={{ width: 110, animation: 'bounce 0.9s ease infinite' }} />
+      {/* Stable /public URL + explicit dims + fetchpriority high = LCP image
+          paints immediately. The preload link in index.html starts the download
+          before the JS bundle even arrives, cutting LCP from ~3.5 s → ~1 s. */}
+      <img
+        src="/quest-logo-loading.png"
+        alt="Quest"
+        width={110}
+        height={110}
+        fetchpriority="high"
+        decoding="async"
+        style={{ width: 110, height: 110, animation: 'bounce 0.9s ease infinite' }}
+      />
       {deepLinks.wasOAuthCallback && (
-        <span style={{ fontSize: 13, color: '#4B5563', fontFamily: 'Inter, sans-serif' }}>
+        <span style={{ fontSize: 13, color: '#4B5563' }}>
           Conectando con Discord…
         </span>
       )}
@@ -641,7 +871,7 @@ function AppInner() {
       animation: 'fadeUp 0.4s ease',
     }}>
       <div style={{ fontSize: 64 }}>🎉</div>
-      <img src={questLogo} alt="Quest" style={{ width: 100 }} />
+      <img src={questLogo} alt="Quest" width={100} height={100} style={{ width: 100, height: 'auto' }} />
       <div style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
         ¡Cuenta confirmada!
       </div>
@@ -669,6 +899,7 @@ function AppInner() {
           initialTab={(deepLinkTournament || deepLinkLeagueId || deepLinkTab === 'ranks') ? 'ranks' : undefined}
           openTournamentId={deepLinkTournament}
           openLeagueId={deepLinkLeagueId}
+          openUsername={deepLinkUsername}
         />
         {showGateModal && (
           <GuestGateModal
@@ -691,11 +922,12 @@ function AppInner() {
       <AuthFlow
         onGuest={() => setIsGuest(true)}
         oauthError={
-          // Explicit error from Supabase redirect (?error= in URL) takes priority.
-          // If we came via Discord (?code=) but still ended up without a session,
-          // the PKCE exchange silently failed — show a generic retry message.
-          deepLinks.oauthErr
-            ?? (deepLinks.wasOAuthCallback ? 'No se pudo conectar con Discord. Intentá de nuevo o ingresá con tu email.' : null)
+          // Apply friendlyOAuthError to the raw URL error HERE so OpeningScreen
+          // receives an already-translated string and doesn't double-process it.
+          // If no URL error but we came via OAuth (?code=) and ended up with no
+          // session, the PKCE exchange silently failed — show a generic retry msg.
+          (deepLinks.oauthErr ? friendlyOAuthError(deepLinks.oauthErr) : null)
+            ?? (deepLinks.wasOAuthCallback ? 'No se pudo conectar con Discord. Intentá de nuevo o usá tu email.' : null)
         }
       />
     </div>
@@ -707,16 +939,24 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ToastProvider>
-        <style>{globalCSS}</style>
-        <div className="phone-wrap">
-          <div className="phone">
-            <ErrorBoundary>
-              <AuthProvider>
-                <AppInner />
-              </AuthProvider>
-            </ErrorBoundary>
+        <ConfirmProvider>
+          <style>{globalCSS}</style>
+          <div className="phone-wrap">
+            <div className="phone">
+              <ErrorBoundary>
+                <AuthProvider>
+                  <AppInner />
+                </AuthProvider>
+              </ErrorBoundary>
+            </div>
           </div>
-        </div>
+          {/* Offline indicator — sits above everything (z:9999), only renders when offline */}
+          <OfflineBanner />
+          {/* Vercel Analytics — page views, traffic, referrers (zero config) */}
+          <Analytics />
+          {/* Speed Insights — real-user Core Web Vitals (LCP, FCP, CLS) */}
+          <SpeedInsights />
+        </ConfirmProvider>
       </ToastProvider>
     </ErrorBoundary>
   )

@@ -2,14 +2,16 @@
 // QUEST — RankingsScreen
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, setTournamentPayment, getActiveSeason, staffAwardRankingPoints, staffSetGamePoints, getLeagues, getLeagueDetails, joinLeague, leaveLeague, updateLeagueStatus, updateFechaStatus, upsertLeagueResult, submitMyResult, addLeagueFecha, addLeagueParticipant, setLeaguePayment, setParticipantTier, deleteLeague } from '../lib/supabase'
+import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, setTournamentPayment, getActiveSeason, staffAwardRankingPoints, staffSetGamePoints, getLeagues, getLeagueDetails, joinLeague, leaveLeague, updateLeagueStatus, updateFechaStatus, upsertLeagueResult, recalcFechaPoints, submitMyResult, addLeagueFecha, addLeagueParticipant, setLeaguePayment, setParticipantTier, deleteLeague } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES } from '../lib/constants'
+import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES, getGameUsername } from '../lib/constants'
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
 import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, ShareIcon, PAID_ROLES, SACalendar, SAClock, SAUsers } from '../components/Icons'
 import { useToast } from '../components/Toast'
+import { useConfirm } from '../components/Confirm'
+import { shareOrCopy } from '../lib/share'
 
 // ── Inline icons (16×16, fill, strokeWidth 0) ─────────
 const UserPlusIcon = ({ size = 14, color = 'currentColor' }) => (
@@ -573,7 +575,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
                 {awardUser ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'rgba(167,139,250,0.08)', borderRadius: 8, border: '1px solid rgba(167,139,250,0.25)' }}>
                     <Avatar url={awardUser.avatar_url} size={26} />
-                    <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#E5E5E5' }}>@{awardUser.username}</span>
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#E5E5E5' }}>{awardUser.username}</span>
                     <button onClick={() => { setAwardUser(null); setAwardQuery('') }} style={{
                       background: 'none', border: 'none', color: '#4B5563', fontSize: 18, cursor: 'pointer', lineHeight: 1,
                     }}>×</button>
@@ -602,7 +604,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <Avatar url={u.avatar_url} size={24} />
-                        <span style={{ fontSize: 12, color: '#E5E5E5' }}>@{u.username}</span>
+                        <span style={{ fontSize: 12, color: '#E5E5E5' }}>{u.username}</span>
                         {u.branch && <span style={{ fontSize: 10, color: '#4B5563', marginLeft: 'auto' }}>{u.branch}</span>}
                       </div>
                     ))}
@@ -715,7 +717,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
               }}><Avatar url={entry.avatar_url} size={34} role={entry.role} isOwner={entry.is_owner} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  @{entry.username}
+                  {entry.username}
                   {entry.verified && <span style={{ fontSize: 10, color: '#60A5FA' }}>✓</span>}
                   {PAID_ROLES.has(entry.role) && <PremiumBadge size={12} role={entry.role} />}
                   <RoleBadge isOwner={entry.is_owner} role={entry.role} size={12} />
@@ -780,7 +782,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
 }
 
 // ── Participant row with pay toggle (admin only) ──
-function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tournamentName, isAdmin, onViewProfile }) {
+function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tournamentName, tournamentGame, isAdmin, onViewProfile }) {
   const [paid,    setPaid]    = useState(!!p.paid)
   const [toggling,setToggling]= useState(false)
 
@@ -817,9 +819,23 @@ function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tourna
       }}>
         <Avatar url={prof.avatar_url} size={28} />
       </div>
-      <span style={{ fontSize: 12, fontWeight: 600, color: '#D1D5DB', fontFamily: 'Inter, sans-serif', flex: 1 }}>
-        @{prof.username}
-      </span>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#D1D5DB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {prof.username}
+        </span>
+        {/* Per-platform game ID (e.g. their Bandai TCG+ name for an OPTCG
+            tournament). Only renders when they actually have it set, so the
+            row stays single-line for the common case. */}
+        {(() => {
+          const gameId = getGameUsername(prof, tournamentGame)
+          if (!gameId) return null
+          return (
+            <span style={{ fontSize: 10, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>
+              🎮 {gameId}
+            </span>
+          )
+        })()}
+      </div>
       {playerMedal && <span style={{ fontSize: 14 }}>{medal(playerMedal.position)}</span>}
 
       {/* Payment status */}
@@ -864,6 +880,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
   const [joining, setJoining] = useState(false)
   const [joinErr, setJoinErr] = useState('')
   const [copied,  setCopied]  = useState(false)
+  const [showExternalLink, setShowExternalLink] = useState(false)
   const cardRef = useRef(null)
 
   // Scroll into view when opened via deep link
@@ -873,16 +890,15 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
     return () => clearTimeout(t)
   }, [autoOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleShare = (e) => {
+  const handleShare = async (e) => {
     e.stopPropagation()
     const url = `${window.location.origin}/?tournament=${t.id}`
-    if (navigator.share) {
-      navigator.share({ title: t.name, text: `¡Unite al torneo! ${t.name}`, url }).catch(() => {})
-    } else {
-      navigator.clipboard?.writeText(url).then(() => {
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-      })
+    // Robust 3-tier fallback so WhatsApp/Instagram in-app browsers + old
+    // Safari can still copy when the modern clipboard API is unavailable.
+    const res = await shareOrCopy({ title: t.name, text: `¡Unite al torneo! ${t.name}`, url })
+    if ((res.method === 'clipboard' || res.method === 'legacy') && res.ok) {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
   }
 
@@ -994,6 +1010,10 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
         await joinTournament(t.id)
         toast?.(`¡Inscripto en ${t.name}!`, { type: 'success' })
         navigator.vibrate?.(20)
+        // If the organizer added an external registration link, surface it
+        // RIGHT AFTER the join so the user remembers to also sign up on the
+        // official platform (Bandai TCG+, MTG Companion, etc.).
+        if (t.external_url) setShowExternalLink(true)
       }
       // Optimistic update — parent will refetch on next mount, for now flip locally
       const uid = profile?.id
@@ -1149,6 +1169,32 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
         </div>
       )}
 
+      {/* External registration link (always visible in the expanded card so
+          users can re-access it after dismissing the post-join modal). */}
+      {open && t.external_url && (
+        <a
+          href={t.external_url}
+          target="_blank" rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 14px',
+            background: 'rgba(167,139,250,0.06)',
+            borderTop: '1px solid rgba(167,139,250,0.18)',
+            color: '#A78BFA', textDecoration: 'none',
+            fontSize: 12, fontWeight: 700,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          <span style={{ flex: 1 }}>Inscripción en plataforma oficial</span>
+          <span style={{ color: '#6B7280', fontSize: 11 }}>Abrir →</span>
+        </a>
+      )}
+
       {/* Expanded — participants + top 3 results */}
       {open && (
         <div style={{ borderTop: '1px solid #1A1A1A', animation: 'fadeUp 0.2s ease' }}>
@@ -1180,6 +1226,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
                       playerMedal={playerMedal}
                       tournamentId={t.id}
                       tournamentName={t.name}
+                      tournamentGame={t.game}
                       isAdmin={isAdmin}
                       onViewProfile={onViewProfile}
                     />
@@ -1211,7 +1258,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
                       {r.position <= 3 ? <RankIcon rank={r.position} size={16} /> : `#${r.position}`}
                     </div>
                     <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      @{r.profiles?.username}
+                      {r.profiles?.username}
                     </div>
                   </div>
                 ))}
@@ -1288,7 +1335,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
                             <Avatar url={user.avatar_url} size={28} />
                           </div>
                           <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#D1D5DB', fontFamily: 'Inter, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            @{user.username}
+                            {user.username}
                           </span>
                           {/* Invite button */}
                           <button
@@ -1377,6 +1424,72 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Post-join modal — shown right after a successful Quest registration
+          when the tournament has an external_url. Reminds the user to also
+          register on the official platform (Bandai TCG+, MTG Companion, etc.).
+          Dismissible — the link also remains visible in the expanded card. */}
+      {showExternalLink && t.external_url && (
+        <div
+          onClick={() => setShowExternalLink(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9000,
+            background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+            animation: 'fadeInFast 0.2s ease',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 340,
+              background: '#111111', border: '1px solid #2A2A2A',
+              borderRadius: 16, padding: '22px 20px 18px',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.7)',
+              animation: 'slideUp 0.28s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{
+              width: 56, height: 56, borderRadius: 14,
+              background: 'rgba(74,222,128,0.12)',
+              border: '1px solid rgba(74,222,128,0.25)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 28, marginBottom: 14,
+            }}>✅</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#FFF', marginBottom: 6 }}>
+              ¡Inscrito en Quest!
+            </div>
+            <div style={{ fontSize: 13, color: '#9CA3AF', lineHeight: 1.5, marginBottom: 18 }}>
+              Ahora completá tu inscripción en el sistema oficial del torneo:
+            </div>
+            <a
+              href={t.external_url}
+              target="_blank" rel="noopener noreferrer"
+              onClick={() => setShowExternalLink(false)}
+              style={{
+                display: 'block', padding: '13px 0', borderRadius: 12,
+                background: '#A78BFA', color: '#111',
+                fontSize: 14, fontWeight: 800, textDecoration: 'none',
+                marginBottom: 8,
+              }}
+            >
+              🔗 Abrir inscripción oficial
+            </a>
+            <button
+              onClick={() => setShowExternalLink(false)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: '#6B7280', fontSize: 12, fontWeight: 600,
+                padding: 8,
+              }}
+            >
+              Lo abro después
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -1477,6 +1590,7 @@ const TIER_STYLE = {
 
 function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpen = false }) {
   const toast  = useToast()
+  const confirmAction = useConfirm()
   const cardRef = useRef(null)
   const [open,        setOpen]        = useState(defaultOpen)
   const [details,     setDetails]     = useState(null)   // { participants, results }
@@ -1498,16 +1612,13 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
 
   const [copied, setCopied] = useState(false)
 
-  const handleShare = (e) => {
+  const handleShare = async (e) => {
     e.stopPropagation()
     const url = `${window.location.origin}/?tab=ranks&liga=${league.id}`
-    if (navigator.share) {
-      navigator.share({ title: league.name, text: `¡Unite a la liga! ${league.name}`, url }).catch(() => {})
-    } else {
-      navigator.clipboard?.writeText(url).then(() => {
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-      })
+    const res = await shareOrCopy({ title: league.name, text: `¡Unite a la liga! ${league.name}`, url })
+    if ((res.method === 'clipboard' || res.method === 'legacy') && res.ok) {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
   }
 
@@ -1529,9 +1640,16 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
   const [searchLoading, setSearchLoading] = useState(false)
   const [addedIds,      setAddedIds]      = useState({})
   const [addTier,       setAddTier]       = useState({})      // userId → 'A'|'B'|'C'
+  // Guest (no-account) add mode
+  const [guestMode,     setGuestMode]     = useState(false)   // toggle between registered / guest
+  const [guestInput,    setGuestInput]    = useState('')
+  const [guestTier,     setGuestTier]     = useState('')
+  const [addingGuest,   setAddingGuest]   = useState(false)
   // Player self-report
   const [selfPosInput,  setSelfPosInput]  = useState('')
   const [selfSubmitting,setSelfSubmitting]= useState(false)
+  // Standings view
+  const [standingsTab,  setStandingsTab]  = useState('general') // 'general'|'A'|'B'|'C'
 
   const gs = league.game ? (GAME_STYLES[league.game] ?? GAME_STYLES['MTG']) : null
   const bs = league.branch ? (BRANCH_STYLES[league.branch] ?? null) : null
@@ -1547,9 +1665,13 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
       .then(d => {
         setDetails(d)
         // Pre-fill positionMap from existing results for the active fecha
+        // Key = participant.id (works for both registered users and guests)
         if (activeFechaId) {
           const m = {}
-          d.results.filter(r => r.fecha_id === activeFechaId).forEach(r => { m[r.user_id] = String(r.position ?? '') })
+          d.results.filter(r => r.fecha_id === activeFechaId).forEach(r => {
+            const part = d.participants.find(p => p.user_id === r.user_id)
+            if (part) m[part.id] = String(r.position ?? '')
+          })
           setPositionMap(m)
         }
       })
@@ -1561,7 +1683,10 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
   useEffect(() => {
     if (!details || !activeFechaId) return
     const m = {}
-    details.results.filter(r => r.fecha_id === activeFechaId).forEach(r => { m[r.user_id] = String(r.position ?? '') })
+    details.results.filter(r => r.fecha_id === activeFechaId).forEach(r => {
+      const part = details.participants.find(p => p.user_id === r.user_id)
+      if (part) m[part.id] = String(r.position ?? '')
+    })
     setPositionMap(m)
   }, [activeFechaId, details])
 
@@ -1618,15 +1743,29 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
     if (!activeFechaId || !details) return
     setSavingPts(true); setPtsErr('')
     try {
-      const toSave = details.participants.filter(p => positionMap[p.user_id] && parseInt(positionMap[p.user_id]) > 0)
+      // Save ALL participants with a position (registered + guests)
+      // Guests get 0 pts but their positions are needed for correct tier ranking
+      const toSave = details.participants.filter(p =>
+        positionMap[p.id] && parseInt(positionMap[p.id]) > 0
+      )
       if (toSave.length === 0) { setPtsErr('Ingresá al menos una posición'); setSavingPts(false); return }
+      // Block if any player has no tier assigned — would corrupt point calculations
+      const missingTier = toSave.filter(p => !p.tier)
+      if (missingTier.length > 0) {
+        setPtsErr(`Sin tier asignado: ${missingTier.map(p => p.profiles?.username || p.guest_name || 'jugador').join(', ')}`)
+        setSavingPts(false); return
+      }
       await Promise.all(
         toSave.map(p => upsertLeagueResult({
           fechaId: activeFechaId, leagueId: league.id,
-          userId: p.user_id, tier: p.tier ?? 'A',
-          position: parseInt(positionMap[p.user_id]),
+          userId: p.user_id || null,
+          participantId: p.id,
+          tier: p.tier,
+          position: parseInt(positionMap[p.id]),
         }))
       )
+      // Recalculate all points for this fecha using cross-row tier rules
+      await recalcFechaPoints(activeFechaId)
       const d = await getLeagueDetails(league.id)
       setDetails(d)
       toast?.('Posiciones guardadas ✓', { type: 'success' })
@@ -1670,20 +1809,40 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
     }
   }
 
+  const handleAddGuest = async () => {
+    const name = guestInput.trim()
+    if (!name || addingGuest) return
+    setAddingGuest(true)
+    try {
+      await addLeagueParticipant(league.id, null, guestTier || null, name)
+      setPartCount(c => c + 1)
+      const d = await getLeagueDetails(league.id)
+      setDetails(d)
+      setGuestInput('')
+      setGuestTier('')
+      toast?.(`${name} agregado`, { type: 'success' })
+    } catch (e) {
+      toast?.(e.message || 'Error al agregar invitado', { type: 'error' })
+    }
+    setAddingGuest(false)
+  }
+
   // Build overall standings from results
   const standings = (() => {
     if (!details) return []
     const totals = {}
     details.results.forEach(r => {
-      totals[r.user_id] = (totals[r.user_id] ?? 0) + r.points
+      if (r.user_id) totals[r.user_id] = (totals[r.user_id] ?? 0) + r.points
     })
     return details.participants
       .map(p => ({
-        ...p.profiles,
-        userId: p.user_id,
-        paid: p.paid,
-        tier: p.tier,
-        total: totals[p.user_id] ?? 0,
+        ...(p.profiles ?? {}),
+        participantId: p.id,          // row PK — used for tier/paid updates
+        userId:    p.user_id,
+        guestName: p.guest_name,      // non-null for guest participants
+        paid:      p.paid,
+        tier:      p.tier,
+        total:     p.user_id ? (totals[p.user_id] ?? 0) : 0,
       }))
       .sort((a, b) => b.total - a.total)
   })()
@@ -1925,80 +2084,97 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                 )}
               </div>
 
-              {/* Overall standings */}
-              {standings.length > 0 && (
-                <div style={{ padding: '12px 16px 16px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.07em', marginBottom: 10 }}>TABLA GENERAL</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {standings.map((s, i) => (
-                      <div key={s.userId} style={{
-                        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-                        borderRadius: 10,
-                        background: i === 0 ? 'rgba(245,158,11,0.06)' : i === 1 ? 'rgba(156,163,175,0.05)' : i === 2 ? 'rgba(184,115,51,0.05)' : 'transparent',
-                        border: `1px solid ${i === 0 ? 'rgba(245,158,11,0.15)' : i === 1 ? 'rgba(156,163,175,0.1)' : i === 2 ? 'rgba(184,115,51,0.1)' : 'transparent'}`,
-                      }}>
-                        <span style={{
-                          width: 20, fontSize: 12, fontWeight: 800, textAlign: 'center', flexShrink: 0,
-                          color: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : i === 2 ? '#B87333' : '#374151',
-                        }}>{i + 1}</span>
-                        <Avatar url={s.avatar_url} size={28} />
-                        {isStaff ? (
-                          <select
-                            value={s.tier ?? ''}
-                            onClick={e => e.stopPropagation()}
-                            onChange={async e => {
-                              const t = e.target.value
-                              try {
-                                await setParticipantTier(league.id, s.userId, t || null)
-                                const d = await getLeagueDetails(league.id)
-                                setDetails(d)
-                              } catch(ex) { toast?.(ex.message, { type: 'error' }) }
-                            }}
-                            style={{
-                              background: '#1A1A1A', border: '1px solid #2A2A2A',
-                              borderRadius: 6, color: s.tier ? TIER_STYLE[s.tier]?.color ?? '#6B7280' : '#4B5563',
-                              fontSize: 11, fontWeight: 700, padding: '3px 6px',
-                              fontFamily: 'Inter, sans-serif', cursor: 'pointer',
-                              colorScheme: 'dark', flexShrink: 0,
-                            }}
-                          >
-                            <option value="">—</option>
-                            <option value="A">T·A</option>
-                            <option value="B">T·B</option>
-                            <option value="C">T·C</option>
-                          </select>
-                        ) : (
-                          <TierBadge tier={s.tier} />
-                        )}
-                        <span
-                          onClick={() => onViewProfile && onViewProfile(s.userId)}
-                          style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#E5E5E5', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                        >@{s.username}</span>
-                        {isStaff && (
-                          <span style={{
-                            fontSize: 11, padding: '3px 8px', borderRadius: 6,
-                            background: s.paid ? 'rgba(74,222,128,0.1)' : 'rgba(239,68,68,0.1)',
-                            border: `1px solid ${s.paid ? 'rgba(74,222,128,0.25)' : 'rgba(239,68,68,0.25)'}`,
-                            color: s.paid ? '#4ADE80' : '#F87171', cursor: 'pointer',
-                          }}
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              try {
-                                await setLeaguePayment(league.id, s.userId, !s.paid)
-                                const d = await getLeagueDetails(league.id)
-                                setDetails(d)
-                              } catch(ex) { toast?.(ex.message, { type: 'error' }) }
-                            }}
-                          >{s.paid ? '✓ Pagó' : 'Pend.'}</span>
-                        )}
-                        <span style={{ fontSize: 14, fontWeight: 800, color: i < 3 ? ['#F59E0B','#9CA3AF','#B87333'][i] : '#6B7280', flexShrink: 0 }}>
-                          {s.total}<span style={{ fontSize: 10, fontWeight: 600, color: '#4B5563', marginLeft: 3 }}>pts</span>
-                        </span>
-                      </div>
-                    ))}
+              {/* Standings — tabbed: General / Tier A / Tier B / Tier C */}
+              {standings.length > 0 && (() => {
+                const TABS = [
+                  { key: 'general', label: 'General' },
+                  { key: 'A', label: 'Tier A', color: TIER_STYLE.A?.color ?? '#F59E0B' },
+                  { key: 'B', label: 'Tier B', color: TIER_STYLE.B?.color ?? '#A78BFA' },
+                  { key: 'C', label: 'Tier C', color: TIER_STYLE.C?.color ?? '#34D399' },
+                ]
+                const filtered = standingsTab === 'general'
+                  ? standings
+                  : standings.filter(s => s.tier === standingsTab)
+                const tabColor = TABS.find(t => t.key === standingsTab)?.color ?? '#6B7280'
+
+                const StandingRow = ({ s, i }) => (
+                  <div key={s.participantId ?? s.userId ?? `g_${s.guestName}`} style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px',
+                    borderRadius: 10,
+                    background: i === 0 ? 'rgba(245,158,11,0.06)' : i === 1 ? 'rgba(156,163,175,0.04)' : i === 2 ? 'rgba(184,115,51,0.04)' : 'transparent',
+                    border: `1px solid ${i === 0 ? 'rgba(245,158,11,0.15)' : i === 1 ? 'rgba(156,163,175,0.08)' : i === 2 ? 'rgba(184,115,51,0.08)' : 'transparent'}`,
+                  }}>
+                    <span style={{
+                      width: 18, fontSize: 11, fontWeight: 800, textAlign: 'center', flexShrink: 0,
+                      color: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : i === 2 ? '#B87333' : '#374151',
+                    }}>{i + 1}</span>
+                    {s.guestName ? (
+                      <div style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: '#1A1A1A', border: '1px dashed #2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>👤</div>
+                    ) : (
+                      <Avatar url={s.avatar_url} size={26} />
+                    )}
+                    {isStaff ? (
+                      <select value={s.tier ?? ''} onClick={e => e.stopPropagation()}
+                        onChange={async e => {
+                          try { await setParticipantTier(s.participantId, e.target.value || null); const d = await getLeagueDetails(league.id); setDetails(d) }
+                          catch(ex) { toast?.(ex.message, { type: 'error' }) }
+                        }}
+                        style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 6, color: s.tier ? TIER_STYLE[s.tier]?.color ?? '#6B7280' : '#4B5563', fontSize: 10, fontWeight: 700, padding: '2px 5px', fontFamily: 'Inter, sans-serif', cursor: 'pointer', colorScheme: 'dark', flexShrink: 0 }}
+                      >
+                        <option value="">—</option>
+                        <option value="A">T·A</option>
+                        <option value="B">T·B</option>
+                        <option value="C">T·C</option>
+                      </select>
+                    ) : (
+                      <TierBadge tier={s.tier} />
+                    )}
+                    {s.guestName ? (
+                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.guestName}</span>
+                    ) : (
+                      <span onClick={() => onViewProfile && onViewProfile(s.userId)}
+                        style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#E5E5E5', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {s.username}
+                      </span>
+                    )}
+                    {isStaff && (
+                      <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 6, background: s.paid ? 'rgba(74,222,128,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${s.paid ? 'rgba(74,222,128,0.25)' : 'rgba(239,68,68,0.25)'}`, color: s.paid ? '#4ADE80' : '#F87171', cursor: 'pointer', flexShrink: 0 }}
+                        onClick={async e => { e.stopPropagation(); try { await setLeaguePayment(s.participantId, !s.paid); const d = await getLeagueDetails(league.id); setDetails(d) } catch(ex) { toast?.(ex.message, { type: 'error' }) } }}
+                      >{s.paid ? '✓ Pagó' : 'Pend.'}</span>
+                    )}
+                    <span style={{ fontSize: 13, fontWeight: 800, color: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : i === 2 ? '#B87333' : '#6B7280', flexShrink: 0 }}>
+                      {s.total}<span style={{ fontSize: 10, fontWeight: 600, color: '#4B5563', marginLeft: 2 }}>pts</span>
+                    </span>
                   </div>
-                </div>
-              )}
+                )
+
+                return (
+                  <div style={{ padding: '12px 16px 16px' }}>
+                    {/* Tab bar */}
+                    <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+                      {TABS.map(tab => (
+                        <button key={tab.key} onClick={() => setStandingsTab(tab.key)}
+                          style={{
+                            flex: 1, padding: '5px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
+                            fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 700,
+                            background: standingsTab === tab.key ? (tab.color ?? '#E5E5E5') : '#1A1A1A',
+                            color: standingsTab === tab.key ? '#111' : '#4B5563',
+                            transition: 'background 0.15s, color 0.15s',
+                          }}
+                        >{tab.label}</button>
+                      ))}
+                    </div>
+
+                    {/* Scrollable list */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 340, overflowY: 'auto', paddingRight: 2 }}>
+                      {filtered.map((s, i) => <StandingRow key={s.participantId ?? s.userId ?? `g_${s.guestName}_${i}`} s={s} i={i} />)}
+                      {filtered.length === 0 && (
+                        <div style={{ fontSize: 11, color: '#374151', textAlign: 'center', padding: '16px 0' }}>Sin datos aún</div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })()}
               {standings.length === 0 && details.participants.length === 0 && (
                 <div style={{ padding: '12px 14px', fontSize: 12, color: '#374151', textAlign: 'center' }}>
                   Aún no hay participantes inscriptos.
@@ -2072,27 +2248,56 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                                 INGRESAR POSICIONES
                                 <span style={{ fontWeight: 400, color: '#374151', marginLeft: 6 }}>· puntos se calculan solos</span>
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                {details.participants.map(p => (
-                                  <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <Avatar url={p.profiles?.avatar_url} size={26} />
-                                    <TierBadge tier={p.tier} />
-                                    <span style={{ flex: 1, fontSize: 12, color: '#E5E5E5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      @{p.profiles?.username}
-                                    </span>
-                                    <select
-                                      value={positionMap[p.user_id] ?? ''}
-                                      onChange={e => setPositionMap(prev => ({ ...prev, [p.user_id]: e.target.value }))}
-                                      style={{ ...inputSm, width: 72, textAlign: 'center', colorScheme: 'dark' }}
-                                    >
-                                      <option value="">—</option>
-                                      {Array.from({ length: maxPlayers > 0 ? maxPlayers : 24 }, (_, i) => i + 1).map(n => (
-                                        <option key={n} value={n}>{n}°</option>
-                                      ))}
-                                    </select>
+                              {(() => {
+                                // Positions already assigned to OTHER players — block them in each dropdown
+                                const totalSlots = Math.max(maxPlayers > 0 ? maxPlayers : 0, details.participants.length, 24)
+                                const usedPositions = new Set(Object.values(positionMap).filter(v => v !== ''))
+                                return (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {details.participants.map(p => {
+                                      const myPos = positionMap[p.id] ?? ''
+                                      const hasPos = myPos !== ''
+                                      return (
+                                        <div key={p.id} style={{
+                                          display: 'flex', alignItems: 'center', gap: 10,
+                                          background: hasPos ? 'rgba(167,139,250,0.06)' : 'transparent',
+                                          borderRadius: 8, padding: hasPos ? '3px 6px' : '0',
+                                          transition: 'background 0.15s',
+                                        }}>
+                                          {p.user_id
+                                            ? <Avatar url={p.profiles?.avatar_url} size={26} />
+                                            : <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>👤</div>
+                                          }
+                                          <TierBadge tier={p.tier} />
+                                          <span style={{ flex: 1, fontSize: 12, color: hasPos ? '#E5E5E5' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {p.user_id ? `@${p.profiles?.username}` : p.guest_name}
+                                          </span>
+                                          <select
+                                            value={myPos}
+                                            onChange={e => setPositionMap(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                            style={{
+                                              ...inputSm, width: 72, textAlign: 'center', colorScheme: 'dark',
+                                              borderColor: hasPos ? '#A78BFA' : undefined,
+                                              color: hasPos ? '#A78BFA' : undefined,
+                                              fontWeight: hasPos ? 700 : 400,
+                                            }}
+                                          >
+                                            <option value="">—</option>
+                                            {Array.from({ length: totalSlots }, (_, i) => i + 1).map(n => {
+                                              const taken = usedPositions.has(String(n)) && myPos !== String(n)
+                                              return (
+                                                <option key={n} value={n} disabled={taken}>
+                                                  {n}°{taken ? ' ✕' : ''}
+                                                </option>
+                                              )
+                                            })}
+                                          </select>
+                                        </div>
+                                      )
+                                    })}
                                   </div>
-                                ))}
-                              </div>
+                                )
+                              })()}
                               {ptsErr && <div style={{ fontSize: 11, color: '#F87171', marginTop: 8 }}>{ptsErr}</div>}
                               <button onClick={handleSavePoints} disabled={savingPts} style={{
                                 marginTop: 10, width: '100%', padding: '9px', borderRadius: 9, border: 'none',
@@ -2111,7 +2316,7 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                                 ¿En qué posición terminaste?
                               </div>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
-                                {Array.from({ length: maxPlayers > 0 ? maxPlayers : 24 }, (_, i) => i + 1).map(pos => (
+                                {Array.from({ length: Math.max(maxPlayers > 0 ? maxPlayers : 0, details.participants.length, 24) }, (_, i) => i + 1).map(pos => (
                                   <button
                                     key={pos}
                                     disabled={selfSubmitting}
@@ -2147,12 +2352,15 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                               {fechaResults.map((r, idx) => {
                                 const participant = details.participants.find(p => p.user_id === r.user_id)
-                                const username = participant?.profiles?.username ?? '—'
+                                const isGuest = !r.user_id
+                                const displayName = isGuest
+                                  ? (participant?.guest_name ?? '—')
+                                  : (participant?.profiles?.username ?? '—')
                                 const avatarUrl = participant?.profiles?.avatar_url
                                 const isMe = profile?.id === r.user_id
                                 const posColor = r.position === 1 ? '#F59E0B' : r.position === 2 ? '#9CA3AF' : r.position === 3 ? '#B87333' : '#4B5563'
                                 return (
-                                  <div key={r.user_id} style={{
+                                  <div key={r.id ?? `${r.user_id}-${idx}`} style={{
                                     display: 'flex', alignItems: 'center', gap: 10,
                                     padding: '9px 14px',
                                     borderTop: idx > 0 ? '1px solid #141414' : 'none',
@@ -2161,10 +2369,13 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                                     <span style={{ width: 24, fontSize: 12, fontWeight: 800, color: posColor, textAlign: 'center', flexShrink: 0 }}>
                                       {r.position}°
                                     </span>
-                                    <Avatar url={avatarUrl} size={26} />
+                                    {isGuest
+                                      ? <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>👤</div>
+                                      : <Avatar url={avatarUrl} size={26} />
+                                    }
                                     <TierBadge tier={r.tier} />
                                     <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: isMe ? '#E5E5E5' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      @{username}{isMe ? ' (yo)' : ''}
+                                      {isGuest ? displayName : `@${displayName}`}{isMe ? ' (yo)' : ''}
                                     </span>
                                     <span style={{ fontSize: 13, fontWeight: 800, color: '#4ADE80', flexShrink: 0 }}>
                                       {r.points}<span style={{ fontSize: 10, color: '#374151', marginLeft: 2 }}>pts</span>
@@ -2188,9 +2399,11 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                 </div>
               )}
 
-              {/* Staff: add participants search */}
+              {/* Staff: add participants */}
               {isStaff && (
-                <div style={{ padding: '0 14px 12px' }}>
+                <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+                  {/* ── Registered user search ── */}
                   {!showSearch ? (
                     <button onClick={() => setShowSearch(true)} style={{
                       fontSize: 11, fontWeight: 700, color: '#A78BFA',
@@ -2215,7 +2428,7 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                           borderBottom: '1px solid #1A1A1A',
                         }}>
                           <Avatar url={u.avatar_url} size={26} />
-                          <span style={{ flex: 1, fontSize: 12, color: '#E5E5E5' }}>@{u.username}</span>
+                          <span style={{ flex: 1, fontSize: 12, color: '#E5E5E5' }}>{u.username}</span>
                           {addedIds[u.id] !== 'added' && (
                             <select
                               value={addTier[u.id] ?? ''}
@@ -2244,6 +2457,52 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                       ))}
                     </div>
                   )}
+
+                  {/* ── Guest (no account) ── */}
+                  {!guestMode ? (
+                    <button onClick={() => setGuestMode(true)} style={{
+                      fontSize: 11, fontWeight: 700, color: '#6B7280',
+                      background: 'transparent', border: '1px solid #2A2A2A',
+                      borderRadius: 8, padding: '7px 14px', cursor: 'pointer',
+                      fontFamily: 'Inter, sans-serif', width: '100%',
+                    }}>+ Agregar sin ID</button>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <input
+                        value={guestInput}
+                        onChange={e => setGuestInput(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleAddGuest()}
+                        placeholder="Nombre del jugador..."
+                        style={{ ...inputSm, flex: 1 }}
+                        autoFocus
+                      />
+                      <select
+                        value={guestTier}
+                        onChange={e => setGuestTier(e.target.value)}
+                        style={{ ...inputSm, fontSize: 10, padding: '3px 6px', width: 62, flexShrink: 0 }}
+                      >
+                        <option value="">Tier</option>
+                        <option value="A">Tier A</option>
+                        <option value="B">Tier B</option>
+                        <option value="C">Tier C</option>
+                      </select>
+                      <button
+                        onClick={handleAddGuest}
+                        disabled={!guestInput.trim() || addingGuest}
+                        style={{
+                          padding: '5px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                          background: guestInput.trim() ? 'rgba(167,139,250,0.15)' : '#1A1A1A',
+                          color: guestInput.trim() ? '#A78BFA' : '#374151',
+                          fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif', flexShrink: 0,
+                        }}
+                      >{addingGuest ? '...' : 'Agregar'}</button>
+                      <button onClick={() => { setGuestMode(false); setGuestInput(''); setGuestTier('') }} style={{
+                        background: 'none', border: 'none', color: '#4B5563',
+                        fontSize: 18, cursor: 'pointer', lineHeight: 1,
+                      }}>×</button>
+                    </div>
+                  )}
+
                 </div>
               )}
 
@@ -2264,7 +2523,11 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
                     )
                   })}
                   <button onClick={async () => {
-                    if (!confirm(`¿Eliminar la liga "${league.name}"?`)) return
+                    const ok = await confirmAction(
+                      `Esta acción no se puede deshacer. Se eliminará "${league.name}" junto con todas sus fechas y resultados.`,
+                      { title: '¿Eliminar liga?', confirmLabel: 'Eliminar', destructive: true }
+                    )
+                    if (!ok) return
                     try {
                       await deleteLeague(league.id)
                       toast?.('Liga eliminada', { type: 'info' })
@@ -2446,7 +2709,7 @@ function ClaimsTab({ isStaff }) {
                 <Avatar url={c.profiles?.avatar_url} size={34} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>@{c.profiles?.username}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>{c.profiles?.username}</div>
                 <div style={{ fontSize: 11, color: '#4B5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {c.tournament_name || 'Torneo sin nombre'}
                 </div>

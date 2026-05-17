@@ -36,6 +36,10 @@ export default function Avatar({ url, size = 36, fontSize, role, isOwner }) {
     <img
       src={getAvatarSrc(url, size)}
       alt=""
+      width={size}
+      height={size}
+      loading="lazy"
+      decoding="async"
       onError={() => setImgError(true)}
       style={{ width: size, height: size, objectFit: 'cover', borderRadius: '50%', display: 'block', flexShrink: 0 }}
     />

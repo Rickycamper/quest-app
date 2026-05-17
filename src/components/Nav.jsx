@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react'
 import { HomeIcon, RanksIcon, FolderIcon, TruckIcon, PlusIcon, BellIcon, CounterIcon, UserIcon, ShopIcon } from './Icons'
+import { HAPTIC } from '../lib/design-tokens'
 
 // ── Owner nav: Feed · Shop · Rank · Counter · Tracking · Notifs ──
 function OwnerBottomNav({ active, hidden, tabs }) {
@@ -11,6 +12,7 @@ function OwnerBottomNav({ active, hidden, tabs }) {
   useEffect(() => () => clearTimeout(tapTimer.current), [])
 
   const handleTap = (id, action) => {
+    HAPTIC.tap()                    // 8 ms vibration on Android Chrome / iOS Safari
     clearTimeout(tapTimer.current)
     setTapped(id)
     tapTimer.current = setTimeout(() => setTapped(null), 420)
@@ -26,7 +28,8 @@ function OwnerBottomNav({ active, hidden, tabs }) {
       display: 'flex', alignItems: 'flex-end',
       paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex: 100,
       transform: hidden ? 'translateY(100%)' : 'translateY(0)',
-      transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)',
+      // Spring physics — overshoot easing for that "Apple bounce" feel.
+      transition: 'transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)',
       willChange: 'transform',
     }}>
       {tabs.map(tab => {
@@ -34,21 +37,30 @@ function OwnerBottomNav({ active, hidden, tabs }) {
         return (
           <button key={tab.id} onClick={() => handleTap(tab.id, tab.action)} style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: 3, cursor: 'pointer', background: 'none', border: 'none', transition: 'all 0.15s',
+            gap: 3, cursor: 'pointer', background: 'none', border: 'none',
+            // The whole tab area (flex:1 of a 56px nav) already gives the user
+            // a ~75×56 hit target — well above Apple's 44 px minimum — so we
+            // don't need minHeight here. Adding it was squashing the spacing.
+            transition: 'opacity 200ms cubic-bezier(0.2, 0, 0.38, 0.9)',
           }}>
             <div style={{ animation: tapped === tab.id ? 'tabBounce 0.42s cubic-bezier(0.34,1.56,0.64,1)' : 'none', position: 'relative' }}>
               {tab.icon(isActive)}
               {tab.badge > 0 && (
                 <div style={{
                   position: 'absolute', top: -2, right: -4,
-                  minWidth: 14, height: 14, borderRadius: 7,
+                  minWidth: 16, height: 16, borderRadius: 8, // unified with NotifBell
                   background: '#EF4444', border: '1.5px solid #0A0A0A',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 8, fontWeight: 800, color: '#FFF', padding: '0 2px',
+                  fontSize: 9, fontWeight: 700, color: '#FFF', padding: '0 3px',
                 }}>{tab.badge > 9 ? '9+' : tab.badge}</div>
               )}
             </div>
-            <span style={{ fontSize: 9, fontWeight: 600, color: isActive ? '#FFFFFF' : '#4B5563', fontFamily: 'Inter, sans-serif' }}>
+            <span style={{
+              // Apple iOS tab bar labels are 10pt — was 9 (below readable threshold).
+              fontSize: 10, fontWeight: isActive ? 600 : 500,
+              color: isActive ? '#FFFFFF' : '#6B7280',
+              letterSpacing: '0.01em',
+            }}>
               {tab.label}
             </span>
           </button>
@@ -60,12 +72,14 @@ function OwnerBottomNav({ active, hidden, tabs }) {
 
 // ── All users get the same nav ───────────────────────────────────────
 export function BottomNav({ active, hidden, onTab, onLifeCounter, onNotifs, unreadCount, isOwner }) {
+  // Labels in Spanish to match the rest of the app's copy.
+  // Short forms picked to fit tab-bar width on iPhone SE (320 px).
   const tabs = [
-    { id: 'feed',  label: 'Feed',    icon: (a) => <HomeIcon active={a} />,    action: () => onTab('feed') },
-    { id: 'shop',  label: 'Shop',    icon: (a) => <ShopIcon active={a} />,    action: () => onTab('shop') },
-    { id: 'ranks', label: 'Rank',    icon: (a) => <RanksIcon active={a} />,   action: () => onTab('ranks') },
-    { id: 'life',  label: 'Counter', icon: (a) => <CounterIcon active={a} />, action: onLifeCounter },
-    { id: 'notif', label: 'Notifs',  icon: (a) => <BellIcon active={a} />,    action: onNotifs, badge: unreadCount },
+    { id: 'feed',  label: 'Feed',     icon: (a) => <HomeIcon active={a} />,    action: () => onTab('feed') },
+    { id: 'shop',  label: 'Tienda',   icon: (a) => <ShopIcon active={a} />,    action: () => onTab('shop') },
+    { id: 'ranks', label: 'Ranking',  icon: (a) => <RanksIcon active={a} />,   action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: (a) => <CounterIcon active={a} />, action: onLifeCounter },
+    { id: 'notif', label: 'Avisos',   icon: (a) => <BellIcon active={a} />,    action: onNotifs, badge: unreadCount },
   ]
   return (
     <OwnerBottomNav

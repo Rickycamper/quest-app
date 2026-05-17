@@ -117,7 +117,7 @@ export default function ChatScreen({ otherUser, onBack }) {
       <div style={s.header}>
         <button onClick={onBack} style={s.backBtn}>←</button>
         <Avatar url={otherUser.avatar_url} size={32} role={otherUser.role} isOwner={otherUser.is_owner} />
-        <span style={s.username}>@{otherUser.username}</span>
+        <span style={s.username}>{otherUser.username}</span>
       </div>
 
       {/* ── Message list ── */}
@@ -199,6 +199,7 @@ export default function ChatScreen({ otherUser, onBack }) {
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
           placeholder="Escribe un mensaje…"
           maxLength={1000}
+          enterKeyHint="send"
           style={s.input}
         />
         <button

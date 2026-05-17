@@ -227,9 +227,9 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, curren
               {pkg.origin_branch} → {pkg.destination_branch}
             </div>
             <div style={{ fontSize: 11, color: '#374151' }}>
-              De: <span style={{ color: '#9CA3AF' }}>@{pkg.sender?.username ?? '—'}</span>
+              De: <span style={{ color: '#9CA3AF' }}>{pkg.sender?.username ?? '—'}</span>
               {'  ·  '}
-              Para: <span style={{ color: '#9CA3AF' }}>@{pkg.recipient?.username ?? '—'}</span>
+              Para: <span style={{ color: '#9CA3AF' }}>{pkg.recipient?.username ?? '—'}</span>
             </div>
           </div>
           <span style={{ color: '#374151', fontSize: 11, flexShrink: 0, marginTop: 2 }}>
@@ -413,12 +413,15 @@ function compressImage(file, { maxW = 1200, quality = 0.78 } = {}) {
 }
 
 // ── Create package modal ──────────────────────
-export function CreatePackageModal({ onClose, onCreated, currentUserId }) {
+// `initialRecipient` lets callers (e.g. the FeatureTour onboarding) pre-fill
+// the recipient — used for the demo tracking that's addressed to the owner so
+// they can clean it up afterwards.
+export function CreatePackageModal({ onClose, onCreated, currentUserId, initialRecipient = null }) {
   const [origin,       setOrigin]      = useState('Panama')
   const [dest,         setDest]        = useState('David')
   const [recipQuery,   setRecipQuery]  = useState('')
   const [recipResult,  setRecipResult] = useState([])
-  const [recipient,    setRecipient]   = useState(null)
+  const [recipient,    setRecipient]   = useState(initialRecipient)
   const [notes,        setNotes]       = useState('')
   const [items,        setItems]       = useState([{ name: '', qty: 1 }])
   const [imageFile,    setImageFile]   = useState(null)
@@ -583,7 +586,7 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId }) {
           {recipient ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#111111', border: '1.5px solid #2A2A2A', borderRadius: 10 }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>👤</div>
-              <span style={{ flex: 1, fontSize: 14, color: '#FFFFFF', fontWeight: 600 }}>@{recipient.username}</span>
+              <span style={{ flex: 1, fontSize: 14, color: '#FFFFFF', fontWeight: 600 }}>{recipient.username}</span>
               <button onClick={() => { setRecipient(null); setRecipQuery('') }}
                 style={{ background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', fontSize: 20, padding: 0, lineHeight: 1 }}>×</button>
             </div>
@@ -610,7 +613,7 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId }) {
                       onClick={() => { setRecipient(u); setRecipQuery(''); setRecipResult([]) }}
                       style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid #1A1A1A', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>👤</div>
-                      <span style={{ fontSize: 14, color: '#FFFFFF', fontWeight: 600 }}>@{u.username}</span>
+                      <span style={{ fontSize: 14, color: '#FFFFFF', fontWeight: 600 }}>{u.username}</span>
                     </button>
                   ))}
                 </div>

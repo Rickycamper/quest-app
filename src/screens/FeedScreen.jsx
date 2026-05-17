@@ -1,12 +1,14 @@
 // ─────────────────────────────────────────────
 // QUEST — FeedScreen
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, memo } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
 import { useGuest } from '../context/GuestContext'
 import { supabase } from '../lib/supabase'
 import { getFeed, getUserLikedPosts, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost, getArticles } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
+import { shareOrCopy } from '../lib/share'
+import { useConfirm } from '../components/Confirm'
 import Avatar from '../components/Avatar'
 import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, RoleBadge, BoltIcon, PAID_ROLES, HomeIcon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
@@ -156,6 +158,10 @@ function ImageCarousel({ images }) {
             src={src}
             alt=""
             draggable={false}
+            // Eager-load only the first image (so it's visible immediately on
+            // the post above the fold); lazy-load the rest as the user swipes.
+            loading={i === 0 ? 'eager' : 'lazy'}
+            decoding="async"
             style={{ width: '100%', flexShrink: 0, height: '100%', maxHeight: 450, objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
           />
         ))}
@@ -313,8 +319,12 @@ function VideoPlayer({ src }) {
   )
 }
 
-function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onViewProfile, onDeleted, animDelay = 0 }) {
+// Wrapped in memo at the bottom of the file. Receives `isFollowed` boolean
+// (not the whole `following` Set) so a follow toggle invalidates only the
+// affected card instead of every card in the feed.
+function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange, onViewProfile, onDeleted, animDelay = 0 }) {
   const { requireAuth } = useGuest()
+  const confirmAction   = useConfirm()
   const [liked,          setLiked]         = useState(post.user_has_liked ?? false)
   const [likeAnim,       setLikeAnim]      = useState(false)
   const [saved,          setSaved]         = useState(false)
@@ -344,6 +354,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   }, [showMenu])
   useEffect(() => () => clearTimeout(likeAnimTimer.current), [])
   const [captionLocal,   setCaptionLocal]  = useState(post.caption)
+  const [captionExpanded, setCaptionExpanded] = useState(false)  // "más" / IG-style truncation
   const [editing,        setEditing]       = useState(false)
   const [editCaption,    setEditCaption]   = useState('')
   const [editSaving,     setEditSaving]    = useState(false)
@@ -381,6 +392,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
       const c = await addComment(post.id, text)
       setComments(prev => [...prev, c])
       setCommentCount(n => n + 1)
+      try { if (navigator?.vibrate) navigator.vibrate(8) } catch {}  // tap haptic on send success
     } catch (e) {
       setCommentText(text)
       if (e?.message) alert(e.message)
@@ -389,22 +401,29 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   }
 
   const handleShare = async () => {
-    const text = `${post.caption}\n— @${post.profiles?.username} en Quest TCG`
-    if (navigator.share) {
-      try { await navigator.share({ title: 'Quest TCG', text }) } catch {}
-    } else {
-      try { await navigator.clipboard.writeText(text) } catch {}
+    // Include the author's profile URL so the link is actually clickable
+    // on WhatsApp / Telegram / Discord — opens our app at @username.
+    const authorUsername = post.profiles?.username
+    const url  = authorUsername ? `${window.location.origin}?u=${encodeURIComponent(authorUsername)}` : window.location.origin
+    const text = `${post.caption}\n— @${authorUsername ?? 'user'} en Quest TCG`
+    // shareOrCopy handles native share → clipboard → legacy execCommand,
+    // so this never silently fails in WhatsApp/Instagram in-app browsers.
+    const res = await shareOrCopy({ title: 'Quest TCG', text, url })
+    if (res.ok && res.method !== 'cancelled') {
+      setShared(true)
+      clearTimeout(sharedTimer.current)
+      sharedTimer.current = setTimeout(() => setShared(false), 2000)
     }
-    setShared(true)
-    clearTimeout(sharedTimer.current)
-    sharedTimer.current = setTimeout(() => setShared(false), 2000)
   }
 
   const handleDelete = async () => {
-    if (!window.confirm(isOwnPost
-      ? '¿Eliminar tu post?'
-      : `¿Eliminar el post de @${post.profiles?.username ?? 'este usuario'}?`
-    )) return
+    const ok = await confirmAction(
+      isOwnPost
+        ? '¿Eliminar tu post? Esta acción no se puede deshacer.'
+        : `¿Eliminar el post de ${post.profiles?.username ?? 'este usuario'}?`,
+      { confirmLabel: 'Eliminar', destructive: true }
+    )
+    if (!ok) return
     setShowMenu(false)
     setDeleting(true)
     try { await deletePost(post.id); onDeleted?.(post.id) } catch {}
@@ -415,7 +434,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   const authorId   = post.profiles?.id
   const isOwnPost  = currentUserId && authorId === currentUserId
   const canDelete  = isOwnPost || isStaff
-  const isFollowed = following?.has(authorId)
+  // isFollowed now comes as a prop (boolean) — no Set lookup inside the card
 
   const handleLike = () => requireAuth(async () => {
     if (likeBusy) return
@@ -444,6 +463,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   const handleFollow = async () => {
     if (fBusy || !authorId) return
     setFBusy(true)
+    try { if (navigator?.vibrate) navigator.vibrate(8) } catch {}  // tap haptic
     try {
       await toggleFollow(authorId)
       onFollowChange(authorId, !isFollowed)
@@ -458,8 +478,18 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
       borderRadius: 16,
       padding: '14px 16px',
       boxShadow: '0 2px 12px rgba(0,0,0,0.45)',
-      animation: 'fadeUp 0.3s ease both',
+      animation: animDelay > 0 ? 'fadeUp 0.3s ease both' : 'none',
       animationDelay: `${animDelay}ms`,
+      // CSS containment — tells the browser this card is independent so it
+      // skips re-layout/paint of *other* cards when this one changes (like
+      // animations, image decoded, comments expanded, etc.). Single biggest
+      // browser-level scroll perf win for a feed of N cards.
+      contain: 'layout style paint',
+      // content-visibility skips rendering work for off-screen cards entirely.
+      // contain-intrinsic-size reserves space so the scroll position stays
+      // correct while not-yet-rendered cards have no measured height.
+      contentVisibility: 'auto',
+      containIntrinsicSize: '0 480px',
     }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -477,7 +507,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <span onClick={() => authorId && requireAuth(() => onViewProfile?.(authorId))}
                 style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', cursor: authorId ? 'pointer' : 'default', flexShrink: 0 }}>
-                @{post.profiles?.username ?? 'user'}
+                {post.profiles?.username ?? 'user'}
               </span>
               {post.profiles?.verified && <span style={{ fontSize: 11, flexShrink: 0 }}>✓</span>}
               {PAID_ROLES.has(post.profiles?.role) && <PremiumBadge size={13} role={post.profiles.role} />}
@@ -559,7 +589,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
         if (imgs.length === 1 && IS_VIDEO_URL.test(imgs[0])) return <VideoPlayer src={imgs[0]} />
         if (imgs.length === 1) return (
           <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 12, background: '#0A0A0A', maxHeight: 450 }}>
-            <img src={imgs[0]} alt="" style={{ width: '100%', height: '100%', maxHeight: 450, objectFit: 'cover', display: 'block' }} />
+            <img src={imgs[0]} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', maxHeight: 450, objectFit: 'cover', display: 'block' }} />
             {/* Subtle bottom fade — image blends with card */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
@@ -595,17 +625,13 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
             }}>Cancelar</button>
           </div>
         </div>
-      ) : (
-        <div style={{ marginBottom: 14 }}>
-          <p style={{ fontSize: 14, color: '#D1D5DB', lineHeight: 1.6, margin: 0 }}>
-            {captionLocal}
-          </p>
-        </div>
-      )}
+      ) : null}
 
-
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: showComments ? 12 : 0 }}>
+      {/* Actions row — moved ABOVE the caption text so when someone writes
+          a long post, the like/comment/share buttons stay visible right
+          under the image (Instagram-style). If a user writes a wall of
+          text the action affordances aren't pushed off-screen. */}
+      <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 10 }}>
         <button onClick={handleLike} style={{
           display: 'flex', alignItems: 'center', gap: 5,
           background: 'none', border: 'none', cursor: 'pointer',
@@ -641,6 +667,44 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
           </div>
         )}
       </div>
+
+      {/* Caption text — now sits below the actions row, so engagement
+          affordances are always reachable without scrolling past long copy.
+          Instagram-style truncation: clip at ~100 chars + inline "más" link
+          that expands the full text. Trims to last whitespace so we don't cut
+          a word in half. Once expanded, stays expanded for the session. */}
+      {!editing && captionLocal && (() => {
+        const TRUNCATE_AT = 40
+        const text = captionLocal
+        const shouldTruncate = !captionExpanded && text.length > TRUNCATE_AT
+        // Trim trailing whitespace + any partial word so the ellipsis lands cleanly
+        const displayed = shouldTruncate
+          ? text.slice(0, TRUNCATE_AT).replace(/\s+\S*$/, '').trimEnd()
+          : text
+        return (
+          <div style={{ marginBottom: showComments ? 12 : 0 }}>
+            <p style={{ fontSize: 14, color: '#D1D5DB', lineHeight: 1.6, margin: 0 }}>
+              {displayed}
+              {shouldTruncate && (
+                <>
+                  {'… '}
+                  <button
+                    onClick={() => setCaptionExpanded(true)}
+                    style={{
+                      background: 'none', border: 'none', padding: 0,
+                      color: '#6B7280', fontSize: 14, fontWeight: 600,
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    más
+                  </button>
+                </>
+              )}
+            </p>
+          </div>
+        )
+      })()}
+
       {/* Comments panel */}
       {showComments && (
         <div style={{ borderTop: '1px solid #1A1A1A', paddingTop: 12, animation: 'fadeUp 0.2s ease' }}>
@@ -658,7 +722,7 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
                 <Avatar url={c.profiles?.avatar_url} size={28} role={c.profiles?.role} isOwner={c.profiles?.is_owner} />
               </div>
               <div style={{ flex: 1, background: '#111', borderRadius: 8, padding: '6px 10px' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#FFF', marginRight: 6 }}>@{c.profiles?.username ?? 'user'}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#FFF', marginRight: 6 }}>{c.profiles?.username ?? 'user'}</span>
                 <span style={{ fontSize: 12, color: '#D1D5DB' }}>{c.content}</span>
               </div>
             </div>
@@ -671,6 +735,8 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
               onChange={e => setCommentText(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSendComment()}
               placeholder="Escribe un comentario..."
+              enterKeyHint="send"
+              maxLength={2000}
               style={{
                 flex: 1, background: '#111', border: '1px solid #222',
                 borderRadius: 8, padding: '8px 12px', color: '#FFF',
@@ -693,6 +759,21 @@ function PostCard({ post, currentUserId, isStaff, following, onFollowChange, onV
   )
 }
 
+// Memoize the card so a parent re-render (scroll, header hide, etc.) doesn't
+// repaint every visible card. Custom comparator skips the prop dive on the
+// post object — posts are immutable from our side; if it changes identity,
+// it's a new post.
+const PostCard = memo(PostCardImpl, (prev, next) => (
+  prev.post === next.post &&
+  prev.currentUserId === next.currentUserId &&
+  prev.isStaff === next.isStaff &&
+  prev.isFollowed === next.isFollowed &&
+  prev.onFollowChange === next.onFollowChange &&
+  prev.onViewProfile === next.onViewProfile &&
+  prev.onDeleted === next.onDeleted &&
+  prev.animDelay === next.animDelay
+))
+
 const menuIconBtn = {
   background: 'none', border: 'none', cursor: 'pointer',
   color: '#9CA3AF', padding: '7px 10px', borderRadius: 8,
@@ -703,6 +784,41 @@ const menuIconBtn = {
 const PULL_THRESHOLD = 65
 const PAGE_SIZE      = 8
 const cacheKey       = (g) => `q_feed_${g ?? 'all'}`
+
+// ── TCG news (RSS) auto-refresh ──────────────────────────────────────────────
+// Used to require the owner to hit "Actualizar artículos" in the admin panel
+// every time. Now it runs automatically whenever someone opens the feed and
+// the latest article is older than STALE_HOURS. Throttled to ≤1 check per
+// browser session per hour so we never spam the edge function.
+const RSS_STALE_HOURS         = 4
+const RSS_CHECK_THROTTLE_MS   = 60 * 60 * 1000
+const RSS_LAST_CHECK_KEY      = 'quest_rss_last_auto_check'
+
+function maybeAutoRefreshArticles() {
+  try {
+    const lastCheck = parseInt(localStorage.getItem(RSS_LAST_CHECK_KEY) || '0', 10)
+    if (Date.now() - lastCheck < RSS_CHECK_THROTTLE_MS) return
+    localStorage.setItem(RSS_LAST_CHECK_KEY, String(Date.now()))
+  } catch { return }
+
+  supabase
+    .from('tcg_articles')
+    .select('published_at')
+    .order('published_at', { ascending: false })
+    .limit(1)
+    .then(({ data }) => {
+      const latest = data?.[0]?.published_at
+      // If the table is empty (latest === null) we still trigger — first run.
+      if (latest) {
+        const ageMs = Date.now() - new Date(latest).getTime()
+        if (ageMs < RSS_STALE_HOURS * 60 * 60 * 1000) return    // still fresh
+      }
+      // Fire-and-forget: the edge function takes 10-30 s but the new
+      // articles will appear in the feed next time it's opened.
+      supabase.functions.invoke('fetch-articles', { body: {} }).catch(() => {})
+    })
+    .catch(() => {})
+}
 
 export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, onPost, refreshKey = 0 }) {
   const [posts,       setPosts]      = useState([])
@@ -725,6 +841,10 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
   const mountedRef     = useRef(false) // true after initial load fires
   const hasPreviewRef  = useRef(false) // true when a client-side preview is already showing
   useEffect(() => { gameRef.current = game }, [game])
+
+  // One throttled check per feed mount. The function itself no-ops if it
+  // already ran in the last hour, so this is always safe to call.
+  useEffect(() => { maybeAutoRefreshArticles() }, [])
 
   const loadFeed = useCallback((opts = {}) => {
     const { withFollowing = false } = opts
@@ -901,18 +1021,21 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  const handleFollowChange = (userId, nowFollowing) => {
+  // useCallback so PostCard's React.memo can keep cards from re-rendering when
+  // the parent's state changes (scroll, header hide, etc.) — without it the
+  // handler is a new reference each render and breaks memoization.
+  const handleFollowChange = useCallback((userId, nowFollowing) => {
     setFollowing(prev => {
       const next = new Set(prev)
       if (nowFollowing) next.add(userId)
       else next.delete(userId)
       return next
     })
-  }
+  }, [])
 
-  const handleDeleted = (postId) => {
+  const handleDeleted = useCallback((postId) => {
     setPosts(prev => prev.filter(p => p.id !== postId))
-  }
+  }, [])
 
   const pullProgress = pullY / PULL_THRESHOLD   // 0 → 1
   const showIndicator = pullY > 8 || refreshing
@@ -1009,7 +1132,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
                 >
                   {a.image_url ? (
                     <div style={{ width: '100%', height: 100, overflow: 'hidden', background: '#0A0A0A', flexShrink: 0 }}>
-                      <img src={a.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <img src={a.image_url} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     </div>
                   ) : (
                     <div style={{
@@ -1083,6 +1206,8 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
           icon={<HomeIcon active />}
           title="Aún nadie publicó nada"
           subtitle="Sé el primero en compartir un mazo, una colección o tu última partida."
+          ctaLabel={onPost ? 'Crear mi primer post' : undefined}
+          onCta={onPost}
         />
       )}
 
@@ -1094,19 +1219,25 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
             }
             return true
           })
-          .map((post, i) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              animDelay={Math.min(i * 40, 240)}
-              currentUserId={profile?.id}
-              isStaff={isStaff}
-              following={following}
-              onFollowChange={handleFollowChange}
-              onViewProfile={onViewProfile}
-              onDeleted={handleDeleted}
-            />
-          ))}
+          .map((post, i) => {
+            const authorId = post.profiles?.id ?? post.user_id
+            // Pass boolean instead of the Set — keeps PostCard's memo intact
+            // when *other* users get followed/unfollowed.
+            const isFollowed = authorId ? following.has(authorId) : false
+            return (
+              <PostCard
+                key={post.id}
+                post={post}
+                animDelay={i < 6 ? Math.min(i * 40, 200) : 0}  // skip stagger past fold
+                currentUserId={profile?.id}
+                isStaff={isStaff}
+                isFollowed={isFollowed}
+                onFollowChange={handleFollowChange}
+                onViewProfile={onViewProfile}
+                onDeleted={handleDeleted}
+              />
+            )
+          })}
       </div>
 
       {/* Infinite scroll sentinel */}

@@ -2,7 +2,8 @@
 // QUEST — EditProfileScreen
 // ─────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react'
-import { getProfile, updateProfile, uploadAvatar, signOut, deleteAccount } from '../lib/supabase'
+import { getProfile, updateProfile, uploadAvatar, signOut, deleteAccount, linkDiscordIdentity, getMyIdentities, unlinkIdentity } from '../lib/supabase'
+import { useConfirm } from '../components/Confirm'
 import { useToast } from '../components/Toast'
 import { BRANCHES, GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
@@ -42,11 +43,13 @@ function UserIcon() {
 
 export default function EditProfileScreen({ userId, onBack, onSaved }) {
   const toast = useToast()
+  const confirmAction = useConfirm()
   const [username,      setUsername]      = useState('')
   const [phone,         setPhone]         = useState('')
   const [email,         setEmail]         = useState('')
   const [branch,        setBranch]        = useState('')
   const [tcgGames,      setTcgGames]      = useState([])
+  const [tcgUsernames,  setTcgUsernames]  = useState({ MTG: '', Pokemon: '', Bandai: '' })
   const [socialLinks,   setSocialLinks]   = useState({ instagram: '', tiktok: '', twitter: '', youtube: '' })
   const [avatarUrl,     setAvatarUrl]     = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
@@ -57,6 +60,8 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
   const [error,         setError]         = useState('')
   const [signingOut,    setSigningOut]    = useState(false)
   const [signOutStep,   setSignOutStep]   = useState(0)   // 0=idle 1=confirm
+  const [identities,    setIdentities]    = useState([])  // ['email', 'discord', ...]
+  const [linkingDiscord,setLinkingDiscord]= useState(false)
   const [deleteStep,    setDeleteStep]    = useState(0)   // 0=idle 1=confirm 2=deleting
   const fileRef = useRef(null)
 
@@ -68,12 +73,57 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
         setEmail(p.email ?? '')
         setBranch(p.branch ?? '')
         setTcgGames(p.tcg_games ?? [])
+        setTcgUsernames({ MTG: '', Pokemon: '', Bandai: '', ...(p.tcg_usernames ?? {}) })
         setSocialLinks({ instagram: '', tiktok: '', twitter: '', youtube: '', ...(p.social_links ?? {}) })
         setAvatarUrl(p.avatar_url ?? null)
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [userId])
+
+  // Load which auth providers (email, discord, etc.) are linked to this user.
+  // Re-fetches whenever the tab gets focus again, so when the user returns
+  // from the Discord OAuth redirect the "Conectar" button updates to "Vinculado".
+  useEffect(() => {
+    let cancelled = false
+    const load = () => {
+      getMyIdentities()
+        .then(p => { if (!cancelled) setIdentities(p) })
+        .catch(() => {})
+    }
+    load()
+    const onFocus = () => load()
+    window.addEventListener('focus', onFocus)
+    return () => { cancelled = true; window.removeEventListener('focus', onFocus) }
+  }, [])
+
+  const handleLinkDiscord = async () => {
+    if (linkingDiscord) return
+    setLinkingDiscord(true)
+    try {
+      await linkDiscordIdentity()  // browser redirects to Discord; comes back here
+    } catch (e) {
+      toast(e.message || 'No se pudo vincular Discord.', { type: 'error' })
+      setLinkingDiscord(false)
+    }
+  }
+
+  const handleUnlinkDiscord = async () => {
+    const ok = await confirmAction(
+      'Vas a poder seguir entrando con email después de desvincularlo.',
+      { title: '¿Desvincular Discord?', confirmLabel: 'Desvincular', destructive: true }
+    )
+    if (!ok) return
+    try {
+      await unlinkIdentity('discord')
+      setIdentities(prev => prev.filter(p => p !== 'discord'))
+      toast('Discord desvinculado.', { type: 'success' })
+    } catch (e) {
+      toast(e.message || 'No se pudo desvincular.', { type: 'error' })
+    }
+  }
+
+  const discordLinked = identities.includes('discord')
 
   const handleAvatarPick = (e) => {
     const file = e.target.files?.[0]
@@ -109,14 +159,20 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
         newAvatarUrl = await uploadAvatar(avatarFile, userId)
         setUploadingImg(false)
       }
+      // Strip empty per-platform IDs so the JSONB stays clean (no
+      // `{"MTG": "", "Pokemon": ""}` rows when the user didn't fill them).
+      const cleanTcgUsernames = Object.fromEntries(
+        Object.entries(tcgUsernames).filter(([, v]) => typeof v === 'string' && v.trim())
+      )
       const updated = await updateProfile(userId, {
         username:   trimmed,
         phone:      phone.trim() || null,
         email:      email.trim() || null,
         branch:     branch || null,
         avatar_url: newAvatarUrl,
-        tcg_games:    tcgGames,
-        social_links: socialLinks,
+        tcg_games:     tcgGames,
+        tcg_usernames: cleanTcgUsernames,
+        social_links:  socialLinks,
       })
       onSaved?.(updated)
       toast('Perfil actualizado', { type: 'success' })
@@ -164,11 +220,36 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
     </div>
   )
 
-  if (loading) return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0A0A0A', minHeight: '100%' }}>
-      <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite' }} />
-    </div>
-  )
+  if (loading) {
+    // Skeleton that mirrors the EditProfileScreen layout — header, avatar,
+    // and form rows — so perceived load is ~2× faster than a centered spinner.
+    const sk = (w, h, r = 6) => ({
+      display: 'inline-block', width: w, height: h, borderRadius: r,
+      background: 'linear-gradient(90deg, #161616 0%, #1F1F1F 50%, #161616 100%)',
+      backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite',
+    })
+    return (
+      <div style={{ background: '#0A0A0A', minHeight: '100%', padding: '14px 20px' }}>
+        {/* Top bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+          <span style={sk(28, 28, 12)} />
+          <span style={sk(120, 18)} />
+        </div>
+        {/* Avatar circle */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+          <span style={sk(96, 96, 48)} />
+        </div>
+        {/* Form fields */}
+        {[80, 80, 60].map((labelW, i) => (
+          <div key={i} style={{ marginBottom: 18 }}>
+            <span style={{ ...sk(labelW, 11), marginBottom: 8, display: 'block' }} />
+            <span style={sk('100%', 44, 12)} />
+          </div>
+        ))}
+        <span style={{ ...sk('100%', 44, 12), marginTop: 24, display: 'block' }} />
+      </div>
+    )
+  }
 
   return (
     <div style={{ background: '#0A0A0A', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -242,7 +323,9 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
               onChange={e => setUsername(e.target.value.replace(/\s/g, ''))}
               style={{ ...inputStyle, border: 'none', borderRadius: 0 }}
               placeholder="tu_usuario"
+              autoComplete="username"
               autoCapitalize="none"
+              autoCorrect="off"
               spellCheck={false}
             />
           </div>
@@ -298,6 +381,59 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
           </div>
         </div>
 
+        {/* ── IDs por plataforma (MTG Arena, Pokémon Live, Bandai TCG+) ── */}
+        {/* Only shown when the user has at least one TCG selected — no point
+            asking for IDs they don't play. Each platform groups multiple games
+            (Bandai = One Piece + Digimon + Gundam + Riftbound). */}
+        {tcgGames.length > 0 && (() => {
+          // Determine which platforms the user needs an ID for, based on the
+          // games they marked as playing.
+          const needsMTG     = tcgGames.includes('MTG')
+          const needsPokemon = tcgGames.includes('Pokemon')
+          const needsBandai  = tcgGames.some(g => ['One Piece','Digimon','Gundam','Riftbound'].includes(g))
+          const rows = []
+          if (needsMTG)     rows.push({ key: 'MTG',     label: 'MTG Arena / Companion', color: '#A78BFA', placeholder: 'Tu ID en MTG Arena' })
+          if (needsPokemon) rows.push({ key: 'Pokemon', label: 'Pokémon TCG Live',      color: '#FCD34D', placeholder: 'Tu ID en Pokémon Live' })
+          if (needsBandai)  rows.push({ key: 'Bandai',  label: 'Bandai TCG+',           color: '#F87171', placeholder: 'Tu ID en Bandai TCG+', hint: 'One Piece · Digimon · Gundam · Riftbound' })
+          if (rows.length === 0) return null
+          return (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>
+                IDS POR JUEGO ONLINE
+              </div>
+              <div style={{ fontSize: 11, color: '#6B7280', lineHeight: 1.5, marginBottom: 10 }}>
+                Tu nombre en cada plataforma online. Aparece junto a tu username de Quest cuando te inscribís en torneos.
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {rows.map(({ key, label, color, placeholder, hint }) => (
+                  <div key={key} style={{
+                    display: 'flex', alignItems: 'center',
+                    background: '#111111', border: '1px solid #222', borderRadius: 10, overflow: 'hidden',
+                  }}>
+                    <span style={{ padding: '0 6px 0 14px', fontSize: 12, fontWeight: 700, color, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {label}
+                    </span>
+                    <input
+                      value={tcgUsernames[key] ?? ''}
+                      onChange={e => setTcgUsernames(prev => ({ ...prev, [key]: e.target.value.replace(/\s/g, '') }))}
+                      style={{ ...inputStyle, border: 'none', borderRadius: 0, flex: 1 }}
+                      placeholder={placeholder}
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                    />
+                  </div>
+                ))}
+                {needsBandai && (
+                  <div style={{ fontSize: 10, color: '#4B5563', lineHeight: 1.4, paddingLeft: 4 }}>
+                    💡 El mismo ID de Bandai sirve para One Piece, Digimon, Gundam y Riftbound.
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* ── Phone ── */}
         {fieldRow(
           <PhoneIcon />, 'TELÉFONO',
@@ -307,6 +443,8 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
             style={{ ...inputStyle, width: '100%' }}
             placeholder="+507 6000-0000"
             type="tel"
+            autoComplete="tel"
+            inputMode="tel"
           />
         )}
 
@@ -340,6 +478,50 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
                 />
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* ── Cuentas vinculadas ── */}
+        <div style={{ marginTop: 24, marginBottom: 4 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.1em', marginBottom: 10 }}>
+            CUENTAS VINCULADAS
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            background: '#111111', border: '1px solid #222', borderRadius: 12,
+            padding: '12px 14px',
+          }}>
+            {/* Discord brand mark */}
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: '#5865F2',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF">
+                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>Discord</div>
+              <div style={{ fontSize: 11, color: discordLinked ? '#4ADE80' : '#6B7280', marginTop: 2 }}>
+                {discordLinked ? '✓ Vinculado' : 'Vinculá Discord para entrar también con él'}
+              </div>
+            </div>
+            {discordLinked ? (
+              <button onClick={handleUnlinkDiscord} style={{
+                padding: '7px 12px', borderRadius: 8,
+                background: 'transparent', border: '1px solid #2A2A2A',
+                color: '#9CA3AF', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                flexShrink: 0,
+              }}>Desvincular</button>
+            ) : (
+              <button onClick={handleLinkDiscord} disabled={linkingDiscord} style={{
+                padding: '7px 14px', borderRadius: 8,
+                background: '#5865F2', border: 'none',
+                color: '#FFFFFF', fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                flexShrink: 0, opacity: linkingDiscord ? 0.5 : 1,
+              }}>{linkingDiscord ? 'Abriendo…' : 'Conectar'}</button>
+            )}
           </div>
         </div>
 

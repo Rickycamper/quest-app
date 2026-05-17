@@ -494,12 +494,12 @@ function ArrivalCard({ pkg, onConfirmed, onRejected }) {
       }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', letterSpacing: '0.06em', marginBottom: 2 }}>REMITENTE</div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>@{pkg.sender?.username ?? '—'}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>{pkg.sender?.username ?? '—'}</div>
         </div>
         <div style={{ width: 1, background: '#1A1A1A' }} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', letterSpacing: '0.06em', marginBottom: 2 }}>DESTINATARIO</div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>@{pkg.recipient?.username ?? '—'}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>{pkg.recipient?.username ?? '—'}</div>
         </div>
       </div>
 
@@ -739,7 +739,7 @@ function QPointsTab() {
               <Avatar url={r.profiles?.avatar_url} size={36} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>@{r.profiles?.username}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>{r.profiles?.username}</div>
               <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>
                 {new Date(r.created_at).toLocaleDateString('es-PA')}
               </div>

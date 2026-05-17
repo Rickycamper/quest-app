@@ -333,6 +333,9 @@ export default function CreatePostModal({ onClose }) {
       }
 
       clearTimeout(safetyTimer)
+      // Success haptic pattern (double tap) — gives the user a physical
+      // confirmation the post landed before the toast even appears.
+      try { if (navigator?.vibrate) navigator.vibrate([0, 12, 40, 12]) } catch {}
       toast('¡Publicación creada!', { type: 'success' })
       onClose()
     } catch (e) {
