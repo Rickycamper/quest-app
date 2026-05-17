@@ -550,6 +550,164 @@ function CountUpNum({ value, startWhen, delay = 0, duration = 1200 }) {
   return <>{n}</>
 }
 
+// ── Branch Podium ───────────────────────────────────────────────────────────
+// Same podium UI as the global overview but tinted with the branch accent
+// color. Used at the top of the branch-specific leaderboard so the top-3 of
+// that branch get a "spotlight" before the long list of everyone else.
+function BranchPodium({ entries, branch, game }) {
+  const top3 = entries.slice(0, 3)
+  const bs   = BRANCH_STYLES[branch] ?? {}
+  const gs   = GAME_STYLES[game] ?? GAME_STYLES['MTG']
+
+  const [animateIn, setAnimateIn] = useState(false)
+  useEffect(() => {
+    setAnimateIn(false)
+    const t = setTimeout(() => setAnimateIn(true), 50)
+    return () => clearTimeout(t)
+  }, [branch, game])
+
+  // Total branch points (sum of all entries) — shown as a header stat
+  const totalPts = entries.reduce((sum, e) => sum + (e.points || 0), 0)
+
+  return (
+    <div style={{ padding: '4px 16px 14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* ── Branch header ───────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 11,
+        padding: '6px 2px 2px',
+      }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: RADIUS.sm,
+          background: bs.bg,
+          border: `1px solid ${bs.border}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 14px ${bs.border}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+        }}>
+          <MapPinIcon size={15} color={bs.color} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{
+            fontSize: 9.5, fontWeight: WEIGHT.bold,
+            color: COLOR.textTertiary, letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            <GameIcon game={game} size={11} /> {game} · Sucursal
+          </div>
+          <div style={{
+            fontSize: 17, fontWeight: WEIGHT.bold, color: bs.color,
+            letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: 2,
+          }}>
+            {branch}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{
+            fontSize: 17, fontWeight: WEIGHT.bold, color: COLOR.text,
+            fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1.1,
+          }}>
+            <CountUpNum value={totalPts} startWhen={animateIn} delay={150} duration={1100} />
+            <span style={{ fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium, marginLeft: 2 }}>pts</span>
+          </div>
+          <div style={{
+            fontSize: 9.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium,
+            letterSpacing: '0.04em', marginTop: 2,
+          }}>
+            {entries.length} {entries.length === 1 ? 'jugador' : 'jugadores'}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Podium card ──────────────────────────────────────────────── */}
+      <div style={{
+        background: `linear-gradient(180deg, ${bs.bg} 0%, ${COLOR.surface} 70%)`,
+        border: `1px solid ${bs.border}`,
+        borderRadius: RADIUS.lg,
+        padding: '14px 14px 16px',
+        boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}, 0 0 24px ${bs.border}`,
+      }}>
+        <div style={{
+          fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+          marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          🏆 Top 3 {branch}
+        </div>
+
+        {/* Podium layout — 2nd | 1st | 3rd */}
+        <div style={{
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around',
+          gap: 8, minHeight: 150,
+        }}>
+          {[1, 0, 2].map((podiumIdx, layoutIdx) => {
+            const e = top3[podiumIdx]
+            if (!e) return <div key={podiumIdx} style={{ flex: 1 }} />
+            const heights = { 0: 130, 1: 100, 2: 85 }
+            const medals  = { 0: '🥇', 1: '🥈', 2: '🥉' }
+            const colors  = {
+              0: { glow: '#F59E0B', text: '#FCD34D', border: 'rgba(245,158,11,0.5)' },
+              1: { glow: '#9CA3AF', text: '#E5E7EB', border: 'rgba(156,163,175,0.45)' },
+              2: { glow: '#B87333', text: '#D97706', border: 'rgba(184,115,51,0.45)' },
+            }
+            const c = colors[podiumIdx]
+            const delay = layoutIdx === 1 ? 0 : layoutIdx === 0 ? 220 : 340
+            return (
+              <div key={e.id} style={{
+                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                opacity: animateIn ? 1 : 0,
+                transform: animateIn ? 'translateY(0)' : 'translateY(12px)',
+                transition: `opacity 500ms ease ${delay}ms, transform 600ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
+                cursor: 'pointer',
+              }}>
+                <div style={{ fontSize: 24, marginBottom: 4 }}>{medals[podiumIdx]}</div>
+                <div style={{
+                  width: 50, height: 50, borderRadius: '50%',
+                  background: COLOR.surfaceRaised,
+                  border: `2px solid ${c.border}`,
+                  overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: `0 0 16px ${c.glow}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  marginBottom: 6,
+                }}>
+                  <Avatar url={e.avatar_url} size={50} role={e.role} isOwner={e.is_owner} />
+                </div>
+                <div style={{
+                  fontSize: 11.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
+                  maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  letterSpacing: '-0.005em', textAlign: 'center',
+                }}>
+                  {e.username}
+                </div>
+                <div style={{
+                  width: '88%',
+                  height: animateIn ? heights[podiumIdx] * 0.55 : 0,
+                  marginTop: 8,
+                  borderRadius: `${RADIUS.sm}px ${RADIUS.sm}px 0 0`,
+                  background: `linear-gradient(180deg, ${c.glow}26 0%, ${c.glow}0d 100%)`,
+                  border: `1px solid ${c.border}`,
+                  borderBottom: 'none',
+                  display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+                  paddingTop: 6,
+                  transition: `height 700ms cubic-bezier(0.34,1.56,0.64,1) ${delay + 100}ms`,
+                  overflow: 'hidden',
+                }}>
+                  <span style={{
+                    fontSize: 14, fontWeight: WEIGHT.bold, color: c.text,
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.01em',
+                  }}>
+                    <CountUpNum value={e.points} startWhen={animateIn} delay={delay + 200} />pts
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Leaderboard ──────────────────────────────
 function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch }) {
   const toast = useToast()
@@ -1042,10 +1200,28 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch })
         // Global view (no specific branch) — show animated overview chart
         // instead of the flat list. Lets the user pick a branch to drill in.
         <RankingsOverview entries={entries} game={game} onSelectBranch={onSelectBranch} />
-      ) : entries.map((entry, i) => {
-        const rank = i + 1
-        const m    = medal(rank)
-        const isTop3 = rank <= 3
+      ) : (
+        <>
+          {/* Branch view — podium for top-3 (if branch has 3+ entries),
+              then the rest of the list starting at rank 4. With fewer than
+              3 entries the podium looks weird, so fall back to a flat list. */}
+          {entries.length >= 3 && <BranchPodium entries={entries} branch={branch} game={game} />}
+
+          {entries.length >= 3 && (
+            <div style={{
+              padding: '4px 20px 8px',
+              fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+            }}>
+              Resto del ranking · #{4} en adelante
+            </div>
+          )}
+
+          {(entries.length >= 3 ? entries.slice(3) : entries).map((entry, iLocal) => {
+            const i = entries.length >= 3 ? iLocal + 3 : iLocal  // absolute index
+            const rank = i + 1
+            const m    = medal(rank)
+            const isTop3 = rank <= 3
         return (
           <div key={entry.id} style={{
             padding: '13px 20px',
@@ -1150,6 +1326,8 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch })
           </div>
         )
       })}
+        </>
+      )}
     </div>
   )
 }
