@@ -23,14 +23,16 @@ function OwnerBottomNav({ active, hidden, tabs }) {
   return (
     <div style={{
       position: 'absolute', bottom: 0, left: 0, right: 0,
-      height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+      // Tighter without labels — was 56 px, now 52. Still well above the
+      // 44 px minimum hit target.
+      height: 'calc(52px + env(safe-area-inset-bottom, 0px))',
       background: 'rgba(10,10,10,0.82)',
       backdropFilter: 'saturate(180%) blur(24px)',
       WebkitBackdropFilter: 'saturate(180%) blur(24px)',
       borderTop: '1px solid rgba(255,255,255,0.06)',
       boxShadow: '0 -8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
-      display: 'flex', alignItems: 'flex-end',
-      paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex: 100,
+      display: 'flex', alignItems: 'center',
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)', zIndex: 100,
       transform: hidden ? 'translateY(100%)' : 'translateY(0)',
       // Spring physics — overshoot easing for that "Apple bounce" feel.
       transition: 'transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -39,35 +41,39 @@ function OwnerBottomNav({ active, hidden, tabs }) {
       {tabs.map(tab => {
         const isActive = active === tab.id
         return (
-          <button key={tab.id} onClick={() => handleTap(tab.id, tab.action)} style={{
-            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: 3, cursor: 'pointer', background: 'none', border: 'none',
-            // The whole tab area (flex:1 of a 56px nav) already gives the user
-            // a ~75×56 hit target — well above Apple's 44 px minimum — so we
-            // don't need minHeight here. Adding it was squashing the spacing.
-            transition: 'opacity 200ms cubic-bezier(0.2, 0, 0.38, 0.9)',
-          }}>
-            <div style={{ animation: tapped === tab.id ? 'tabBounce 0.42s cubic-bezier(0.34,1.56,0.64,1)' : 'none', position: 'relative' }}>
+          <button
+            key={tab.id}
+            onClick={() => handleTap(tab.id, tab.action)}
+            aria-label={tab.label}
+            title={tab.label}
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              height: '100%', cursor: 'pointer', background: 'none', border: 'none',
+              padding: 0,
+              transition: 'opacity 200ms cubic-bezier(0.2, 0, 0.38, 0.9)',
+            }}
+          >
+            <div style={{
+              position: 'relative',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              animation: tapped === tab.id ? 'tabBounce 0.42s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+              // Subtle scale-up of the active icon — fills the space that
+              // the label used to occupy and reinforces the active state.
+              transform: isActive ? 'scale(1.12)' : 'scale(1)',
+              transition: 'transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+              opacity: isActive ? 1 : 0.65,
+            }}>
               {tab.icon(isActive)}
               {tab.badge > 0 && (
                 <div style={{
-                  position: 'absolute', top: -2, right: -4,
-                  minWidth: 16, height: 16, borderRadius: 8, // unified with NotifBell
+                  position: 'absolute', top: -3, right: -6,
+                  minWidth: 16, height: 16, borderRadius: 8,
                   background: '#EF4444', border: '1.5px solid #0A0A0A',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 9, fontWeight: 700, color: '#FFF', padding: '0 3px',
                 }}>{tab.badge > 9 ? '9+' : tab.badge}</div>
               )}
             </div>
-            <span style={{
-              // Apple iOS tab bar labels are 10pt — was 9 (below readable threshold).
-              fontSize: 10, fontWeight: isActive ? 700 : 500,
-              color: isActive ? '#FFFFFF' : '#6B7280',
-              letterSpacing: '0.015em',
-              transition: 'color 200ms cubic-bezier(0.2, 0, 0.38, 0.9)',
-            }}>
-              {tab.label}
-            </span>
           </button>
         )
       })}
