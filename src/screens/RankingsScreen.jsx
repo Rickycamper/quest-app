@@ -708,13 +708,185 @@ function BranchPodium({ entries, branch, game }) {
   )
 }
 
+// ── Champions by TCG (top-1 per game on the ALL/empty state) ───────────────
+// Shown when the user lands on Rankings without a TCG selected. One card per
+// game with its #1 global player and the branch they belong to. Tap a card
+// to drill into that game's leaderboard.
+function ChampionsByTcg({ champions, onSelectGame }) {
+  const [animateIn, setAnimateIn] = useState(false)
+  useEffect(() => {
+    setAnimateIn(false)
+    const t = setTimeout(() => setAnimateIn(true), 100)
+    return () => clearTimeout(t)
+  }, [])
+
+  const loaded = Object.keys(champions).length === GAMES.length
+
+  return (
+    <div style={{
+      background: COLOR.surface,
+      border: `1px solid ${COLOR.border}`,
+      borderRadius: RADIUS.lg,
+      padding: '14px 14px 12px',
+      boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 12,
+      }}>
+        <div style={{
+          fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          👑 Campeones por TCG
+        </div>
+        <div style={{
+          fontSize: 10, color: COLOR.textQuaternary, fontWeight: WEIGHT.medium,
+          letterSpacing: '0.02em',
+        }}>
+          Tap para ver ranking →
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {GAMES.map((g, i) => {
+          const champ = champions[g]
+          const gs    = GAME_STYLES[g] ?? {}
+          const bs    = champ?.branch ? (BRANCH_STYLES[champ.branch] ?? {}) : {}
+          const delay = i * 80
+          const isLoading = !loaded
+          const hasChamp  = !!champ
+
+          return (
+            <button
+              key={g}
+              onClick={() => hasChamp && onSelectGame?.(g)}
+              className={hasChamp ? 'pressable' : ''}
+              disabled={!hasChamp}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 11,
+                padding: '11px 12px',
+                background: hasChamp
+                  ? `linear-gradient(135deg, ${gs.bg ?? COLOR.background} 0%, transparent 60%)`
+                  : COLOR.background,
+                border: `1px solid ${hasChamp ? gs.border : COLOR.border}`,
+                borderRadius: RADIUS.md,
+                cursor: hasChamp ? 'pointer' : 'default',
+                textAlign: 'left',
+                fontFamily: FONT_STACK,
+                transition: MOTION.springTransition,
+                opacity: animateIn ? 1 : 0,
+                transform: animateIn ? 'translateX(0)' : 'translateX(-8px)',
+                transitionDelay: `${delay}ms`,
+                boxShadow: hasChamp ? `0 0 10px ${gs.border}, inset 0 1px 0 rgba(255,255,255,0.04)` : 'none',
+              }}
+            >
+              {/* Game icon block */}
+              <div style={{
+                width: 38, height: 38, borderRadius: RADIUS.sm, flexShrink: 0,
+                background: gs.bg ?? COLOR.surfaceRaised,
+                border: `1px solid ${gs.border ?? COLOR.borderStrong}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+              }}>
+                <GameIcon game={g} size={20} />
+              </div>
+
+              {/* Middle: game name + champion username + branch */}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={{
+                  fontSize: 13.5, fontWeight: WEIGHT.bold,
+                  color: gs.color ?? COLOR.text,
+                  letterSpacing: '-0.005em',
+                }}>
+                  {g}
+                </div>
+                {isLoading ? (
+                  <div style={{
+                    width: '60%', height: 12, borderRadius: 4,
+                    background: `linear-gradient(90deg, ${COLOR.surfaceRaised} 0%, ${COLOR.surfaceHover} 50%, ${COLOR.surfaceRaised} 100%)`,
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer 1.4s ease-in-out infinite',
+                  }} />
+                ) : hasChamp ? (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    fontSize: 11.5, color: COLOR.textSecondary,
+                    fontWeight: WEIGHT.medium,
+                  }}>
+                    <span style={{ fontSize: 12 }}>🥇</span>
+                    <span style={{
+                      color: COLOR.text, fontWeight: WEIGHT.semibold,
+                      letterSpacing: '-0.005em',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      maxWidth: 100,
+                    }}>
+                      {champ.username}
+                    </span>
+                    {champ.branch && (
+                      <>
+                        <span style={{ color: COLOR.textQuaternary }}>·</span>
+                        <span style={{
+                          width: 5, height: 5, borderRadius: '50%',
+                          background: bs.dot ?? COLOR.textTertiary, flexShrink: 0,
+                          boxShadow: `0 0 6px ${bs.dot}`,
+                        }} />
+                        <span style={{
+                          color: bs.color ?? COLOR.textTertiary,
+                          fontWeight: WEIGHT.bold,
+                          letterSpacing: '0.005em',
+                        }}>
+                          {champ.branch}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{
+                    fontSize: 11.5, color: COLOR.textQuaternary,
+                    fontWeight: WEIGHT.medium,
+                  }}>
+                    Sin ranking aún
+                  </div>
+                )}
+              </div>
+
+              {/* Right: points pill — only when we have a champion */}
+              {hasChamp && (
+                <div style={{
+                  flexShrink: 0,
+                  padding: '5px 11px', borderRadius: RADIUS.full,
+                  background: gs.bg ?? 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${gs.border ?? COLOR.borderStrong}`,
+                  color: gs.color ?? COLOR.text,
+                  fontSize: 12, fontWeight: WEIGHT.bold,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.005em',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                }}>
+                  <CountUpNum value={champ.points} startWhen={animateIn} delay={delay + 300} duration={1000} />
+                  <span style={{ fontSize: 9.5, opacity: 0.7, marginLeft: 1 }}>pts</span>
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Leaderboard ──────────────────────────────
-function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch }) {
+function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, onSelectGame }) {
   const toast = useToast()
   const [showRules, setShowRules] = useState(false)
   const [entries,   setEntries]   = useState([])
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState('')
+  // Champions per TCG — fetched when no game is selected (empty state).
+  // Each entry: { game: 'MTG', champion: <leaderboard row>, loading: bool }.
+  const [champions, setChampions] = useState({})
   // Editing state — admin only, available in all tabs
   const [editingId, setEditingId] = useState(null)
   const [ptsVal,    setPtsVal]    = useState('')
@@ -742,6 +914,28 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch })
       .catch(e => { if (e?.name !== 'AbortError') setError(e.message || 'Error de conexión.') })
       .finally(() => setLoading(false))
   }, [branch, game])
+
+  // ── Champions per TCG (fetched only when no game is selected) ─────────────
+  // Parallel queries for each game's #1 player, with a tiny session cache
+  // so flipping between tabs doesn't re-fetch every time.
+  useEffect(() => {
+    if (game) return  // only when on the ALL screen
+    if (Object.keys(champions).length === GAMES.length) return  // already loaded
+    let cancelled = false
+    Promise.all(
+      GAMES.map(g =>
+        getLeaderboard({ branch: null, game: g })
+          .then(rows => ({ game: g, champion: rows?.[0] ?? null }))
+          .catch(() => ({ game: g, champion: null }))
+      )
+    ).then(results => {
+      if (cancelled) return
+      const next = {}
+      for (const r of results) next[r.game] = r.champion
+      setChampions(next)
+    })
+    return () => { cancelled = true }
+  }, [game]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const openEdit = (entry) => {
     setEditingId(entry.id)
@@ -873,6 +1067,11 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch })
           </div>
         )
       })()}
+
+      {/* ── Campeones por TCG — top 1 de cada juego ────────────────────
+          Para cada TCG mostramos al #1 global + sucursal a la que pertenece.
+          Tap → drill-in al ranking de ese TCG. Cards animan en stagger. */}
+      <ChampionsByTcg champions={champions} onSelectGame={onSelectGame} />
 
       {/* ── Rules card (collapsible) ── */}
       <div style={{
@@ -3504,7 +3703,7 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
 
       {['leaderboard', 'tournaments', 'liga'].map(t => (
         <div key={t} style={{ display: t === tab ? 'block' : 'none' }}>
-          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} onSelectBranch={setBranch} />}
+          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} onSelectBranch={setBranch} onSelectGame={setGame} />}
           {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={profile?.role === 'admin'} openTournamentId={openTournamentId} />}
           {t === 'liga' && <LeagueTab key={`${game}-${branch}`} game={game} branch={branch} profile={profile} isStaff={isStaff} onViewProfile={onViewProfile} onCreateLeague={onCreateLeague} openLeagueId={openLeagueId} />}
         </div>
