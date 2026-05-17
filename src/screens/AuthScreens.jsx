@@ -104,11 +104,20 @@ export function OpeningScreen({ onSignIn, onSignUp, onGuest, oauthError }) {
 
       {/* Text */}
       <div style={{ padding: '0 28px 32px', width: '100%' }}>
-        <div style={{ fontSize: 26, fontWeight: 800, color: '#FFFFFF', textAlign: 'center', marginBottom: 8, letterSpacing: '-0.02em' }}>
-          Explore the app
+        <div style={{
+          fontSize: 28, fontWeight: 800, color: '#FFFFFF',
+          textAlign: 'center', marginBottom: 10,
+          letterSpacing: '-0.025em',
+          lineHeight: 1.15,
+        }}>
+          Entrá a Quest
         </div>
-        <div style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 1.5, marginBottom: 28 }}>
-          La comunidad TCG de Panamá — compite, colecciona y conecta.
+        <div style={{
+          fontSize: 14.5, color: '#9CA3AF', textAlign: 'center',
+          lineHeight: 1.5, marginBottom: 30,
+          fontWeight: 400, letterSpacing: '-0.005em',
+        }}>
+          La comunidad TCG de Panamá — competí, coleccioná y conectá.
         </div>
 
         {/* In-app browser warning (WhatsApp, Instagram, etc.) */}
@@ -263,27 +272,41 @@ export function OpeningScreen({ onSignIn, onSignUp, onGuest, oauthError }) {
 
         {/* Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <button onClick={signInWithDiscord} style={socialBtn}>
-            <DiscordIcon size={20} /> Continue with Discord
+          <button onClick={signInWithDiscord} className="pressable" style={{
+            ...socialBtn,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4)',
+            transition: 'all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          }}>
+            <DiscordIcon size={20} /> Continuar con Discord
           </button>
-          <button onClick={onSignUp} style={socialBtn}>
-            <MailIcon size={18} /> Continue with Email
+          <button onClick={onSignUp} className="pressable" style={{
+            ...socialBtn,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4)',
+            transition: 'all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          }}>
+            <MailIcon size={18} /> Continuar con Email
           </button>
-          <button onClick={onGuest} style={{
+          <button onClick={onGuest} className="pressable" style={{
             ...socialBtn,
             background: 'transparent',
-            border: '1px solid #2A2A2A',
-            color: '#9CA3AF',
+            border: '1px solid rgba(255,255,255,0.18)',
+            color: '#E5E7EB',
             gap: 8,
+            boxShadow: 'none',
+            transition: 'all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
           }}>
             <span style={{ fontSize: 16 }}>⚔️</span>
             Explorar sin cuenta
           </button>
         </div>
 
-        <div style={{ textAlign: 'center', fontSize: 13, color: '#6B7280', marginTop: 20 }}>
-          Already have an account?{' '}
-          <button onClick={onSignIn} style={linkBtn}>Log in</button>
+        <div style={{
+          textAlign: 'center', fontSize: 13.5,
+          color: '#9CA3AF', marginTop: 22,
+          letterSpacing: '-0.005em',
+        }}>
+          ¿Ya tenés cuenta?{' '}
+          <button onClick={onSignIn} style={linkBtn}>Iniciar sesión</button>
         </div>
       </div>
     </div>
@@ -592,9 +615,18 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
 
       {/* Form */}
       <div style={{ flex: 1, padding: '110px 24px 24px', overflowY: 'auto', scrollbarWidth: 'none', position: 'relative', zIndex: 1 }}>
-        <img src={qLogo} alt="Q" style={{ width: 52, objectFit: 'contain', marginBottom: 12 }} />
-        <div style={{ fontSize: 28, fontWeight: 800, color: '#111111', letterSpacing: '-0.02em', marginBottom: 24 }}>
-          Log in
+        <img src={qLogo} alt="Q" style={{ width: 52, objectFit: 'contain', marginBottom: 14 }} />
+        <div style={{
+          fontSize: 30, fontWeight: 800, color: '#111111',
+          letterSpacing: '-0.025em', marginBottom: 6, lineHeight: 1.1,
+        }}>
+          Iniciar sesión
+        </div>
+        <div style={{
+          fontSize: 14, color: '#6B7280',
+          letterSpacing: '-0.005em', marginBottom: 24, lineHeight: 1.5,
+        }}>
+          Volvé a tu cuenta de Quest para seguir compitiendo.
         </div>
 
         {/* OAuth error banner (passed from failed Discord redirect) */}

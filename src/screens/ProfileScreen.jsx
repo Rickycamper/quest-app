@@ -13,6 +13,7 @@ import Spinner from '../components/Spinner'
 import { useToast } from '../components/Toast'
 import { HAPTIC } from '../lib/design-tokens'
 import { shareOrCopy } from '../lib/share'
+import { COLOR, RADIUS, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
 
 const POST_TYPE_COLORS = {
   quiero: '#F59E0B',
@@ -183,11 +184,14 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
             // method === 'share' → native sheet IS the feedback, no toast needed
           }}
           title="Compartir perfil"
+          className="pressable"
           style={{
-            width: 36, height: 36, borderRadius: 10,
-            border: '1.5px solid #2A2A2A', background: '#1A1A1A',
+            width: 38, height: 38, borderRadius: RADIUS.md,
+            border: `1px solid ${COLOR.borderStrong}`, background: COLOR.surfaceRaised,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: '#9CA3AF', flexShrink: 0,
+            cursor: 'pointer', color: COLOR.textSecondary, flexShrink: 0,
+            boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+            transition: MOTION.springTransition,
           }}
         >
           <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -199,11 +203,13 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           </svg>
         </button>
         {isOwn && (
-          <button onClick={onEditProfile} style={{
-            width: 36, height: 36, borderRadius: 10,
-            border: '1.5px solid #2A2A2A', background: '#1A1A1A',
+          <button onClick={onEditProfile} className="pressable" style={{
+            width: 38, height: 38, borderRadius: RADIUS.md,
+            border: `1px solid ${COLOR.borderStrong}`, background: COLOR.surfaceRaised,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: '#9CA3AF', flexShrink: 0,
+            cursor: 'pointer', color: COLOR.textSecondary, flexShrink: 0,
+            boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+            transition: MOTION.springTransition,
           }}>
             <EditIcon />
           </button>
@@ -215,36 +221,56 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginBottom: 14 }}>
           {/* Avatar */}
           <div style={{
-            width: 72, height: 72, borderRadius: '50%',
-            background: '#1F1F1F', border: '2px solid #2A2A2A',
+            width: 78, height: 78, borderRadius: '50%',
+            background: COLOR.surfaceRaised,
+            border: `2px solid ${COLOR.borderStrong}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 32, flexShrink: 0, overflow: 'hidden',
+            boxShadow: `${ELEVATION.md}, inset 0 1px 0 rgba(255,255,255,0.06)`,
           }}>
-            <Avatar url={profile?.avatar_url} size={72} role={profile?.role} isOwner={profile?.is_owner} />
+            <Avatar url={profile?.avatar_url} size={78} role={profile?.role} isOwner={profile?.is_owner} />
           </div>
 
           {/* Stats row */}
-          <div style={{ display: 'flex', gap: 16, flex: 1, paddingBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 18, flex: 1, paddingBottom: 4 }}>
             {[
               { label: 'Posts',      value: posts.length },
               { label: 'Seguidores', value: counts.followers },
               { label: 'Siguiendo',  value: counts.following },
             ].map(s => (
               <div key={s.label} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF' }}>{s.value}</div>
-                <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{s.label}</div>
+                <div style={{
+                  fontSize: 18, fontWeight: WEIGHT.bold, color: COLOR.text,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.1,
+                }}>{s.value}</div>
+                <div style={{
+                  fontSize: 10.5, color: COLOR.textTertiary, marginTop: 3,
+                  fontWeight: WEIGHT.medium,
+                  letterSpacing: '0.01em',
+                }}>{s.label}</div>
               </div>
             ))}
             {/* Q Points — shown on own profile */}
             {isOwn && (
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: '#FBBF24', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <div style={{
+                  fontSize: 18, fontWeight: WEIGHT.bold, color: COLOR.gold,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.1,
+                }}>
                   <svg width={14} height={14} viewBox="0 0 16 16" fill="none">
                     <path d="m14.281666666666666 6.706533333333333 -4.531466666666667 -5.809333333333333c-0.22759999999999997 -0.237 -0.5015333333333333 -0.42466666666666664 -0.8046666666666666 -0.5514666666666667 -0.30319999999999997 -0.1268 -0.6291333333333333 -0.18993333333333332 -0.9577333333333333 -0.18553333333333333 -0.32853333333333334 0.004399999999999999 -0.6527333333333333 0.07626666666666666 -0.9524 0.2112 -0.29966666666666664 0.13479999999999998 -0.5684666666666667 0.3298 -0.7895999999999999 0.5728666666666666l-4.507933333333333 5.762266666666666c-0.24953333333333333 0.38539999999999996 -0.38293333333333335 0.8344666666666667 -0.3841333333333333 1.2935999999999999 0.013066666666666666 0.4401333333333333 0.14593333333333333 0.8684 0.3841333333333333 1.2386666666666666l0.04706666666666666 0.05486666666666666 4.500066666666666 5.809333333333333c0.2215333333333333 0.23459999999999998 0.48906666666666665 0.4210666666666667 0.7857333333333334 0.5478666666666666 0.2967333333333333 0.1267333333333333 0.6163333333333333 0.19113333333333332 0.9390000000000001 0.18906666666666666 0.33359999999999995 -0.0002666666666666667 0.6635333333333333 -0.07013333333333333 0.9685333333333334 -0.2051333333333333 0.3051333333333333 -0.135 0.5786666666666667 -0.3321333333333333 0.8033333333333333 -0.5788l4.500066666666666 -5.762333333333332c0.24593333333333334 -0.38859999999999995 0.37259999999999993 -0.8408 0.36419999999999997 -1.3006 -0.0084 -0.4598 -0.15126666666666666 -0.9071333333333333 -0.41126666666666667 -1.2865333333333333h0.04706666666666666Z" fill="#FBBF24" strokeWidth="0"/>
                   </svg>
                   {profile?.q_points ?? 0}
                 </div>
-                <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Q Coins</div>
+                <div style={{
+                  fontSize: 10.5, color: COLOR.textTertiary, marginTop: 3,
+                  fontWeight: WEIGHT.medium, letterSpacing: '0.01em',
+                }}>Q Coins</div>
               </div>
             )}
           </div>
@@ -344,13 +370,16 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
         {isOwn ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={onEditProfile} style={{
-                flex: 1, padding: '9px 0',
-                borderRadius: 8, background: 'transparent',
-                border: '1.5px solid #2A2A2A',
-                color: '#9CA3AF', fontSize: 13, fontWeight: 700,
-                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              <button onClick={onEditProfile} className="pressable" style={{
+                flex: 1, padding: '10px 0',
+                borderRadius: RADIUS.md, background: COLOR.surfaceRaised,
+                border: `1px solid ${COLOR.borderStrong}`,
+                color: COLOR.textSecondary, fontSize: 13, fontWeight: WEIGHT.semibold,
+                cursor: 'pointer', fontFamily: FONT_STACK,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                transition: MOTION.springTransition,
+                letterSpacing: '-0.005em',
+                boxShadow: ELEVATION.sm,
               }}>
                 <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -360,14 +389,18 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
               </button>
               <button
                 onClick={() => onVs?.()}
+                className="pressable"
                 style={{
-                  flex: 1, padding: '9px 0',
-                  borderRadius: 8, background: 'transparent',
-                  border: '1.5px solid #2A2A2A',
-                  color: '#FB923C', fontSize: 13, fontWeight: 700,
-                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  flex: 1, padding: '10px 0',
+                  borderRadius: RADIUS.md,
+                  background: 'linear-gradient(135deg, rgba(251,146,60,0.15) 0%, rgba(251,146,60,0.06) 100%)',
+                  border: '1px solid rgba(251,146,60,0.35)',
+                  color: COLOR.orange, fontSize: 13, fontWeight: WEIGHT.bold,
+                  cursor: 'pointer', fontFamily: FONT_STACK,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  transition: 'all 0.15s',
+                  transition: MOTION.springTransition,
+                  letterSpacing: '-0.005em',
+                  boxShadow: '0 0 12px rgba(251,146,60,0.12), inset 0 1px 0 rgba(255,255,255,0.05)',
                 }}
               >
                 ⚔️ Duelo

@@ -68,16 +68,19 @@ export default function EmptyState({
         </div>
       )}
       <div style={{
-        fontSize: 15, fontWeight: 700, color: '#E5E5E5',
-        letterSpacing: '-0.01em',
+        fontSize: 16, fontWeight: 700, color: '#E5E7EB',
+        letterSpacing: '-0.015em',
+        lineHeight: 1.3,
       }}>
         {title}
       </div>
       {subtitle && (
         <div style={{
-          fontSize: 12.5, color: '#6B7280',
+          fontSize: 13, color: '#9CA3AF',
           lineHeight: 1.5,
-          maxWidth: 270, marginTop: 2,
+          maxWidth: 270, marginTop: 4,
+          fontWeight: 400,
+          letterSpacing: '-0.005em',
         }}>
           {subtitle}
         </div>
@@ -85,18 +88,15 @@ export default function EmptyState({
       {ctaLabel && onCta && (
         <button
           onClick={onCta}
+          className="pressable"
           style={{
-            marginTop: 16, padding: '11px 22px', borderRadius: 12,
-            background: '#FFFFFF', border: 'none', color: '#111',
-            fontSize: 13, fontWeight: 800, cursor: 'pointer',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1) inset',
-            transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+            marginTop: 18, padding: '12px 24px', borderRadius: 12,
+            background: '#FFFFFF', border: 'none', color: '#0A0A0A',
+            fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.4) inset',
+            transition: 'all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+            letterSpacing: '-0.005em',
           }}
-          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.96)'}
-          onMouseUp  ={e => e.currentTarget.style.transform = 'scale(1)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          onTouchStart={e => e.currentTarget.style.transform = 'scale(0.96)'}
-          onTouchEnd  ={e => e.currentTarget.style.transform = 'scale(1)'}
         >
           {ctaLabel}
         </button>

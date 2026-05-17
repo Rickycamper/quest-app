@@ -12,6 +12,7 @@ import GameIcon from '../components/GameIcon'
 import { ShopIcon, SearchIcon } from '../components/Icons'
 import EmptyState from '../components/EmptyState'
 import { useToast } from '../components/Toast'
+import { COLOR, RADIUS, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
 
 const STORE_WHATSAPP = '50766130548'
 // Branch-specific WhatsApp numbers.
@@ -825,26 +826,52 @@ function ProductCard({ product, isOwner, onSave, onDelete }) {
 
   return (
     <>
-      <div onClick={() => setShowDetail(true)} style={{
-        background: '#111', borderRadius: 12, overflow: 'hidden',
-        border: '1px solid #1F1F1F', display: 'flex', flexDirection: 'column', cursor: 'pointer',
+      <div onClick={() => setShowDetail(true)} className="pressable lift" style={{
+        background: COLOR.surface,
+        borderRadius: RADIUS.lg,
+        overflow: 'hidden',
+        border: `1px solid ${COLOR.border}`,
+        boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+        display: 'flex', flexDirection: 'column',
+        cursor: 'pointer',
+        transition: MOTION.springTransition,
       }}>
         <ProductImage src={product.image_url} game={product.game} ratio="1/1" />
-        <div style={{ padding: '10px 10px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#FFF', lineHeight: 1.35, flex: 1 }}>
+        <div style={{ padding: '11px 11px 13px', flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{
+            fontSize: 11.5, fontWeight: WEIGHT.bold, color: COLOR.text,
+            lineHeight: 1.35, flex: 1, letterSpacing: '-0.005em',
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}>
             {product.name}
           </div>
-          <div style={{ fontSize: 15, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{
+            fontSize: 16, fontWeight: WEIGHT.bold, color: COLOR.text,
+            fontVariantNumeric: 'tabular-nums',
+            letterSpacing: '-0.02em',
+            lineHeight: 1.1,
+          }}>
             {fmtPriceOrAsk(product.price)}
           </div>
           {product.price > 0 && (
-            <div style={{ fontSize: 9, color: '#4B5563', fontWeight: 600, letterSpacing: '0.04em' }}>
+            <div style={{
+              fontSize: 9, color: COLOR.textQuaternary,
+              fontWeight: WEIGHT.medium, letterSpacing: '0.04em',
+            }}>
               Precio sujeto a revisión del mercado
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-            <div style={{ width: 5, height: 5, borderRadius: '50%', background: sl.dot, flexShrink: 0 }} />
-            <span style={{ fontSize: 9, fontWeight: 700, color: sl.color }}>{sl.text}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+            <div style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: sl.dot, flexShrink: 0,
+              boxShadow: `0 0 6px ${sl.dot}`,
+            }} />
+            <span style={{
+              fontSize: 9.5, fontWeight: WEIGHT.bold, color: sl.color,
+              letterSpacing: '0.02em',
+            }}>{sl.text}</span>
           </div>
         </div>
       </div>
@@ -1307,30 +1334,38 @@ function FL({ children }) {
 // ── Game filter strip (same as Feed) ──────────
 function GameFilter({ value, onChange }) {
   return (
-    <div style={{ background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12, display: 'flex', alignItems: 'center', padding: '8px 10px', gap: 6 }}>
-      <button onClick={() => onChange(null)} style={{
-        flex: 1, height: 34, borderRadius: 8,
-        border: !value ? '1.5px solid rgba(255,255,255,0.35)' : '1.5px solid transparent',
-        background: !value ? 'rgba(255,255,255,0.1)' : 'transparent',
-        color: !value ? '#FFF' : '#4B5563',
-        fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+    <div style={{
+      background: 'rgba(17,17,17,0.85)',
+      backdropFilter: 'saturate(180%) blur(20px)',
+      WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+      border: `1px solid ${COLOR.border}`,
+      borderRadius: RADIUS.md,
+      boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+      display: 'flex', alignItems: 'center', padding: '7px 9px', gap: 6,
+    }}>
+      <button onClick={() => onChange(null)} className="pressable" style={{
+        flex: 1, height: 36, borderRadius: RADIUS.sm,
+        border: !value ? '1px solid rgba(255,255,255,0.45)' : '1px solid transparent',
+        background: !value ? 'rgba(255,255,255,0.12)' : 'transparent',
+        color: !value ? COLOR.text : COLOR.textTertiary,
+        fontSize: 10.5, fontWeight: WEIGHT.bold,
+        cursor: 'pointer', fontFamily: FONT_STACK,
+        letterSpacing: '0.06em',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'background 0.18s, border-color 0.18s',
-        animation: !value ? 'iconPop 0.28s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+        transition: MOTION.springTransition,
       }}>ALL</button>
-      <div style={{ width: 1, height: 20, background: '#2A2A2A', flexShrink: 0 }} />
+      <div style={{ width: 1, height: 18, background: COLOR.borderStrong, flexShrink: 0, opacity: 0.7 }} />
       {GAMES.map(g => {
         const gs = GAME_STYLES[g]
         const active = value === g
         return (
-          <button key={g} onClick={() => onChange(active ? null : g)} title={g} style={{
-            flex: 1, height: 34, borderRadius: 8,
-            border: `1.5px solid ${active ? gs.border : 'transparent'}`,
+          <button key={g} onClick={() => onChange(active ? null : g)} title={g} className="pressable" style={{
+            flex: 1, height: 36, borderRadius: RADIUS.sm,
+            border: `1px solid ${active ? gs.border : 'transparent'}`,
             background: active ? gs.bg : 'transparent',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'background 0.18s, border-color 0.18s, box-shadow 0.18s',
-            boxShadow: active ? `0 0 10px ${gs.border}55` : 'none',
-            animation: active ? 'iconPop 0.28s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+            transition: MOTION.springTransition,
+            boxShadow: active ? `0 0 12px ${gs.border}60, inset 0 1px 0 rgba(255,255,255,0.05)` : 'none',
           }}>
             <GameIcon game={g} size={18} />
           </button>
@@ -1343,17 +1378,20 @@ function GameFilter({ value, onChange }) {
 // ── Accessory sub-filter chips ────────────────
 function AccessoryFilter({ value, onChange }) {
   return (
-    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+    <div style={{ display: 'flex', gap: 7, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
       {ACCESSORY_SUBS.map(s => {
         const active = value === s.id
         return (
-          <button key={String(s.id)} onClick={() => onChange(s.id)} style={{
-            flexShrink: 0, padding: '7px 14px', borderRadius: 20,
-            border: `1.5px solid ${active ? '#A78BFA' : '#2A2A2A'}`,
-            background: active ? 'rgba(167,139,250,0.12)' : 'transparent',
-            color: active ? '#A78BFA' : '#6B7280',
-            fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-            transition: 'all 0.15s',
+          <button key={String(s.id)} onClick={() => onChange(s.id)} className="pressable" style={{
+            flexShrink: 0, padding: '8px 15px', borderRadius: RADIUS.full,
+            border: `1px solid ${active ? COLOR.purple : COLOR.borderStrong}`,
+            background: active ? 'rgba(167,139,250,0.14)' : COLOR.surfaceRaised,
+            color: active ? COLOR.purple : COLOR.textSecondary,
+            fontSize: 11.5, fontWeight: WEIGHT.bold,
+            cursor: 'pointer', fontFamily: FONT_STACK,
+            letterSpacing: '-0.005em',
+            transition: MOTION.springTransition,
+            boxShadow: active ? '0 0 10px rgba(167,139,250,0.2), inset 0 1px 0 rgba(255,255,255,0.05)' : ELEVATION.sm,
           }}>{s.label}</button>
         )
       })}
@@ -1379,17 +1417,23 @@ export function prefetchShopProducts() {
 // ── Skeleton card shown while first load is in progress ──────────────────────
 function SkeletonCard() {
   const sh = {
-    background: 'linear-gradient(90deg,#1C1C1C 25%,#252525 50%,#1C1C1C 75%)',
-    backgroundSize: '400px 100%',
-    animation: 'shimmer 1.4s ease infinite',
+    background: `linear-gradient(90deg, ${COLOR.surface} 0%, ${COLOR.surfaceRaised} 50%, ${COLOR.surface} 100%)`,
+    backgroundSize: '200% 100%',
+    animation: 'shimmer 1.4s ease-in-out infinite',
   }
   return (
-    <div style={{ borderRadius: 14, overflow: 'hidden', background: '#111', border: '1px solid #1E1E1E' }}>
+    <div style={{
+      borderRadius: RADIUS.lg,
+      overflow: 'hidden',
+      background: COLOR.surface,
+      border: `1px solid ${COLOR.border}`,
+      boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+    }}>
       <div style={{ aspectRatio: '1/1', ...sh }} />
-      <div style={{ padding: '10px 12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ height: 10, borderRadius: 6, width: '55%', ...sh }} />
-        <div style={{ height: 14, borderRadius: 6, width: '88%', ...sh }} />
-        <div style={{ height: 11, borderRadius: 6, width: '40%', ...sh }} />
+      <div style={{ padding: '11px 11px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ height: 10, borderRadius: 4, width: '55%', ...sh }} />
+        <div style={{ height: 14, borderRadius: 4, width: '88%', ...sh }} />
+        <div style={{ height: 11, borderRadius: 4, width: '40%', ...sh }} />
       </div>
     </div>
   )

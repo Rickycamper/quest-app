@@ -23,8 +23,11 @@ function OwnerBottomNav({ active, hidden, tabs }) {
     <div style={{
       position: 'absolute', bottom: 0, left: 0, right: 0,
       height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-      background: 'rgba(10,10,10,0.97)', backdropFilter: 'blur(20px)',
-      borderTop: '1px solid #1F1F1F',
+      background: 'rgba(10,10,10,0.82)',
+      backdropFilter: 'saturate(180%) blur(24px)',
+      WebkitBackdropFilter: 'saturate(180%) blur(24px)',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+      boxShadow: '0 -8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
       display: 'flex', alignItems: 'flex-end',
       paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex: 100,
       transform: hidden ? 'translateY(100%)' : 'translateY(0)',
@@ -57,9 +60,10 @@ function OwnerBottomNav({ active, hidden, tabs }) {
             </div>
             <span style={{
               // Apple iOS tab bar labels are 10pt — was 9 (below readable threshold).
-              fontSize: 10, fontWeight: isActive ? 600 : 500,
+              fontSize: 10, fontWeight: isActive ? 700 : 500,
               color: isActive ? '#FFFFFF' : '#6B7280',
-              letterSpacing: '0.01em',
+              letterSpacing: '0.015em',
+              transition: 'color 200ms cubic-bezier(0.2, 0, 0.38, 0.9)',
             }}>
               {tab.label}
             </span>

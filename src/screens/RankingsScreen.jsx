@@ -12,6 +12,7 @@ import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, ShareIcon, PAID_ROLES,
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/Confirm'
 import { shareOrCopy } from '../lib/share'
+import { COLOR, RADIUS, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
 
 // ── Inline icons (16×16, fill, strokeWidth 0) ─────────
 const UserPlusIcon = ({ size = 14, color = 'currentColor' }) => (
@@ -694,51 +695,73 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
       ) : entries.map((entry, i) => {
         const rank = i + 1
         const m    = medal(rank)
+        const isTop3 = rank <= 3
         return (
           <div key={entry.id} style={{
-            padding: '12px 20px',
-            background: rank <= 3 ? 'rgba(255,255,255,0.02)' : 'transparent',
-            borderBottom: '1px solid #111111',
+            padding: '13px 20px',
+            background: isTop3
+              ? 'linear-gradient(90deg, rgba(245,158,11,0.04) 0%, transparent 60%)'
+              : 'transparent',
+            borderBottom: `1px solid ${COLOR.border}`,
             animation: 'fadeUp 0.3s ease both',
             animationDelay: `${i * 0.03}s`,
+            transition: MOTION.quickTransition,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 28, textAlign: 'center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 30, textAlign: 'center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {m
-                  ? <RankIcon rank={rank} size={18} />
-                  : <span style={{ fontSize: 13, fontWeight: 700, color: '#4B5563' }}>#{rank}</span>
+                  ? <RankIcon rank={rank} size={19} />
+                  : <span style={{
+                      fontSize: 13, fontWeight: WEIGHT.bold,
+                      color: COLOR.textQuaternary,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>#{rank}</span>
                 }
               </div>
               <div style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: '#1F1F1F', border: '1.5px solid #2A2A2A',
+                width: 36, height: 36, borderRadius: '50%',
+                background: COLOR.surfaceRaised,
+                border: `1px solid ${isTop3 ? 'rgba(245,158,11,0.35)' : COLOR.borderStrong}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 15, flexShrink: 0, overflow: 'hidden',
-              }}><Avatar url={entry.avatar_url} size={34} role={entry.role} isOwner={entry.is_owner} /></div>
+                boxShadow: isTop3 ? '0 0 12px rgba(245,158,11,0.18)' : 'none',
+              }}><Avatar url={entry.avatar_url} size={36} role={entry.role} isOwner={entry.is_owner} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <div style={{
+                  fontSize: 13.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
+                  display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+                  letterSpacing: '-0.01em',
+                }}>
                   {entry.username}
-                  {entry.verified && <span style={{ fontSize: 10, color: '#60A5FA' }}>✓</span>}
+                  {entry.verified && <span style={{ fontSize: 10, color: COLOR.blue }}>✓</span>}
                   {PAID_ROLES.has(entry.role) && <PremiumBadge size={12} role={entry.role} />}
                   <RoleBadge isOwner={entry.is_owner} role={entry.role} size={12} />
                   <SeasonBadgePill badges={entry.season_badges} game={game} branch={branch} />
                 </div>
                 {entry.branch && (
-                  <div style={{ fontSize: 11, color: BRANCH_STYLES[entry.branch]?.color ?? '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <MapPinIcon size={10} color={BRANCH_STYLES[entry.branch]?.color ?? '#4B5563'} />
+                  <div style={{
+                    fontSize: 11, color: BRANCH_STYLES[entry.branch]?.color ?? COLOR.textTertiary,
+                    display: 'flex', alignItems: 'center', gap: 4, marginTop: 2,
+                    fontWeight: WEIGHT.medium, letterSpacing: '0.005em',
+                  }}>
+                    <MapPinIcon size={10} color={BRANCH_STYLES[entry.branch]?.color ?? COLOR.textTertiary} />
                     {entry.branch}
                   </div>
                 )}
               </div>
               <div
                 onClick={() => canEdit && !editingId ? openEdit(entry) : null}
+                className={canEdit ? 'pressable' : ''}
                 style={{
-                  padding: '4px 12px', borderRadius: 8,
-                  background: editingId === entry.id ? 'rgba(167,139,250,0.22)' : 'rgba(167,139,250,0.12)',
-                  border: `1px solid ${editingId === entry.id ? 'rgba(167,139,250,0.5)' : 'rgba(167,139,250,0.25)'}`,
-                  color: '#A78BFA', fontSize: 13, fontWeight: 800,
+                  padding: '6px 14px', borderRadius: RADIUS.md,
+                  background: editingId === entry.id ? 'rgba(167,139,250,0.26)' : 'rgba(167,139,250,0.12)',
+                  border: `1px solid ${editingId === entry.id ? 'rgba(167,139,250,0.55)' : 'rgba(167,139,250,0.28)'}`,
+                  color: COLOR.purple, fontSize: 13, fontWeight: WEIGHT.bold,
                   cursor: canEdit ? 'pointer' : 'default',
-                  transition: 'all 0.15s',
+                  transition: MOTION.springTransition,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.005em',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
                 }}>{entry.points}pts</div>
             </div>
 
@@ -802,25 +825,30 @@ function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tourna
     <div
       onClick={() => onViewProfile?.(p.user_id)}
       style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '7px 0',
-        borderBottom: idx < total - 1 ? '1px solid #161616' : 'none',
+        display: 'flex', alignItems: 'center', gap: 11,
+        padding: '8px 4px',
+        borderBottom: idx < total - 1 ? `1px solid ${COLOR.border}` : 'none',
         cursor: onViewProfile ? 'pointer' : 'default',
-        borderRadius: 8, transition: 'background 0.12s',
+        borderRadius: RADIUS.sm,
+        transition: MOTION.quickTransition,
       }}
-      onMouseEnter={e => { if (onViewProfile) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+      onMouseEnter={e => { if (onViewProfile) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
       onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
     >
       <div style={{
-        width: 28, height: 28, borderRadius: '50%',
-        background: '#1F1F1F', border: '1px solid #2A2A2A',
+        width: 30, height: 30, borderRadius: '50%',
+        background: COLOR.surfaceRaised, border: `1px solid ${COLOR.borderStrong}`,
         overflow: 'hidden', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12,
       }}>
-        <Avatar url={prof.avatar_url} size={28} />
+        <Avatar url={prof.avatar_url} size={30} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#D1D5DB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{
+          fontSize: 12.5, fontWeight: WEIGHT.semibold, color: '#D1D5DB',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          letterSpacing: '-0.005em',
+        }}>
           {prof.username}
         </span>
         {/* Per-platform game ID (e.g. their Bandai TCG+ name for an OPTCG
@@ -830,27 +858,33 @@ function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tourna
           const gameId = getGameUsername(prof, tournamentGame)
           if (!gameId) return null
           return (
-            <span style={{ fontSize: 10, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>
+            <span style={{
+              fontSize: 10.5, color: COLOR.textTertiary,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              marginTop: 1, fontWeight: WEIGHT.medium,
+            }}>
               🎮 {gameId}
             </span>
           )
         })()}
       </div>
-      {playerMedal && <span style={{ fontSize: 14 }}>{medal(playerMedal.position)}</span>}
+      {playerMedal && <span style={{ fontSize: 15 }}>{medal(playerMedal.position)}</span>}
 
       {/* Payment status */}
       {isAdmin ? (
         <button
           onClick={handlePayToggle}
           disabled={toggling}
+          className="pressable"
           style={{
             flexShrink: 0,
-            padding: '3px 9px', borderRadius: 8, fontSize: 10, fontWeight: 800,
-            fontFamily: 'Inter, sans-serif', cursor: toggling ? 'default' : 'pointer',
-            border: 'none',
-            background: paid ? 'rgba(74,222,128,0.15)' : 'rgba(251,191,36,0.12)',
-            color: paid ? '#4ADE80' : '#FBBF24',
-            transition: 'all 0.15s',
+            padding: '4px 10px', borderRadius: RADIUS.sm,
+            fontSize: 10, fontWeight: WEIGHT.bold, letterSpacing: '0.02em',
+            fontFamily: FONT_STACK, cursor: toggling ? 'default' : 'pointer',
+            border: paid ? '1px solid rgba(74,222,128,0.3)' : '1px solid rgba(251,191,36,0.25)',
+            background: paid ? 'rgba(74,222,128,0.12)' : 'rgba(251,191,36,0.10)',
+            color: paid ? COLOR.green : COLOR.gold,
+            transition: MOTION.springTransition,
           }}
         >
           {toggling ? '…' : paid ? '✓ Pagó' : 'Pendiente'}
@@ -858,15 +892,17 @@ function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tourna
       ) : (
         paid && (
           <span style={{
-            flexShrink: 0, fontSize: 10, fontWeight: 700,
-            color: '#4ADE80', background: 'rgba(74,222,128,0.12)',
-            borderRadius: 8, padding: '3px 8px',
+            flexShrink: 0, fontSize: 10, fontWeight: WEIGHT.bold,
+            color: COLOR.green, background: 'rgba(74,222,128,0.1)',
+            borderRadius: RADIUS.sm, padding: '4px 9px',
+            border: '1px solid rgba(74,222,128,0.22)',
+            letterSpacing: '0.02em',
           }}>✓ Pagó</span>
         )
       )}
 
       {onViewProfile && (
-        <span style={{ fontSize: 11, color: '#374151', marginLeft: 2 }}>›</span>
+        <span style={{ fontSize: 12, color: COLOR.textQuaternary, marginLeft: 2 }}>›</span>
       )}
     </div>
   )
@@ -1032,57 +1068,69 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
 
   return (
     <div ref={cardRef} style={{
-      margin: '0 16px 8px',
-      background: '#111111', borderRadius: 10,
-      border: `1px solid ${isJoined ? bs.border : '#1F1F1F'}`,
+      margin: '0 16px 10px',
+      background: COLOR.surface,
+      borderRadius: RADIUS.md,
+      border: `1px solid ${isJoined ? bs.border : COLOR.border}`,
       animation: 'fadeUp 0.3s ease both',
       animationDelay: `${index * 0.04}s`,
       overflow: 'hidden',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+      boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
       // Left accent bar using branch color
       borderLeft: `3px solid ${bs.dot}`,
+      transition: MOTION.springTransition,
     }}>
       {/* Collapsed — 2-row layout */}
       <div
         onClick={() => setOpen(o => !o)}
-        style={{ padding: '10px 14px 8px', cursor: 'pointer' }}
+        style={{ padding: '12px 15px 10px', cursor: 'pointer' }}
       >
         {/* ── Row 1: logo · name · join · chevron ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           {/* Game icon */}
           <div style={{
-            width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+            width: 34, height: 34, borderRadius: RADIUS.sm, flexShrink: 0,
             background: gs.bg, border: `1px solid ${gs.border}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
           }}>
-            <GameIcon game={t.game} size={16} />
+            <GameIcon game={t.game} size={17} />
           </div>
 
           {/* Tournament name */}
-          <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{
+            flex: 1, minWidth: 0,
+            fontSize: 13.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            letterSpacing: '-0.01em',
+          }}>
             {t.name}
           </div>
 
-          {/* Join button */}
+          {/* Join button — refined pill */}
           {!isPast && (
             <button
               onClick={handleJoin}
               disabled={joining || (!isJoined && isFull)}
+              className="pressable"
               style={{
-                fontSize: 11, fontWeight: 700, flexShrink: 0,
-                padding: '4px 10px', borderRadius: 20,
-                minWidth: 78,
+                fontSize: 11.5, fontWeight: WEIGHT.bold, flexShrink: 0,
+                padding: '6px 12px', borderRadius: RADIUS.full,
+                minWidth: 82, fontFamily: FONT_STACK,
+                letterSpacing: '-0.005em',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
                 border: isJoined
-                  ? '1px solid rgba(34,197,94,0.45)'
-                  : '1px solid rgba(255,255,255,0.15)',
+                  ? '1px solid rgba(34,197,94,0.55)'
+                  : `1px solid ${COLOR.borderStrong}`,
                 background: isJoined
-                  ? 'linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0.08) 100%)'
-                  : 'transparent',
-                color: isJoined ? '#86EFAC' : '#9CA3AF',
-                boxShadow: isJoined ? '0 0 8px rgba(34,197,94,0.15)' : 'none',
+                  ? 'linear-gradient(135deg, rgba(34,197,94,0.22) 0%, rgba(34,197,94,0.10) 100%)'
+                  : COLOR.surfaceRaised,
+                color: isJoined ? '#86EFAC' : COLOR.textSecondary,
+                boxShadow: isJoined
+                  ? '0 0 10px rgba(34,197,94,0.18), inset 0 1px 0 rgba(255,255,255,0.05)'
+                  : ELEVATION.sm,
                 cursor: (joining || (!isJoined && isFull)) ? 'default' : 'pointer',
-                transition: 'all 0.2s',
+                transition: MOTION.springTransition,
               }}
             >
               {joining ? (
@@ -1105,38 +1153,38 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
 
           {/* Chevron */}
           <span style={{
-            fontSize: 10, color: '#374151', flexShrink: 0,
+            fontSize: 10, color: COLOR.textQuaternary, flexShrink: 0,
             transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s', display: 'inline-block',
+            transition: MOTION.springTransition, display: 'inline-block',
           }}>▼</span>
         </div>
 
         {/* ── Row 2: count · date · time · share ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
           {/* Participants */}
-          <SAUsers size={10} color="#6B7280" />
-          <span style={{ fontSize: 10, color: '#6B7280', fontWeight: 600 }}>{joinedCount}/{curCount} inscritos</span>
+          <SAUsers size={10.5} color={COLOR.textTertiary} />
+          <span style={{ fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.semibold, letterSpacing: '0.005em' }}>{joinedCount}/{curCount} inscritos</span>
 
           {curDate && (
             <>
-              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-              <SACalendar size={10} color="#6B7280" />
-              <span style={{ fontSize: 10, color: '#6B7280' }}>{dateStr}</span>
+              <span style={{ fontSize: 10, color: COLOR.borderStrong }}>·</span>
+              <SACalendar size={10.5} color={COLOR.textTertiary} />
+              <span style={{ fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium }}>{dateStr}</span>
             </>
           )}
 
           {timeStr && (
             <>
-              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-              <SAClock size={10} color="#6B7280" />
-              <span style={{ fontSize: 10, color: '#6B7280' }}>{timeStr}</span>
+              <span style={{ fontSize: 10, color: COLOR.borderStrong }}>·</span>
+              <SAClock size={10.5} color={COLOR.textTertiary} />
+              <span style={{ fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium }}>{timeStr}</span>
             </>
           )}
 
           {curFee > 0 && (
             <>
-              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-              <span style={{ fontSize: 10, color: '#FBBF24', fontWeight: 700 }}>${curFee % 1 === 0 ? curFee : curFee.toFixed(2)}</span>
+              <span style={{ fontSize: 10, color: COLOR.borderStrong }}>·</span>
+              <span style={{ fontSize: 10.5, color: COLOR.gold, fontWeight: WEIGHT.bold }}>${curFee % 1 === 0 ? curFee : curFee.toFixed(2)}</span>
             </>
           )}
 
@@ -1145,12 +1193,14 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
           <button
             onClick={handleShare}
             title="Compartir torneo"
+            className="pressable"
             style={{
-              background: 'none', border: 'none', padding: '2px 0px',
-              cursor: 'pointer', color: copied ? '#4ADE80' : '#6B7280',
-              fontSize: copied ? 10 : 13, fontWeight: copied ? 700 : 400,
-              fontFamily: 'Inter, sans-serif', lineHeight: 1,
-              transition: 'color 0.2s', flexShrink: 0,
+              background: 'none', border: 'none', padding: '4px 6px',
+              borderRadius: RADIUS.sm,
+              cursor: 'pointer', color: copied ? COLOR.green : COLOR.textTertiary,
+              fontSize: copied ? 10.5 : 13, fontWeight: copied ? WEIGHT.bold : WEIGHT.regular,
+              fontFamily: FONT_STACK, lineHeight: 1,
+              transition: MOTION.springTransition, flexShrink: 0,
             }}
           >
             {copied ? '✓ copiado' : (
@@ -1200,16 +1250,26 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
         <div style={{ borderTop: '1px solid #1A1A1A', animation: 'fadeUp 0.2s ease' }}>
 
           {/* Participants list */}
-          <div style={{ padding: '10px 14px 0' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#374151', letterSpacing: '0.08em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              INSCRIPTOS
-              <span style={{ background: 'rgba(255,255,255,0.07)', color: '#6B7280', fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 10 }}>
+          <div style={{ padding: '12px 15px 0' }}>
+            <div style={{
+              fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              Inscriptos
+              <span style={{
+                background: COLOR.surfaceRaised, color: COLOR.textSecondary,
+                fontSize: 9.5, fontWeight: WEIGHT.bold,
+                padding: '2px 7px', borderRadius: RADIUS.full,
+                letterSpacing: 0,
+                border: `1px solid ${COLOR.border}`,
+              }}>
                 {joinedCount}/{curCount}
               </span>
             </div>
 
             {participants.length === 0 ? (
-              <div style={{ fontSize: 12, color: '#374151', paddingBottom: 10 }}>Nadie inscripto aún</div>
+              <div style={{ fontSize: 12.5, color: COLOR.textQuaternary, paddingBottom: 12, fontWeight: WEIGHT.medium }}>Nadie inscripto aún</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {participants.map((p, idx) => {
