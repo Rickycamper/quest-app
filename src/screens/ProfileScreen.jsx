@@ -32,7 +32,7 @@ function EditIcon() {
   )
 }
 
-export default function ProfileScreen({ userId, currentUserId, onBack, onEditProfile, onMessage, onVs }) {
+export default function ProfileScreen({ userId, currentUserId, onBack, onEditProfile, onMessage, onVs, onNotifs, unreadCount = 0 }) {
   const { profile: myProfile } = useAuth()
   const toast = useToast()
   const isPremium = myProfile?.role === 'premium' || myProfile?.role === 'admin'
@@ -365,6 +365,89 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
             </div>
           )}
         </div>
+
+        {/* Avisos — only on own profile. Lives right above the action
+            buttons so it's the first thing the user sees after opening
+            their profile via the avatar tab in the bottom nav. */}
+        {isOwn && onNotifs && (
+          <button
+            onClick={onNotifs}
+            className="pressable"
+            style={{
+              width: '100%', marginBottom: 10,
+              padding: '12px 14px',
+              borderRadius: RADIUS.md,
+              background: unreadCount > 0
+                ? 'linear-gradient(135deg, rgba(167,139,250,0.14) 0%, rgba(167,139,250,0.04) 100%)'
+                : COLOR.surfaceRaised,
+              border: `1px solid ${unreadCount > 0 ? 'rgba(167,139,250,0.32)' : COLOR.borderStrong}`,
+              boxShadow: unreadCount > 0
+                ? '0 0 16px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.05)'
+                : `${ELEVATION.sm}, inset 0 1px 0 rgba(255,255,255,0.04)`,
+              display: 'flex', alignItems: 'center', gap: 12,
+              cursor: 'pointer', fontFamily: FONT_STACK,
+              transition: MOTION.springTransition,
+            }}
+          >
+            {/* Bell icon block with badge */}
+            <div style={{
+              width: 38, height: 38, borderRadius: RADIUS.sm, flexShrink: 0,
+              background: unreadCount > 0 ? 'rgba(167,139,250,0.18)' : COLOR.background,
+              border: `1px solid ${unreadCount > 0 ? 'rgba(167,139,250,0.32)' : COLOR.border}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: unreadCount > 0 ? COLOR.purple : COLOR.textSecondary,
+              position: 'relative',
+              animation: unreadCount > 0 ? 'trophyGlow 2.6s ease-in-out infinite' : 'none',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {unreadCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: -4, right: -4,
+                  minWidth: 18, height: 18, borderRadius: 9,
+                  background: '#EF4444',
+                  border: '2px solid #0A0A0A',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: WEIGHT.bold, color: '#FFFFFF',
+                  padding: '0 5px',
+                  animation: 'pulseDot 1.6s ease-in-out infinite',
+                }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </div>
+
+            {/* Text */}
+            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+              <div style={{
+                fontSize: 13.5, fontWeight: WEIGHT.bold,
+                color: unreadCount > 0 ? COLOR.text : COLOR.textSecondary,
+                letterSpacing: '-0.005em',
+              }}>
+                Avisos
+              </div>
+              <div style={{
+                fontSize: 11.5,
+                color: unreadCount > 0 ? COLOR.purple : COLOR.textTertiary,
+                fontWeight: WEIGHT.medium,
+                marginTop: 2,
+                letterSpacing: '-0.005em',
+              }}>
+                {unreadCount > 0
+                  ? `${unreadCount} ${unreadCount === 1 ? 'aviso nuevo' : 'avisos nuevos'}`
+                  : 'Sin avisos nuevos'}
+              </div>
+            </div>
+
+            {/* Chevron */}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              style={{ color: unreadCount > 0 ? COLOR.purple : COLOR.textQuaternary, flexShrink: 0 }}>
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        )}
 
         {/* Action buttons */}
         {isOwn ? (

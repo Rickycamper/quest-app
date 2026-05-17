@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react'
 import { HomeIcon, RanksIcon, FolderIcon, TruckIcon, PlusIcon, BellIcon, CounterIcon, UserIcon, ShopIcon } from './Icons'
+import Avatar from './Avatar'
 import { HAPTIC } from '../lib/design-tokens'
 
 // ── Owner nav: Feed · Shop · Rank · Counter · Tracking · Notifs ──
@@ -75,7 +76,29 @@ function OwnerBottomNav({ active, hidden, tabs }) {
 }
 
 // ── All users get the same nav ───────────────────────────────────────
-export function BottomNav({ active, hidden, onTab, onLifeCounter, onNotifs, unreadCount, isOwner }) {
+// The 5th tab used to be the bell ("Avisos"). It's now the user's own avatar
+// — taps open their profile, and the unread-count badge sits on the avatar
+// so they don't lose the notification affordance. Notifications themselves
+// live inside the profile (Avisos card at the top).
+export function BottomNav({ active, hidden, onTab, onLifeCounter, onMyProfile, unreadCount, isOwner, profile }) {
+  // Avatar-as-icon for the "Yo / Profile" tab. The `active` ring color comes
+  // from the rest of the nav so the visual treatment stays consistent.
+  const AvatarTabIcon = ({ active: isActive }) => (
+    <div style={{
+      width: 26, height: 26, borderRadius: '50%',
+      background: '#1F1F1F',
+      border: `1.5px solid ${isActive ? '#FFFFFF' : '#2A2A2A'}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden',
+      boxShadow: isActive ? '0 0 10px rgba(255,255,255,0.18), inset 0 1px 0 rgba(255,255,255,0.06)' : 'none',
+      transition: 'border-color 220ms cubic-bezier(0.2, 0, 0.38, 0.9), box-shadow 220ms',
+    }}>
+      {profile?.avatar_url
+        ? <Avatar url={profile.avatar_url} size={26} role={profile.role} isOwner={profile.is_owner} />
+        : <UserIcon active={isActive} />}
+    </div>
+  )
+
   // Labels in Spanish to match the rest of the app's copy.
   // Short forms picked to fit tab-bar width on iPhone SE (320 px).
   const tabs = [
@@ -83,12 +106,11 @@ export function BottomNav({ active, hidden, onTab, onLifeCounter, onNotifs, unre
     { id: 'shop',  label: 'Tienda',   icon: (a) => <ShopIcon active={a} />,    action: () => onTab('shop') },
     { id: 'ranks', label: 'Ranking',  icon: (a) => <RanksIcon active={a} />,   action: () => onTab('ranks') },
     { id: 'life',  label: 'Vida',     icon: (a) => <CounterIcon active={a} />, action: onLifeCounter },
-    { id: 'notif', label: 'Avisos',   icon: (a) => <BellIcon active={a} />,    action: onNotifs, badge: unreadCount },
+    { id: 'me',    label: 'Yo',       icon: (a) => <AvatarTabIcon active={a} />, action: onMyProfile, badge: unreadCount },
   ]
   return (
     <OwnerBottomNav
       active={active} hidden={hidden} tabs={tabs}
-      onTab={onTab} onLifeCounter={onLifeCounter} onNotifs={onNotifs} unreadCount={unreadCount}
     />
   )
 }

@@ -562,6 +562,8 @@ const needsTerms = profile && !profile.terms_accepted_at
               onEditProfile={() => setShowEditProfile(true)}
               onMessage={(u) => setChatUser(u)}
               onVs={(u) => { setVsUser(u ?? null); setShowMatchModal(true) }}
+              onNotifs={() => setShowNotifs(true)}
+              unreadCount={unreadCount}
             />
           )}
         </div>
@@ -738,7 +740,8 @@ const needsTerms = profile && !profile.terms_accepted_at
         active={activeTab}
         hidden={navHidden}
         isOwner={isOwner}
-        onNotifs={() => setShowNotifs(true)}
+        profile={profile}
+        onMyProfile={() => { if (profile?.id) setViewingUserId(profile.id) }}
         unreadCount={unreadCount}
         onTab={(tab) => {
           if (tab === 'feed' && activeTab === 'feed') {
