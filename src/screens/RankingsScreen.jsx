@@ -204,8 +204,354 @@ function SeasonBadgePill({ badges, game, branch }) {
   )
 }
 
+// ── Tiny count-up hook ────────────────────────
+// Animates a number from 0 → target over `duration` ms using rAF.
+// Used in the Rankings overview so big point totals "feel earned."
+function useCountUp(target, duration = 1200, startWhen = true) {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    if (!startWhen) return
+    let raf
+    const start = performance.now()
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration)
+      // ease-out cubic — fast start, slow finish (feels like settling)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setValue(Math.round(target * eased))
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration, startWhen])
+  return value
+}
+
+// ── Rankings Overview (chart-style dashboard) ──────────────────────────────
+// Shown when the user is on Global × [TCG] — instead of the flat list, gives
+// them a "where do I stand?" view: top-3 podium + per-branch totals as
+// animated bars. Tap a branch → drills into its filtered ranking list.
+function RankingsOverview({ entries, game, onSelectBranch }) {
+  // Aggregate by branch: total points + player count + best (lowest) rank
+  const byBranch = (() => {
+    const map = {}
+    for (const b of BRANCHES) map[b] = { branch: b, totalPts: 0, players: 0, topRank: null }
+    entries.forEach((e, i) => {
+      if (!e.branch || !map[e.branch]) return
+      map[e.branch].totalPts += e.points || 0
+      map[e.branch].players  += 1
+      const rank = i + 1
+      if (map[e.branch].topRank === null || rank < map[e.branch].topRank) {
+        map[e.branch].topRank = rank
+      }
+    })
+    return Object.values(map).sort((a, b) => b.totalPts - a.totalPts)
+  })()
+
+  const top3 = entries.slice(0, 3)
+  const maxPts = Math.max(1, ...byBranch.map(b => b.totalPts))
+  const gs = GAME_STYLES[game] ?? GAME_STYLES['MTG']
+
+  // Stagger entry: kick everything off ~50 ms after mount so the bars and
+  // numbers start from 0 even on prefetched data.
+  const [animateIn, setAnimateIn] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setAnimateIn(true), 50)
+    return () => clearTimeout(t)
+  }, [game])
+
+  return (
+    <div style={{ padding: '4px 16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* ── Game header with badge ────────────────────────────────── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '6px 2px 2px',
+      }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: RADIUS.sm,
+          background: gs.bg, border: `1px solid ${gs.border}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 14px ${gs.border}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+        }}>
+          <GameIcon game={game} size={16} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{
+            fontSize: 9.5, fontWeight: WEIGHT.bold,
+            color: COLOR.textTertiary, letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          }}>
+            Temporada activa
+          </div>
+          <div style={{
+            fontSize: 17, fontWeight: WEIGHT.bold, color: COLOR.text,
+            letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: 2,
+          }}>
+            Ranking {game} · Global
+          </div>
+        </div>
+      </div>
+
+      {/* ── Top 3 podium ─────────────────────────────────────────────── */}
+      {top3.length > 0 && (
+        <div style={{
+          background: COLOR.surface,
+          border: `1px solid ${COLOR.border}`,
+          borderRadius: RADIUS.lg,
+          padding: '14px 14px 16px',
+          boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+        }}>
+          <div style={{
+            fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+            marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            🏆 Top 3 global
+          </div>
+
+          {/* Podium layout — 2nd | 1st | 3rd, columns of different height for that "podium" feel */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around',
+            gap: 8, minHeight: 150,
+          }}>
+            {[1, 0, 2].map((podiumIdx, layoutIdx) => {  // 2nd, 1st, 3rd visual order
+              const e = top3[podiumIdx]
+              if (!e) return <div key={podiumIdx} style={{ flex: 1 }} />
+              const rank = podiumIdx + 1
+              const heights = { 0: 130, 1: 100, 2: 85 }  // 1st tallest
+              const medals = { 0: '🥇', 1: '🥈', 2: '🥉' }
+              const colors = {
+                0: { glow: '#F59E0B', text: '#FCD34D', border: 'rgba(245,158,11,0.5)' },
+                1: { glow: '#9CA3AF', text: '#E5E7EB', border: 'rgba(156,163,175,0.45)' },
+                2: { glow: '#B87333', text: '#D97706', border: 'rgba(184,115,51,0.45)' },
+              }
+              const c = colors[podiumIdx]
+              const bs = BRANCH_STYLES[e.branch] ?? {}
+              const delay = layoutIdx === 1 ? 0 : layoutIdx === 0 ? 220 : 340
+              return (
+                <div key={e.id} style={{
+                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  opacity: animateIn ? 1 : 0,
+                  transform: animateIn ? 'translateY(0)' : 'translateY(12px)',
+                  transition: `opacity 500ms ease ${delay}ms, transform 600ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
+                }}>
+                  <div style={{ fontSize: 24, marginBottom: 4 }}>{medals[podiumIdx]}</div>
+                  <div style={{
+                    width: 50, height: 50, borderRadius: '50%',
+                    background: COLOR.surfaceRaised,
+                    border: `2px solid ${c.border}`,
+                    overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: `0 0 16px ${c.glow}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                    marginBottom: 6,
+                  }}>
+                    <Avatar url={e.avatar_url} size={50} role={e.role} isOwner={e.is_owner} />
+                  </div>
+                  <div style={{
+                    fontSize: 11.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
+                    maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    letterSpacing: '-0.005em', textAlign: 'center',
+                  }}>
+                    {e.username}
+                  </div>
+                  {e.branch && (
+                    <div style={{
+                      fontSize: 9.5, color: bs.color ?? COLOR.textTertiary,
+                      fontWeight: WEIGHT.bold, letterSpacing: '0.04em',
+                      marginTop: 1,
+                    }}>
+                      {e.branch}
+                    </div>
+                  )}
+                  {/* Podium block underneath — width 100%, height varies by rank */}
+                  <div style={{
+                    width: '88%',
+                    height: animateIn ? heights[podiumIdx] * 0.55 : 0,
+                    marginTop: 8,
+                    borderRadius: `${RADIUS.sm}px ${RADIUS.sm}px 0 0`,
+                    background: `linear-gradient(180deg, ${c.glow}26 0%, ${c.glow}0d 100%)`,
+                    border: `1px solid ${c.border}`,
+                    borderBottom: 'none',
+                    display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+                    paddingTop: 6,
+                    transition: `height 700ms cubic-bezier(0.34,1.56,0.64,1) ${delay + 100}ms`,
+                    overflow: 'hidden',
+                  }}>
+                    <span style={{
+                      fontSize: 14, fontWeight: WEIGHT.bold, color: c.text,
+                      fontVariantNumeric: 'tabular-nums',
+                      letterSpacing: '-0.01em',
+                    }}>
+                      <CountUpNum value={e.points} startWhen={animateIn} delay={delay + 200} />pts
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Branches breakdown ───────────────────────────────────────── */}
+      <div style={{
+        background: COLOR.surface,
+        border: `1px solid ${COLOR.border}`,
+        borderRadius: RADIUS.lg,
+        padding: '14px 14px 8px',
+        boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 14,
+        }}>
+          <div style={{
+            fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+          }}>
+            Sucursales
+          </div>
+          <div style={{
+            fontSize: 10, color: COLOR.textQuaternary, fontWeight: WEIGHT.medium,
+            letterSpacing: '0.02em',
+          }}>
+            Tap para ver ranking →
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {byBranch.map((b, i) => {
+            const bs = BRANCH_STYLES[b.branch] ?? {}
+            const pct = (b.totalPts / maxPts) * 100
+            const hasTop3 = b.topRank !== null && b.topRank <= 3
+            const delay = i * 110
+
+            return (
+              <button
+                key={b.branch}
+                onClick={() => onSelectBranch?.(b.branch)}
+                className="pressable"
+                style={{
+                  display: 'flex', flexDirection: 'column', gap: 7,
+                  padding: '10px 12px',
+                  background: hasTop3
+                    ? `linear-gradient(135deg, ${bs.bg} 0%, transparent 70%)`
+                    : COLOR.background,
+                  border: `1px solid ${hasTop3 ? bs.border : COLOR.border}`,
+                  borderRadius: RADIUS.md,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontFamily: FONT_STACK,
+                  transition: MOTION.springTransition,
+                  opacity: animateIn ? 1 : 0,
+                  transform: animateIn ? 'translateX(0)' : 'translateX(-8px)',
+                  boxShadow: hasTop3 ? `0 0 12px ${bs.border}` : 'none',
+                }}
+              >
+                {/* Top row — branch name + dot + crown if top-3 + total pts */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: bs.dot ?? COLOR.textTertiary,
+                    flexShrink: 0,
+                    boxShadow: `0 0 8px ${bs.dot}`,
+                  }} />
+                  <span style={{
+                    fontSize: 14, fontWeight: WEIGHT.bold,
+                    color: bs.color ?? COLOR.text,
+                    letterSpacing: '-0.01em',
+                    flex: 1,
+                  }}>
+                    {b.branch}
+                  </span>
+                  {hasTop3 && (
+                    <span style={{
+                      fontSize: 9.5, fontWeight: WEIGHT.bold,
+                      padding: '2px 7px', borderRadius: RADIUS.full,
+                      background: 'rgba(245,158,11,0.18)',
+                      border: '1px solid rgba(245,158,11,0.45)',
+                      color: COLOR.gold,
+                      letterSpacing: '0.04em',
+                      display: 'inline-flex', alignItems: 'center', gap: 3,
+                    }}>
+                      👑 TOP {b.topRank}
+                    </span>
+                  )}
+                  <span style={{
+                    fontSize: 15, fontWeight: WEIGHT.bold,
+                    color: COLOR.text,
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.01em',
+                    minWidth: 50, textAlign: 'right',
+                  }}>
+                    <CountUpNum value={b.totalPts} startWhen={animateIn} delay={delay + 150} duration={1100} />
+                    <span style={{ fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium, marginLeft: 2 }}>pts</span>
+                  </span>
+                </div>
+
+                {/* Bar */}
+                <div style={{
+                  width: '100%', height: 8, borderRadius: 4,
+                  background: COLOR.surfaceRaised,
+                  overflow: 'hidden', position: 'relative',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: animateIn ? `${pct}%` : '0%',
+                    background: hasTop3
+                      ? `linear-gradient(90deg, ${bs.dot} 0%, ${bs.color} 100%)`
+                      : `linear-gradient(90deg, ${bs.dot}aa 0%, ${bs.dot} 100%)`,
+                    borderRadius: 4,
+                    boxShadow: `0 0 8px ${bs.dot}88`,
+                    transition: `width 1100ms cubic-bezier(0.34,1.56,0.64,1) ${delay + 80}ms`,
+                  }} />
+                </div>
+
+                {/* Subtle metadata */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium,
+                  letterSpacing: '0.005em',
+                }}>
+                  <span>{b.players} {b.players === 1 ? 'jugador' : 'jugadores'}</span>
+                  {b.topRank !== null && (
+                    <span style={{ color: hasTop3 ? COLOR.gold : COLOR.textTertiary }}>
+                      Mejor: #{b.topRank}
+                    </span>
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Footer hint — explicit affordance to drill in ────────────── */}
+      <div style={{
+        textAlign: 'center', padding: '4px 0 0',
+        fontSize: 11.5, color: COLOR.textQuaternary,
+        fontWeight: WEIGHT.medium, letterSpacing: '-0.005em',
+      }}>
+        Tap una sucursal para ver el ranking completo
+      </div>
+    </div>
+  )
+}
+
+// Wrapper that uses the count-up hook — needed because hooks can't run
+// conditionally inside the map callback above.
+function CountUpNum({ value, startWhen, delay = 0, duration = 1200 }) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    if (!startWhen) { setReady(false); return }
+    const t = setTimeout(() => setReady(true), delay)
+    return () => clearTimeout(t)
+  }, [startWhen, delay])
+  const n = useCountUp(value, duration, ready)
+  return <>{n}</>
+}
+
 // ── Leaderboard ──────────────────────────────
-function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
+function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch }) {
   const toast = useToast()
   const [showRules, setShowRules] = useState(false)
   const [entries,   setEntries]   = useState([])
@@ -692,6 +1038,10 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
           <div style={{ fontSize: 15, fontWeight: 700, color: '#4B5563' }}>No hay rankings aún</div>
           <div style={{ fontSize: 12, color: '#374151' }}>Reporta tus resultados de torneo para aparecer aquí</div>
         </div>
+      ) : !branch ? (
+        // Global view (no specific branch) — show animated overview chart
+        // instead of the flat list. Lets the user pick a branch to drill in.
+        <RankingsOverview entries={entries} game={game} onSelectBranch={onSelectBranch} />
       ) : entries.map((entry, i) => {
         const rank = i + 1
         const m    = medal(rank)
@@ -2976,7 +3326,7 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
 
       {['leaderboard', 'tournaments', 'liga'].map(t => (
         <div key={t} style={{ display: t === tab ? 'block' : 'none' }}>
-          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} />}
+          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} onSelectBranch={setBranch} />}
           {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={profile?.role === 'admin'} openTournamentId={openTournamentId} />}
           {t === 'liga' && <LeagueTab key={`${game}-${branch}`} game={game} branch={branch} profile={profile} isStaff={isStaff} onViewProfile={onViewProfile} onCreateLeague={onCreateLeague} openLeagueId={openLeagueId} />}
         </div>
