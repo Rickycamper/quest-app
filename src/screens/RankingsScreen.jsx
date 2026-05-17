@@ -708,6 +708,212 @@ function BranchPodium({ entries, branch, game }) {
   )
 }
 
+// ── Season Overview Card (collapsible, animated) ────────────────────────────
+// The big season banner shown on the Rankings ALL view. Compact by default —
+// just the title + status pill — taps open to reveal description, date range,
+// progress bar, and Championship rules. Designed to feel "alive" with subtle
+// motion: pulsing ACTIVA dot, trophy glint, spring chevron, content stagger.
+function SeasonOverviewCard({ season }) {
+  const [expanded, setExpanded] = useState(false)
+  const endStr    = safeDate(season?.end_date,   '2026-08-31')
+  const startStr  = safeDate(season?.start_date, '2026-05-01')
+  const endDate   = new Date(endStr   + 'T23:59:59')
+  const startDate = new Date(startStr + 'T00:00:00')
+  const now       = new Date()
+  const daysLeft  = Math.max(0, Math.ceil((endDate - now) / 86_400_000))
+  const totalDays = Math.max(1, Math.ceil((endDate - startDate) / 86_400_000))
+  const pct       = Math.min(100, Math.max(0, Math.round(((now - startDate) / (endDate - startDate)) * 100)))
+  const fmt       = (d, opts) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', opts)
+  const startFmt  = fmt(startDate, { day: 'numeric', month: 'long' })
+  const endFmt    = fmt(endDate,   { day: 'numeric', month: 'long', year: 'numeric' })
+  const seasonName = season?.name ?? 'Temporada 2'
+
+  // Subtle shimmer on the gradient — drifts every few seconds for "alive" feel
+  return (
+    <div style={{
+      borderRadius: RADIUS.lg, overflow: 'hidden',
+      background: `
+        linear-gradient(135deg, rgba(245,158,11,0.14) 0%, rgba(251,191,36,0.04) 100%),
+        radial-gradient(ellipse at top right, rgba(251,191,36,0.10) 0%, transparent 60%)
+      `,
+      border: '1px solid rgba(245,158,11,0.28)',
+      boxShadow: `0 0 24px rgba(245,158,11,0.10), ${ELEVATION.md}, ${ELEVATION.innerLit}`,
+      transition: MOTION.springTransition,
+      position: 'relative',
+    }}>
+      {/* Diagonal shimmer ribbon — passes once every ~6s */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%)',
+        backgroundSize: '200% 100%',
+        animation: 'seasonShine 6s ease-in-out infinite',
+        pointerEvents: 'none', borderRadius: 'inherit',
+      }} />
+
+      {/* ── Collapsed header (always visible, clickable) ─────────────── */}
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="pressable"
+        style={{
+          width: '100%', padding: '12px 14px',
+          background: 'none', border: 'none',
+          display: 'flex', alignItems: 'center', gap: 11,
+          cursor: 'pointer', fontFamily: FONT_STACK,
+          position: 'relative', zIndex: 1,
+        }}
+        aria-expanded={expanded}
+      >
+        {/* Trophy icon with soft pulse glow */}
+        <div style={{
+          width: 36, height: 36, borderRadius: RADIUS.sm, flexShrink: 0,
+          background: 'rgba(245,158,11,0.15)',
+          border: '1px solid rgba(245,158,11,0.35)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 0 14px rgba(245,158,11,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
+          animation: 'trophyGlow 2.8s ease-in-out infinite',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#FBBF24" strokeWidth="0">
+            <path d={HAND_MIDDLE_PATH} />
+          </svg>
+        </div>
+
+        {/* Title + date range — date hides when collapsed for a cleaner look */}
+        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+          <div style={{
+            fontSize: 9.5, fontWeight: WEIGHT.bold,
+            color: 'rgba(245,158,11,0.7)', letterSpacing: '0.12em',
+            textTransform: 'uppercase', lineHeight: 1,
+          }}>
+            Temporada activa
+          </div>
+          <div style={{
+            fontSize: 16, fontWeight: WEIGHT.bold, color: '#FBBF24',
+            letterSpacing: '-0.015em', lineHeight: 1.2, marginTop: 3,
+          }}>
+            {seasonName}
+          </div>
+        </div>
+
+        {/* Right side: ACTIVA pill (with pulsing dot) + chevron */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+        }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: 9.5, fontWeight: WEIGHT.bold,
+            padding: '4px 9px', borderRadius: RADIUS.full,
+            background: 'rgba(74,222,128,0.14)',
+            border: '1px solid rgba(74,222,128,0.32)',
+            color: COLOR.green, letterSpacing: '0.06em',
+          }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: COLOR.green,
+              boxShadow: '0 0 8px rgba(74,222,128,0.7)',
+              animation: 'pulseDot 1.6s ease-in-out infinite',
+            }} />
+            ACTIVA
+          </div>
+          <svg
+            width="14" height="14" viewBox="0 0 16 16" fill={COLOR.gold} strokeWidth="0"
+            style={{
+              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+              opacity: 0.7,
+            }}
+          >
+            <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+          </svg>
+        </div>
+      </button>
+
+      {/* ── Expanded body ─────────────────────────────────────────────── */}
+      <div style={{
+        maxHeight: expanded ? 360 : 0,
+        opacity: expanded ? 1 : 0,
+        overflow: 'hidden',
+        transition: expanded
+          ? 'max-height 380ms cubic-bezier(0.34, 1.3, 0.64, 1), opacity 320ms ease 80ms'
+          : 'max-height 280ms ease, opacity 180ms ease',
+        position: 'relative', zIndex: 1,
+      }}>
+        <div style={{
+          padding: '4px 14px 14px',
+          borderTop: '1px solid rgba(245,158,11,0.18)',
+          marginTop: 4,
+        }}>
+          {/* Days left big number + progress */}
+          <div style={{
+            display: 'flex', alignItems: 'baseline', gap: 10,
+            paddingTop: 12, marginBottom: 12,
+          }}>
+            <div style={{
+              fontSize: 32, fontWeight: WEIGHT.bold, color: '#FBBF24',
+              fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', lineHeight: 0.95,
+            }}>
+              {daysLeft}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 12, fontWeight: WEIGHT.semibold, color: COLOR.text,
+                letterSpacing: '-0.005em',
+              }}>
+                {daysLeft === 1 ? 'día restante' : 'días restantes'}
+              </div>
+              <div style={{
+                fontSize: 11, color: COLOR.textTertiary, marginTop: 2,
+                fontWeight: WEIGHT.medium,
+              }}>
+                {startFmt} – {endFmt}
+              </div>
+            </div>
+          </div>
+
+          {/* Progress bar — animates from 0 → pct on expand */}
+          <div style={{
+            height: 6, borderRadius: 3,
+            background: 'rgba(255,255,255,0.05)',
+            overflow: 'hidden', marginBottom: 14,
+            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+          }}>
+            <div style={{
+              height: '100%',
+              width: expanded ? `${pct}%` : '0%',
+              borderRadius: 3,
+              background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)',
+              boxShadow: '0 0 8px rgba(251,191,36,0.6)',
+              transition: 'width 900ms cubic-bezier(0.34,1.3,0.64,1) 120ms',
+            }} />
+          </div>
+
+          {/* Description */}
+          <p style={{
+            margin: '0 0 8px', fontSize: 12.5, color: '#E5E7EB',
+            lineHeight: 1.55, letterSpacing: '-0.005em',
+          }}>
+            La <strong style={{ color: '#FBBF24' }}>{seasonName} es oficial</strong> — los puntos que acumules <strong style={{ color: COLOR.text }}>cuentan para el ranking final</strong> y el Season Championship.
+          </p>
+
+          {/* Championship rule pill */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '6px 11px', borderRadius: RADIUS.full,
+            background: 'rgba(167,139,250,0.10)',
+            border: '1px solid rgba(167,139,250,0.25)',
+            color: COLOR.purple,
+            fontSize: 11.5, fontWeight: WEIGHT.semibold,
+            letterSpacing: '-0.005em',
+          }}>
+            <span style={{ fontSize: 13 }}>🏆</span>
+            Top 2 por ciudad clasifica al Championship
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Champions by TCG (top-1 per game on the ALL/empty state) ───────────────
 // Shown when the user lands on Rankings without a TCG selected. One card per
 // game with its #1 global player and the branch they belong to. Tap a card
@@ -1010,63 +1216,8 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
   if (!game) return (
     <div style={{ padding: '12px 14px 32px', display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.25s ease' }}>
 
-      {/* ── Season announcement — adapts to current season ── */}
-      {(() => {
-        const endStr    = safeDate(activeSeason?.end_date,   '2026-08-31')
-        const startStr  = safeDate(activeSeason?.start_date, '2026-05-01')
-        const endDate   = new Date(endStr   + 'T23:59:59')
-        const startDate = new Date(startStr + 'T00:00:00')
-        const now       = new Date()
-        const daysLeft  = Math.max(0, Math.ceil((endDate - now) / 86_400_000))
-        // isTest: still within S1 (today hasn't passed the end date)
-        const fmt = (d, opts) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', opts)
-        const endFmt = fmt(endDate, { day: 'numeric', month: 'long', year: 'numeric' })
-
-        return (
-          <div style={{
-            borderRadius: 14, overflow: 'hidden',
-            background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(251,191,36,0.06) 100%)',
-            border: '1px solid rgba(245,158,11,0.25)',
-          }}>
-            <div style={{
-              padding: '10px 14px 8px',
-              borderBottom: '1px solid rgba(245,158,11,0.15)',
-              display: 'flex', alignItems: 'center', gap: 10,
-            }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-                background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
-                  <path d={HAND_MIDDLE_PATH} />
-                </svg>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#F59E0B', letterSpacing: '-0.01em' }}>
-                  {activeSeason?.name ?? 'Temporada 2'} — Oficial
-                </div>
-                <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>
-                  {fmt(startDate, { day: 'numeric', month: 'long' })} – {endFmt} · {daysLeft}d restantes
-                </div>
-              </div>
-              <div style={{
-                fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 6,
-                background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)',
-                color: '#4ADE80', letterSpacing: '0.05em', flexShrink: 0,
-              }}>ACTIVA</div>
-            </div>
-            <div style={{ padding: '10px 14px 12px' }}>
-              <p style={{ margin: '0 0 6px', fontSize: 12, color: '#D1D5DB', lineHeight: 1.55 }}>
-                La <strong style={{ color: '#F59E0B' }}>{activeSeason?.name ?? 'Temporada 2'} es oficial</strong> — los puntos que acumules <strong style={{ color: '#FFFFFF' }}>cuentan para el ranking final</strong> y el Season Championship.
-              </p>
-              <p style={{ margin: 0, fontSize: 11, color: '#6B7280', lineHeight: 1.5 }}>
-                Top 2 por ciudad clasifica al Season Championship.
-              </p>
-            </div>
-          </div>
-        )
-      })()}
+      {/* ── Season announcement — collapsible, adapts to current season ── */}
+      <SeasonOverviewCard season={activeSeason} />
 
       {/* ── Campeones por TCG — top 1 de cada juego ────────────────────
           Para cada TCG mostramos al #1 global + sucursal a la que pertenece.

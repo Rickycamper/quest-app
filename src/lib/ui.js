@@ -279,6 +279,19 @@ export function injectGlobalKeyframes() {
     @keyframes pop     { 0%{transform:scale(.85)} 60%{transform:scale(1.04)} 100%{transform:scale(1)} }
     @keyframes bounce  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
     @keyframes tabBounce { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
+    @keyframes seasonShine {
+      0%   { background-position: -100% 0; }
+      55%  { background-position:  120% 0; }
+      100% { background-position:  120% 0; }
+    }
+    @keyframes trophyGlow {
+      0%, 100% { box-shadow: 0 0 14px rgba(245,158,11,0.22), inset 0 1px 0 rgba(255,255,255,0.06); }
+      50%      { box-shadow: 0 0 22px rgba(251,191,36,0.45), inset 0 1px 0 rgba(255,255,255,0.08); }
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1;   transform: scale(1); }
+      50%      { opacity: 0.55; transform: scale(0.85); }
+    }
     .pressable:active { transform: scale(0.97); }
     .lift:hover { transform: translateY(-1px); }
   `
