@@ -9,6 +9,9 @@ import { logMatch, searchUsers } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
+// Phosphor — used in the admin/owner refined header only (matches the
+// medieval nav family: Sword for combat / life counter).
+import { SwordIcon } from '@phosphor-icons/react'
 import qLogo from '../assets/q-logo.png'
 import biohazardIcon from '../assets/Biohazard--Streamline-Font-Awesome.svg'
 import crownIcon from '../assets/Crown--Streamline-Font-Awesome.svg'
@@ -1577,7 +1580,8 @@ function SectionLabel({ children }) {
 // ── Main export ───────────────────────────────
 // Works both as a nav tab (no onClose) and as a modal overlay (onClose provided).
 export default function LifeCounterScreen({ onClose, onViewProfile }) {
-  const { profile } = useAuth()
+  const { profile, isOwner, isAdmin } = useAuth()
+  const isAdminOrOwner = isOwner || isAdmin
   const [step,    setStep]   = useState('setup') // 'setup' | 'counter' | 'wl' | 'done'
   const [config,  setConfig] = useState(null)
   const [result,  setResult] = useState(null)
@@ -1633,25 +1637,53 @@ export default function LifeCounterScreen({ onClose, onViewProfile }) {
       background: '#0A0A0A', minHeight: '100%',
     }}>
 
-      {/* Header — only on setup and done */}
+      {/* Header — only on setup and done.
+          Admin/owner get the refined version matching the medieval nav family
+          (Sword icon, softer borders, glass-tinted bar).
+          Regular users keep the original look (heart-like custom svg) — no
+          surprise UI shift for them. */}
       {(step === 'setup' || step === 'done') && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          padding: '14px 16px 12px', flexShrink: 0,
-          background: '#0D0D0D', borderBottom: '1px solid #1A1A1A',
-        }}>
-          {/* Back arrow only in modal mode; in tab mode show nothing (nav handles back) */}
-          {isModal
-            ? <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, padding: '0 2px' }}>←</button>
-            : <div style={{ width: 28 }} />
-          }
-          <div style={{ fontSize: 17, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="#fff" strokeWidth="0">
-              <path d="M13 12.465625c1.828125 -1.284375 3 -3.253125 3 -5.465625C16 3.134375 12.41875 0 8 0S0 3.134375 0 7c0 2.209375 1.171875 4.18125 3 5.465625l0 0.034375v2c0 0.828125 0.671875 1.5 1.5 1.5h1.5v-1.5c0 -0.275 0.225 -0.5 0.5 -0.5s0.5 0.225 0.5 0.5v1.5h2v-1.5c0 -0.275 0.225 -0.5 0.5 -0.5s0.5 0.225 0.5 0.5v1.5h1.5c0.828125 0 1.5 -0.671875 1.5 -1.5v-2l0 -0.034375zM3 8a2 2 0 1 1 4 0 2 2 0 1 1 -4 0zm8 -2a2 2 0 1 1 0 4 2 2 0 1 1 0 -4z"/>
-            </svg>
-            Life Counter
+        isAdminOrOwner ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '14px 16px 12px', flexShrink: 0,
+            background: 'rgba(255,255,255,0.03)',
+            borderBottom: '0.5px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          }}>
+            {isModal
+              ? <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 22, lineHeight: 1, padding: '0 2px' }}>‹</button>
+              : <div style={{ width: 28 }} />
+            }
+            <div style={{
+              fontSize: 17, fontWeight: 700, color: '#FFFFFF',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif',
+              display: 'flex', alignItems: 'center', gap: 9,
+              letterSpacing: '-0.015em',
+            }}>
+              <SwordIcon size={20} weight="fill" color="#FFFFFF" />
+              Life Counter
+            </div>
           </div>
-        </div>
+        ) : (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '14px 16px 12px', flexShrink: 0,
+            background: '#0D0D0D', borderBottom: '1px solid #1A1A1A',
+          }}>
+            {isModal
+              ? <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, padding: '0 2px' }}>←</button>
+              : <div style={{ width: 28 }} />
+            }
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="#fff" strokeWidth="0">
+                <path d="M13 12.465625c1.828125 -1.284375 3 -3.253125 3 -5.465625C16 3.134375 12.41875 0 8 0S0 3.134375 0 7c0 2.209375 1.171875 4.18125 3 5.465625l0 0.034375v2c0 0.828125 0.671875 1.5 1.5 1.5h1.5v-1.5c0 -0.275 0.225 -0.5 0.5 -0.5s0.5 0.225 0.5 0.5v1.5h2v-1.5c0 -0.275 0.225 -0.5 0.5 -0.5s0.5 0.225 0.5 0.5v1.5h1.5c0.828125 0 1.5 -0.671875 1.5 -1.5v-2l0 -0.034375zM3 8a2 2 0 1 1 4 0 2 2 0 1 1 -4 0zm8 -2a2 2 0 1 1 0 4 2 2 0 1 1 0 -4z"/>
+              </svg>
+              Life Counter
+            </div>
+          </div>
+        )
       )}
 
       {step === 'setup' && (
