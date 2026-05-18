@@ -25,31 +25,29 @@ const STORAGE_KEY = 'quest_dc_preview'
 //   • Pill-style active tab is faked with a glow ring on the icon container.
 // ─────────────────────────────────────────────────────────────────────────────
 const DC_CSS = `
-/* ── 0. Base palette + ambient aurora ──────────────────────────────────── */
+/* ── 0. Base palette — designcode.io reference ──────────────────────────── */
 body.dc-preview {
-  /* Pale purple-blue base — color is visible everywhere, not just at the
-     corners. Cards (with the iOS frosted-white glass recipe) absorb this
-     tint via backdrop-filter, so each card naturally looks washed in
-     violet/indigo without us baking color into the card itself. */
+  /* Mirrors the designcode card hero: top half lighter violet, bottom half
+     deep navy, very subtle. Cards' glass will pick this up cleanly. */
   background:
-    radial-gradient(ellipse 90% 60% at 25% 15%, rgba(99,102,241,0.55) 0%, transparent 70%),
-    radial-gradient(ellipse 90% 60% at 75% 85%, rgba(168,85,247,0.50) 0%, transparent 70%),
-    radial-gradient(ellipse 70% 50% at 50% 50%, rgba(139,92,246,0.30) 0%, transparent 80%),
-    #1A1438 !important;
+    radial-gradient(ellipse 100% 60% at 30% 0%, rgba(76,29,149,0.85) 0%, transparent 70%),
+    radial-gradient(ellipse 90% 50% at 80% 25%, rgba(124,58,237,0.45) 0%, transparent 65%),
+    linear-gradient(180deg, #2B1F5E 0%, #161438 55%, #0E0A28 100%) !important;
   background-attachment: fixed !important;
   color: #F5F5F7 !important;
 }
 
-/* Fixed aurora overlay — accent pops on top of the colored base */
+/* Fixed aurora overlay — soft pink curves at the bottom (the designcode
+   "neon trail" detail) + a small pink top-right accent. */
 body.dc-preview::before {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse 50% 30% at 110% -10%, rgba(236,72,153,0.22) 0%, transparent 60%),
-    radial-gradient(ellipse 45% 28% at -10% 105%, rgba(56,189,248,0.20) 0%, transparent 60%),
-    radial-gradient(ellipse 30% 22% at 50% -8%, rgba(217,70,239,0.12) 0%, transparent 60%);
+    radial-gradient(ellipse 60% 8% at 30% 102%, rgba(244,114,182,0.55) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 4% at 60% 105%, rgba(236,72,153,0.40) 0%, transparent 70%),
+    radial-gradient(ellipse 35% 25% at 110% -8%, rgba(217,70,239,0.18) 0%, transparent 60%);
   animation: dcAurora 24s ease-in-out infinite alternate;
 }
 
@@ -70,39 +68,42 @@ body.dc-preview .screen-scroll {
   background: transparent !important;
 }
 
-/* ── 1. iOS-style frosted glass cards ───────────────────────────────────── */
-/* This is the recipe Apple uses for Control Center / Notification Center
-   / Widgets on iOS: heavy blur, strong saturation boost, very light white
-   translucent fill (NOT dark), thin 0.5 px borders, a subtle top-edge
-   highlight, and a soft bottom inner shadow for depth.
-
-   Cards float on top of the ambient purple → the blur picks up the violet
-   from the bg → cards take on a faint glassy tint without us hardcoding
-   any color into them. That's the real Apple trick. */
+/* ── 1. Designcode card recipe — tinted glass with gradient hairline ─────── */
+/* Closer to the designcode.io reference: not pure-white frosted (which goes
+   bright on dark bg) but a slightly purple-tinted dark glass with a VISIBLE
+   gradient hairline border that catches light at the top and falls into
+   shadow at the bottom — the signature 'Liquid Glass' edge. */
 body.dc-preview [style*="background: rgb(17, 17, 17)"],
 body.dc-preview [style*="background:#111"],
 body.dc-preview [style*="background: #111"],
 body.dc-preview [style*="background:#111111"],
 body.dc-preview [style*="background: #111111"] {
+  /* Tinted dark fill — slightly violet, slightly transparent so the blur
+     picks up the bg gradient through it. */
   background:
-    /* Top-edge specular highlight — thin and bright (Liquid Glass cue) */
-    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 30%),
-    /* The body fill: very light translucent white, not dark grey */
-    rgba(255,255,255,0.06) !important;
-  backdrop-filter: blur(40px) saturate(200%) brightness(115%) !important;
-  -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(115%) !important;
-  /* iOS uses sub-pixel borders. 0.5 px = hairline on retina, fades on non-retina. */
-  border: 0.5px solid rgba(255,255,255,0.18) !important;
+    /* Top specular sheen (bright, fades fast) */
+    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 22%),
+    /* Body tint — dark violet, semi-transparent */
+    linear-gradient(180deg, rgba(60,46,110,0.42) 0%, rgba(30,20,68,0.55) 100%) !important;
+  backdrop-filter: blur(38px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(38px) saturate(180%) !important;
+  /* Gradient hairline using border-image — bright at the top, dim at the
+     bottom. Fallback to solid border if border-image isn't supported. */
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  border-image: linear-gradient(180deg,
+    rgba(255,255,255,0.30) 0%,
+    rgba(255,255,255,0.10) 40%,
+    rgba(0,0,0,0.20) 100%) 1 !important;
   box-shadow:
-    /* Soft outer drop — short and low, NOT a heavy shadow */
-    0 1px 3px rgba(0,0,0,0.25),
-    0 4px 16px rgba(0,0,0,0.20),
-    /* Inner top highlight + inner bottom shadow → 3D glass feel */
-    0 1px 0 rgba(255,255,255,0.22) inset,
-    0 -1px 0 rgba(0,0,0,0.18) inset !important;
+    /* Long soft drop — designcode shadow is generous */
+    0 18px 40px rgba(0,0,0,0.40),
+    0 4px 12px rgba(76,29,149,0.20),
+    /* Inner highlight at top, inner shadow at bottom = 3D refraction */
+    0 1px 0 rgba(255,255,255,0.20) inset,
+    0 -1px 0 rgba(0,0,0,0.25) inset !important;
 }
 
-/* Raised surfaces (#1A1A1A / #1F1F1F) — slightly brighter glass */
+/* Raised surfaces (#1A1A1A / #1F1F1F) — same recipe, slightly brighter fill */
 body.dc-preview [style*="background: rgb(26, 26, 26)"],
 body.dc-preview [style*="background:#1A1A1A"],
 body.dc-preview [style*="background: #1A1A1A"],
@@ -110,9 +111,9 @@ body.dc-preview [style*="background: rgb(31, 31, 31)"],
 body.dc-preview [style*="background:#1F1F1F"],
 body.dc-preview [style*="background: #1F1F1F"] {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 35%),
-    rgba(255,255,255,0.09) !important;
-  border-color: rgba(255,255,255,0.22) !important;
+    linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 25%),
+    linear-gradient(180deg, rgba(80,62,140,0.48) 0%, rgba(40,28,86,0.55) 100%) !important;
+  border-color: rgba(255,255,255,0.14) !important;
 }
 
 /* App background (0A0A0A) → transparent so aurora shows through */
@@ -202,21 +203,21 @@ body.dc-preview textarea::placeholder {
   color: rgba(245,245,247,0.40) !important;
 }
 
-/* ── 5. Generous radius bumps (DC kit signature) ────────────────────────── */
+/* ── 5. Generous radius — designcode card signature ────────────────────── */
 body.dc-preview [style*="border-radius: 6px"],
-body.dc-preview [style*="border-radius:6px"]   { border-radius: 10px !important; }
+body.dc-preview [style*="border-radius:6px"]   { border-radius: 12px !important; }
 body.dc-preview [style*="border-radius: 8px"],
-body.dc-preview [style*="border-radius:8px"]   { border-radius: 14px !important; }
+body.dc-preview [style*="border-radius:8px"]   { border-radius: 16px !important; }
 body.dc-preview [style*="border-radius: 10px"],
-body.dc-preview [style*="border-radius:10px"]  { border-radius: 16px !important; }
+body.dc-preview [style*="border-radius:10px"]  { border-radius: 20px !important; }
 body.dc-preview [style*="border-radius: 12px"],
-body.dc-preview [style*="border-radius:12px"]  { border-radius: 20px !important; }
+body.dc-preview [style*="border-radius:12px"]  { border-radius: 24px !important; }
 body.dc-preview [style*="border-radius: 14px"],
-body.dc-preview [style*="border-radius:14px"]  { border-radius: 22px !important; }
+body.dc-preview [style*="border-radius:14px"]  { border-radius: 26px !important; }
 body.dc-preview [style*="border-radius: 16px"],
-body.dc-preview [style*="border-radius:16px"]  { border-radius: 24px !important; }
+body.dc-preview [style*="border-radius:16px"]  { border-radius: 30px !important; }
 body.dc-preview [style*="border-radius: 20px"],
-body.dc-preview [style*="border-radius:20px"]  { border-radius: 28px !important; }
+body.dc-preview [style*="border-radius:20px"]  { border-radius: 34px !important; }
 
 /* Pills (full radius 9999) stay full — but make them clearly pill */
 body.dc-preview [style*="border-radius: 9999"] {
