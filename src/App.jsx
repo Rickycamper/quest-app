@@ -770,9 +770,11 @@ const needsTerms = profile && !profile.terms_accepted_at
       />
       {/* PWA install prompt — auto-shows on Android Chrome and iOS Safari (with a tip). */}
       <InstallPrompt />
-      {/* Design Code UI preview toggle — renders only when isOwner=true.
-          Floating pill, no impact on other users. Pure visual experiment. */}
-      <DCPreviewToggle isOwner={isOwner} />
+      {/* Premium preview toggle — visible to owner AND admins so the
+          staff can try the redesign and feed back opinions. Other users
+          (regular / staff-only / guest) never see this. Pure visual,
+          stored per-user in localStorage. */}
+      <DCPreviewToggle canPreview={isOwner || isAdmin} />
     </Suspense>
   )
 }

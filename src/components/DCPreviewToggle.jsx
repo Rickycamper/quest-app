@@ -408,14 +408,14 @@ body.dc-preview .pressable:active {
 }
 `
 
-export default function DCPreviewToggle({ isOwner }) {
+export default function DCPreviewToggle({ canPreview }) {
   const [enabled, setEnabled] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) === 'on' } catch { return false }
   })
   const [collapsed, setCollapsed] = useState(true)
 
   useEffect(() => {
-    if (!isOwner) return
+    if (!canPreview) return
     try { localStorage.setItem(STORAGE_KEY, enabled ? 'on' : 'off') } catch {}
 
     if (!enabled) {
@@ -441,9 +441,9 @@ export default function DCPreviewToggle({ isOwner }) {
       const el = document.getElementById('quest-dc-preview-style')
       if (el) el.remove()
     }
-  }, [enabled, isOwner])
+  }, [enabled, canPreview])
 
-  if (!isOwner) return null
+  if (!canPreview) return null
 
   // Collapsed bubble
   if (collapsed) {
@@ -497,8 +497,18 @@ export default function DCPreviewToggle({ isOwner }) {
       animation: 'fadeUp 0.22s ease',
       fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
     }}>
-      <span style={{ fontSize: 13, fontWeight: 600, color: '#E5E7EB', letterSpacing: '-0.005em' }}>
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 7,
+        fontSize: 13, fontWeight: 600, color: '#E5E7EB', letterSpacing: '-0.005em',
+      }}>
         🎨 Premium
+        <span style={{
+          fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
+          padding: '2px 6px', borderRadius: 6,
+          background: 'linear-gradient(135deg, #A78BFA 0%, #6366F1 100%)',
+          color: '#FFFFFF',
+          boxShadow: '0 0 8px rgba(167,139,250,0.4)',
+        }}>BETA</span>
       </span>
       <button
         onClick={() => setEnabled(v => !v)}
