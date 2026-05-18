@@ -64,8 +64,31 @@ body.dc-preview #root {
   z-index: 1;
 }
 
-body.dc-preview .screen-scroll {
+body.dc-preview .screen-scroll,
+body.dc-preview .filter-scroll {
   background: transparent !important;
+}
+
+/* Catch any inline #0A0A0A / #000 / near-black wrapper that React is
+   painting between the body and the cards. Without this the purple bg
+   never makes it past the screen container, and posts feel like they're
+   floating on black. The MOST visible offender is each ScreenContainer
+   div in App.jsx that wraps the active screen. */
+body.dc-preview [style*="background: rgb(10, 10, 10)"],
+body.dc-preview [style*="background:#0A0A0A"],
+body.dc-preview [style*="background: #0A0A0A"],
+body.dc-preview [style*="background:#0a0a0a"],
+body.dc-preview [style*="background: #0a0a0a"],
+body.dc-preview [style*="background: rgb(0, 0, 0)"],
+body.dc-preview [style*="background:#000"],
+body.dc-preview [style*="background: #000"],
+body.dc-preview [style*="background:#000000"],
+body.dc-preview [style*="background: #000000"],
+body.dc-preview [style*="background-color: rgb(10, 10, 10)"],
+body.dc-preview [style*="background-color:#0A0A0A"],
+body.dc-preview [style*="background-color: #0A0A0A"] {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* ── 1. Designcode card recipe — tinted glass with gradient hairline ─────── */
@@ -81,26 +104,21 @@ body.dc-preview [style*="background: #111111"] {
   /* Tinted dark fill — slightly violet, slightly transparent so the blur
      picks up the bg gradient through it. */
   background:
-    /* Top specular sheen (bright, fades fast) */
-    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 22%),
+    /* Subtle top specular sheen (very gentle, just enough for depth) */
+    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 18%),
     /* Body tint — dark violet, semi-transparent */
     linear-gradient(180deg, rgba(60,46,110,0.42) 0%, rgba(30,20,68,0.55) 100%) !important;
   backdrop-filter: blur(38px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(38px) saturate(180%) !important;
-  /* Gradient hairline using border-image — bright at the top, dim at the
-     bottom. Fallback to solid border if border-image isn't supported. */
-  border: 1px solid rgba(255,255,255,0.10) !important;
-  border-image: linear-gradient(180deg,
-    rgba(255,255,255,0.30) 0%,
-    rgba(255,255,255,0.10) 40%,
-    rgba(0,0,0,0.20) 100%) 1 !important;
+  /* Soft uniform hairline — no gradient, no border-image */
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-image: none !important;
   box-shadow:
-    /* Long soft drop — designcode shadow is generous */
+    /* Long soft drop with a faint violet ambient */
     0 18px 40px rgba(0,0,0,0.40),
     0 4px 12px rgba(76,29,149,0.20),
-    /* Inner highlight at top, inner shadow at bottom = 3D refraction */
-    0 1px 0 rgba(255,255,255,0.20) inset,
-    0 -1px 0 rgba(0,0,0,0.25) inset !important;
+    /* Just the top inner-light — no bottom shadow, no dark line */
+    0 1px 0 rgba(255,255,255,0.06) inset !important;
 }
 
 /* Raised surfaces (#1A1A1A / #1F1F1F) — same recipe, slightly brighter fill */
@@ -111,9 +129,9 @@ body.dc-preview [style*="background: rgb(31, 31, 31)"],
 body.dc-preview [style*="background:#1F1F1F"],
 body.dc-preview [style*="background: #1F1F1F"] {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 25%),
+    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 22%),
     linear-gradient(180deg, rgba(80,62,140,0.48) 0%, rgba(40,28,86,0.55) 100%) !important;
-  border-color: rgba(255,255,255,0.14) !important;
+  border-color: rgba(255,255,255,0.10) !important;
 }
 
 /* App background (0A0A0A) → transparent so aurora shows through */
