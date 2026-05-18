@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react'
 import { HomeIcon, RanksIcon, FolderIcon, TruckIcon, PlusIcon, BellIcon, CounterIcon, UserIcon, ShopIcon } from './Icons'
+import HIcon from './HIcon'
 import Avatar from './Avatar'
 import { HAPTIC } from '../lib/design-tokens'
 
@@ -118,12 +119,25 @@ function OwnerBottomNav({ active, hidden, tabs }) {
 // can host the primary 'crear' action, which is the most engaged-with
 // affordance in a social app.
 export function BottomNav({ active, hidden, onTab, onLifeCounter, onPost, isOwner }) {
+  // Hicon-pack icons — minimal stroke, MIT/CC-BY licensed, loaded once via CDN.
+  // Fallback to the original Quest icon if hicon's JSON hasn't loaded yet or
+  // the icon name isn't in the pack (failsafe so the nav is never blank).
+  const Hi = (name, fallback) => (a) => (
+    <HIcon
+      name={name}
+      size={26}
+      color={a ? '#FFFFFF' : '#9CA3AF'}
+      strokeWidth={a ? 2.2 : 1.8}
+      fallback={fallback(a)}
+    />
+  )
+
   const tabs = [
-    { id: 'feed',  label: 'Feed',     icon: (a) => <HomeIcon active={a} />,    action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: (a) => <ShopIcon active={a} />,    action: () => onTab('shop') },
-    { id: 'post',  label: 'Crear',    icon: null,                              action: onPost, variant: 'primary' },
-    { id: 'ranks', label: 'Ranking',  icon: (a) => <RanksIcon active={a} />,   action: () => onTab('ranks') },
-    { id: 'life',  label: 'Vida',     icon: (a) => <CounterIcon active={a} />, action: onLifeCounter },
+    { id: 'feed',  label: 'Feed',     icon: Hi('home',          (a) => <HomeIcon active={a} />),    action: () => onTab('feed') },
+    { id: 'shop',  label: 'Tienda',   icon: Hi('shopping-bag',  (a) => <ShopIcon active={a} />),    action: () => onTab('shop') },
+    { id: 'post',  label: 'Crear',    icon: null,                                                    action: onPost, variant: 'primary' },
+    { id: 'ranks', label: 'Ranking',  icon: Hi('award',         (a) => <RanksIcon active={a} />),   action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: Hi('heart',         (a) => <CounterIcon active={a} />), action: onLifeCounter },
   ]
   return (
     <OwnerBottomNav
