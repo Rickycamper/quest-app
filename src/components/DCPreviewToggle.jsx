@@ -27,30 +27,32 @@ const STORAGE_KEY = 'quest_dc_preview'
 const DC_CSS = `
 /* ── 0. Base palette + ambient aurora ──────────────────────────────────── */
 body.dc-preview {
-  /* Deep navy/indigo base, not pure black — DC kit signature */
-  background: #08090F !important;
+  /* Deep purple base — feels like cards float ON a violet ambient */
+  background: #14082A !important;
   background-attachment: fixed !important;
   color: #F5F5F7 !important;
 }
 
-/* Fixed aurora overlay — sits behind everything, doesn't scroll */
+/* Fixed aurora overlay — heavy purple, dim accent colors */
 body.dc-preview::before {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse 70% 50% at 110% -10%, rgba(167,139,250,0.30) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at -10% 5%,   rgba(236,72,153,0.20)  0%, transparent 55%),
-    radial-gradient(ellipse 60% 40% at 50% 120%,  rgba(56,189,248,0.18)  0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 30% 60%,   rgba(94,92,230,0.10)   0%, transparent 70%);
-  animation: dcAurora 18s ease-in-out infinite alternate;
+    radial-gradient(ellipse 80% 60% at 100% -10%, rgba(139,92,246,0.55) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at -10% 10%, rgba(167,139,250,0.40) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 40% at 50% 105%, rgba(124,58,237,0.45) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 30% at 80% 50%, rgba(236,72,153,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 35% 25% at 20% 75%, rgba(168,85,247,0.30) 0%, transparent 70%);
+  animation: dcAurora 22s ease-in-out infinite alternate;
 }
 
 /* Subtle drift on the aurora — feels alive */
 @keyframes dcAurora {
   0%   { transform: translate3d(0, 0, 0) scale(1); }
-  100% { transform: translate3d(-2%, 1%, 0) scale(1.04); }
+  50%  { transform: translate3d(-1.5%, 0.8%, 0) scale(1.03); }
+  100% { transform: translate3d(1.2%, -0.6%, 0) scale(1.05); }
 }
 
 body.dc-preview #root {
@@ -73,19 +75,19 @@ body.dc-preview [style*="background: #111"],
 body.dc-preview [style*="background:#111111"],
 body.dc-preview [style*="background: #111111"] {
   background:
-    linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.015) 100%),
-    rgba(20,20,28,0.55) !important;
-  backdrop-filter: saturate(180%) blur(22px) !important;
-  -webkit-backdrop-filter: saturate(180%) blur(22px) !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
+    linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(167,139,250,0.04) 100%),
+    rgba(40,22,68,0.50) !important;
+  backdrop-filter: saturate(190%) blur(28px) !important;
+  -webkit-backdrop-filter: saturate(190%) blur(28px) !important;
+  border: 1px solid rgba(167,139,250,0.18) !important;
   box-shadow:
     0 10px 32px rgba(0,0,0,0.45),
-    0 2px 8px  rgba(0,0,0,0.25),
-    0 0 0 0.5px rgba(167,139,250,0.10) inset,
-    0 1px 0 rgba(255,255,255,0.06) inset !important;
+    0 2px 8px  rgba(76,29,149,0.30),
+    0 0 0 0.5px rgba(167,139,250,0.15) inset,
+    0 1px 0 rgba(255,255,255,0.07) inset !important;
 }
 
-/* Raised surfaces (#1A1A1A / #1F1F1F) — slightly brighter glass */
+/* Raised surfaces (#1A1A1A / #1F1F1F) — slightly brighter purple glass */
 body.dc-preview [style*="background: rgb(26, 26, 26)"],
 body.dc-preview [style*="background:#1A1A1A"],
 body.dc-preview [style*="background: #1A1A1A"],
@@ -93,9 +95,9 @@ body.dc-preview [style*="background: rgb(31, 31, 31)"],
 body.dc-preview [style*="background:#1F1F1F"],
 body.dc-preview [style*="background: #1F1F1F"] {
   background:
-    linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%),
-    rgba(28,28,40,0.6) !important;
-  border-color: rgba(255,255,255,0.10) !important;
+    linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(167,139,250,0.06) 100%),
+    rgba(50,28,86,0.55) !important;
+  border-color: rgba(167,139,250,0.22) !important;
 }
 
 /* App background (0A0A0A) → transparent so aurora shows through */
@@ -143,13 +145,13 @@ body.dc-preview button[style*="border: 1px solid rgb(42, 42, 42)"] {
 /* ── 3. Bottom nav — heavier glass + purple top border ─────────────────── */
 body.dc-preview [style*="rgba(10, 10, 10, 0.82)"],
 body.dc-preview [style*="rgba(10,10,10,0.82)"] {
-  background: linear-gradient(180deg, rgba(28,28,40,0.55) 0%, rgba(12,12,18,0.85) 100%) !important;
-  backdrop-filter: saturate(200%) blur(32px) !important;
-  -webkit-backdrop-filter: saturate(200%) blur(32px) !important;
-  border-top: 1px solid rgba(167,139,250,0.22) !important;
+  background: linear-gradient(180deg, rgba(60,32,108,0.50) 0%, rgba(20,8,42,0.85) 100%) !important;
+  backdrop-filter: saturate(220%) blur(36px) !important;
+  -webkit-backdrop-filter: saturate(220%) blur(36px) !important;
+  border-top: 1px solid rgba(167,139,250,0.32) !important;
   box-shadow:
-    0 -12px 36px rgba(0,0,0,0.5),
-    0 -1px 0 rgba(167,139,250,0.12) inset !important;
+    0 -12px 40px rgba(0,0,0,0.55),
+    0 -1px 0 rgba(167,139,250,0.18) inset !important;
 }
 
 /* ── 4. Inputs — soft glass with vibrant focus ─────────────────────────── */
