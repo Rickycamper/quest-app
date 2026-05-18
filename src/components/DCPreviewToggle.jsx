@@ -116,27 +116,30 @@ body.dc-preview [style*="background:#111"],
 body.dc-preview [style*="background: #111"],
 body.dc-preview [style*="background:#111111"],
 body.dc-preview [style*="background: #111111"] {
-  /* Tinted dark fill — slightly violet, slightly transparent so the blur
-     picks up the bg gradient through it. */
+  /* Same recipe as the bottom nav: translucent WHITE fill, heavy blur,
+     hairline white border. The card absorbs the purple bg through the
+     blur instead of carrying a baked tint. */
   background:
-    /* Subtle top specular sheen (very gentle, just enough for depth) */
-    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 18%),
-    /* Body tint — dark violet, semi-transparent */
-    linear-gradient(180deg, rgba(60,46,110,0.42) 0%, rgba(30,20,68,0.55) 100%) !important;
-  backdrop-filter: blur(38px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(38px) saturate(180%) !important;
-  /* Soft uniform hairline — no gradient, no border-image */
-  border: 1px solid rgba(255,255,255,0.08) !important;
+    /* Top sheen (matches nav's 0.10 alpha) */
+    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 35%),
+    /* Translucent white fill — same as nav */
+    rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
+  /* Hairline white border — same as nav */
+  border: 0.5px solid rgba(255,255,255,0.22) !important;
   border-image: none !important;
   box-shadow:
-    /* Long soft drop with a faint violet ambient */
-    0 18px 40px rgba(0,0,0,0.40),
-    0 4px 12px rgba(76,29,149,0.20),
-    /* Just the top inner-light — no bottom shadow, no dark line */
-    0 1px 0 rgba(255,255,255,0.06) inset !important;
+    /* Outer drop so the card floats above the bg (nav doesn't need this
+       because it's anchored to the screen edge — cards do) */
+    0 18px 40px rgba(0,0,0,0.35),
+    0 4px 12px rgba(76,29,149,0.18),
+    /* Inner top + bottom lines — same recipe as nav */
+    0 1px 0 rgba(255,255,255,0.18) inset,
+    0 -1px 0 rgba(0,0,0,0.18) inset !important;
 }
 
-/* Raised surfaces (#1A1A1A / #1F1F1F) — same recipe, slightly brighter fill */
+/* Raised surfaces (#1A1A1A / #1F1F1F) — slightly brighter, same recipe */
 body.dc-preview [style*="background: rgb(26, 26, 26)"],
 body.dc-preview [style*="background:#1A1A1A"],
 body.dc-preview [style*="background: #1A1A1A"],
@@ -144,9 +147,9 @@ body.dc-preview [style*="background: rgb(31, 31, 31)"],
 body.dc-preview [style*="background:#1F1F1F"],
 body.dc-preview [style*="background: #1F1F1F"] {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 22%),
-    linear-gradient(180deg, rgba(80,62,140,0.48) 0%, rgba(40,28,86,0.55) 100%) !important;
-  border-color: rgba(255,255,255,0.10) !important;
+    linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 40%),
+    rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.26) !important;
 }
 
 /* App background (0A0A0A) → transparent so aurora shows through */
