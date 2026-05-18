@@ -208,6 +208,24 @@ body.dc-preview [style*="rgba(10,10,10,0.82)"] {
     0 1px 0 rgba(0,0,0,0.18) inset !important;
 }
 
+/* ── 3b. Top app header — same glass treatment as the bottom nav ──────────
+   The header uses inline rgba(10,10,10,0.95) (different alpha from the
+   nav so it has its own selector). Apply identical recipe so they read
+   as a matching pair sandwiching the content. */
+body.dc-preview [style*="rgba(10, 10, 10, 0.95)"],
+body.dc-preview [style*="rgba(10,10,10,0.95)"] {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 35%),
+    rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
+  /* Header has border-BOTTOM (opposite of nav's border-top) */
+  border-bottom: 0.5px solid rgba(255,255,255,0.22) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.18) inset,
+    0 -1px 0 rgba(0,0,0,0.18) inset !important;
+}
+
 /* ── 4. Inputs — iOS frosted input bar ───────────────────────────────── */
 body.dc-preview input,
 body.dc-preview textarea,
