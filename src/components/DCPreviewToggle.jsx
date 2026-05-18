@@ -65,8 +65,23 @@ body.dc-preview #root {
 }
 
 body.dc-preview .screen-scroll,
-body.dc-preview .filter-scroll {
+body.dc-preview .filter-scroll,
+body.dc-preview .phone,
+body.dc-preview .phone-wrap,
+body.dc-preview .app-header {
   background: transparent !important;
+}
+
+/* On mobile, a media query in App.jsx overrides body { background: #0A0A0A }.
+   Our body.dc-preview wins on specificity (1,0,1 vs 0,0,1) + !important,
+   but ensure it sticks by re-declaring inside the same media query. */
+@media (max-width: 480px) {
+  body.dc-preview {
+    background:
+      radial-gradient(ellipse 100% 60% at 30% 0%, rgba(76,29,149,0.85) 0%, transparent 70%),
+      radial-gradient(ellipse 90% 50% at 80% 25%, rgba(124,58,237,0.45) 0%, transparent 65%),
+      linear-gradient(180deg, #2B1F5E 0%, #161438 55%, #0E0A28 100%) !important;
+  }
 }
 
 /* Catch any inline #0A0A0A / #000 / near-black wrapper that React is
