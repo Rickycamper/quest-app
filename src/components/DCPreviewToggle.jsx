@@ -27,27 +27,29 @@ const STORAGE_KEY = 'quest_dc_preview'
 const DC_CSS = `
 /* ── 0. Base palette + ambient aurora ──────────────────────────────────── */
 body.dc-preview {
-  /* Black base with a subtle purple ambient column running vertically.
-     This is what cards' glass picks up when blurred — gives them a real
-     'glass over color' feel instead of glass over flat black. */
+  /* Pale purple-blue base — color is visible everywhere, not just at the
+     corners. Cards (with the iOS frosted-white glass recipe) absorb this
+     tint via backdrop-filter, so each card naturally looks washed in
+     violet/indigo without us baking color into the card itself. */
   background:
-    radial-gradient(ellipse 90% 55% at 50% 30%, rgba(88,28,135,0.32) 0%, transparent 70%),
-    radial-gradient(ellipse 80% 50% at 50% 75%, rgba(124,58,237,0.22) 0%, transparent 70%),
-    #08080B !important;
+    radial-gradient(ellipse 90% 60% at 25% 15%, rgba(99,102,241,0.55) 0%, transparent 70%),
+    radial-gradient(ellipse 90% 60% at 75% 85%, rgba(168,85,247,0.50) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 50% at 50% 50%, rgba(139,92,246,0.30) 0%, transparent 80%),
+    #1A1438 !important;
   background-attachment: fixed !important;
   color: #F5F5F7 !important;
 }
 
-/* Fixed aurora overlay — secondary accent blobs in the corners */
+/* Fixed aurora overlay — accent pops on top of the colored base */
 body.dc-preview::before {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse 55% 35% at 110% -10%, rgba(167,139,250,0.22) 0%, transparent 60%),
-    radial-gradient(ellipse 45% 30% at -10% 105%, rgba(56,189,248,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 30% 22% at 50% -8%, rgba(236,72,153,0.10) 0%, transparent 60%);
+    radial-gradient(ellipse 50% 30% at 110% -10%, rgba(236,72,153,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 28% at -10% 105%, rgba(56,189,248,0.20) 0%, transparent 60%),
+    radial-gradient(ellipse 30% 22% at 50% -8%, rgba(217,70,239,0.12) 0%, transparent 60%);
   animation: dcAurora 24s ease-in-out infinite alternate;
 }
 
