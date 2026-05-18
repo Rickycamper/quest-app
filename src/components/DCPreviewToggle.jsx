@@ -25,29 +25,31 @@ const STORAGE_KEY = 'quest_dc_preview'
 //   • Pill-style active tab is faked with a glow ring on the icon container.
 // ─────────────────────────────────────────────────────────────────────────────
 const DC_CSS = `
-/* ── 0. Base palette — designcode.io reference ──────────────────────────── */
+/* ── 0. Base palette — dark with subtle multi-color blooms ──────────────── */
 body.dc-preview {
-  /* Mirrors the designcode card hero: top half lighter violet, bottom half
-     deep navy, very subtle. Cards' glass will pick this up cleanly. */
+  /* Deep almost-black base. The color comes from blooms (orange / pink /
+     indigo) scattered across the viewport — same idea as the pricing
+     card reference. The dark base lets each bloom feel like a light
+     source, not a wash. */
   background:
-    radial-gradient(ellipse 100% 60% at 30% 0%, rgba(76,29,149,0.85) 0%, transparent 70%),
-    radial-gradient(ellipse 90% 50% at 80% 25%, rgba(124,58,237,0.45) 0%, transparent 65%),
-    linear-gradient(180deg, #2B1F5E 0%, #161438 55%, #0E0A28 100%) !important;
+    radial-gradient(ellipse 60% 40% at 15% 15%, rgba(251,146,60,0.20) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 85% 25%, rgba(236,72,153,0.20) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 65%, rgba(99,102,241,0.30) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 85%, rgba(167,139,250,0.18) 0%, transparent 60%),
+    #0A081A !important;
   background-attachment: fixed !important;
   color: #F5F5F7 !important;
 }
 
-/* Fixed aurora overlay — soft pink curves at the bottom (the designcode
-   "neon trail" detail) + a small pink top-right accent. */
+/* Fixed aurora overlay — micro pops at the edges, not a wash */
 body.dc-preview::before {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse 60% 8% at 30% 102%, rgba(244,114,182,0.55) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 4% at 60% 105%, rgba(236,72,153,0.40) 0%, transparent 70%),
-    radial-gradient(ellipse 35% 25% at 110% -8%, rgba(217,70,239,0.18) 0%, transparent 60%);
+    radial-gradient(ellipse 30% 20% at 110% -10%, rgba(244,114,182,0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 25% 18% at -10% 105%, rgba(56,189,248,0.14) 0%, transparent 60%);
   animation: dcAurora 24s ease-in-out infinite alternate;
 }
 
@@ -116,29 +118,31 @@ body.dc-preview [style*="background:#111"],
 body.dc-preview [style*="background: #111"],
 body.dc-preview [style*="background:#111111"],
 body.dc-preview [style*="background: #111111"] {
-  /* Same glass material as the bottom nav (same blur / brightness / border)
-     but with a *light* violet tint so cards visually separate from the nav
-     even though they're the same physical substance. */
+  /* Deep glass with INTERNAL color blooms — orange top-left, pink center,
+     indigo right. Same trick the designcode pricing card uses: dark base
+     + multiple radial gradients scattered inside the surface so each card
+     reads as a self-contained "light show". */
   background:
-    /* Top sheen */
-    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 35%),
-    /* Soft violet wash + translucent white — the wash is gentle (alpha 0.08)
-       so the bg still bleeds through, but cards now read 'lavender glass'
-       vs the nav's 'clear glass'. */
-    linear-gradient(180deg, rgba(167,139,250,0.10) 0%, rgba(139,92,246,0.06) 100%),
-    rgba(255,255,255,0.05) !important;
-  backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
-  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
-  border: 0.5px solid rgba(196,181,253,0.28) !important;
+    /* Internal color blooms — these live INSIDE each card, not behind it */
+    radial-gradient(ellipse 70% 50% at 20% 20%, rgba(251,146,60,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 80% 30%, rgba(236,72,153,0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 80%, rgba(99,102,241,0.20) 0%, transparent 60%),
+    /* Dark base — gives the blooms something to glow against */
+    linear-gradient(180deg, rgba(20,15,38,0.85) 0%, rgba(8,6,20,0.92) 100%) !important;
+  backdrop-filter: blur(40px) saturate(170%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(170%) !important;
+  /* Very subtle border — almost invisible, like the reference */
+  border: 0.5px solid rgba(255,255,255,0.06) !important;
   border-image: none !important;
   box-shadow:
-    0 18px 40px rgba(0,0,0,0.35),
-    0 4px 12px rgba(76,29,149,0.18),
-    0 1px 0 rgba(255,255,255,0.18) inset,
-    0 -1px 0 rgba(0,0,0,0.18) inset !important;
+    /* Long soft drop — cards float on the dark bg */
+    0 20px 48px rgba(0,0,0,0.50),
+    0 6px 14px rgba(76,29,149,0.18),
+    /* Subtle inner refraction */
+    0 1px 0 rgba(255,255,255,0.06) inset !important;
 }
 
-/* Raised surfaces (#1A1A1A / #1F1F1F) — slightly brighter, same recipe */
+/* Raised surfaces (#1A1A1A / #1F1F1F) — same blooms, brighter base */
 body.dc-preview [style*="background: rgb(26, 26, 26)"],
 body.dc-preview [style*="background:#1A1A1A"],
 body.dc-preview [style*="background: #1A1A1A"],
@@ -146,10 +150,11 @@ body.dc-preview [style*="background: rgb(31, 31, 31)"],
 body.dc-preview [style*="background:#1F1F1F"],
 body.dc-preview [style*="background: #1F1F1F"] {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 40%),
-    linear-gradient(180deg, rgba(167,139,250,0.14) 0%, rgba(139,92,246,0.08) 100%),
-    rgba(255,255,255,0.08) !important;
-  border-color: rgba(196,181,253,0.32) !important;
+    radial-gradient(ellipse 70% 50% at 20% 20%, rgba(251,146,60,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 80% 30%, rgba(236,72,153,0.20) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 80%, rgba(99,102,241,0.24) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(28,22,50,0.85) 0%, rgba(14,10,28,0.90) 100%) !important;
+  border-color: rgba(255,255,255,0.08) !important;
 }
 
 /* App background (0A0A0A) → transparent so aurora shows through */
@@ -194,36 +199,32 @@ body.dc-preview button[style*="border: 1px solid rgb(42, 42, 42)"] {
   -webkit-backdrop-filter: blur(12px) !important;
 }
 
-/* ── 3. Bottom nav — iOS tab bar glass ──────────────────────────────────── */
+/* ── 3. Bottom nav — same deep glass recipe as cards ────────────────────── */
 body.dc-preview [style*="rgba(10, 10, 10, 0.82)"],
 body.dc-preview [style*="rgba(10,10,10,0.82)"] {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 35%),
-    rgba(255,255,255,0.05) !important;
-  backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
-  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
-  border-top: 0.5px solid rgba(255,255,255,0.22) !important;
+    radial-gradient(ellipse 80% 100% at 50% 50%, rgba(99,102,241,0.10) 0%, transparent 70%),
+    linear-gradient(180deg, rgba(20,15,38,0.75) 0%, rgba(8,6,20,0.92) 100%) !important;
+  backdrop-filter: blur(48px) saturate(200%) brightness(110%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(110%) !important;
+  border-top: 0.5px solid rgba(255,255,255,0.10) !important;
   box-shadow:
-    0 -1px 0 rgba(255,255,255,0.18) inset,
-    0 1px 0 rgba(0,0,0,0.18) inset !important;
+    0 -1px 0 rgba(255,255,255,0.08) inset,
+    0 1px 0 rgba(0,0,0,0.20) inset !important;
 }
 
-/* ── 3b. Top app header — same glass treatment as the bottom nav ──────────
-   The header uses inline rgba(10,10,10,0.95) (different alpha from the
-   nav so it has its own selector). Apply identical recipe so they read
-   as a matching pair sandwiching the content. */
+/* ── 3b. Top app header — same recipe as nav ──────────────────────────── */
 body.dc-preview [style*="rgba(10, 10, 10, 0.95)"],
 body.dc-preview [style*="rgba(10,10,10,0.95)"] {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 35%),
-    rgba(255,255,255,0.05) !important;
-  backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
-  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
-  /* Header has border-BOTTOM (opposite of nav's border-top) */
-  border-bottom: 0.5px solid rgba(255,255,255,0.22) !important;
+    radial-gradient(ellipse 80% 100% at 50% 50%, rgba(99,102,241,0.10) 0%, transparent 70%),
+    linear-gradient(180deg, rgba(20,15,38,0.85) 0%, rgba(8,6,20,0.92) 100%) !important;
+  backdrop-filter: blur(48px) saturate(200%) brightness(110%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(110%) !important;
+  border-bottom: 0.5px solid rgba(255,255,255,0.10) !important;
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.18) inset,
-    0 -1px 0 rgba(0,0,0,0.18) inset !important;
+    0 1px 0 rgba(255,255,255,0.08) inset,
+    0 -1px 0 rgba(0,0,0,0.20) inset !important;
 }
 
 /* ── 4. Inputs — iOS frosted input bar ───────────────────────────────── */
