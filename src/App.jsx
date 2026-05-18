@@ -145,8 +145,6 @@ class ErrorBoundary extends Component {
 import { acceptTerms, subscribeToPush, supabase } from './lib/supabase'
 import { BottomNav, NotifBell } from './components/Nav'
 import { ShieldIcon, SearchIcon, DiamondIcon } from './components/Icons'
-// Phosphor — for the admin shield in the header. Tree-shaken individual imports.
-import { ShieldCheckIcon } from '@phosphor-icons/react'
 // NotificationPanel + OnboardingModal + FeatureTour lazy-loaded — none shows on first render
 const NotificationPanel = lazy(() => import('./components/NotificationPanel'))
 const OnboardingModal   = lazy(() => import('./components/OnboardingModal'))
@@ -567,6 +565,7 @@ const needsTerms = profile && !profile.terms_accepted_at
               onVs={(u) => { setVsUser(u ?? null); setShowMatchModal(true) }}
               onNotifs={() => setShowNotifs(true)}
               unreadCount={unreadCount}
+              isAdminOrOwner={isOwner || isAdmin}
             />
           )}
         </div>
@@ -658,7 +657,7 @@ const needsTerms = profile && !profile.terms_accepted_at
                 color: '#9CA3AF',
                 width: 36, height: 36, padding: 8, lineHeight: 1, // bigger touch target
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}><ShieldCheckIcon size={22} weight="regular" color="#9CA3AF" /></button>
+              }}><ShieldIcon size={20} /></button>
             )}
             {activeTab !== 'shop' && (
               isGuest ? (
@@ -693,7 +692,10 @@ const needsTerms = profile && !profile.terms_accepted_at
                 </button>
               )
             )}
-            {activeTab !== 'shop' && !isGuest && (
+            {/* Admin/owner: avatar button (opens own profile, where the
+                Avisos card lives). Regular users: the original '+'
+                post button — they keep the existing UX. */}
+            {activeTab !== 'shop' && !isGuest && (isOwner || isAdmin) && (
               <button
                 onClick={() => { if (profile?.id) setViewingUserId(profile.id) }}
                 aria-label="Abrir mi perfil"
@@ -705,7 +707,6 @@ const needsTerms = profile && !profile.terms_accepted_at
                   cursor: 'pointer', padding: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   overflow: 'visible',
-                  // Spring press feedback (matches the previous "+" button's interaction model).
                   transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
                 onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.92)' }}
@@ -727,6 +728,30 @@ const needsTerms = profile && !profile.terms_accepted_at
                     fontFamily: 'Inter, sans-serif',
                   }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
                 )}
+              </button>
+            )}
+            {/* Regular users: original '+' post button in header */}
+            {activeTab !== 'shop' && !(isOwner || isAdmin) && (
+              <button
+                onClick={() => requireAuth(() => setShowPost(true))}
+                aria-label="Crear post"
+                style={{
+                  width: 36, height: 36, borderRadius: 12,
+                  background: 'linear-gradient(135deg, #FFFFFF 0%, #E8E8E8 100%)',
+                  border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6)',
+                  transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                }}
+                onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.92)' }}
+                onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+                onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.92)' }}
+                onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1v12M1 7h12" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
               </button>
             )}
           </div>
@@ -754,8 +779,10 @@ const needsTerms = profile && !profile.terms_accepted_at
       <BottomNav
         active={activeTab}
         hidden={navHidden}
-        isOwner={isOwner}
+        isAdminOrOwner={isOwner || isAdmin}
         onPost={() => requireAuth(() => setShowPost(true))}
+        onNotifs={() => setShowNotifs(true)}
+        unreadCount={unreadCount}
         onTab={(tab) => {
           if (tab === 'feed' && activeTab === 'feed') {
             scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })

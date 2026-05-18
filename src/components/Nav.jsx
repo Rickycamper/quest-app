@@ -2,16 +2,11 @@
 // QUEST — BottomNav + NotifBell
 // ─────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react'
-// Quest's original SVG icons are retained for non-nav surfaces (e.g.
-// NotifBell below). The nav itself now uses Phosphor icons.
-import { BellIcon } from './Icons'
-// Phosphor icons — 9k+ glyphs, 6 weights, MIT. Tree-shaken.
-// Medieval / fantasy nav family — every icon is from the same imagined world
-// (kingdom + treasure + crown + combat) so they read as one set:
-//   Feed     → Castle    (your fortress / hub of the kingdom)
-//   Tienda   → Coins     (treasury / merchant — gold pairs with the crown)
-//   Ranking  → Crown     (king of the leaderboard)
-//   Vida     → Swords    (combat / duels — Quest IS a TCG community)
+// Quest's original SVG icons — used by the regular-user nav layout.
+import { HomeIcon, RanksIcon, BellIcon, CounterIcon, ShopIcon } from './Icons'
+// Phosphor icons — only loaded for admins/owner (preview nav).
+// Tree-shaking on the import means regular users still don't pay
+// for these in the bundle they download.
 import { CastleTurretIcon, CoinsIcon, CrownIcon, SwordIcon } from '@phosphor-icons/react'
 import Avatar from './Avatar'
 import { HAPTIC } from '../lib/design-tokens'
@@ -121,17 +116,31 @@ function OwnerBottomNav({ active, hidden, tabs }) {
   )
 }
 
-// ── All users get the same nav ───────────────────────────────────────
-// Layout:  Feed  ·  Tienda  ·  [+ Post]  ·  Ranking  ·  Vida
-// The avatar moved out of the bottom nav — it now lives in the top
-// header (where the '+' button used to be). That way the center slot
-// can host the primary 'crear' action, which is the most engaged-with
-// affordance in a social app.
-export function BottomNav({ active, hidden, onTab, onLifeCounter, onPost, isOwner }) {
-  // Helper: render a Phosphor icon inside a fixed 28x28 frame so all four
-  // tabs occupy the same visual footprint regardless of each glyph's shape.
-  // weight switches regular → fill when the tab is active (the icon visibly
-  // 'fills in', a more satisfying activation cue than a color flip alone).
+// ── Two layouts, gated by isAdminOrOwner ─────────────────────────────────
+// Regular users keep the ORIGINAL nav:
+//     Feed · Tienda · Ranking · Vida · Avisos(bell)
+// Admins + owner see the NEW preview nav:
+//     Castillo · Monedas · [+ Crear] · Corona · Espada
+// (avatar moves to the top header for admins; bell stays in this nav
+// only for regular users — they don't have the avatar entry point.)
+export function BottomNav({
+  active, hidden, onTab, onLifeCounter, onPost, onNotifs,
+  unreadCount, isAdminOrOwner,
+}) {
+  // ── REGULAR user nav — original 5-tab layout, original Quest icons ──
+  if (!isAdminOrOwner) {
+    const tabs = [
+      { id: 'feed',  label: 'Feed',     icon: (a) => <HomeIcon active={a} />,    action: () => onTab('feed') },
+      { id: 'shop',  label: 'Tienda',   icon: (a) => <ShopIcon active={a} />,    action: () => onTab('shop') },
+      { id: 'ranks', label: 'Ranking',  icon: (a) => <RanksIcon active={a} />,   action: () => onTab('ranks') },
+      { id: 'life',  label: 'Vida',     icon: (a) => <CounterIcon active={a} />, action: onLifeCounter },
+      { id: 'notif', label: 'Avisos',   icon: (a) => <BellIcon active={a} />,    action: onNotifs, badge: unreadCount },
+    ]
+    return <OwnerBottomNav active={active} hidden={hidden} tabs={tabs} />
+  }
+
+  // ── ADMIN / OWNER preview nav — medieval icons + center post + header avatar ──
+  // Phosphor icons in fixed 28×28 frame, weight regular ↔ fill for active state.
   const Ph = (Icon) => (a) => (
     <div style={{
       width: 28, height: 28,
@@ -147,16 +156,12 @@ export function BottomNav({ active, hidden, onTab, onLifeCounter, onPost, isOwne
 
   const tabs = [
     { id: 'feed',  label: 'Feed',     icon: Ph(CastleTurretIcon), action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Ph(CoinsIcon),    action: () => onTab('shop') },
-    { id: 'post',  label: 'Crear',    icon: null,             action: onPost, variant: 'primary' },
-    { id: 'ranks', label: 'Ranking',  icon: Ph(CrownIcon),    action: () => onTab('ranks') },
-    { id: 'life',  label: 'Vida',     icon: Ph(SwordIcon),    action: onLifeCounter },
+    { id: 'shop',  label: 'Tienda',   icon: Ph(CoinsIcon),        action: () => onTab('shop') },
+    { id: 'post',  label: 'Crear',    icon: null,                 action: onPost, variant: 'primary' },
+    { id: 'ranks', label: 'Ranking',  icon: Ph(CrownIcon),        action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: Ph(SwordIcon),        action: onLifeCounter },
   ]
-  return (
-    <OwnerBottomNav
-      active={active} hidden={hidden} tabs={tabs}
-    />
-  )
+  return <OwnerBottomNav active={active} hidden={hidden} tabs={tabs} />
 }
 
 export function NotifBell({ count, onClick }) {

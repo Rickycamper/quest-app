@@ -32,7 +32,7 @@ function EditIcon() {
   )
 }
 
-export default function ProfileScreen({ userId, currentUserId, onBack, onEditProfile, onMessage, onVs, onNotifs, unreadCount = 0 }) {
+export default function ProfileScreen({ userId, currentUserId, onBack, onEditProfile, onMessage, onVs, onNotifs, unreadCount = 0, isAdminOrOwner = false }) {
   const { profile: myProfile } = useAuth()
   const toast = useToast()
   const isPremium = myProfile?.role === 'premium' || myProfile?.role === 'admin'
@@ -366,10 +366,11 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           )}
         </div>
 
-        {/* Avisos — only on own profile. Lives right above the action
-            buttons so it's the first thing the user sees after opening
-            their profile via the avatar tab in the bottom nav. */}
-        {isOwn && onNotifs && (
+        {/* Avisos — only on own profile, and only for admin/owner
+            (regular users still have the bell tab in the bottom nav
+            as their notifications entry point, so they don't need the
+            card here too). */}
+        {isOwn && onNotifs && isAdminOrOwner && (
           <button
             onClick={onNotifs}
             className="pressable"
@@ -449,11 +450,46 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           </button>
         )}
 
-        {/* Action buttons — 'Editar perfil' lives in the top bar (pencil icon),
-            and 'Duelo' was rarely used as a self-action. Removed both from
-            here to declutter the own-profile view. */}
+        {/* Action buttons.
+            Admin/owner preview: Editar perfil + Duelo inline removed
+              (the pencil in the top bar handles edit, Duelo wasn't useful
+              as a self-action). Cleaner profile for the preview audience.
+            Regular users: keep the original Editar perfil + Duelo row so
+              nothing changes for them in production. */}
         {isOwn ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {!isAdminOrOwner && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={onEditProfile} style={{
+                  flex: 1, padding: '9px 0',
+                  borderRadius: 8, background: 'transparent',
+                  border: '1.5px solid #2A2A2A',
+                  color: '#9CA3AF', fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                }}>
+                  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Editar perfil
+                </button>
+                <button
+                  onClick={() => onVs?.()}
+                  style={{
+                    flex: 1, padding: '9px 0',
+                    borderRadius: 8, background: 'transparent',
+                    border: '1.5px solid #2A2A2A',
+                    color: '#FB923C', fontSize: 13, fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  ⚔️ Duelo
+                </button>
+              </div>
+            )}
             {/* Q Points redemption button — shown when user has ≥1000 pts */}
             {(profile?.q_points ?? 0) >= 1000 && (
               <button onClick={() => { setRedeemMsg(''); setShowRedeem(true) }} style={{
