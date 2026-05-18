@@ -27,22 +27,27 @@ const STORAGE_KEY = 'quest_dc_preview'
 const DC_CSS = `
 /* ── 0. Base palette + ambient aurora ──────────────────────────────────── */
 body.dc-preview {
-  /* Neutral deep black — base stays clean, color comes from cards & glow */
-  background: #08080B !important;
+  /* Black base with a subtle purple ambient column running vertically.
+     This is what cards' glass picks up when blurred — gives them a real
+     'glass over color' feel instead of glass over flat black. */
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 30%, rgba(88,28,135,0.32) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 50% at 50% 75%, rgba(124,58,237,0.22) 0%, transparent 70%),
+    #08080B !important;
   background-attachment: fixed !important;
   color: #F5F5F7 !important;
 }
 
-/* Fixed aurora overlay — very subtle, only at corners, dim alphas */
+/* Fixed aurora overlay — secondary accent blobs in the corners */
 body.dc-preview::before {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse 60% 40% at 110% -10%, rgba(167,139,250,0.18) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 35% at -10% 100%, rgba(56,189,248,0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 30% 25% at 50% -10%, rgba(236,72,153,0.08) 0%, transparent 60%);
+    radial-gradient(ellipse 55% 35% at 110% -10%, rgba(167,139,250,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 30% at -10% 105%, rgba(56,189,248,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 30% 22% at 50% -8%, rgba(236,72,153,0.10) 0%, transparent 60%);
   animation: dcAurora 24s ease-in-out infinite alternate;
 }
 
