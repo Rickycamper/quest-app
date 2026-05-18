@@ -68,26 +68,36 @@ body.dc-preview .screen-scroll {
   background: transparent !important;
 }
 
-/* ── 1. Cards — glassmorphism with gradient borders ─────────────────────── */
-/* All the common card backgrounds get the same glass treatment.
-   Using border-image to fake a gradient border (CSS doesn't allow
-   gradient on border-color directly without box hacks). */
+/* ── 1. iOS-style frosted glass cards ───────────────────────────────────── */
+/* This is the recipe Apple uses for Control Center / Notification Center
+   / Widgets on iOS: heavy blur, strong saturation boost, very light white
+   translucent fill (NOT dark), thin 0.5 px borders, a subtle top-edge
+   highlight, and a soft bottom inner shadow for depth.
+
+   Cards float on top of the ambient purple → the blur picks up the violet
+   from the bg → cards take on a faint glassy tint without us hardcoding
+   any color into them. That's the real Apple trick. */
 body.dc-preview [style*="background: rgb(17, 17, 17)"],
 body.dc-preview [style*="background:#111"],
 body.dc-preview [style*="background: #111"],
 body.dc-preview [style*="background:#111111"],
 body.dc-preview [style*="background: #111111"] {
   background:
-    linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.015) 100%),
-    rgba(22,22,28,0.62) !important;
-  backdrop-filter: saturate(180%) blur(24px) !important;
-  -webkit-backdrop-filter: saturate(180%) blur(24px) !important;
-  border: 1px solid rgba(255,255,255,0.10) !important;
+    /* Top-edge specular highlight — thin and bright (Liquid Glass cue) */
+    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 30%),
+    /* The body fill: very light translucent white, not dark grey */
+    rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(40px) saturate(200%) brightness(115%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(115%) !important;
+  /* iOS uses sub-pixel borders. 0.5 px = hairline on retina, fades on non-retina. */
+  border: 0.5px solid rgba(255,255,255,0.18) !important;
   box-shadow:
-    0 10px 32px rgba(0,0,0,0.50),
-    0 2px 8px  rgba(0,0,0,0.25),
-    0 0 0 0.5px rgba(167,139,250,0.08) inset,
-    0 1px 0 rgba(255,255,255,0.06) inset !important;
+    /* Soft outer drop — short and low, NOT a heavy shadow */
+    0 1px 3px rgba(0,0,0,0.25),
+    0 4px 16px rgba(0,0,0,0.20),
+    /* Inner top highlight + inner bottom shadow → 3D glass feel */
+    0 1px 0 rgba(255,255,255,0.22) inset,
+    0 -1px 0 rgba(0,0,0,0.18) inset !important;
 }
 
 /* Raised surfaces (#1A1A1A / #1F1F1F) — slightly brighter glass */
@@ -98,9 +108,9 @@ body.dc-preview [style*="background: rgb(31, 31, 31)"],
 body.dc-preview [style*="background:#1F1F1F"],
 body.dc-preview [style*="background: #1F1F1F"] {
   background:
-    linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%),
-    rgba(32,32,40,0.66) !important;
-  border-color: rgba(255,255,255,0.12) !important;
+    linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 35%),
+    rgba(255,255,255,0.09) !important;
+  border-color: rgba(255,255,255,0.22) !important;
 }
 
 /* App background (0A0A0A) → transparent so aurora shows through */
@@ -145,35 +155,44 @@ body.dc-preview button[style*="border: 1px solid rgb(42, 42, 42)"] {
   -webkit-backdrop-filter: blur(12px) !important;
 }
 
-/* ── 3. Bottom nav — heavier glass + subtle purple top accent ───────────── */
+/* ── 3. Bottom nav — iOS tab bar glass ──────────────────────────────────── */
 body.dc-preview [style*="rgba(10, 10, 10, 0.82)"],
 body.dc-preview [style*="rgba(10,10,10,0.82)"] {
-  background: linear-gradient(180deg, rgba(28,28,38,0.55) 0%, rgba(10,10,14,0.88) 100%) !important;
-  backdrop-filter: saturate(200%) blur(32px) !important;
-  -webkit-backdrop-filter: saturate(200%) blur(32px) !important;
-  border-top: 1px solid rgba(167,139,250,0.18) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 35%),
+    rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
+  border-top: 0.5px solid rgba(255,255,255,0.22) !important;
   box-shadow:
-    0 -12px 36px rgba(0,0,0,0.55),
-    0 -1px 0 rgba(167,139,250,0.10) inset !important;
+    0 -1px 0 rgba(255,255,255,0.18) inset,
+    0 1px 0 rgba(0,0,0,0.18) inset !important;
 }
 
-/* ── 4. Inputs — soft glass with vibrant focus ─────────────────────────── */
+/* ── 4. Inputs — iOS frosted input bar ───────────────────────────────── */
 body.dc-preview input,
 body.dc-preview textarea,
 body.dc-preview select {
-  background: rgba(255,255,255,0.05) !important;
-  border: 1px solid rgba(255,255,255,0.10) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 50%),
+    rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 0.5px solid rgba(255,255,255,0.18) !important;
   color: #F5F5F7 !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.10) inset,
+    0 -1px 0 rgba(0,0,0,0.15) inset !important;
   transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease !important;
 }
 body.dc-preview input:focus,
 body.dc-preview textarea:focus,
 body.dc-preview select:focus {
-  border-color: rgba(167,139,250,0.65) !important;
-  background: rgba(167,139,250,0.06) !important;
+  border-color: rgba(167,139,250,0.55) !important;
   box-shadow:
     0 0 0 4px rgba(167,139,250,0.22),
-    0 0 24px rgba(167,139,250,0.18) !important;
+    0 0 24px rgba(167,139,250,0.18),
+    0 1px 0 rgba(255,255,255,0.14) inset !important;
   outline: none !important;
 }
 body.dc-preview input::placeholder,
