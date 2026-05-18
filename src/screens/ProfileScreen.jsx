@@ -509,8 +509,10 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
               </button>
             )}
 
-            {/* Win rate stats button */}
-            {myStats.length > 0 && (
+            {/* Win rate stats button — regular users only. For admin/owner
+                the record lives in Quest Hub → Mi récord (more breathing room
+                + decluttered profile). */}
+            {myStats.length > 0 && !isAdminOrOwner && (
               <button onClick={() => setShowStats(true)} style={{
                 width: '100%', padding: '9px 14px',
                 borderRadius: 8, background: 'rgba(74,222,128,0.06)',
