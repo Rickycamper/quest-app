@@ -13,6 +13,7 @@ import Spinner from '../components/Spinner'
 import { useToast } from '../components/Toast'
 import { HAPTIC } from '../lib/design-tokens'
 import { shareOrCopy } from '../lib/share'
+import { COLOR, RADIUS, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
 
 const POST_TYPE_COLORS = {
   quiero: '#F59E0B',
@@ -31,7 +32,7 @@ function EditIcon() {
   )
 }
 
-export default function ProfileScreen({ userId, currentUserId, onBack, onEditProfile, onMessage, onVs }) {
+export default function ProfileScreen({ userId, currentUserId, onBack, onEditProfile, onMessage, onVs, onNotifs, unreadCount = 0, isAdminOrOwner = false }) {
   const { profile: myProfile } = useAuth()
   const toast = useToast()
   const isPremium = myProfile?.role === 'premium' || myProfile?.role === 'admin'
@@ -183,11 +184,14 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
             // method === 'share' → native sheet IS the feedback, no toast needed
           }}
           title="Compartir perfil"
+          className="pressable"
           style={{
-            width: 36, height: 36, borderRadius: 10,
-            border: '1.5px solid #2A2A2A', background: '#1A1A1A',
+            width: 38, height: 38, borderRadius: RADIUS.md,
+            border: `1px solid ${COLOR.borderStrong}`, background: COLOR.surfaceRaised,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: '#9CA3AF', flexShrink: 0,
+            cursor: 'pointer', color: COLOR.textSecondary, flexShrink: 0,
+            boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+            transition: MOTION.springTransition,
           }}
         >
           <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -199,11 +203,13 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           </svg>
         </button>
         {isOwn && (
-          <button onClick={onEditProfile} style={{
-            width: 36, height: 36, borderRadius: 10,
-            border: '1.5px solid #2A2A2A', background: '#1A1A1A',
+          <button onClick={onEditProfile} className="pressable" style={{
+            width: 38, height: 38, borderRadius: RADIUS.md,
+            border: `1px solid ${COLOR.borderStrong}`, background: COLOR.surfaceRaised,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: '#9CA3AF', flexShrink: 0,
+            cursor: 'pointer', color: COLOR.textSecondary, flexShrink: 0,
+            boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+            transition: MOTION.springTransition,
           }}>
             <EditIcon />
           </button>
@@ -215,36 +221,56 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginBottom: 14 }}>
           {/* Avatar */}
           <div style={{
-            width: 72, height: 72, borderRadius: '50%',
-            background: '#1F1F1F', border: '2px solid #2A2A2A',
+            width: 78, height: 78, borderRadius: '50%',
+            background: COLOR.surfaceRaised,
+            border: `2px solid ${COLOR.borderStrong}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 32, flexShrink: 0, overflow: 'hidden',
+            boxShadow: `${ELEVATION.md}, inset 0 1px 0 rgba(255,255,255,0.06)`,
           }}>
-            <Avatar url={profile?.avatar_url} size={72} role={profile?.role} isOwner={profile?.is_owner} />
+            <Avatar url={profile?.avatar_url} size={78} role={profile?.role} isOwner={profile?.is_owner} />
           </div>
 
           {/* Stats row */}
-          <div style={{ display: 'flex', gap: 16, flex: 1, paddingBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 18, flex: 1, paddingBottom: 4 }}>
             {[
               { label: 'Posts',      value: posts.length },
               { label: 'Seguidores', value: counts.followers },
               { label: 'Siguiendo',  value: counts.following },
             ].map(s => (
               <div key={s.label} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF' }}>{s.value}</div>
-                <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{s.label}</div>
+                <div style={{
+                  fontSize: 18, fontWeight: WEIGHT.bold, color: COLOR.text,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.1,
+                }}>{s.value}</div>
+                <div style={{
+                  fontSize: 10.5, color: COLOR.textTertiary, marginTop: 3,
+                  fontWeight: WEIGHT.medium,
+                  letterSpacing: '0.01em',
+                }}>{s.label}</div>
               </div>
             ))}
             {/* Q Points — shown on own profile */}
             {isOwn && (
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: '#FBBF24', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <div style={{
+                  fontSize: 18, fontWeight: WEIGHT.bold, color: COLOR.gold,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.1,
+                }}>
                   <svg width={14} height={14} viewBox="0 0 16 16" fill="none">
                     <path d="m14.281666666666666 6.706533333333333 -4.531466666666667 -5.809333333333333c-0.22759999999999997 -0.237 -0.5015333333333333 -0.42466666666666664 -0.8046666666666666 -0.5514666666666667 -0.30319999999999997 -0.1268 -0.6291333333333333 -0.18993333333333332 -0.9577333333333333 -0.18553333333333333 -0.32853333333333334 0.004399999999999999 -0.6527333333333333 0.07626666666666666 -0.9524 0.2112 -0.29966666666666664 0.13479999999999998 -0.5684666666666667 0.3298 -0.7895999999999999 0.5728666666666666l-4.507933333333333 5.762266666666666c-0.24953333333333333 0.38539999999999996 -0.38293333333333335 0.8344666666666667 -0.3841333333333333 1.2935999999999999 0.013066666666666666 0.4401333333333333 0.14593333333333333 0.8684 0.3841333333333333 1.2386666666666666l0.04706666666666666 0.05486666666666666 4.500066666666666 5.809333333333333c0.2215333333333333 0.23459999999999998 0.48906666666666665 0.4210666666666667 0.7857333333333334 0.5478666666666666 0.2967333333333333 0.1267333333333333 0.6163333333333333 0.19113333333333332 0.9390000000000001 0.18906666666666666 0.33359999999999995 -0.0002666666666666667 0.6635333333333333 -0.07013333333333333 0.9685333333333334 -0.2051333333333333 0.3051333333333333 -0.135 0.5786666666666667 -0.3321333333333333 0.8033333333333333 -0.5788l4.500066666666666 -5.762333333333332c0.24593333333333334 -0.38859999999999995 0.37259999999999993 -0.8408 0.36419999999999997 -1.3006 -0.0084 -0.4598 -0.15126666666666666 -0.9071333333333333 -0.41126666666666667 -1.2865333333333333h0.04706666666666666Z" fill="#FBBF24" strokeWidth="0"/>
                   </svg>
                   {profile?.q_points ?? 0}
                 </div>
-                <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Q Coins</div>
+                <div style={{
+                  fontSize: 10.5, color: COLOR.textTertiary, marginTop: 3,
+                  fontWeight: WEIGHT.medium, letterSpacing: '0.01em',
+                }}>Q Coins</div>
               </div>
             )}
           </div>
@@ -340,39 +366,130 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           )}
         </div>
 
-        {/* Action buttons */}
+        {/* Avisos — only on own profile, and only for admin/owner
+            (regular users still have the bell tab in the bottom nav
+            as their notifications entry point, so they don't need the
+            card here too). */}
+        {isOwn && onNotifs && isAdminOrOwner && (
+          <button
+            onClick={onNotifs}
+            className="pressable"
+            style={{
+              width: '100%', marginBottom: 10,
+              padding: '12px 14px',
+              borderRadius: RADIUS.md,
+              background: unreadCount > 0
+                ? 'linear-gradient(135deg, rgba(167,139,250,0.14) 0%, rgba(167,139,250,0.04) 100%)'
+                : COLOR.surfaceRaised,
+              border: `1px solid ${unreadCount > 0 ? 'rgba(167,139,250,0.32)' : COLOR.borderStrong}`,
+              boxShadow: unreadCount > 0
+                ? '0 0 16px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.05)'
+                : `${ELEVATION.sm}, inset 0 1px 0 rgba(255,255,255,0.04)`,
+              display: 'flex', alignItems: 'center', gap: 12,
+              cursor: 'pointer', fontFamily: FONT_STACK,
+              transition: MOTION.springTransition,
+            }}
+          >
+            {/* Bell icon block with badge */}
+            <div style={{
+              width: 38, height: 38, borderRadius: RADIUS.sm, flexShrink: 0,
+              background: unreadCount > 0 ? 'rgba(167,139,250,0.18)' : COLOR.background,
+              border: `1px solid ${unreadCount > 0 ? 'rgba(167,139,250,0.32)' : COLOR.border}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: unreadCount > 0 ? COLOR.purple : COLOR.textSecondary,
+              position: 'relative',
+              animation: unreadCount > 0 ? 'trophyGlow 2.6s ease-in-out infinite' : 'none',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {unreadCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: -4, right: -4,
+                  minWidth: 18, height: 18, borderRadius: 9,
+                  background: '#EF4444',
+                  border: '2px solid #0A0A0A',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: WEIGHT.bold, color: '#FFFFFF',
+                  padding: '0 5px',
+                  animation: 'pulseDot 1.6s ease-in-out infinite',
+                }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </div>
+
+            {/* Text */}
+            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+              <div style={{
+                fontSize: 13.5, fontWeight: WEIGHT.bold,
+                color: unreadCount > 0 ? COLOR.text : COLOR.textSecondary,
+                letterSpacing: '-0.005em',
+              }}>
+                Avisos
+              </div>
+              <div style={{
+                fontSize: 11.5,
+                color: unreadCount > 0 ? COLOR.purple : COLOR.textTertiary,
+                fontWeight: WEIGHT.medium,
+                marginTop: 2,
+                letterSpacing: '-0.005em',
+              }}>
+                {unreadCount > 0
+                  ? `${unreadCount} ${unreadCount === 1 ? 'aviso nuevo' : 'avisos nuevos'}`
+                  : 'Sin avisos nuevos'}
+              </div>
+            </div>
+
+            {/* Chevron */}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              style={{ color: unreadCount > 0 ? COLOR.purple : COLOR.textQuaternary, flexShrink: 0 }}>
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        )}
+
+        {/* Action buttons.
+            Admin/owner preview: Editar perfil + Duelo inline removed
+              (the pencil in the top bar handles edit, Duelo wasn't useful
+              as a self-action). Cleaner profile for the preview audience.
+            Regular users: keep the original Editar perfil + Duelo row so
+              nothing changes for them in production. */}
         {isOwn ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={onEditProfile} style={{
-                flex: 1, padding: '9px 0',
-                borderRadius: 8, background: 'transparent',
-                border: '1.5px solid #2A2A2A',
-                color: '#9CA3AF', fontSize: 13, fontWeight: 700,
-                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-              }}>
-                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-                Editar perfil
-              </button>
-              <button
-                onClick={() => onVs?.()}
-                style={{
+            {!isAdminOrOwner && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={onEditProfile} style={{
                   flex: 1, padding: '9px 0',
                   borderRadius: 8, background: 'transparent',
                   border: '1.5px solid #2A2A2A',
-                  color: '#FB923C', fontSize: 13, fontWeight: 700,
+                  color: '#9CA3AF', fontSize: 13, fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  transition: 'all 0.15s',
-                }}
-              >
-                ⚔️ Duelo
-              </button>
-            </div>
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                }}>
+                  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Editar perfil
+                </button>
+                <button
+                  onClick={() => onVs?.()}
+                  style={{
+                    flex: 1, padding: '9px 0',
+                    borderRadius: 8, background: 'transparent',
+                    border: '1.5px solid #2A2A2A',
+                    color: '#FB923C', fontSize: 13, fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  ⚔️ Duelo
+                </button>
+              </div>
+            )}
             {/* Q Points redemption button — shown when user has ≥1000 pts */}
             {(profile?.q_points ?? 0) >= 1000 && (
               <button onClick={() => { setRedeemMsg(''); setShowRedeem(true) }} style={{

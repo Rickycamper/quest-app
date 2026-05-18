@@ -2,6 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import App from './App.jsx'
+import { injectGlobalKeyframes } from './lib/ui'
+
+// Register shared CSS animations once at boot (shimmer, fadeUp, slideUp, …)
+injectGlobalKeyframes()
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()))

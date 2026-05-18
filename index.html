@@ -62,10 +62,30 @@
     <link rel="shortcut icon" href="/icons/icon-192.png" />
     <!-- Prevent white flash before React mounts -->
     <!-- Disable text selection & callout globally — prevents iOS "Copy/Look Up" popup on long-press -->
+    <!-- SF Pro on Apple devices, Inter on others — instant typography upgrade everywhere -->
     <style>
-      html,body{background:#0A0A0A}
+      html,body{
+        background:#0A0A0A;
+        font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter",system-ui,sans-serif;
+        -webkit-font-smoothing:antialiased;
+        -moz-osx-font-smoothing:grayscale;
+        text-rendering:optimizeLegibility;
+        font-feature-settings:"cv02","cv03","cv04","cv11","ss01";
+      }
       *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
       input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
+      /* Tap highlight off — replaced by our own spring animations */
+      button,a,[role="button"]{-webkit-tap-highlight-color:transparent}
+      /* Smoother scroll inertia on iOS */
+      *{scroll-behavior:smooth}
+      @media (prefers-reduced-motion: reduce){
+        *,*::before,*::after{
+          animation-duration:.01ms !important;
+          animation-iteration-count:1 !important;
+          transition-duration:.01ms !important;
+          scroll-behavior:auto !important;
+        }
+      }
     </style>
   </head>
   <body>

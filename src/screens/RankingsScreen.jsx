@@ -12,6 +12,7 @@ import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, ShareIcon, PAID_ROLES,
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/Confirm'
 import { shareOrCopy } from '../lib/share'
+import { COLOR, RADIUS, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
 
 // ── Inline icons (16×16, fill, strokeWidth 0) ─────────
 const UserPlusIcon = ({ size = 14, color = 'currentColor' }) => (
@@ -203,13 +204,895 @@ function SeasonBadgePill({ badges, game, branch }) {
   )
 }
 
+// ── Tiny count-up hook ────────────────────────
+// Animates a number from 0 → target over `duration` ms using rAF.
+// Used in the Rankings overview so big point totals "feel earned."
+function useCountUp(target, duration = 1200, startWhen = true) {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    if (!startWhen) return
+    let raf
+    const start = performance.now()
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration)
+      // ease-out cubic — fast start, slow finish (feels like settling)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setValue(Math.round(target * eased))
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration, startWhen])
+  return value
+}
+
+// ── Rankings Overview (chart-style dashboard) ──────────────────────────────
+// Shown when the user is on Global × [TCG] — instead of the flat list, gives
+// them a "where do I stand?" view: top-3 podium + per-branch totals as
+// animated bars. Tap a branch → drills into its filtered ranking list.
+function RankingsOverview({ entries, game, onSelectBranch }) {
+  // Aggregate by branch: total points + player count + best (lowest) rank
+  const byBranch = (() => {
+    const map = {}
+    for (const b of BRANCHES) map[b] = { branch: b, totalPts: 0, players: 0, topRank: null }
+    entries.forEach((e, i) => {
+      if (!e.branch || !map[e.branch]) return
+      map[e.branch].totalPts += e.points || 0
+      map[e.branch].players  += 1
+      const rank = i + 1
+      if (map[e.branch].topRank === null || rank < map[e.branch].topRank) {
+        map[e.branch].topRank = rank
+      }
+    })
+    return Object.values(map).sort((a, b) => b.totalPts - a.totalPts)
+  })()
+
+  const top3 = entries.slice(0, 3)
+  const maxPts = Math.max(1, ...byBranch.map(b => b.totalPts))
+  const gs = GAME_STYLES[game] ?? GAME_STYLES['MTG']
+
+  // Stagger entry: kick everything off ~50 ms after mount so the bars and
+  // numbers start from 0 even on prefetched data.
+  const [animateIn, setAnimateIn] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setAnimateIn(true), 50)
+    return () => clearTimeout(t)
+  }, [game])
+
+  return (
+    <div style={{ padding: '4px 16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* ── Game header with badge ────────────────────────────────── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '6px 2px 2px',
+      }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: RADIUS.sm,
+          background: gs.bg, border: `1px solid ${gs.border}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 14px ${gs.border}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+        }}>
+          <GameIcon game={game} size={16} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{
+            fontSize: 9.5, fontWeight: WEIGHT.bold,
+            color: COLOR.textTertiary, letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          }}>
+            Temporada activa
+          </div>
+          <div style={{
+            fontSize: 17, fontWeight: WEIGHT.bold, color: COLOR.text,
+            letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: 2,
+          }}>
+            Ranking {game} · Global
+          </div>
+        </div>
+      </div>
+
+      {/* ── Top 3 podium ─────────────────────────────────────────────── */}
+      {top3.length > 0 && (
+        <div style={{
+          background: COLOR.surface,
+          border: `1px solid ${COLOR.border}`,
+          borderRadius: RADIUS.lg,
+          padding: '14px 14px 16px',
+          boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+        }}>
+          <div style={{
+            fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+            marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            🏆 Top 3 global
+          </div>
+
+          {/* Podium layout — 2nd | 1st | 3rd, columns of different height for that "podium" feel */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around',
+            gap: 8, minHeight: 150,
+          }}>
+            {[1, 0, 2].map((podiumIdx, layoutIdx) => {  // 2nd, 1st, 3rd visual order
+              const e = top3[podiumIdx]
+              if (!e) return <div key={podiumIdx} style={{ flex: 1 }} />
+              const rank = podiumIdx + 1
+              const heights = { 0: 130, 1: 100, 2: 85 }  // 1st tallest
+              const medals = { 0: '🥇', 1: '🥈', 2: '🥉' }
+              const colors = {
+                0: { glow: '#F59E0B', text: '#FCD34D', border: 'rgba(245,158,11,0.5)' },
+                1: { glow: '#9CA3AF', text: '#E5E7EB', border: 'rgba(156,163,175,0.45)' },
+                2: { glow: '#B87333', text: '#D97706', border: 'rgba(184,115,51,0.45)' },
+              }
+              const c = colors[podiumIdx]
+              const bs = BRANCH_STYLES[e.branch] ?? {}
+              const delay = layoutIdx === 1 ? 0 : layoutIdx === 0 ? 220 : 340
+              return (
+                <div key={e.id} style={{
+                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  opacity: animateIn ? 1 : 0,
+                  transform: animateIn ? 'translateY(0)' : 'translateY(12px)',
+                  transition: `opacity 500ms ease ${delay}ms, transform 600ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
+                }}>
+                  <div style={{ fontSize: 24, marginBottom: 4 }}>{medals[podiumIdx]}</div>
+                  <div style={{
+                    width: 50, height: 50, borderRadius: '50%',
+                    background: COLOR.surfaceRaised,
+                    border: `2px solid ${c.border}`,
+                    overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: `0 0 16px ${c.glow}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                    marginBottom: 6,
+                  }}>
+                    <Avatar url={e.avatar_url} size={50} role={e.role} isOwner={e.is_owner} />
+                  </div>
+                  <div style={{
+                    fontSize: 11.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
+                    maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    letterSpacing: '-0.005em', textAlign: 'center',
+                  }}>
+                    {e.username}
+                  </div>
+                  {e.branch && (
+                    <div style={{
+                      fontSize: 9.5, color: bs.color ?? COLOR.textTertiary,
+                      fontWeight: WEIGHT.bold, letterSpacing: '0.04em',
+                      marginTop: 1,
+                    }}>
+                      {e.branch}
+                    </div>
+                  )}
+                  {/* Podium block underneath — width 100%, height varies by rank */}
+                  <div style={{
+                    width: '88%',
+                    height: animateIn ? heights[podiumIdx] * 0.55 : 0,
+                    marginTop: 8,
+                    borderRadius: `${RADIUS.sm}px ${RADIUS.sm}px 0 0`,
+                    background: `linear-gradient(180deg, ${c.glow}26 0%, ${c.glow}0d 100%)`,
+                    border: `1px solid ${c.border}`,
+                    borderBottom: 'none',
+                    display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+                    paddingTop: 6,
+                    transition: `height 700ms cubic-bezier(0.34,1.56,0.64,1) ${delay + 100}ms`,
+                    overflow: 'hidden',
+                  }}>
+                    <span style={{
+                      fontSize: 14, fontWeight: WEIGHT.bold, color: c.text,
+                      fontVariantNumeric: 'tabular-nums',
+                      letterSpacing: '-0.01em',
+                    }}>
+                      <CountUpNum value={e.points} startWhen={animateIn} delay={delay + 200} />pts
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Branches breakdown ───────────────────────────────────────── */}
+      <div style={{
+        background: COLOR.surface,
+        border: `1px solid ${COLOR.border}`,
+        borderRadius: RADIUS.lg,
+        padding: '14px 14px 8px',
+        boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 14,
+        }}>
+          <div style={{
+            fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+          }}>
+            Sucursales
+          </div>
+          <div style={{
+            fontSize: 10, color: COLOR.textQuaternary, fontWeight: WEIGHT.medium,
+            letterSpacing: '0.02em',
+          }}>
+            Tap para ver ranking →
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {byBranch.map((b, i) => {
+            const bs = BRANCH_STYLES[b.branch] ?? {}
+            const pct = (b.totalPts / maxPts) * 100
+            const hasTop3 = b.topRank !== null && b.topRank <= 3
+            const delay = i * 110
+
+            return (
+              <button
+                key={b.branch}
+                onClick={() => onSelectBranch?.(b.branch)}
+                className="pressable"
+                style={{
+                  display: 'flex', flexDirection: 'column', gap: 7,
+                  padding: '10px 12px',
+                  background: hasTop3
+                    ? `linear-gradient(135deg, ${bs.bg} 0%, transparent 70%)`
+                    : COLOR.background,
+                  border: `1px solid ${hasTop3 ? bs.border : COLOR.border}`,
+                  borderRadius: RADIUS.md,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontFamily: FONT_STACK,
+                  transition: MOTION.springTransition,
+                  opacity: animateIn ? 1 : 0,
+                  transform: animateIn ? 'translateX(0)' : 'translateX(-8px)',
+                  boxShadow: hasTop3 ? `0 0 12px ${bs.border}` : 'none',
+                }}
+              >
+                {/* Top row — branch name + dot + crown if top-3 + total pts */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: bs.dot ?? COLOR.textTertiary,
+                    flexShrink: 0,
+                    boxShadow: `0 0 8px ${bs.dot}`,
+                  }} />
+                  <span style={{
+                    fontSize: 14, fontWeight: WEIGHT.bold,
+                    color: bs.color ?? COLOR.text,
+                    letterSpacing: '-0.01em',
+                    flex: 1,
+                  }}>
+                    {b.branch}
+                  </span>
+                  {hasTop3 && (
+                    <span style={{
+                      fontSize: 9.5, fontWeight: WEIGHT.bold,
+                      padding: '2px 7px', borderRadius: RADIUS.full,
+                      background: 'rgba(245,158,11,0.18)',
+                      border: '1px solid rgba(245,158,11,0.45)',
+                      color: COLOR.gold,
+                      letterSpacing: '0.04em',
+                      display: 'inline-flex', alignItems: 'center', gap: 3,
+                    }}>
+                      👑 TOP {b.topRank}
+                    </span>
+                  )}
+                  <span style={{
+                    fontSize: 15, fontWeight: WEIGHT.bold,
+                    color: COLOR.text,
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.01em',
+                    minWidth: 50, textAlign: 'right',
+                  }}>
+                    <CountUpNum value={b.totalPts} startWhen={animateIn} delay={delay + 150} duration={1100} />
+                    <span style={{ fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium, marginLeft: 2 }}>pts</span>
+                  </span>
+                </div>
+
+                {/* Bar */}
+                <div style={{
+                  width: '100%', height: 8, borderRadius: 4,
+                  background: COLOR.surfaceRaised,
+                  overflow: 'hidden', position: 'relative',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: animateIn ? `${pct}%` : '0%',
+                    background: hasTop3
+                      ? `linear-gradient(90deg, ${bs.dot} 0%, ${bs.color} 100%)`
+                      : `linear-gradient(90deg, ${bs.dot}aa 0%, ${bs.dot} 100%)`,
+                    borderRadius: 4,
+                    boxShadow: `0 0 8px ${bs.dot}88`,
+                    transition: `width 1100ms cubic-bezier(0.34,1.56,0.64,1) ${delay + 80}ms`,
+                  }} />
+                </div>
+
+                {/* Subtle metadata */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium,
+                  letterSpacing: '0.005em',
+                }}>
+                  <span>{b.players} {b.players === 1 ? 'jugador' : 'jugadores'}</span>
+                  {b.topRank !== null && (
+                    <span style={{ color: hasTop3 ? COLOR.gold : COLOR.textTertiary }}>
+                      Mejor: #{b.topRank}
+                    </span>
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Footer hint — explicit affordance to drill in ────────────── */}
+      <div style={{
+        textAlign: 'center', padding: '4px 0 0',
+        fontSize: 11.5, color: COLOR.textQuaternary,
+        fontWeight: WEIGHT.medium, letterSpacing: '-0.005em',
+      }}>
+        Tap una sucursal para ver el ranking completo
+      </div>
+    </div>
+  )
+}
+
+// Wrapper that uses the count-up hook — needed because hooks can't run
+// conditionally inside the map callback above.
+function CountUpNum({ value, startWhen, delay = 0, duration = 1200 }) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    if (!startWhen) { setReady(false); return }
+    const t = setTimeout(() => setReady(true), delay)
+    return () => clearTimeout(t)
+  }, [startWhen, delay])
+  const n = useCountUp(value, duration, ready)
+  return <>{n}</>
+}
+
+// ── Branch Podium ───────────────────────────────────────────────────────────
+// Same podium UI as the global overview but tinted with the branch accent
+// color. Used at the top of the branch-specific leaderboard so the top-3 of
+// that branch get a "spotlight" before the long list of everyone else.
+function BranchPodium({ entries, branch, game }) {
+  const top3 = entries.slice(0, 3)
+  const bs   = BRANCH_STYLES[branch] ?? {}
+  const gs   = GAME_STYLES[game] ?? GAME_STYLES['MTG']
+
+  const [animateIn, setAnimateIn] = useState(false)
+  useEffect(() => {
+    setAnimateIn(false)
+    const t = setTimeout(() => setAnimateIn(true), 50)
+    return () => clearTimeout(t)
+  }, [branch, game])
+
+  // Total branch points (sum of all entries) — shown as a header stat
+  const totalPts = entries.reduce((sum, e) => sum + (e.points || 0), 0)
+
+  return (
+    <div style={{ padding: '4px 16px 14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* ── Branch header ───────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 11,
+        padding: '6px 2px 2px',
+      }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: RADIUS.sm,
+          background: bs.bg,
+          border: `1px solid ${bs.border}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 14px ${bs.border}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+        }}>
+          <MapPinIcon size={15} color={bs.color} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{
+            fontSize: 9.5, fontWeight: WEIGHT.bold,
+            color: COLOR.textTertiary, letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            <GameIcon game={game} size={11} /> {game} · Sucursal
+          </div>
+          <div style={{
+            fontSize: 17, fontWeight: WEIGHT.bold, color: bs.color,
+            letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: 2,
+          }}>
+            {branch}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{
+            fontSize: 17, fontWeight: WEIGHT.bold, color: COLOR.text,
+            fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1.1,
+          }}>
+            <CountUpNum value={totalPts} startWhen={animateIn} delay={150} duration={1100} />
+            <span style={{ fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium, marginLeft: 2 }}>pts</span>
+          </div>
+          <div style={{
+            fontSize: 9.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium,
+            letterSpacing: '0.04em', marginTop: 2,
+          }}>
+            {entries.length} {entries.length === 1 ? 'jugador' : 'jugadores'}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Podium card ──────────────────────────────────────────────── */}
+      <div style={{
+        background: `linear-gradient(180deg, ${bs.bg} 0%, ${COLOR.surface} 70%)`,
+        border: `1px solid ${bs.border}`,
+        borderRadius: RADIUS.lg,
+        padding: '14px 14px 16px',
+        boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}, 0 0 24px ${bs.border}`,
+      }}>
+        <div style={{
+          fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+          marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          🏆 Top 3 {branch}
+        </div>
+
+        {/* Podium layout — 2nd | 1st | 3rd */}
+        <div style={{
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around',
+          gap: 8, minHeight: 150,
+        }}>
+          {[1, 0, 2].map((podiumIdx, layoutIdx) => {
+            const e = top3[podiumIdx]
+            if (!e) return <div key={podiumIdx} style={{ flex: 1 }} />
+            const heights = { 0: 130, 1: 100, 2: 85 }
+            const medals  = { 0: '🥇', 1: '🥈', 2: '🥉' }
+            const colors  = {
+              0: { glow: '#F59E0B', text: '#FCD34D', border: 'rgba(245,158,11,0.5)' },
+              1: { glow: '#9CA3AF', text: '#E5E7EB', border: 'rgba(156,163,175,0.45)' },
+              2: { glow: '#B87333', text: '#D97706', border: 'rgba(184,115,51,0.45)' },
+            }
+            const c = colors[podiumIdx]
+            const delay = layoutIdx === 1 ? 0 : layoutIdx === 0 ? 220 : 340
+            return (
+              <div key={e.id} style={{
+                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                opacity: animateIn ? 1 : 0,
+                transform: animateIn ? 'translateY(0)' : 'translateY(12px)',
+                transition: `opacity 500ms ease ${delay}ms, transform 600ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
+                cursor: 'pointer',
+              }}>
+                <div style={{ fontSize: 24, marginBottom: 4 }}>{medals[podiumIdx]}</div>
+                <div style={{
+                  width: 50, height: 50, borderRadius: '50%',
+                  background: COLOR.surfaceRaised,
+                  border: `2px solid ${c.border}`,
+                  overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: `0 0 16px ${c.glow}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  marginBottom: 6,
+                }}>
+                  <Avatar url={e.avatar_url} size={50} role={e.role} isOwner={e.is_owner} />
+                </div>
+                <div style={{
+                  fontSize: 11.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
+                  maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  letterSpacing: '-0.005em', textAlign: 'center',
+                }}>
+                  {e.username}
+                </div>
+                <div style={{
+                  width: '88%',
+                  height: animateIn ? heights[podiumIdx] * 0.55 : 0,
+                  marginTop: 8,
+                  borderRadius: `${RADIUS.sm}px ${RADIUS.sm}px 0 0`,
+                  background: `linear-gradient(180deg, ${c.glow}26 0%, ${c.glow}0d 100%)`,
+                  border: `1px solid ${c.border}`,
+                  borderBottom: 'none',
+                  display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+                  paddingTop: 6,
+                  transition: `height 700ms cubic-bezier(0.34,1.56,0.64,1) ${delay + 100}ms`,
+                  overflow: 'hidden',
+                }}>
+                  <span style={{
+                    fontSize: 14, fontWeight: WEIGHT.bold, color: c.text,
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.01em',
+                  }}>
+                    <CountUpNum value={e.points} startWhen={animateIn} delay={delay + 200} />pts
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Season Overview Card (collapsible, animated) ────────────────────────────
+// The big season banner shown on the Rankings ALL view. Compact by default —
+// just the title + status pill — taps open to reveal description, date range,
+// progress bar, and Championship rules. Designed to feel "alive" with subtle
+// motion: pulsing ACTIVA dot, trophy glint, spring chevron, content stagger.
+function SeasonOverviewCard({ season }) {
+  const [expanded, setExpanded] = useState(false)
+  const endStr    = safeDate(season?.end_date,   '2026-08-31')
+  const startStr  = safeDate(season?.start_date, '2026-05-01')
+  const endDate   = new Date(endStr   + 'T23:59:59')
+  const startDate = new Date(startStr + 'T00:00:00')
+  const now       = new Date()
+  const daysLeft  = Math.max(0, Math.ceil((endDate - now) / 86_400_000))
+  const totalDays = Math.max(1, Math.ceil((endDate - startDate) / 86_400_000))
+  const pct       = Math.min(100, Math.max(0, Math.round(((now - startDate) / (endDate - startDate)) * 100)))
+  const fmt       = (d, opts) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', opts)
+  const startFmt  = fmt(startDate, { day: 'numeric', month: 'long' })
+  const endFmt    = fmt(endDate,   { day: 'numeric', month: 'long', year: 'numeric' })
+  const seasonName = season?.name ?? 'Temporada 2'
+
+  // Subtle shimmer on the gradient — drifts every few seconds for "alive" feel
+  return (
+    <div style={{
+      borderRadius: RADIUS.lg, overflow: 'hidden',
+      background: `
+        linear-gradient(135deg, rgba(245,158,11,0.14) 0%, rgba(251,191,36,0.04) 100%),
+        radial-gradient(ellipse at top right, rgba(251,191,36,0.10) 0%, transparent 60%)
+      `,
+      border: '1px solid rgba(245,158,11,0.28)',
+      boxShadow: `0 0 24px rgba(245,158,11,0.10), ${ELEVATION.md}, ${ELEVATION.innerLit}`,
+      transition: MOTION.springTransition,
+      position: 'relative',
+    }}>
+      {/* Diagonal shimmer ribbon — passes once every ~6s */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%)',
+        backgroundSize: '200% 100%',
+        animation: 'seasonShine 6s ease-in-out infinite',
+        pointerEvents: 'none', borderRadius: 'inherit',
+      }} />
+
+      {/* ── Collapsed header (always visible, clickable) ─────────────── */}
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="pressable"
+        style={{
+          width: '100%', padding: '12px 14px',
+          background: 'none', border: 'none',
+          display: 'flex', alignItems: 'center', gap: 11,
+          cursor: 'pointer', fontFamily: FONT_STACK,
+          position: 'relative', zIndex: 1,
+        }}
+        aria-expanded={expanded}
+      >
+        {/* Trophy icon with soft pulse glow */}
+        <div style={{
+          width: 36, height: 36, borderRadius: RADIUS.sm, flexShrink: 0,
+          background: 'rgba(245,158,11,0.15)',
+          border: '1px solid rgba(245,158,11,0.35)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 0 14px rgba(245,158,11,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
+          animation: 'trophyGlow 2.8s ease-in-out infinite',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#FBBF24" strokeWidth="0">
+            <path d={HAND_MIDDLE_PATH} />
+          </svg>
+        </div>
+
+        {/* Title + date range — date hides when collapsed for a cleaner look */}
+        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+          <div style={{
+            fontSize: 9.5, fontWeight: WEIGHT.bold,
+            color: 'rgba(245,158,11,0.7)', letterSpacing: '0.12em',
+            textTransform: 'uppercase', lineHeight: 1,
+          }}>
+            Temporada activa
+          </div>
+          <div style={{
+            fontSize: 16, fontWeight: WEIGHT.bold, color: '#FBBF24',
+            letterSpacing: '-0.015em', lineHeight: 1.2, marginTop: 3,
+          }}>
+            {seasonName}
+          </div>
+        </div>
+
+        {/* Right side: ACTIVA pill (with pulsing dot) + chevron */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+        }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: 9.5, fontWeight: WEIGHT.bold,
+            padding: '4px 9px', borderRadius: RADIUS.full,
+            background: 'rgba(74,222,128,0.14)',
+            border: '1px solid rgba(74,222,128,0.32)',
+            color: COLOR.green, letterSpacing: '0.06em',
+          }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: COLOR.green,
+              boxShadow: '0 0 8px rgba(74,222,128,0.7)',
+              animation: 'pulseDot 1.6s ease-in-out infinite',
+            }} />
+            ACTIVA
+          </div>
+          <svg
+            width="14" height="14" viewBox="0 0 16 16" fill={COLOR.gold} strokeWidth="0"
+            style={{
+              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+              opacity: 0.7,
+            }}
+          >
+            <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+          </svg>
+        </div>
+      </button>
+
+      {/* ── Expanded body ─────────────────────────────────────────────── */}
+      <div style={{
+        maxHeight: expanded ? 360 : 0,
+        opacity: expanded ? 1 : 0,
+        overflow: 'hidden',
+        transition: expanded
+          ? 'max-height 380ms cubic-bezier(0.34, 1.3, 0.64, 1), opacity 320ms ease 80ms'
+          : 'max-height 280ms ease, opacity 180ms ease',
+        position: 'relative', zIndex: 1,
+      }}>
+        <div style={{
+          padding: '4px 14px 14px',
+          borderTop: '1px solid rgba(245,158,11,0.18)',
+          marginTop: 4,
+        }}>
+          {/* Days left big number + progress */}
+          <div style={{
+            display: 'flex', alignItems: 'baseline', gap: 10,
+            paddingTop: 12, marginBottom: 12,
+          }}>
+            <div style={{
+              fontSize: 32, fontWeight: WEIGHT.bold, color: '#FBBF24',
+              fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', lineHeight: 0.95,
+            }}>
+              {daysLeft}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 12, fontWeight: WEIGHT.semibold, color: COLOR.text,
+                letterSpacing: '-0.005em',
+              }}>
+                {daysLeft === 1 ? 'día restante' : 'días restantes'}
+              </div>
+              <div style={{
+                fontSize: 11, color: COLOR.textTertiary, marginTop: 2,
+                fontWeight: WEIGHT.medium,
+              }}>
+                {startFmt} – {endFmt}
+              </div>
+            </div>
+          </div>
+
+          {/* Progress bar — animates from 0 → pct on expand */}
+          <div style={{
+            height: 6, borderRadius: 3,
+            background: 'rgba(255,255,255,0.05)',
+            overflow: 'hidden', marginBottom: 14,
+            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+          }}>
+            <div style={{
+              height: '100%',
+              width: expanded ? `${pct}%` : '0%',
+              borderRadius: 3,
+              background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)',
+              boxShadow: '0 0 8px rgba(251,191,36,0.6)',
+              transition: 'width 900ms cubic-bezier(0.34,1.3,0.64,1) 120ms',
+            }} />
+          </div>
+
+          {/* Description */}
+          <p style={{
+            margin: '0 0 8px', fontSize: 12.5, color: '#E5E7EB',
+            lineHeight: 1.55, letterSpacing: '-0.005em',
+          }}>
+            La <strong style={{ color: '#FBBF24' }}>{seasonName} es oficial</strong> — los puntos que acumules <strong style={{ color: COLOR.text }}>cuentan para el ranking final</strong> y el Season Championship.
+          </p>
+
+          {/* Championship rule pill */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '6px 11px', borderRadius: RADIUS.full,
+            background: 'rgba(167,139,250,0.10)',
+            border: '1px solid rgba(167,139,250,0.25)',
+            color: COLOR.purple,
+            fontSize: 11.5, fontWeight: WEIGHT.semibold,
+            letterSpacing: '-0.005em',
+          }}>
+            <span style={{ fontSize: 13 }}>🏆</span>
+            Top 2 por ciudad clasifica al Championship
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Champions by TCG (top-1 per game on the ALL/empty state) ───────────────
+// Shown when the user lands on Rankings without a TCG selected. One card per
+// game with its #1 global player and the branch they belong to. Tap a card
+// to drill into that game's leaderboard.
+function ChampionsByTcg({ champions, onSelectGame }) {
+  const [animateIn, setAnimateIn] = useState(false)
+  useEffect(() => {
+    setAnimateIn(false)
+    const t = setTimeout(() => setAnimateIn(true), 100)
+    return () => clearTimeout(t)
+  }, [])
+
+  const loaded = Object.keys(champions).length === GAMES.length
+
+  return (
+    <div style={{
+      background: COLOR.surface,
+      border: `1px solid ${COLOR.border}`,
+      borderRadius: RADIUS.lg,
+      padding: '14px 14px 12px',
+      boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 12,
+      }}>
+        <div style={{
+          fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          👑 Campeones por TCG
+        </div>
+        <div style={{
+          fontSize: 10, color: COLOR.textQuaternary, fontWeight: WEIGHT.medium,
+          letterSpacing: '0.02em',
+        }}>
+          Tap para ver ranking →
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {GAMES.map((g, i) => {
+          const champ = champions[g]
+          const gs    = GAME_STYLES[g] ?? {}
+          const bs    = champ?.branch ? (BRANCH_STYLES[champ.branch] ?? {}) : {}
+          const delay = i * 80
+          const isLoading = !loaded
+          const hasChamp  = !!champ
+
+          return (
+            <button
+              key={g}
+              onClick={() => hasChamp && onSelectGame?.(g)}
+              className={hasChamp ? 'pressable' : ''}
+              disabled={!hasChamp}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 11,
+                padding: '11px 12px',
+                background: hasChamp
+                  ? `linear-gradient(135deg, ${gs.bg ?? COLOR.background} 0%, transparent 60%)`
+                  : COLOR.background,
+                border: `1px solid ${hasChamp ? gs.border : COLOR.border}`,
+                borderRadius: RADIUS.md,
+                cursor: hasChamp ? 'pointer' : 'default',
+                textAlign: 'left',
+                fontFamily: FONT_STACK,
+                transition: MOTION.springTransition,
+                opacity: animateIn ? 1 : 0,
+                transform: animateIn ? 'translateX(0)' : 'translateX(-8px)',
+                transitionDelay: `${delay}ms`,
+                boxShadow: hasChamp ? `0 0 10px ${gs.border}, inset 0 1px 0 rgba(255,255,255,0.04)` : 'none',
+              }}
+            >
+              {/* Game icon block */}
+              <div style={{
+                width: 38, height: 38, borderRadius: RADIUS.sm, flexShrink: 0,
+                background: gs.bg ?? COLOR.surfaceRaised,
+                border: `1px solid ${gs.border ?? COLOR.borderStrong}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+              }}>
+                <GameIcon game={g} size={20} />
+              </div>
+
+              {/* Middle: game name + champion username + branch */}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={{
+                  fontSize: 13.5, fontWeight: WEIGHT.bold,
+                  color: gs.color ?? COLOR.text,
+                  letterSpacing: '-0.005em',
+                }}>
+                  {g}
+                </div>
+                {isLoading ? (
+                  <div style={{
+                    width: '60%', height: 12, borderRadius: 4,
+                    background: `linear-gradient(90deg, ${COLOR.surfaceRaised} 0%, ${COLOR.surfaceHover} 50%, ${COLOR.surfaceRaised} 100%)`,
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer 1.4s ease-in-out infinite',
+                  }} />
+                ) : hasChamp ? (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    fontSize: 11.5, color: COLOR.textSecondary,
+                    fontWeight: WEIGHT.medium,
+                  }}>
+                    <span style={{ fontSize: 12 }}>🥇</span>
+                    <span style={{
+                      color: COLOR.text, fontWeight: WEIGHT.semibold,
+                      letterSpacing: '-0.005em',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      maxWidth: 100,
+                    }}>
+                      {champ.username}
+                    </span>
+                    {champ.branch && (
+                      <>
+                        <span style={{ color: COLOR.textQuaternary }}>·</span>
+                        <span style={{
+                          width: 5, height: 5, borderRadius: '50%',
+                          background: bs.dot ?? COLOR.textTertiary, flexShrink: 0,
+                          boxShadow: `0 0 6px ${bs.dot}`,
+                        }} />
+                        <span style={{
+                          color: bs.color ?? COLOR.textTertiary,
+                          fontWeight: WEIGHT.bold,
+                          letterSpacing: '0.005em',
+                        }}>
+                          {champ.branch}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{
+                    fontSize: 11.5, color: COLOR.textQuaternary,
+                    fontWeight: WEIGHT.medium,
+                  }}>
+                    Sin ranking aún
+                  </div>
+                )}
+              </div>
+
+              {/* Right: points pill — only when we have a champion */}
+              {hasChamp && (
+                <div style={{
+                  flexShrink: 0,
+                  padding: '5px 11px', borderRadius: RADIUS.full,
+                  background: gs.bg ?? 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${gs.border ?? COLOR.borderStrong}`,
+                  color: gs.color ?? COLOR.text,
+                  fontSize: 12, fontWeight: WEIGHT.bold,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.005em',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                }}>
+                  <CountUpNum value={champ.points} startWhen={animateIn} delay={delay + 300} duration={1000} />
+                  <span style={{ fontSize: 9.5, opacity: 0.7, marginLeft: 1 }}>pts</span>
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Leaderboard ──────────────────────────────
-function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
+function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, onSelectGame }) {
   const toast = useToast()
   const [showRules, setShowRules] = useState(false)
   const [entries,   setEntries]   = useState([])
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState('')
+  // Champions per TCG — fetched when no game is selected (empty state).
+  // Each entry: { game: 'MTG', champion: <leaderboard row>, loading: bool }.
+  const [champions, setChampions] = useState({})
   // Editing state — admin only, available in all tabs
   const [editingId, setEditingId] = useState(null)
   const [ptsVal,    setPtsVal]    = useState('')
@@ -237,6 +1120,28 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
       .catch(e => { if (e?.name !== 'AbortError') setError(e.message || 'Error de conexión.') })
       .finally(() => setLoading(false))
   }, [branch, game])
+
+  // ── Champions per TCG (fetched only when no game is selected) ─────────────
+  // Parallel queries for each game's #1 player, with a tiny session cache
+  // so flipping between tabs doesn't re-fetch every time.
+  useEffect(() => {
+    if (game) return  // only when on the ALL screen
+    if (Object.keys(champions).length === GAMES.length) return  // already loaded
+    let cancelled = false
+    Promise.all(
+      GAMES.map(g =>
+        getLeaderboard({ branch: null, game: g })
+          .then(rows => ({ game: g, champion: rows?.[0] ?? null }))
+          .catch(() => ({ game: g, champion: null }))
+      )
+    ).then(results => {
+      if (cancelled) return
+      const next = {}
+      for (const r of results) next[r.game] = r.champion
+      setChampions(next)
+    })
+    return () => { cancelled = true }
+  }, [game]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const openEdit = (entry) => {
     setEditingId(entry.id)
@@ -311,63 +1216,13 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
   if (!game) return (
     <div style={{ padding: '12px 14px 32px', display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.25s ease' }}>
 
-      {/* ── Season announcement — adapts to current season ── */}
-      {(() => {
-        const endStr    = safeDate(activeSeason?.end_date,   '2026-08-31')
-        const startStr  = safeDate(activeSeason?.start_date, '2026-05-01')
-        const endDate   = new Date(endStr   + 'T23:59:59')
-        const startDate = new Date(startStr + 'T00:00:00')
-        const now       = new Date()
-        const daysLeft  = Math.max(0, Math.ceil((endDate - now) / 86_400_000))
-        // isTest: still within S1 (today hasn't passed the end date)
-        const fmt = (d, opts) => (!d || isNaN(d)) ? '?' : d.toLocaleDateString('es', opts)
-        const endFmt = fmt(endDate, { day: 'numeric', month: 'long', year: 'numeric' })
+      {/* ── Season announcement — collapsible, adapts to current season ── */}
+      <SeasonOverviewCard season={activeSeason} />
 
-        return (
-          <div style={{
-            borderRadius: 14, overflow: 'hidden',
-            background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(251,191,36,0.06) 100%)',
-            border: '1px solid rgba(245,158,11,0.25)',
-          }}>
-            <div style={{
-              padding: '10px 14px 8px',
-              borderBottom: '1px solid rgba(245,158,11,0.15)',
-              display: 'flex', alignItems: 'center', gap: 10,
-            }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-                background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="#F59E0B" strokeWidth="0">
-                  <path d={HAND_MIDDLE_PATH} />
-                </svg>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#F59E0B', letterSpacing: '-0.01em' }}>
-                  {activeSeason?.name ?? 'Temporada 2'} — Oficial
-                </div>
-                <div style={{ fontSize: 10, color: '#78716C', marginTop: 1 }}>
-                  {fmt(startDate, { day: 'numeric', month: 'long' })} – {endFmt} · {daysLeft}d restantes
-                </div>
-              </div>
-              <div style={{
-                fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 6,
-                background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)',
-                color: '#4ADE80', letterSpacing: '0.05em', flexShrink: 0,
-              }}>ACTIVA</div>
-            </div>
-            <div style={{ padding: '10px 14px 12px' }}>
-              <p style={{ margin: '0 0 6px', fontSize: 12, color: '#D1D5DB', lineHeight: 1.55 }}>
-                La <strong style={{ color: '#F59E0B' }}>{activeSeason?.name ?? 'Temporada 2'} es oficial</strong> — los puntos que acumules <strong style={{ color: '#FFFFFF' }}>cuentan para el ranking final</strong> y el Season Championship.
-              </p>
-              <p style={{ margin: 0, fontSize: 11, color: '#6B7280', lineHeight: 1.5 }}>
-                Top 2 por ciudad clasifica al Season Championship.
-              </p>
-            </div>
-          </div>
-        )
-      })()}
+      {/* ── Campeones por TCG — top 1 de cada juego ────────────────────
+          Para cada TCG mostramos al #1 global + sucursal a la que pertenece.
+          Tap → drill-in al ranking de ese TCG. Cards animan en stagger. */}
+      <ChampionsByTcg champions={champions} onSelectGame={onSelectGame} />
 
       {/* ── Rules card (collapsible) ── */}
       <div style={{
@@ -691,54 +1546,98 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
           <div style={{ fontSize: 15, fontWeight: 700, color: '#4B5563' }}>No hay rankings aún</div>
           <div style={{ fontSize: 12, color: '#374151' }}>Reporta tus resultados de torneo para aparecer aquí</div>
         </div>
-      ) : entries.map((entry, i) => {
-        const rank = i + 1
-        const m    = medal(rank)
+      ) : !branch ? (
+        // Global view (no specific branch) — show animated overview chart
+        // instead of the flat list. Lets the user pick a branch to drill in.
+        <RankingsOverview entries={entries} game={game} onSelectBranch={onSelectBranch} />
+      ) : (
+        <>
+          {/* Branch view — podium for top-3 (if branch has 3+ entries),
+              then the rest of the list starting at rank 4. With fewer than
+              3 entries the podium looks weird, so fall back to a flat list. */}
+          {entries.length >= 3 && <BranchPodium entries={entries} branch={branch} game={game} />}
+
+          {entries.length >= 3 && (
+            <div style={{
+              padding: '4px 20px 8px',
+              fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+            }}>
+              Resto del ranking · #{4} en adelante
+            </div>
+          )}
+
+          {(entries.length >= 3 ? entries.slice(3) : entries).map((entry, iLocal) => {
+            const i = entries.length >= 3 ? iLocal + 3 : iLocal  // absolute index
+            const rank = i + 1
+            const m    = medal(rank)
+            const isTop3 = rank <= 3
         return (
           <div key={entry.id} style={{
-            padding: '12px 20px',
-            background: rank <= 3 ? 'rgba(255,255,255,0.02)' : 'transparent',
-            borderBottom: '1px solid #111111',
+            padding: '13px 20px',
+            background: isTop3
+              ? 'linear-gradient(90deg, rgba(245,158,11,0.04) 0%, transparent 60%)'
+              : 'transparent',
+            borderBottom: `1px solid ${COLOR.border}`,
             animation: 'fadeUp 0.3s ease both',
             animationDelay: `${i * 0.03}s`,
+            transition: MOTION.quickTransition,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 28, textAlign: 'center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 30, textAlign: 'center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {m
-                  ? <RankIcon rank={rank} size={18} />
-                  : <span style={{ fontSize: 13, fontWeight: 700, color: '#4B5563' }}>#{rank}</span>
+                  ? <RankIcon rank={rank} size={19} />
+                  : <span style={{
+                      fontSize: 13, fontWeight: WEIGHT.bold,
+                      color: COLOR.textQuaternary,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>#{rank}</span>
                 }
               </div>
               <div style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: '#1F1F1F', border: '1.5px solid #2A2A2A',
+                width: 36, height: 36, borderRadius: '50%',
+                background: COLOR.surfaceRaised,
+                border: `1px solid ${isTop3 ? 'rgba(245,158,11,0.35)' : COLOR.borderStrong}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 15, flexShrink: 0, overflow: 'hidden',
-              }}><Avatar url={entry.avatar_url} size={34} role={entry.role} isOwner={entry.is_owner} /></div>
+                boxShadow: isTop3 ? '0 0 12px rgba(245,158,11,0.18)' : 'none',
+              }}><Avatar url={entry.avatar_url} size={36} role={entry.role} isOwner={entry.is_owner} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <div style={{
+                  fontSize: 13.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
+                  display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+                  letterSpacing: '-0.01em',
+                }}>
                   {entry.username}
-                  {entry.verified && <span style={{ fontSize: 10, color: '#60A5FA' }}>✓</span>}
+                  {entry.verified && <span style={{ fontSize: 10, color: COLOR.blue }}>✓</span>}
                   {PAID_ROLES.has(entry.role) && <PremiumBadge size={12} role={entry.role} />}
                   <RoleBadge isOwner={entry.is_owner} role={entry.role} size={12} />
                   <SeasonBadgePill badges={entry.season_badges} game={game} branch={branch} />
                 </div>
                 {entry.branch && (
-                  <div style={{ fontSize: 11, color: BRANCH_STYLES[entry.branch]?.color ?? '#4B5563', display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <MapPinIcon size={10} color={BRANCH_STYLES[entry.branch]?.color ?? '#4B5563'} />
+                  <div style={{
+                    fontSize: 11, color: BRANCH_STYLES[entry.branch]?.color ?? COLOR.textTertiary,
+                    display: 'flex', alignItems: 'center', gap: 4, marginTop: 2,
+                    fontWeight: WEIGHT.medium, letterSpacing: '0.005em',
+                  }}>
+                    <MapPinIcon size={10} color={BRANCH_STYLES[entry.branch]?.color ?? COLOR.textTertiary} />
                     {entry.branch}
                   </div>
                 )}
               </div>
               <div
                 onClick={() => canEdit && !editingId ? openEdit(entry) : null}
+                className={canEdit ? 'pressable' : ''}
                 style={{
-                  padding: '4px 12px', borderRadius: 8,
-                  background: editingId === entry.id ? 'rgba(167,139,250,0.22)' : 'rgba(167,139,250,0.12)',
-                  border: `1px solid ${editingId === entry.id ? 'rgba(167,139,250,0.5)' : 'rgba(167,139,250,0.25)'}`,
-                  color: '#A78BFA', fontSize: 13, fontWeight: 800,
+                  padding: '6px 14px', borderRadius: RADIUS.md,
+                  background: editingId === entry.id ? 'rgba(167,139,250,0.26)' : 'rgba(167,139,250,0.12)',
+                  border: `1px solid ${editingId === entry.id ? 'rgba(167,139,250,0.55)' : 'rgba(167,139,250,0.28)'}`,
+                  color: COLOR.purple, fontSize: 13, fontWeight: WEIGHT.bold,
                   cursor: canEdit ? 'pointer' : 'default',
-                  transition: 'all 0.15s',
+                  transition: MOTION.springTransition,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.005em',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
                 }}>{entry.points}pts</div>
             </div>
 
@@ -777,6 +1676,8 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason }) {
           </div>
         )
       })}
+        </>
+      )}
     </div>
   )
 }
@@ -802,25 +1703,30 @@ function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tourna
     <div
       onClick={() => onViewProfile?.(p.user_id)}
       style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '7px 0',
-        borderBottom: idx < total - 1 ? '1px solid #161616' : 'none',
+        display: 'flex', alignItems: 'center', gap: 11,
+        padding: '8px 4px',
+        borderBottom: idx < total - 1 ? `1px solid ${COLOR.border}` : 'none',
         cursor: onViewProfile ? 'pointer' : 'default',
-        borderRadius: 8, transition: 'background 0.12s',
+        borderRadius: RADIUS.sm,
+        transition: MOTION.quickTransition,
       }}
-      onMouseEnter={e => { if (onViewProfile) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+      onMouseEnter={e => { if (onViewProfile) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
       onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
     >
       <div style={{
-        width: 28, height: 28, borderRadius: '50%',
-        background: '#1F1F1F', border: '1px solid #2A2A2A',
+        width: 30, height: 30, borderRadius: '50%',
+        background: COLOR.surfaceRaised, border: `1px solid ${COLOR.borderStrong}`,
         overflow: 'hidden', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12,
       }}>
-        <Avatar url={prof.avatar_url} size={28} />
+        <Avatar url={prof.avatar_url} size={30} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#D1D5DB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{
+          fontSize: 12.5, fontWeight: WEIGHT.semibold, color: '#D1D5DB',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          letterSpacing: '-0.005em',
+        }}>
           {prof.username}
         </span>
         {/* Per-platform game ID (e.g. their Bandai TCG+ name for an OPTCG
@@ -830,27 +1736,33 @@ function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tourna
           const gameId = getGameUsername(prof, tournamentGame)
           if (!gameId) return null
           return (
-            <span style={{ fontSize: 10, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>
+            <span style={{
+              fontSize: 10.5, color: COLOR.textTertiary,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              marginTop: 1, fontWeight: WEIGHT.medium,
+            }}>
               🎮 {gameId}
             </span>
           )
         })()}
       </div>
-      {playerMedal && <span style={{ fontSize: 14 }}>{medal(playerMedal.position)}</span>}
+      {playerMedal && <span style={{ fontSize: 15 }}>{medal(playerMedal.position)}</span>}
 
       {/* Payment status */}
       {isAdmin ? (
         <button
           onClick={handlePayToggle}
           disabled={toggling}
+          className="pressable"
           style={{
             flexShrink: 0,
-            padding: '3px 9px', borderRadius: 8, fontSize: 10, fontWeight: 800,
-            fontFamily: 'Inter, sans-serif', cursor: toggling ? 'default' : 'pointer',
-            border: 'none',
-            background: paid ? 'rgba(74,222,128,0.15)' : 'rgba(251,191,36,0.12)',
-            color: paid ? '#4ADE80' : '#FBBF24',
-            transition: 'all 0.15s',
+            padding: '4px 10px', borderRadius: RADIUS.sm,
+            fontSize: 10, fontWeight: WEIGHT.bold, letterSpacing: '0.02em',
+            fontFamily: FONT_STACK, cursor: toggling ? 'default' : 'pointer',
+            border: paid ? '1px solid rgba(74,222,128,0.3)' : '1px solid rgba(251,191,36,0.25)',
+            background: paid ? 'rgba(74,222,128,0.12)' : 'rgba(251,191,36,0.10)',
+            color: paid ? COLOR.green : COLOR.gold,
+            transition: MOTION.springTransition,
           }}
         >
           {toggling ? '…' : paid ? '✓ Pagó' : 'Pendiente'}
@@ -858,15 +1770,17 @@ function ParticipantRow({ p, prof, idx, total, playerMedal, tournamentId, tourna
       ) : (
         paid && (
           <span style={{
-            flexShrink: 0, fontSize: 10, fontWeight: 700,
-            color: '#4ADE80', background: 'rgba(74,222,128,0.12)',
-            borderRadius: 8, padding: '3px 8px',
+            flexShrink: 0, fontSize: 10, fontWeight: WEIGHT.bold,
+            color: COLOR.green, background: 'rgba(74,222,128,0.1)',
+            borderRadius: RADIUS.sm, padding: '4px 9px',
+            border: '1px solid rgba(74,222,128,0.22)',
+            letterSpacing: '0.02em',
           }}>✓ Pagó</span>
         )
       )}
 
       {onViewProfile && (
-        <span style={{ fontSize: 11, color: '#374151', marginLeft: 2 }}>›</span>
+        <span style={{ fontSize: 12, color: COLOR.textQuaternary, marginLeft: 2 }}>›</span>
       )}
     </div>
   )
@@ -1032,57 +1946,69 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
 
   return (
     <div ref={cardRef} style={{
-      margin: '0 16px 8px',
-      background: '#111111', borderRadius: 10,
-      border: `1px solid ${isJoined ? bs.border : '#1F1F1F'}`,
+      margin: '0 16px 10px',
+      background: COLOR.surface,
+      borderRadius: RADIUS.md,
+      border: `1px solid ${isJoined ? bs.border : COLOR.border}`,
       animation: 'fadeUp 0.3s ease both',
       animationDelay: `${index * 0.04}s`,
       overflow: 'hidden',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+      boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
       // Left accent bar using branch color
       borderLeft: `3px solid ${bs.dot}`,
+      transition: MOTION.springTransition,
     }}>
       {/* Collapsed — 2-row layout */}
       <div
         onClick={() => setOpen(o => !o)}
-        style={{ padding: '10px 14px 8px', cursor: 'pointer' }}
+        style={{ padding: '12px 15px 10px', cursor: 'pointer' }}
       >
         {/* ── Row 1: logo · name · join · chevron ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           {/* Game icon */}
           <div style={{
-            width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+            width: 34, height: 34, borderRadius: RADIUS.sm, flexShrink: 0,
             background: gs.bg, border: `1px solid ${gs.border}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
           }}>
-            <GameIcon game={t.game} size={16} />
+            <GameIcon game={t.game} size={17} />
           </div>
 
           {/* Tournament name */}
-          <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{
+            flex: 1, minWidth: 0,
+            fontSize: 13.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            letterSpacing: '-0.01em',
+          }}>
             {t.name}
           </div>
 
-          {/* Join button */}
+          {/* Join button — refined pill */}
           {!isPast && (
             <button
               onClick={handleJoin}
               disabled={joining || (!isJoined && isFull)}
+              className="pressable"
               style={{
-                fontSize: 11, fontWeight: 700, flexShrink: 0,
-                padding: '4px 10px', borderRadius: 20,
-                minWidth: 78,
+                fontSize: 11.5, fontWeight: WEIGHT.bold, flexShrink: 0,
+                padding: '6px 12px', borderRadius: RADIUS.full,
+                minWidth: 82, fontFamily: FONT_STACK,
+                letterSpacing: '-0.005em',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
                 border: isJoined
-                  ? '1px solid rgba(34,197,94,0.45)'
-                  : '1px solid rgba(255,255,255,0.15)',
+                  ? '1px solid rgba(34,197,94,0.55)'
+                  : `1px solid ${COLOR.borderStrong}`,
                 background: isJoined
-                  ? 'linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0.08) 100%)'
-                  : 'transparent',
-                color: isJoined ? '#86EFAC' : '#9CA3AF',
-                boxShadow: isJoined ? '0 0 8px rgba(34,197,94,0.15)' : 'none',
+                  ? 'linear-gradient(135deg, rgba(34,197,94,0.22) 0%, rgba(34,197,94,0.10) 100%)'
+                  : COLOR.surfaceRaised,
+                color: isJoined ? '#86EFAC' : COLOR.textSecondary,
+                boxShadow: isJoined
+                  ? '0 0 10px rgba(34,197,94,0.18), inset 0 1px 0 rgba(255,255,255,0.05)'
+                  : ELEVATION.sm,
                 cursor: (joining || (!isJoined && isFull)) ? 'default' : 'pointer',
-                transition: 'all 0.2s',
+                transition: MOTION.springTransition,
               }}
             >
               {joining ? (
@@ -1105,38 +2031,38 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
 
           {/* Chevron */}
           <span style={{
-            fontSize: 10, color: '#374151', flexShrink: 0,
+            fontSize: 10, color: COLOR.textQuaternary, flexShrink: 0,
             transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s', display: 'inline-block',
+            transition: MOTION.springTransition, display: 'inline-block',
           }}>▼</span>
         </div>
 
         {/* ── Row 2: count · date · time · share ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
           {/* Participants */}
-          <SAUsers size={10} color="#6B7280" />
-          <span style={{ fontSize: 10, color: '#6B7280', fontWeight: 600 }}>{joinedCount}/{curCount} inscritos</span>
+          <SAUsers size={10.5} color={COLOR.textTertiary} />
+          <span style={{ fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.semibold, letterSpacing: '0.005em' }}>{joinedCount}/{curCount} inscritos</span>
 
           {curDate && (
             <>
-              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-              <SACalendar size={10} color="#6B7280" />
-              <span style={{ fontSize: 10, color: '#6B7280' }}>{dateStr}</span>
+              <span style={{ fontSize: 10, color: COLOR.borderStrong }}>·</span>
+              <SACalendar size={10.5} color={COLOR.textTertiary} />
+              <span style={{ fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium }}>{dateStr}</span>
             </>
           )}
 
           {timeStr && (
             <>
-              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-              <SAClock size={10} color="#6B7280" />
-              <span style={{ fontSize: 10, color: '#6B7280' }}>{timeStr}</span>
+              <span style={{ fontSize: 10, color: COLOR.borderStrong }}>·</span>
+              <SAClock size={10.5} color={COLOR.textTertiary} />
+              <span style={{ fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.medium }}>{timeStr}</span>
             </>
           )}
 
           {curFee > 0 && (
             <>
-              <span style={{ fontSize: 10, color: '#2A2A2A' }}>·</span>
-              <span style={{ fontSize: 10, color: '#FBBF24', fontWeight: 700 }}>${curFee % 1 === 0 ? curFee : curFee.toFixed(2)}</span>
+              <span style={{ fontSize: 10, color: COLOR.borderStrong }}>·</span>
+              <span style={{ fontSize: 10.5, color: COLOR.gold, fontWeight: WEIGHT.bold }}>${curFee % 1 === 0 ? curFee : curFee.toFixed(2)}</span>
             </>
           )}
 
@@ -1145,12 +2071,14 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
           <button
             onClick={handleShare}
             title="Compartir torneo"
+            className="pressable"
             style={{
-              background: 'none', border: 'none', padding: '2px 0px',
-              cursor: 'pointer', color: copied ? '#4ADE80' : '#6B7280',
-              fontSize: copied ? 10 : 13, fontWeight: copied ? 700 : 400,
-              fontFamily: 'Inter, sans-serif', lineHeight: 1,
-              transition: 'color 0.2s', flexShrink: 0,
+              background: 'none', border: 'none', padding: '4px 6px',
+              borderRadius: RADIUS.sm,
+              cursor: 'pointer', color: copied ? COLOR.green : COLOR.textTertiary,
+              fontSize: copied ? 10.5 : 13, fontWeight: copied ? WEIGHT.bold : WEIGHT.regular,
+              fontFamily: FONT_STACK, lineHeight: 1,
+              transition: MOTION.springTransition, flexShrink: 0,
             }}
           >
             {copied ? '✓ copiado' : (
@@ -1200,16 +2128,26 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
         <div style={{ borderTop: '1px solid #1A1A1A', animation: 'fadeUp 0.2s ease' }}>
 
           {/* Participants list */}
-          <div style={{ padding: '10px 14px 0' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#374151', letterSpacing: '0.08em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              INSCRIPTOS
-              <span style={{ background: 'rgba(255,255,255,0.07)', color: '#6B7280', fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 10 }}>
+          <div style={{ padding: '12px 15px 0' }}>
+            <div style={{
+              fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              Inscriptos
+              <span style={{
+                background: COLOR.surfaceRaised, color: COLOR.textSecondary,
+                fontSize: 9.5, fontWeight: WEIGHT.bold,
+                padding: '2px 7px', borderRadius: RADIUS.full,
+                letterSpacing: 0,
+                border: `1px solid ${COLOR.border}`,
+              }}>
                 {joinedCount}/{curCount}
               </span>
             </div>
 
             {participants.length === 0 ? (
-              <div style={{ fontSize: 12, color: '#374151', paddingBottom: 10 }}>Nadie inscripto aún</div>
+              <div style={{ fontSize: 12.5, color: COLOR.textQuaternary, paddingBottom: 12, fontWeight: WEIGHT.medium }}>Nadie inscripto aún</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {participants.map((p, idx) => {
@@ -2916,7 +3854,7 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
 
       {['leaderboard', 'tournaments', 'liga'].map(t => (
         <div key={t} style={{ display: t === tab ? 'block' : 'none' }}>
-          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} />}
+          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} onSelectBranch={setBranch} onSelectGame={setGame} />}
           {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={profile?.role === 'admin'} openTournamentId={openTournamentId} />}
           {t === 'liga' && <LeagueTab key={`${game}-${branch}`} game={game} branch={branch} profile={profile} isStaff={isStaff} onViewProfile={onViewProfile} onCreateLeague={onCreateLeague} openLeagueId={openLeagueId} />}
         </div>

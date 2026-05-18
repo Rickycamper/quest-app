@@ -14,11 +14,12 @@ import { CommentIcon, BookmarkIcon, ShareIcon, PremiumBadge, RoleBadge, BoltIcon
 import GameIcon from '../components/GameIcon'
 import EmptyState from '../components/EmptyState'
 import Spinner from '../components/Spinner'
+import { COLOR, RADIUS, SPACING, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
 
 const sk = (w, h, r = 6) => ({
   width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
-  background: 'linear-gradient(90deg,#141414 25%,#222 50%,#141414 75%)',
-  backgroundSize: '400px 100%', animation: 'shimmer 1.4s infinite linear',
+  background: 'linear-gradient(90deg,#111 0%,#1F1F1F 50%,#111 100%)',
+  backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite ease-in-out',
 })
 
 function ImageCarousel({ images }) {
@@ -473,11 +474,11 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
 
   return (
     <div style={{
-      background: '#111111',
-      border: '1px solid #1E1E1E',
-      borderRadius: 16,
-      padding: '14px 16px',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.45)',
+      background: COLOR.surface,
+      border: `1px solid ${COLOR.border}`,
+      borderRadius: RADIUS.lg,
+      padding: '16px 18px',
+      boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
       animation: animDelay > 0 ? 'fadeUp 0.3s ease both' : 'none',
       animationDelay: `${animDelay}ms`,
       // CSS containment — tells the browser this card is independent so it
@@ -492,43 +493,50 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
       containIntrinsicSize: '0 480px',
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14 }}>
         <div onClick={() => authorId && requireAuth(() => onViewProfile?.(authorId))} style={{
-          width: 36, height: 36, borderRadius: '50%',
-          background: '#1F1F1F', border: '1.5px solid #2A2A2A',
+          width: 38, height: 38, borderRadius: '50%',
+          background: COLOR.surfaceRaised, border: `1px solid ${COLOR.borderStrong}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0,
           cursor: authorId ? 'pointer' : 'default', overflow: 'hidden',
-        }}><Avatar url={post.profiles?.avatar_url} size={36} role={post.profiles?.role} isOwner={post.profiles?.is_owner} /></div>
+          transition: MOTION.springTransition,
+        }}><Avatar url={post.profiles?.avatar_url} size={38} role={post.profiles?.role} isOwner={post.profiles?.is_owner} /></div>
 
         {/* Info col + follow + ··· */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'stretch', gap: 8 }}>
           {/* Text block */}
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3 }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <span onClick={() => authorId && requireAuth(() => onViewProfile?.(authorId))}
-                style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', cursor: authorId ? 'pointer' : 'default', flexShrink: 0 }}>
+                style={{
+                  fontSize: 14, fontWeight: WEIGHT.semibold, color: COLOR.text,
+                  cursor: authorId ? 'pointer' : 'default', flexShrink: 0,
+                  letterSpacing: '-0.01em',
+                }}>
                 {post.profiles?.username ?? 'user'}
               </span>
               {post.profiles?.verified && <span style={{ fontSize: 11, flexShrink: 0 }}>✓</span>}
               {PAID_ROLES.has(post.profiles?.role) && <PremiumBadge size={13} role={post.profiles.role} />}
               <RoleBadge isOwner={post.profiles?.is_owner} role={post.profiles?.role} size={13} />
             </div>
-            <span style={{ fontSize: 11, color: '#4B5563' }}>{timeAgo(post.created_at)}</span>
+            <span style={{ fontSize: 11.5, color: COLOR.textQuaternary, fontWeight: WEIGHT.medium }}>{timeAgo(post.created_at)}</span>
           </div>
 
-          {/* Follow button — double height, spans both rows */}
+          {/* Follow button — pill, refined */}
           {!isOwnPost && authorId && (
             <button onClick={handleFollow} disabled={fBusy} style={{
-              alignSelf: 'stretch',
-              padding: '0 10px', borderRadius: 6,
-              border: `1.5px solid ${isFollowed ? '#2A2A2A' : '#FFFFFF'}`,
+              alignSelf: 'center',
+              padding: '7px 14px', borderRadius: RADIUS.full,
+              border: `1px solid ${isFollowed ? COLOR.borderStrong : '#FFFFFF'}`,
               background: isFollowed ? 'transparent' : '#FFFFFF',
-              color: isFollowed ? '#4B5563' : '#111111',
-              fontSize: 11, fontWeight: 700,
-              cursor: 'pointer', transition: 'all 0.15s',
+              color: isFollowed ? COLOR.textSecondary : '#0A0A0A',
+              fontSize: 11.5, fontWeight: WEIGHT.bold,
+              cursor: 'pointer',
+              transition: MOTION.springTransition,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0, fontFamily: 'Inter, sans-serif',
+              flexShrink: 0, fontFamily: FONT_STACK,
               whiteSpace: 'nowrap',
+              letterSpacing: '-0.005em',
             }}>
               {isFollowed ? 'Siguiendo' : 'Seguir'}
             </button>
@@ -538,9 +546,11 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
           {!editing && (
             <div ref={menuRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
               <button onClick={() => setShowMenu(m => !m)} style={{
-                background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px',
-                color: '#4B5563', fontSize: 18, lineHeight: 1, letterSpacing: 1,
-              }}>···</button>
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '6px 4px', borderRadius: RADIUS.sm,
+                color: COLOR.textQuaternary, fontSize: 18, lineHeight: 1, letterSpacing: 1,
+                transition: MOTION.quickTransition,
+              }} aria-label="Más opciones">···</button>
               {showMenu && (
                 <div style={{
                   position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 120,
@@ -627,42 +637,50 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
         </div>
       ) : null}
 
-      {/* Actions row — moved ABOVE the caption text so when someone writes
-          a long post, the like/comment/share buttons stay visible right
-          under the image (Instagram-style). If a user writes a wall of
-          text the action affordances aren't pushed off-screen. */}
-      <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 10 }}>
-        <button onClick={handleLike} style={{
-          display: 'flex', alignItems: 'center', gap: 5,
+      {/* Actions row — sits above the caption so engagement affordances
+          stay visible right under the image (Instagram-style) even for
+          long posts. Tactile press: each button scales 0.92 on press via
+          .pressable class (registered in lib/ui keyframes). */}
+      <div style={{ display: 'flex', gap: 22, alignItems: 'center', marginBottom: 10 }}>
+        <button onClick={handleLike} className="pressable" style={{
+          display: 'flex', alignItems: 'center', gap: 6,
           background: 'none', border: 'none', cursor: 'pointer',
-          color: liked ? '#FFF' : '#4B5563', fontSize: 13, fontWeight: 600,
-          fontFamily: 'Inter, sans-serif', padding: 0, transition: 'color 0.15s',
-        }}>
-          <BoltIcon filled={liked} size={18} pop={likeAnim} color={liked ? '#FFFFFF' : '#4B5563'} /> {likes > 0 && likes}
+          color: liked ? COLOR.text : COLOR.textQuaternary,
+          fontSize: 13.5, fontWeight: WEIGHT.semibold,
+          fontFamily: FONT_STACK, padding: '2px 0',
+          transition: MOTION.springTransition,
+          letterSpacing: '-0.005em',
+        }} aria-label={liked ? 'Quitar like' : 'Like'} aria-pressed={liked}>
+          <BoltIcon filled={liked} size={19} pop={likeAnim} color={liked ? '#FFFFFF' : COLOR.textQuaternary} /> {likes > 0 && likes}
         </button>
-        <button onClick={handleOpenComments} style={{
-          display: 'flex', alignItems: 'center', gap: 5,
+        <button onClick={handleOpenComments} className="pressable" style={{
+          display: 'flex', alignItems: 'center', gap: 6,
           background: 'none', border: 'none', cursor: 'pointer',
-          color: showComments ? '#FFF' : '#4B5563', fontSize: 13, fontWeight: 600,
-          fontFamily: 'Inter, sans-serif', padding: 0, transition: 'color 0.15s',
-        }}>
-          <CommentIcon size={18} /> {commentCount > 0 && commentCount}
+          color: showComments ? COLOR.text : COLOR.textQuaternary,
+          fontSize: 13.5, fontWeight: WEIGHT.semibold,
+          fontFamily: FONT_STACK, padding: '2px 0',
+          transition: MOTION.springTransition,
+          letterSpacing: '-0.005em',
+        }} aria-label="Comentarios">
+          <CommentIcon size={19} /> {commentCount > 0 && commentCount}
         </button>
 
         {/* Share */}
-        <button onClick={handleShare} title="Compartir" style={{
-          display: 'flex', alignItems: 'center', gap: 5,
+        <button onClick={handleShare} className="pressable" title="Compartir" style={{
+          display: 'flex', alignItems: 'center', gap: 6,
           background: 'none', border: 'none', cursor: 'pointer',
-          color: shared ? '#4ADE80' : '#4B5563', fontSize: 13, fontWeight: 600,
-          fontFamily: 'Inter, sans-serif', padding: 0, transition: 'color 0.15s',
-        }}>
-          <ShareIcon size={17} />
-          {shared && <span style={{ fontSize: 11, color: '#4ADE80' }}>Copiado</span>}
+          color: shared ? COLOR.green : COLOR.textQuaternary,
+          fontSize: 13.5, fontWeight: WEIGHT.semibold,
+          fontFamily: FONT_STACK, padding: '2px 0',
+          transition: MOTION.springTransition,
+        }} aria-label="Compartir">
+          <ShareIcon size={18} />
+          {shared && <span style={{ fontSize: 11.5, color: COLOR.green, fontWeight: WEIGHT.semibold }}>Copiado</span>}
         </button>
 
         {/* Game icon — pushed to the right */}
         {post.tag && (
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', opacity: 0.7 }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', opacity: 0.75 }}>
             <GameIcon game={post.tag} size={18} />
           </div>
         )}
@@ -682,8 +700,13 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
           ? text.slice(0, TRUNCATE_AT).replace(/\s+\S*$/, '').trimEnd()
           : text
         return (
-          <div style={{ marginBottom: showComments ? 12 : 0 }}>
-            <p style={{ fontSize: 14, color: '#D1D5DB', lineHeight: 1.6, margin: 0 }}>
+          <div style={{ marginBottom: showComments ? 14 : 0 }}>
+            <p style={{
+              fontSize: 14.5, color: '#E5E7EB',
+              lineHeight: 1.55, margin: 0,
+              fontWeight: WEIGHT.regular,
+              letterSpacing: '-0.005em',
+            }}>
               {displayed}
               {shouldTruncate && (
                 <>
@@ -692,7 +715,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
                     onClick={() => setCaptionExpanded(true)}
                     style={{
                       background: 'none', border: 'none', padding: 0,
-                      color: '#6B7280', fontSize: 14, fontWeight: 600,
+                      color: COLOR.textTertiary, fontSize: 14.5, fontWeight: WEIGHT.semibold,
                       cursor: 'pointer', fontFamily: 'inherit',
                     }}
                   >
@@ -707,29 +730,43 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
 
       {/* Comments panel */}
       {showComments && (
-        <div style={{ borderTop: '1px solid #1A1A1A', paddingTop: 12, animation: 'fadeUp 0.2s ease' }}>
+        <div style={{ borderTop: `1px solid ${COLOR.border}`, paddingTop: 14, marginTop: 4, animation: 'fadeUp 0.2s ease' }}>
           {loadingCmts && (
             <div style={{ padding: '10px 0' }}>
               <Spinner size="sm" centered />
             </div>
           )}
           {!loadingCmts && comments.length === 0 && (
-            <div style={{ fontSize: 12, color: '#374151', textAlign: 'center', padding: '8px 0 12px' }}>Sin comentarios aún</div>
+            <div style={{
+              fontSize: 12.5, color: COLOR.textQuaternary, textAlign: 'center',
+              padding: '8px 0 14px', fontWeight: WEIGHT.medium,
+            }}>Sin comentarios aún</div>
           )}
           {comments.map(c => (
-            <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div key={c.id} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: COLOR.surfaceRaised, overflow: 'hidden', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
                 <Avatar url={c.profiles?.avatar_url} size={28} role={c.profiles?.role} isOwner={c.profiles?.is_owner} />
               </div>
-              <div style={{ flex: 1, background: '#111', borderRadius: 8, padding: '6px 10px' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#FFF', marginRight: 6 }}>{c.profiles?.username ?? 'user'}</span>
-                <span style={{ fontSize: 12, color: '#D1D5DB' }}>{c.content}</span>
+              <div style={{
+                flex: 1, background: COLOR.surfaceRaised,
+                borderRadius: RADIUS.md, padding: '7px 12px',
+                border: `1px solid ${COLOR.border}`,
+              }}>
+                <span style={{
+                  fontSize: 12.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
+                  marginRight: 6, letterSpacing: '-0.005em',
+                }}>{c.profiles?.username ?? 'user'}</span>
+                <span style={{ fontSize: 12.5, color: '#D1D5DB', lineHeight: 1.45 }}>{c.content}</span>
               </div>
             </div>
           ))}
 
           {/* Input */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
             <input
               value={commentText}
               onChange={e => setCommentText(e.target.value)}
@@ -738,19 +775,26 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
               enterKeyHint="send"
               maxLength={2000}
               style={{
-                flex: 1, background: '#111', border: '1px solid #222',
-                borderRadius: 8, padding: '8px 12px', color: '#FFF',
-                fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none',
+                flex: 1, background: COLOR.background,
+                border: `1px solid ${COLOR.borderStrong}`,
+                borderRadius: RADIUS.md, padding: '9px 13px',
+                color: COLOR.text,
+                fontSize: 13.5, fontFamily: FONT_STACK, outline: 'none',
+                transition: MOTION.quickTransition,
               }}
+              onFocus={e => e.currentTarget.style.borderColor = COLOR.textTertiary}
+              onBlur ={e => e.currentTarget.style.borderColor = COLOR.borderStrong}
             />
-            <button onClick={handleSendComment} disabled={!commentText.trim() || sendingCmt} style={{
-              background: commentText.trim() ? '#FFF' : '#1A1A1A',
-              color: commentText.trim() ? '#000' : '#555',
-              border: 'none', borderRadius: 8, padding: '0 14px',
-              fontSize: 13, fontWeight: 700, cursor: commentText.trim() ? 'pointer' : 'default',
-              fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', flexShrink: 0,
+            <button onClick={handleSendComment} disabled={!commentText.trim() || sendingCmt} className="pressable" style={{
+              background: commentText.trim() ? '#FFFFFF' : COLOR.surfaceRaised,
+              color: commentText.trim() ? '#0A0A0A' : '#555',
+              border: 'none', borderRadius: RADIUS.md, padding: '0 15px',
+              fontSize: 14, fontWeight: WEIGHT.bold,
+              cursor: commentText.trim() ? 'pointer' : 'default',
+              fontFamily: FONT_STACK, transition: MOTION.springTransition, flexShrink: 0,
+              minWidth: 44,
             }}>
-              {sendingCmt ? '...' : '→'}
+              {sendingCmt ? '…' : '→'}
             </button>
           </div>
         </div>
@@ -1066,35 +1110,40 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
           {refreshing ? 'Actualizando…' : pullProgress >= 1 ? '↑ Soltá para recargar' : '↓ Jalá para recargar'}
         </div>
       )}
-      {/* Game filter — full-width icon strip for everyone */}
+      {/* Game filter — glass-style icon strip pinned at top */}
       <div style={{ padding: '10px 14px 4px' }}>
         <div style={{
-          background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
-          display: 'flex', alignItems: 'center', padding: '8px 10px', gap: 6,
+          background: 'rgba(17,17,17,0.85)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          border: `1px solid ${COLOR.border}`,
+          borderRadius: RADIUS.md,
+          boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+          display: 'flex', alignItems: 'center', padding: '7px 9px', gap: 6,
         }}>
-          <button onClick={() => handleGameSwitch(null)} style={{
-            flex: 1, height: 34, borderRadius: 8,
-            border: !game ? '1.5px solid rgba(255,255,255,0.35)' : '1.5px solid transparent',
-            background: !game ? 'rgba(255,255,255,0.1)' : 'transparent',
-            color: !game ? '#FFFFFF' : '#4B5563',
-            fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          <button onClick={() => handleGameSwitch(null)} className="pressable" style={{
+            flex: 1, height: 36, borderRadius: RADIUS.sm,
+            border: !game ? '1px solid rgba(255,255,255,0.45)' : '1px solid transparent',
+            background: !game ? 'rgba(255,255,255,0.12)' : 'transparent',
+            color: !game ? COLOR.text : COLOR.textTertiary,
+            fontSize: 10.5, fontWeight: WEIGHT.bold,
+            cursor: 'pointer', fontFamily: FONT_STACK,
+            letterSpacing: '0.06em',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'background 0.18s, border-color 0.18s',
-            animation: !game ? 'iconPop 0.28s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+            transition: MOTION.springTransition,
           }}>ALL</button>
-          <div style={{ width: 1, height: 20, background: '#2A2A2A', flexShrink: 0 }} />
+          <div style={{ width: 1, height: 18, background: COLOR.borderStrong, flexShrink: 0, opacity: 0.7 }} />
           {GAMES.map(g => {
             const gs = GAME_STYLES[g]
             const active = game === g
             return (
-              <button key={g} onClick={() => handleGameSwitch(active ? null : g)} title={g} style={{
-                flex: 1, height: 34, borderRadius: 8,
-                border: `1.5px solid ${active ? gs.border : 'transparent'}`,
+              <button key={g} onClick={() => handleGameSwitch(active ? null : g)} title={g} className="pressable" style={{
+                flex: 1, height: 36, borderRadius: RADIUS.sm,
+                border: `1px solid ${active ? gs.border : 'transparent'}`,
                 background: active ? gs.bg : 'transparent',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.18s, border-color 0.18s, box-shadow 0.18s',
-                boxShadow: active ? `0 0 10px ${gs.border}55` : 'none',
-                animation: active ? 'iconPop 0.28s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+                transition: MOTION.springTransition,
+                boxShadow: active ? `0 0 12px ${gs.border}60, inset 0 1px 0 rgba(255,255,255,0.05)` : 'none',
               }}>
                 <GameIcon game={g} size={18} />
               </button>
@@ -1105,9 +1154,14 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
 
       {/* ── Articles strip (shown when a game is selected and articles exist) ── */}
       {articles.length > 0 && (
-        <div style={{ padding: '12px 0 4px' }}>
-          <div style={{ paddingLeft: 14, marginBottom: 8, fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.06em' }}>
-            NOTICIAS
+        <div style={{ padding: '14px 0 4px' }}>
+          <div style={{
+            paddingLeft: 14, marginBottom: 10,
+            fontSize: 10.5, fontWeight: WEIGHT.bold,
+            color: COLOR.textTertiary, letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+          }}>
+            Noticias
           </div>
           <div className="filter-scroll" style={{ padding: '0 14px', gap: 10 }}>
             {articles.map(a => {
@@ -1123,11 +1177,15 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
                   href={a.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="lift"
                   style={{
-                    flexShrink: 0, width: 200, borderRadius: 14, overflow: 'hidden',
-                    background: '#111', border: '1px solid #1E1E1E',
+                    flexShrink: 0, width: 210, borderRadius: RADIUS.lg, overflow: 'hidden',
+                    background: COLOR.surface,
+                    border: `1px solid ${COLOR.border}`,
+                    boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
                     display: 'flex', flexDirection: 'column',
                     textDecoration: 'none',
+                    transition: MOTION.springTransition,
                   }}
                 >
                   {a.image_url ? (
@@ -1143,14 +1201,18 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
                       <GameIcon game={a.game} size={32} />
                     </div>
                   )}
-                  <div style={{ padding: '10px 10px 12px', display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+                  <div style={{ padding: '12px 12px 14px', display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
                     <p style={{
-                      fontSize: 12, fontWeight: 700, color: '#E5E7EB', lineHeight: 1.4, margin: 0,
+                      fontSize: 12.5, fontWeight: WEIGHT.semibold, color: '#E5E7EB',
+                      lineHeight: 1.4, margin: 0, letterSpacing: '-0.005em',
                       display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                     }}>{a.title}</p>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 6 }}>
-                      <span style={{ fontSize: 10, color: gs.color ?? '#6B7280', fontWeight: 600 }}>{a.source_name}</span>
-                      {ago && <span style={{ fontSize: 10, color: '#374151' }}>{ago}</span>}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 8 }}>
+                      <span style={{
+                        fontSize: 10.5, color: gs.color ?? COLOR.textTertiary,
+                        fontWeight: WEIGHT.bold, letterSpacing: '0.02em',
+                      }}>{a.source_name}</span>
+                      {ago && <span style={{ fontSize: 10.5, color: COLOR.textQuaternary, fontWeight: WEIGHT.medium }}>{ago}</span>}
                     </div>
                   </div>
                 </a>
@@ -1163,7 +1225,13 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
       {loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 14px 0' }}>
           {[...Array(3)].map((_, i) => (
-            <div key={i} style={{ padding: '14px 16px', background: '#111111', border: '1px solid #1E1E1E', borderRadius: 16 }}>
+            <div key={i} style={{
+              padding: '16px 18px',
+              background: COLOR.surface,
+              border: `1px solid ${COLOR.border}`,
+              borderRadius: RADIUS.lg,
+              boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+            }}>
               {/* Avatar + name row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <span style={sk(36, 36, 18)} />
@@ -1189,8 +1257,22 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
 
       {error && (
         <div style={{ margin: '16px 20px', textAlign: 'center' }}>
-          <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13, marginBottom: 10 }}>{error}</div>
-          <button onClick={loadFeed} style={{ padding: '8px 20px', borderRadius: 8, background: '#1A1A1A', border: '1px solid #333', color: '#FFF', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>🔄 Reintentar</button>
+          <div style={{
+            padding: '13px 16px', borderRadius: RADIUS.md,
+            background: 'rgba(248,113,113,0.08)',
+            border: '1px solid rgba(248,113,113,0.22)',
+            color: COLOR.red, fontSize: 13.5,
+            fontWeight: WEIGHT.medium,
+            marginBottom: 12, letterSpacing: '-0.005em',
+          }}>{error}</div>
+          <button onClick={loadFeed} className="pressable" style={{
+            padding: '10px 22px', borderRadius: RADIUS.md,
+            background: COLOR.surfaceRaised,
+            border: `1px solid ${COLOR.borderStrong}`,
+            color: COLOR.text, fontSize: 13.5, fontWeight: WEIGHT.semibold,
+            cursor: 'pointer', fontFamily: FONT_STACK,
+            transition: MOTION.springTransition,
+          }}>Reintentar</button>
         </div>
       )}
 
