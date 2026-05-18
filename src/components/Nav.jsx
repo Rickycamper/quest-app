@@ -133,11 +133,11 @@ export function BottomNav({ active, hidden, onTab, onLifeCounter, onPost, isOwne
   )
 
   const tabs = [
-    { id: 'feed',  label: 'Feed',     icon: Hi('home',          (a) => <HomeIcon active={a} />),    action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Hi('shopping-bag',  (a) => <ShopIcon active={a} />),    action: () => onTab('shop') },
-    { id: 'post',  label: 'Crear',    icon: null,                                                    action: onPost, variant: 'primary' },
-    { id: 'ranks', label: 'Ranking',  icon: Hi('award',         (a) => <RanksIcon active={a} />),   action: () => onTab('ranks') },
-    { id: 'life',  label: 'Vida',     icon: Hi('heart',         (a) => <CounterIcon active={a} />), action: onLifeCounter },
+    { id: 'feed',  label: 'Feed',     icon: Hi('home',           (a) => <HomeIcon active={a} />),    action: () => onTab('feed') },
+    { id: 'shop',  label: 'Tienda',   icon: Hi('shopping-cart',  (a) => <ShopIcon active={a} />),    action: () => onTab('shop') },
+    { id: 'post',  label: 'Crear',    icon: null,                                                     action: onPost, variant: 'primary' },
+    { id: 'ranks', label: 'Ranking',  icon: Hi('trophy',         (a) => <RanksIcon active={a} />),   action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: Hi('heart',          (a) => <CounterIcon active={a} />), action: onLifeCounter },
   ]
   return (
     <OwnerBottomNav
