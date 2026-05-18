@@ -63,19 +63,16 @@ body.dc-preview .app-header { background: transparent !important; }
   }
 }
 
-/* Kill any other dark inline-background wrappers between body and cards */
-body.dc-preview [style*="background: rgb(10, 10, 10)"],
-body.dc-preview [style*="background:#0A0A0A"],
-body.dc-preview [style*="background: #0A0A0A"],
-body.dc-preview [style*="background: rgb(0, 0, 0)"],
-body.dc-preview [style*="background:#000"],
-body.dc-preview [style*="background: #000"],
-body.dc-preview [style*="background:#000000"],
-body.dc-preview [style*="background: #000000"],
-body.dc-preview [style*="background-color: rgb(10, 10, 10)"],
-body.dc-preview [style*="background-color:#0A0A0A"] {
+/* Kill #0A0A0A backgrounds on layout WRAPPERS only (not modal overlays).
+   The :not() guards exclude full-screen overlays like QuestHubScreen,
+   AdminScreen, AuctionScreen, ProfileScreen overlay, etc. — those need
+   their solid bg to cover what's underneath. Wrappers like the
+   FeedScreen / Rankings root div have neither absolute/fixed position
+   nor a z-index, so they still match and go transparent. */
+body.dc-preview [style*="background: rgb(10, 10, 10)"]:not([style*="position: absolute"]):not([style*="position: fixed"]):not([style*="z-index"]),
+body.dc-preview [style*="background:#0A0A0A"]:not([style*="position: absolute"]):not([style*="position: fixed"]):not([style*="z-index"]),
+body.dc-preview [style*="background: #0A0A0A"]:not([style*="position: absolute"]):not([style*="position: fixed"]):not([style*="z-index"]) {
   background: transparent !important;
-  background-color: transparent !important;
 }
 
 /* ── 1. Cards — premium social glass ────────────────────────────────────
