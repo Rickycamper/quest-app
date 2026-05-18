@@ -5,10 +5,13 @@ import { useState, useRef, useEffect } from 'react'
 // Quest's original SVG icons are retained for non-nav surfaces (e.g.
 // NotifBell below). The nav itself now uses Phosphor icons.
 import { BellIcon } from './Icons'
-// Phosphor icons — 9k+ glyphs, 6 weights, MIT. Tree-shaken so only the
-// imports below ship in the bundle (~2 KB each). Active state uses
-// `fill` weight; inactive uses `regular` for a 'lights up' feel.
-import { HouseIcon, ShoppingBagIcon, TrophyIcon, HeartIcon as PhHeartIcon } from '@phosphor-icons/react'
+// Phosphor icons — 9k+ glyphs, 6 weights, MIT. Tree-shaken.
+// TCG-themed nav vocabulary:
+//   Feed     → House          (your hub)
+//   Tienda   → CardsThree     (booster pack / card shop — literal TCG)
+//   Ranking  → Crown          (champion of the leaderboard)
+//   Vida     → Heartbeat      (life points with a pulse line — dynamic)
+import { HouseIcon, CardsThreeIcon, CrownIcon, HeartbeatIcon } from '@phosphor-icons/react'
 import Avatar from './Avatar'
 import { HAPTIC } from '../lib/design-tokens'
 
@@ -142,11 +145,11 @@ export function BottomNav({ active, hidden, onTab, onLifeCounter, onPost, isOwne
   )
 
   const tabs = [
-    { id: 'feed',  label: 'Feed',     icon: Ph(HouseIcon),        action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Ph(ShoppingBagIcon),  action: () => onTab('shop') },
-    { id: 'post',  label: 'Crear',    icon: null,                 action: onPost, variant: 'primary' },
-    { id: 'ranks', label: 'Ranking',  icon: Ph(TrophyIcon),       action: () => onTab('ranks') },
-    { id: 'life',  label: 'Vida',     icon: Ph(PhHeartIcon),      action: onLifeCounter },
+    { id: 'feed',  label: 'Feed',     icon: Ph(HouseIcon),       action: () => onTab('feed') },
+    { id: 'shop',  label: 'Tienda',   icon: Ph(CardsThreeIcon),  action: () => onTab('shop') },
+    { id: 'post',  label: 'Crear',    icon: null,                action: onPost, variant: 'primary' },
+    { id: 'ranks', label: 'Ranking',  icon: Ph(CrownIcon),       action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: Ph(HeartbeatIcon),   action: onLifeCounter },
   ]
   return (
     <OwnerBottomNav
