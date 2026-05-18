@@ -691,17 +691,19 @@ const needsTerms = profile && !profile.terms_accepted_at
                 </button>
               )
             )}
-            {activeTab !== 'shop' && (
+            {activeTab !== 'shop' && !isGuest && (
               <button
-                onClick={() => requireAuth(() => setShowPost(true))}
-                aria-label="Crear post"
+                onClick={() => { if (profile?.id) setViewingUserId(profile.id) }}
+                aria-label="Abrir mi perfil"
                 style={{
-                  width: 36, height: 36, borderRadius: 12,             // bigger + 4pt-grid radius
-                  background: 'linear-gradient(135deg, #FFFFFF 0%, #E8E8E8 100%)',
-                  border: 'none', cursor: 'pointer',
+                  position: 'relative',
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: '#1F1F1F',
+                  border: '1.5px solid #2A2A2A',
+                  cursor: 'pointer', padding: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6)',
-                  // Spring press feedback (overshoot easing).
+                  overflow: 'visible',
+                  // Spring press feedback (matches the previous "+" button's interaction model).
                   transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
                 onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.92)' }}
@@ -710,9 +712,19 @@ const needsTerms = profile && !profile.terms_accepted_at
                 onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 1v12M1 7h12" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Avatar url={profile?.avatar_url} size={32} role={profile?.role} isOwner={profile?.is_owner} />
+                </div>
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -3, right: -3,
+                    minWidth: 16, height: 16, borderRadius: 8,
+                    background: '#EF4444', border: '1.5px solid #0A0A0A',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, fontWeight: 700, color: '#FFFFFF', padding: '0 4px',
+                    fontFamily: 'Inter, sans-serif',
+                  }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
+                )}
               </button>
             )}
           </div>
@@ -741,9 +753,7 @@ const needsTerms = profile && !profile.terms_accepted_at
         active={activeTab}
         hidden={navHidden}
         isOwner={isOwner}
-        profile={profile}
-        onMyProfile={() => { if (profile?.id) setViewingUserId(profile.id) }}
-        unreadCount={unreadCount}
+        onPost={() => requireAuth(() => setShowPost(true))}
         onTab={(tab) => {
           if (tab === 'feed' && activeTab === 'feed') {
             scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -754,7 +764,6 @@ const needsTerms = profile && !profile.terms_accepted_at
           setActiveTab(tab); setViewingUserId(null); setShowEditProfile(false)
           requestAnimationFrame(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0 })
         }}
-        onPost={() => requireAuth(() => setShowPost(true))}
         onLifeCounter={() => setShowLifeCounter(true)}
       />
       {/* PWA install prompt — auto-shows on Android Chrome and iOS Safari (with a tip). */}
