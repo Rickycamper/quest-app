@@ -25,32 +25,22 @@ const STORAGE_KEY = 'quest_dc_preview'
 //   • Pill-style active tab is faked with a glow ring on the icon container.
 // ─────────────────────────────────────────────────────────────────────────────
 const DC_CSS = `
-/* ── 0. Base palette — dark with subtle multi-color blooms ──────────────── */
+/* ── 0. Base palette — pure black ──────────────────────────────────────── */
 body.dc-preview {
-  /* Deep almost-black base. The color comes from blooms (orange / pink /
-     indigo) scattered across the viewport — same idea as the pricing
-     card reference. The dark base lets each bloom feel like a light
-     source, not a wash. */
-  background:
-    radial-gradient(ellipse 60% 40% at 15% 15%, rgba(251,146,60,0.20) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 85% 25%, rgba(236,72,153,0.20) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 50% 65%, rgba(99,102,241,0.30) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 85% 85%, rgba(167,139,250,0.18) 0%, transparent 60%),
-    #0A081A !important;
+  /* Pure dark. All the color comes from the cards' internal blooms — the
+     bg stays out of the way. */
+  background: #050508 !important;
   background-attachment: fixed !important;
   color: #F5F5F7 !important;
 }
 
-/* Fixed aurora overlay — micro pops at the edges, not a wash */
+/* No ambient aurora overlay — keep the field clean */
 body.dc-preview::before {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
   z-index: 0;
-  background:
-    radial-gradient(ellipse 30% 20% at 110% -10%, rgba(244,114,182,0.16) 0%, transparent 60%),
-    radial-gradient(ellipse 25% 18% at -10% 105%, rgba(56,189,248,0.14) 0%, transparent 60%);
-  animation: dcAurora 24s ease-in-out infinite alternate;
+  background: transparent;
 }
 
 /* Very gentle drift — barely perceptible */
@@ -79,10 +69,7 @@ body.dc-preview .app-header {
    but ensure it sticks by re-declaring inside the same media query. */
 @media (max-width: 480px) {
   body.dc-preview {
-    background:
-      radial-gradient(ellipse 100% 60% at 30% 0%, rgba(76,29,149,0.85) 0%, transparent 70%),
-      radial-gradient(ellipse 90% 50% at 80% 25%, rgba(124,58,237,0.45) 0%, transparent 65%),
-      linear-gradient(180deg, #2B1F5E 0%, #161438 55%, #0E0A28 100%) !important;
+    background: #050508 !important;
   }
 }
 
