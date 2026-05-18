@@ -195,16 +195,168 @@ body.dc-preview select:focus {
 body.dc-preview input::placeholder,
 body.dc-preview textarea::placeholder { color: rgba(245,245,247,0.40) !important; }
 
-/* ── 6. Generous but disciplined radius scale ───────────────────────────
-   Less pillowy than the last attempt — more like Instagram's measured
-   roundness. */
-body.dc-preview [style*="border-radius: 6px"]   { border-radius: 10px !important; }
-body.dc-preview [style*="border-radius: 8px"]   { border-radius: 14px !important; }
-body.dc-preview [style*="border-radius: 10px"]  { border-radius: 16px !important; }
-body.dc-preview [style*="border-radius: 12px"]  { border-radius: 20px !important; }
-body.dc-preview [style*="border-radius: 14px"]  { border-radius: 22px !important; }
-body.dc-preview [style*="border-radius: 16px"]  { border-radius: 24px !important; }
-body.dc-preview [style*="border-radius: 20px"]  { border-radius: 28px !important; }
+/* ─────────────────────────────────────────────────────────────────────────
+   6. SHAPE SCALE — discrete tiers, like H1/H2/H3 but for radii
+   ─────────────────────────────────────────────────────────────────────────
+   Collapses ALL existing inline border-radius values into 5 buckets so
+   everything reads as one coherent system. No more 8/10/12/14 differing
+   by 2px each.
+
+     XS (8 px)    — tiny: dots, micro chips, small badges
+     SM (12 px)   — chips, tags, small buttons, inputs
+     MD (18 px)   — standard buttons, list rows
+     LG (22 px)   — cards, modals, panels
+     XL (28 px)   — hero cards, big featured surfaces
+     FULL (9999)  — pills (kept as-is)
+
+   The mapping is range-based: any inline radius in a range collapses to
+   that tier. ──────────────────────────────────────────────────────────── */
+
+/* XS — 0-7 px → 8 */
+body.dc-preview [style*="border-radius: 4px"],
+body.dc-preview [style*="border-radius:4px"],
+body.dc-preview [style*="border-radius: 5px"],
+body.dc-preview [style*="border-radius:5px"],
+body.dc-preview [style*="border-radius: 6px"],
+body.dc-preview [style*="border-radius:6px"],
+body.dc-preview [style*="border-radius: 7px"],
+body.dc-preview [style*="border-radius:7px"]   { border-radius: 8px !important; }
+
+/* SM — 8-11 px → 12 */
+body.dc-preview [style*="border-radius: 8px"],
+body.dc-preview [style*="border-radius:8px"],
+body.dc-preview [style*="border-radius: 9px"],
+body.dc-preview [style*="border-radius:9px"],
+body.dc-preview [style*="border-radius: 10px"],
+body.dc-preview [style*="border-radius:10px"],
+body.dc-preview [style*="border-radius: 11px"],
+body.dc-preview [style*="border-radius:11px"]  { border-radius: 12px !important; }
+
+/* MD — 12-15 px → 18 */
+body.dc-preview [style*="border-radius: 12px"],
+body.dc-preview [style*="border-radius:12px"],
+body.dc-preview [style*="border-radius: 13px"],
+body.dc-preview [style*="border-radius:13px"],
+body.dc-preview [style*="border-radius: 14px"],
+body.dc-preview [style*="border-radius:14px"],
+body.dc-preview [style*="border-radius: 15px"],
+body.dc-preview [style*="border-radius:15px"]  { border-radius: 18px !important; }
+
+/* LG — 16-21 px → 22 */
+body.dc-preview [style*="border-radius: 16px"],
+body.dc-preview [style*="border-radius:16px"],
+body.dc-preview [style*="border-radius: 17px"],
+body.dc-preview [style*="border-radius:17px"],
+body.dc-preview [style*="border-radius: 18px"],
+body.dc-preview [style*="border-radius:18px"],
+body.dc-preview [style*="border-radius: 19px"],
+body.dc-preview [style*="border-radius:19px"],
+body.dc-preview [style*="border-radius: 20px"],
+body.dc-preview [style*="border-radius:20px"],
+body.dc-preview [style*="border-radius: 21px"],
+body.dc-preview [style*="border-radius:21px"]  { border-radius: 22px !important; }
+
+/* XL — 22+ px → 28 */
+body.dc-preview [style*="border-radius: 22px"],
+body.dc-preview [style*="border-radius:22px"],
+body.dc-preview [style*="border-radius: 24px"],
+body.dc-preview [style*="border-radius:24px"],
+body.dc-preview [style*="border-radius: 26px"],
+body.dc-preview [style*="border-radius:26px"]  { border-radius: 28px !important; }
+
+/* FULL pill — keep as-is */
+body.dc-preview [style*="border-radius: 9999px"],
+body.dc-preview [style*="border-radius:9999px"] { border-radius: 9999px !important; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   7. TYPE SCALE — H1/H2/H3 for font sizes
+   ─────────────────────────────────────────────────────────────────────────
+   Same idea applied to typography. Collapses inline font-size into a
+   clean Apple-HIG-style ladder.
+
+     EYEBROW (11) — 9-10 px:      uppercase labels, dot meta
+     CAPTION (12) — 11-12 px:     timestamps, smallest body
+     FOOTNOTE (14) — 13-14 px:    secondary body, captions
+     BODY (15) — 15 px:           default body text
+     CALLOUT (16) — 16 px:        prominent body
+     SUBHEAD (18) — 17-19 px:     list-row primaries
+     TITLE (22) — 20-24 px:       section / screen titles
+     DISPLAY (28) — 25+ px:       heroes, big numbers
+   ───────────────────────────────────────────────────────────────────── */
+
+/* EYEBROW — 9-10 px → 11 */
+body.dc-preview [style*="font-size: 9px"],
+body.dc-preview [style*="font-size:9px"],
+body.dc-preview [style*="font-size: 9.5px"],
+body.dc-preview [style*="font-size:9.5px"],
+body.dc-preview [style*="font-size: 10px"],
+body.dc-preview [style*="font-size:10px"],
+body.dc-preview [style*="font-size: 10.5px"],
+body.dc-preview [style*="font-size:10.5px"] { font-size: 11px !important; }
+
+/* CAPTION — 11-12 px → 12 */
+body.dc-preview [style*="font-size: 11px"],
+body.dc-preview [style*="font-size:11px"],
+body.dc-preview [style*="font-size: 11.5px"],
+body.dc-preview [style*="font-size:11.5px"],
+body.dc-preview [style*="font-size: 12px"],
+body.dc-preview [style*="font-size:12px"]   { font-size: 12px !important; }
+
+/* FOOTNOTE — 12.5-14 px → 14 */
+body.dc-preview [style*="font-size: 12.5px"],
+body.dc-preview [style*="font-size:12.5px"],
+body.dc-preview [style*="font-size: 13px"],
+body.dc-preview [style*="font-size:13px"],
+body.dc-preview [style*="font-size: 13.5px"],
+body.dc-preview [style*="font-size:13.5px"],
+body.dc-preview [style*="font-size: 14px"],
+body.dc-preview [style*="font-size:14px"]   { font-size: 14px !important; }
+
+/* BODY — 14.5-15 px → 15 */
+body.dc-preview [style*="font-size: 14.5px"],
+body.dc-preview [style*="font-size:14.5px"],
+body.dc-preview [style*="font-size: 15px"],
+body.dc-preview [style*="font-size:15px"]   { font-size: 15px !important; }
+
+/* CALLOUT — 15.5-16.5 px → 16 */
+body.dc-preview [style*="font-size: 15.5px"],
+body.dc-preview [style*="font-size:15.5px"],
+body.dc-preview [style*="font-size: 16px"],
+body.dc-preview [style*="font-size:16px"],
+body.dc-preview [style*="font-size: 16.5px"],
+body.dc-preview [style*="font-size:16.5px"] { font-size: 16px !important; }
+
+/* SUBHEAD — 17-19 px → 18 */
+body.dc-preview [style*="font-size: 17px"],
+body.dc-preview [style*="font-size:17px"],
+body.dc-preview [style*="font-size: 18px"],
+body.dc-preview [style*="font-size:18px"],
+body.dc-preview [style*="font-size: 19px"],
+body.dc-preview [style*="font-size:19px"]   { font-size: 18px !important; }
+
+/* TITLE — 20-24 px → 22 */
+body.dc-preview [style*="font-size: 20px"],
+body.dc-preview [style*="font-size:20px"],
+body.dc-preview [style*="font-size: 21px"],
+body.dc-preview [style*="font-size:21px"],
+body.dc-preview [style*="font-size: 22px"],
+body.dc-preview [style*="font-size:22px"],
+body.dc-preview [style*="font-size: 23px"],
+body.dc-preview [style*="font-size:23px"],
+body.dc-preview [style*="font-size: 24px"],
+body.dc-preview [style*="font-size:24px"]   { font-size: 22px !important; }
+
+/* DISPLAY — 25+ → 28 */
+body.dc-preview [style*="font-size: 25px"],
+body.dc-preview [style*="font-size:25px"],
+body.dc-preview [style*="font-size: 26px"],
+body.dc-preview [style*="font-size:26px"],
+body.dc-preview [style*="font-size: 28px"],
+body.dc-preview [style*="font-size:28px"],
+body.dc-preview [style*="font-size: 30px"],
+body.dc-preview [style*="font-size:30px"],
+body.dc-preview [style*="font-size: 32px"],
+body.dc-preview [style*="font-size:32px"]   { font-size: 28px !important; letter-spacing: -0.025em !important; }
 
 /* ── 7. Avatars — clean ring, no gradient flair ────────────────────────── */
 body.dc-preview [style*="border: 1.5px solid rgb(42, 42, 42)"][style*="border-radius: 50%"],
