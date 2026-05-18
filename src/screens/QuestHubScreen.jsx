@@ -5,8 +5,9 @@
 import { useState, useEffect } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
 import { BRANCH_STYLES } from '../lib/constants'
-import { getPointsHistory, redeemPoints, getMembershipUsageSummary } from '../lib/supabase'
+import { getPointsHistory, redeemPoints, getMembershipUsageSummary, getMyStats } from '../lib/supabase'
 import { SAWizardHat, SAGem, SACrown, SATruck, SALock, SABolt, SAGavel, SAFlag, SACircleCheck, SAFire, SADungeon } from '../components/Icons'
+import GameIcon from '../components/GameIcon'
 import Avatar from '../components/Avatar'
 
 // ── Minimal SVG icons ─────────────────────────
@@ -89,6 +90,14 @@ function Icon({ id, size = 24, color = 'currentColor' }) {
   if (id === 'folder') return (
     <svg style={s} viewBox="0 0 24 24" {...p}>
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    </svg>
+  )
+  if (id === 'chart') return (
+    <svg style={s} viewBox="0 0 24 24" {...p}>
+      <line x1="3" y1="20" x2="21" y2="20" />
+      <rect x="5"  y="10" width="3" height="10" rx="0.5" fill={color} />
+      <rect x="10" y="5"  width="3" height="15" rx="0.5" fill={color} />
+      <rect x="15" y="13" width="3" height="7"  rx="0.5" fill={color} />
     </svg>
   )
   if (id === 'heart') return (
@@ -719,6 +728,115 @@ function QPointsView({ profile, onRedeemed }) {
 }
 
 // ── Hub tiles ─────────────────────────────────
+// ── Mi récord — W/L per TCG ──────────────────────────────────────────────
+// Previously lived as a sheet inside ProfileScreen. Lifted into Quest Hub
+// so the profile stays focused on identity while combat stats get their
+// own dedicated space.
+function RecordView() {
+  const [stats,   setStats]   = useState([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    getMyStats()
+      .then(s => { if (!cancelled) setStats(s ?? []) })
+      .catch(() => { if (!cancelled) setStats([]) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  if (loading) return (
+    <div style={{ padding: '40px 20px', textAlign: 'center', color: '#4B5563', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+      Cargando…
+    </div>
+  )
+
+  if (stats.length === 0) return (
+    <div style={{ padding: '60px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+      <div style={{ fontSize: 44 }}>📊</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>
+        Sin partidas confirmadas
+      </div>
+      <div style={{ fontSize: 12.5, color: '#4B5563', fontFamily: 'Inter, sans-serif', lineHeight: 1.5, maxWidth: 280 }}>
+        Una vez que vos y tu rival confirmen una partida, va a aparecer acá con su % de victoria.
+      </div>
+    </div>
+  )
+
+  // Totals across all games
+  const totalWins   = stats.reduce((s, r) => s + (r.wins   || 0), 0)
+  const totalLosses = stats.reduce((s, r) => s + (r.losses || 0), 0)
+  const totalGames  = totalWins + totalLosses
+  const overallPct  = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0
+  const overallColor = overallPct >= 60 ? '#4ADE80' : overallPct >= 40 ? '#FBBF24' : '#F87171'
+
+  return (
+    <div style={{ padding: '12px 16px 32px', fontFamily: 'Inter, sans-serif' }}>
+      {/* Summary card — overall record */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(74,222,128,0.08) 0%, rgba(167,139,250,0.05) 100%)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 14, padding: '16px 18px', marginBottom: 16,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#6B7280', letterSpacing: '0.12em' }}>RÉCORD GLOBAL</div>
+          <div style={{ fontSize: 14, color: '#E5E7EB', marginTop: 6, fontWeight: 600 }}>
+            <span style={{ color: '#4ADE80' }}>{totalWins}V</span>
+            <span style={{ color: '#374151', margin: '0 7px' }}>·</span>
+            <span style={{ color: '#F87171' }}>{totalLosses}D</span>
+            <span style={{ color: '#4B5563', marginLeft: 7, fontSize: 12 }}>en {totalGames} {totalGames === 1 ? 'partida' : 'partidas'}</span>
+          </div>
+        </div>
+        <div style={{
+          fontSize: 26, fontWeight: 800, color: overallColor, fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '-0.02em', lineHeight: 1,
+        }}>
+          {overallPct}<span style={{ fontSize: 14, color: '#6B7280', marginLeft: 1 }}>%</span>
+        </div>
+      </div>
+
+      {/* Per-TCG breakdown */}
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.12em', marginBottom: 10 }}>
+        POR JUEGO
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {stats.map(s => {
+          const pct = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0
+          const color = pct >= 60 ? '#4ADE80' : pct >= 40 ? '#FBBF24' : '#F87171'
+          return (
+            <div key={s.game} style={{
+              background: '#1A1A1A', borderRadius: 12, padding: '12px 14px',
+              border: '1px solid #1F1F1F',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <GameIcon game={s.game} size={16} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>{s.game}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 800 }}>{s.wins}V</span>
+                  <span style={{ fontSize: 11, color: '#333' }}>·</span>
+                  <span style={{ fontSize: 12, color: '#F87171', fontWeight: 800 }}>{s.losses}D</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color, minWidth: 36, textAlign: 'right' }}>{pct}%</span>
+                </div>
+              </div>
+              {/* Win rate bar */}
+              <div style={{ height: 4, borderRadius: 2, background: '#2A2A2A', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2, transition: 'width 0.4s ease' }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div style={{ fontSize: 11, color: '#4B5563', textAlign: 'center', marginTop: 14 }}>
+        Solo cuenta partidas confirmadas por ambos jugadores
+      </div>
+    </div>
+  )
+}
+
 const TILES = [
   {
     id:      'sucursales',
@@ -770,6 +888,16 @@ const TILES = [
     border:  'rgba(52,211,153,0.2)',
     enabled: true,
   },
+  {
+    id:      'record',
+    icon:    'chart',
+    label:   'Mi récord',
+    desc:    'Wins · Losses',
+    color:   '#4ADE80',
+    bg:      'rgba(74,222,128,0.08)',
+    border:  'rgba(74,222,128,0.2)',
+    enabled: true,
+  },
 ]
 
 // ── Main component ────────────────────────────
@@ -786,7 +914,12 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
     setView(tile.id)
   }
 
-  const viewTitle = view === 'sucursales' ? 'Sucursales' : view === 'membresia' ? 'Membresía' : view === 'qpoints' ? 'Q Coins' : ''
+  const viewTitle =
+    view === 'sucursales' ? 'Sucursales'
+    : view === 'membresia' ? 'Membresía'
+    : view === 'qpoints'   ? 'Q Coins'
+    : view === 'record'    ? 'Mi récord'
+    : ''
 
   return (
     <div style={{
@@ -825,6 +958,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
       {view === 'sucursales' && <SucursalesView onBack={() => setView(null)} />}
       {view === 'membresia'  && <MembresiaView profile={profile} />}
       {view === 'qpoints'    && <QPointsView profile={profile} />}
+      {view === 'record'     && <RecordView />}
 
       {/* Main tiles grid */}
       {!view && (
