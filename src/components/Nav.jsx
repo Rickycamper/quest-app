@@ -2,8 +2,13 @@
 // QUEST — BottomNav + NotifBell
 // ─────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react'
-import { HomeIcon, RanksIcon, FolderIcon, TruckIcon, PlusIcon, BellIcon, CounterIcon, UserIcon, ShopIcon } from './Icons'
-import HIcon from './HIcon'
+// Quest's original SVG icons are retained for non-nav surfaces (e.g.
+// NotifBell below). The nav itself now uses Phosphor icons.
+import { BellIcon } from './Icons'
+// Phosphor icons — 9k+ glyphs, 6 weights, MIT. Tree-shaken so only the
+// imports below ship in the bundle (~2 KB each). Active state uses
+// `fill` weight; inactive uses `regular` for a 'lights up' feel.
+import { HouseIcon, ShoppingBagIcon, TrophyIcon, HeartIcon as PhHeartIcon } from '@phosphor-icons/react'
 import Avatar from './Avatar'
 import { HAPTIC } from '../lib/design-tokens'
 
@@ -119,38 +124,29 @@ function OwnerBottomNav({ active, hidden, tabs }) {
 // can host the primary 'crear' action, which is the most engaged-with
 // affordance in a social app.
 export function BottomNav({ active, hidden, onTab, onLifeCounter, onPost, isOwner }) {
-  // Hicon-pack icons — each glyph has its own visual weight (a tall 'home'
-  // outline takes more space than a 'trophy' silhouette at the same px),
-  // so we tune size PER icon to make them feel evenly sized in the bar.
-  // Every tab icon is rendered inside a 28×28 frame; the SVG just fills
-  // a portion of that frame according to its visual density.
-  const Hi = (name, size, fallback) => (a) => (
+  // Helper: render a Phosphor icon inside a fixed 28x28 frame so all four
+  // tabs occupy the same visual footprint regardless of each glyph's shape.
+  // weight switches regular → fill when the tab is active (the icon visibly
+  // 'fills in', a more satisfying activation cue than a color flip alone).
+  const Ph = (Icon) => (a) => (
     <div style={{
       width: 28, height: 28,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      <HIcon
-        name={name}
-        size={size}
+      <Icon
+        size={24}
+        weight={a ? 'fill' : 'regular'}
         color={a ? '#FFFFFF' : '#9CA3AF'}
-        strokeWidth={a ? 2.2 : 1.8}
-        fallback={fallback(a)}
       />
     </div>
   )
 
   const tabs = [
-    // Tuned sizes: home reads tall so we shrink it; trophy + cart have
-    // internal detail so we bump them; heart is balanced.
-    { id: 'feed',  label: 'Feed',     icon: Hi('home',  22, (a) => <HomeIcon active={a} />),    action: () => onTab('feed') },
-    // Shop: tried 'shopping-bag' and 'shopping-cart' — using 'bag' (simpler).
-    // Alternatives in pack: bag-2, bag-3, box, briefcase, gift, package.
-    { id: 'shop',  label: 'Tienda',   icon: Hi('bag',   24, (a) => <ShopIcon active={a} />),    action: () => onTab('shop') },
-    { id: 'post',  label: 'Crear',    icon: null,                                                action: onPost, variant: 'primary' },
-    // Ranking: 'trophy' is NOT in the hicon pack (would fall back silently).
-    // Pack offers: award, flag, star — using 'award' (medal-on-ribbon, iconic).
-    { id: 'ranks', label: 'Ranking',  icon: Hi('award', 24, (a) => <RanksIcon active={a} />),   action: () => onTab('ranks') },
-    { id: 'life',  label: 'Vida',     icon: Hi('heart', 24, (a) => <CounterIcon active={a} />), action: onLifeCounter },
+    { id: 'feed',  label: 'Feed',     icon: Ph(HouseIcon),        action: () => onTab('feed') },
+    { id: 'shop',  label: 'Tienda',   icon: Ph(ShoppingBagIcon),  action: () => onTab('shop') },
+    { id: 'post',  label: 'Crear',    icon: null,                 action: onPost, variant: 'primary' },
+    { id: 'ranks', label: 'Ranking',  icon: Ph(TrophyIcon),       action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: Ph(PhHeartIcon),      action: onLifeCounter },
   ]
   return (
     <OwnerBottomNav

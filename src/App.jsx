@@ -145,6 +145,8 @@ class ErrorBoundary extends Component {
 import { acceptTerms, subscribeToPush, supabase } from './lib/supabase'
 import { BottomNav, NotifBell } from './components/Nav'
 import { ShieldIcon, SearchIcon, DiamondIcon } from './components/Icons'
+// Phosphor — for the admin shield in the header. Tree-shaken individual imports.
+import { ShieldCheckIcon } from '@phosphor-icons/react'
 // NotificationPanel + OnboardingModal + FeatureTour lazy-loaded — none shows on first render
 const NotificationPanel = lazy(() => import('./components/NotificationPanel'))
 const OnboardingModal   = lazy(() => import('./components/OnboardingModal'))
@@ -656,7 +658,7 @@ const needsTerms = profile && !profile.terms_accepted_at
                 color: '#9CA3AF',
                 width: 36, height: 36, padding: 8, lineHeight: 1, // bigger touch target
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}><ShieldIcon size={20} /></button>
+              }}><ShieldCheckIcon size={22} weight="regular" color="#9CA3AF" /></button>
             )}
             {activeTab !== 'shop' && (
               isGuest ? (
