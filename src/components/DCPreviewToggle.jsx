@@ -63,16 +63,34 @@ body.dc-preview .app-header { background: transparent !important; }
   }
 }
 
-/* Kill #0A0A0A backgrounds on layout WRAPPERS only (not modal overlays).
-   The :not() guards exclude full-screen overlays like QuestHubScreen,
-   AdminScreen, AuctionScreen, ProfileScreen overlay, etc. — those need
-   their solid bg to cover what's underneath. Wrappers like the
-   FeedScreen / Rankings root div have neither absolute/fixed position
-   nor a z-index, so they still match and go transparent. */
+/* Layout WRAPPERS (no position / no z-index) → fully transparent so the
+   violet body bg can bleed through. Used by FeedScreen / Rankings root. */
 body.dc-preview [style*="background: rgb(10, 10, 10)"]:not([style*="position: absolute"]):not([style*="position: fixed"]):not([style*="z-index"]),
 body.dc-preview [style*="background:#0A0A0A"]:not([style*="position: absolute"]):not([style*="position: fixed"]):not([style*="z-index"]),
 body.dc-preview [style*="background: #0A0A0A"]:not([style*="position: absolute"]):not([style*="position: fixed"]):not([style*="z-index"]) {
   background: transparent !important;
+}
+
+/* Full-screen MODALS / overlays (Quest Hub, Admin, Auction, Profile
+   overlay, etc.) — same glass recipe as cards but more opaque so the
+   content underneath gets blurred + dimmed, not erased. iOS share-sheet
+   feel: clearly a layered surface, with hints of depth coming through. */
+body.dc-preview [style*="background: rgb(10, 10, 10)"][style*="position: absolute"],
+body.dc-preview [style*="background:#0A0A0A"][style*="position: absolute"],
+body.dc-preview [style*="background: #0A0A0A"][style*="position: absolute"],
+body.dc-preview [style*="background: rgb(10, 10, 10)"][style*="position: fixed"],
+body.dc-preview [style*="background:#0A0A0A"][style*="position: fixed"],
+body.dc-preview [style*="background: #0A0A0A"][style*="position: fixed"] {
+  background:
+    /* Top sheen so the modal has a clear "top edge" */
+    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 8%),
+    /* Translucent black-ish glass — high enough alpha that what's behind
+       reads as 'blurred backdrop', not 'seeing through the wall'. */
+    rgba(12,10,18,0.78) !important;
+  backdrop-filter: blur(40px) saturate(180%) brightness(105%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(105%) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.06) inset !important;
 }
 
 /* ── 1. Cards — premium social glass ────────────────────────────────────
