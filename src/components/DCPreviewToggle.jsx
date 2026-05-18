@@ -116,25 +116,24 @@ body.dc-preview [style*="background:#111"],
 body.dc-preview [style*="background: #111"],
 body.dc-preview [style*="background:#111111"],
 body.dc-preview [style*="background: #111111"] {
-  /* Same recipe as the bottom nav: translucent WHITE fill, heavy blur,
-     hairline white border. The card absorbs the purple bg through the
-     blur instead of carrying a baked tint. */
+  /* Same glass material as the bottom nav (same blur / brightness / border)
+     but with a *light* violet tint so cards visually separate from the nav
+     even though they're the same physical substance. */
   background:
-    /* Top sheen (matches nav's 0.10 alpha) */
+    /* Top sheen */
     linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 35%),
-    /* Translucent white fill — same as nav */
+    /* Soft violet wash + translucent white — the wash is gentle (alpha 0.08)
+       so the bg still bleeds through, but cards now read 'lavender glass'
+       vs the nav's 'clear glass'. */
+    linear-gradient(180deg, rgba(167,139,250,0.10) 0%, rgba(139,92,246,0.06) 100%),
     rgba(255,255,255,0.05) !important;
   backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
   -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(115%) !important;
-  /* Hairline white border — same as nav */
-  border: 0.5px solid rgba(255,255,255,0.22) !important;
+  border: 0.5px solid rgba(196,181,253,0.28) !important;
   border-image: none !important;
   box-shadow:
-    /* Outer drop so the card floats above the bg (nav doesn't need this
-       because it's anchored to the screen edge — cards do) */
     0 18px 40px rgba(0,0,0,0.35),
     0 4px 12px rgba(76,29,149,0.18),
-    /* Inner top + bottom lines — same recipe as nav */
     0 1px 0 rgba(255,255,255,0.18) inset,
     0 -1px 0 rgba(0,0,0,0.18) inset !important;
 }
@@ -148,8 +147,9 @@ body.dc-preview [style*="background:#1F1F1F"],
 body.dc-preview [style*="background: #1F1F1F"] {
   background:
     linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 40%),
+    linear-gradient(180deg, rgba(167,139,250,0.14) 0%, rgba(139,92,246,0.08) 100%),
     rgba(255,255,255,0.08) !important;
-  border-color: rgba(255,255,255,0.26) !important;
+  border-color: rgba(196,181,253,0.32) !important;
 }
 
 /* App background (0A0A0A) → transparent so aurora shows through */
