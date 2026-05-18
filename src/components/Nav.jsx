@@ -119,25 +119,34 @@ function OwnerBottomNav({ active, hidden, tabs }) {
 // can host the primary 'crear' action, which is the most engaged-with
 // affordance in a social app.
 export function BottomNav({ active, hidden, onTab, onLifeCounter, onPost, isOwner }) {
-  // Hicon-pack icons — minimal stroke, MIT/CC-BY licensed, loaded once via CDN.
-  // Fallback to the original Quest icon if hicon's JSON hasn't loaded yet or
-  // the icon name isn't in the pack (failsafe so the nav is never blank).
-  const Hi = (name, fallback) => (a) => (
-    <HIcon
-      name={name}
-      size={26}
-      color={a ? '#FFFFFF' : '#9CA3AF'}
-      strokeWidth={a ? 2.2 : 1.8}
-      fallback={fallback(a)}
-    />
+  // Hicon-pack icons — each glyph has its own visual weight (a tall 'home'
+  // outline takes more space than a 'trophy' silhouette at the same px),
+  // so we tune size PER icon to make them feel evenly sized in the bar.
+  // Every tab icon is rendered inside a 28×28 frame; the SVG just fills
+  // a portion of that frame according to its visual density.
+  const Hi = (name, size, fallback) => (a) => (
+    <div style={{
+      width: 28, height: 28,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <HIcon
+        name={name}
+        size={size}
+        color={a ? '#FFFFFF' : '#9CA3AF'}
+        strokeWidth={a ? 2.2 : 1.8}
+        fallback={fallback(a)}
+      />
+    </div>
   )
 
   const tabs = [
-    { id: 'feed',  label: 'Feed',     icon: Hi('home',           (a) => <HomeIcon active={a} />),    action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Hi('shopping-cart',  (a) => <ShopIcon active={a} />),    action: () => onTab('shop') },
-    { id: 'post',  label: 'Crear',    icon: null,                                                     action: onPost, variant: 'primary' },
-    { id: 'ranks', label: 'Ranking',  icon: Hi('trophy',         (a) => <RanksIcon active={a} />),   action: () => onTab('ranks') },
-    { id: 'life',  label: 'Vida',     icon: Hi('heart',          (a) => <CounterIcon active={a} />), action: onLifeCounter },
+    // Tuned sizes: home reads tall so we shrink it; trophy + cart have
+    // internal detail so we bump them; heart is balanced.
+    { id: 'feed',  label: 'Feed',     icon: Hi('home',          22, (a) => <HomeIcon active={a} />),    action: () => onTab('feed') },
+    { id: 'shop',  label: 'Tienda',   icon: Hi('shopping-cart', 26, (a) => <ShopIcon active={a} />),    action: () => onTab('shop') },
+    { id: 'post',  label: 'Crear',    icon: null,                                                       action: onPost, variant: 'primary' },
+    { id: 'ranks', label: 'Ranking',  icon: Hi('trophy',        26, (a) => <RanksIcon active={a} />),   action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: Hi('heart',         24, (a) => <CounterIcon active={a} />), action: onLifeCounter },
   ]
   return (
     <OwnerBottomNav
