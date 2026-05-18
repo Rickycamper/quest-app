@@ -6,12 +6,13 @@ import { useState, useRef, useEffect } from 'react'
 // NotifBell below). The nav itself now uses Phosphor icons.
 import { BellIcon } from './Icons'
 // Phosphor icons — 9k+ glyphs, 6 weights, MIT. Tree-shaken.
-// TCG-themed nav vocabulary:
-//   Feed     → House          (your hub)
-//   Tienda   → CardsThree     (booster pack / card shop — literal TCG)
-//   Ranking  → Crown          (champion of the leaderboard)
-//   Vida     → Heartbeat      (life points with a pulse line — dynamic)
-import { HouseIcon, CardsThreeIcon, CrownIcon, HeartbeatIcon } from '@phosphor-icons/react'
+// Medieval / fantasy nav family — every icon is from the same imagined world
+// (kingdom + treasure + crown + combat) so they read as one set:
+//   Feed     → Castle    (your fortress / hub of the kingdom)
+//   Tienda   → Coins     (treasury / merchant — gold pairs with the crown)
+//   Ranking  → Crown     (king of the leaderboard)
+//   Vida     → Swords    (combat / duels — Quest IS a TCG community)
+import { CastleTurretIcon, CoinsIcon, CrownIcon, SwordIcon } from '@phosphor-icons/react'
 import Avatar from './Avatar'
 import { HAPTIC } from '../lib/design-tokens'
 
@@ -145,11 +146,11 @@ export function BottomNav({ active, hidden, onTab, onLifeCounter, onPost, isOwne
   )
 
   const tabs = [
-    { id: 'feed',  label: 'Feed',     icon: Ph(HouseIcon),       action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Ph(CardsThreeIcon),  action: () => onTab('shop') },
-    { id: 'post',  label: 'Crear',    icon: null,                action: onPost, variant: 'primary' },
-    { id: 'ranks', label: 'Ranking',  icon: Ph(CrownIcon),       action: () => onTab('ranks') },
-    { id: 'life',  label: 'Vida',     icon: Ph(HeartbeatIcon),   action: onLifeCounter },
+    { id: 'feed',  label: 'Feed',     icon: Ph(CastleTurretIcon), action: () => onTab('feed') },
+    { id: 'shop',  label: 'Tienda',   icon: Ph(CoinsIcon),    action: () => onTab('shop') },
+    { id: 'post',  label: 'Crear',    icon: null,             action: onPost, variant: 'primary' },
+    { id: 'ranks', label: 'Ranking',  icon: Ph(CrownIcon),    action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: Ph(SwordIcon),    action: onLifeCounter },
   ]
   return (
     <OwnerBottomNav
