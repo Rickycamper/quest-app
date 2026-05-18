@@ -142,11 +142,15 @@ export function BottomNav({ active, hidden, onTab, onLifeCounter, onPost, isOwne
   const tabs = [
     // Tuned sizes: home reads tall so we shrink it; trophy + cart have
     // internal detail so we bump them; heart is balanced.
-    { id: 'feed',  label: 'Feed',     icon: Hi('home',          22, (a) => <HomeIcon active={a} />),    action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Hi('shopping-cart', 26, (a) => <ShopIcon active={a} />),    action: () => onTab('shop') },
-    { id: 'post',  label: 'Crear',    icon: null,                                                       action: onPost, variant: 'primary' },
-    { id: 'ranks', label: 'Ranking',  icon: Hi('trophy',        26, (a) => <RanksIcon active={a} />),   action: () => onTab('ranks') },
-    { id: 'life',  label: 'Vida',     icon: Hi('heart',         24, (a) => <CounterIcon active={a} />), action: onLifeCounter },
+    { id: 'feed',  label: 'Feed',     icon: Hi('home',  22, (a) => <HomeIcon active={a} />),    action: () => onTab('feed') },
+    // Shop: tried 'shopping-bag' and 'shopping-cart' — using 'bag' (simpler).
+    // Alternatives in pack: bag-2, bag-3, box, briefcase, gift, package.
+    { id: 'shop',  label: 'Tienda',   icon: Hi('bag',   24, (a) => <ShopIcon active={a} />),    action: () => onTab('shop') },
+    { id: 'post',  label: 'Crear',    icon: null,                                                action: onPost, variant: 'primary' },
+    // Ranking: 'trophy' is NOT in the hicon pack (would fall back silently).
+    // Pack offers: award, flag, star — using 'award' (medal-on-ribbon, iconic).
+    { id: 'ranks', label: 'Ranking',  icon: Hi('award', 24, (a) => <RanksIcon active={a} />),   action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: Hi('heart', 24, (a) => <CounterIcon active={a} />), action: onLifeCounter },
   ]
   return (
     <OwnerBottomNav
