@@ -152,6 +152,7 @@ const FeatureTour       = lazy(() => import('./components/FeatureTour'))
 import Avatar from './components/Avatar'
 import InstallPrompt from './components/InstallPrompt'
 import OfflineBanner from './components/OfflineBanner'
+import DCPreviewToggle from './components/DCPreviewToggle'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 
@@ -758,6 +759,9 @@ const needsTerms = profile && !profile.terms_accepted_at
       />
       {/* PWA install prompt — auto-shows on Android Chrome and iOS Safari (with a tip). */}
       <InstallPrompt />
+      {/* Design Code UI preview toggle — renders only when isOwner=true.
+          Floating pill, no impact on other users. Pure visual experiment. */}
+      <DCPreviewToggle isOwner={isOwner} />
     </Suspense>
   )
 }
