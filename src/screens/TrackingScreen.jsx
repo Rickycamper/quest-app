@@ -119,6 +119,9 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, curren
   const [deleting,   setDeleting]   = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
   const [cardErr,    setCardErr]    = useState('')
+  // Lightbox — when tapped, the package image opens fullscreen so the
+  // user can actually see what's inside (instead of just a 200 px crop).
+  const [lightbox,   setLightbox]   = useState(false)
 
   const handleAdminDelete = async () => {
     if (!confirmDel) { setConfirmDel(true); return }
@@ -253,11 +256,89 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, curren
       {expanded && (
         <div style={{ borderTop: '1px solid #1A1A1A', padding: '12px 16px' }}>
 
-          {/* Package photo */}
+          {/* Package photo — tap to open fullscreen lightbox.
+              The thumbnail uses object-fit: cover at 200 px max (often crops
+              the photo), so without the lightbox users only see a slice of
+              what was actually packed. */}
           {pkg.image_url && (
-            <div style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', background: '#0A0A0A' }}>
+            <button
+              onClick={() => setLightbox(true)}
+              aria-label="Ver imagen completa"
+              style={{
+                marginBottom: 12, borderRadius: 8, overflow: 'hidden',
+                background: '#0A0A0A', cursor: 'pointer', padding: 0,
+                border: 'none', width: '100%', display: 'block',
+                position: 'relative',
+              }}
+            >
               <img src={pkg.image_url} alt="Contenido del paquete"
-                style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />
+                style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
+              {/* Hint chip: 'Ver completa' so users know it's tappable */}
+              <span style={{
+                position: 'absolute', bottom: 8, right: 8,
+                padding: '4px 9px', borderRadius: 6,
+                background: 'rgba(0,0,0,0.55)',
+                color: '#FFFFFF', fontSize: 10, fontWeight: 700,
+                fontFamily: 'Inter, sans-serif', letterSpacing: '0.02em',
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                pointerEvents: 'none',
+              }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 3 21 3 21 9"/>
+                  <polyline points="9 21 3 21 3 15"/>
+                  <line x1="21" y1="3" x2="14" y2="10"/>
+                  <line x1="3" y1="21" x2="10" y2="14"/>
+                </svg>
+                Ver completa
+              </span>
+            </button>
+          )}
+
+          {/* Lightbox modal — full-bleed image, tap anywhere to close */}
+          {lightbox && pkg.image_url && (
+            <div
+              onClick={() => setLightbox(false)}
+              style={{
+                position: 'fixed', inset: 0, zIndex: 9999,
+                background: 'rgba(0,0,0,0.92)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: 16, cursor: 'zoom-out',
+                animation: 'fadeUp 0.18s ease',
+              }}
+            >
+              <img
+                src={pkg.image_url}
+                alt="Contenido del paquete (completo)"
+                style={{
+                  maxWidth: '100%', maxHeight: '92%',
+                  objectFit: 'contain', display: 'block',
+                  borderRadius: 12,
+                  boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
+                }}
+                // Stop the close-on-tap when tapping the image itself, so users
+                // can pinch-zoom without dismissing.
+                onClick={(e) => e.stopPropagation()}
+              />
+              {/* Close button (also closes on bg tap) */}
+              <button
+                onClick={() => setLightbox(false)}
+                aria-label="Cerrar"
+                style={{
+                  position: 'absolute', top: 'calc(20px + env(safe-area-inset-top, 0px))', right: 20,
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.10)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '0.5px solid rgba(255,255,255,0.20)',
+                  color: '#FFFFFF', fontSize: 20, lineHeight: 1, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >×</button>
             </div>
           )}
 

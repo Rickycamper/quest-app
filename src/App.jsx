@@ -525,10 +525,29 @@ const needsTerms = profile && !profile.terms_accepted_at
       )}
       {showTracking && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 200, background: '#0A0A0A', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)', animation: 'slideUp 0.22s ease' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px 12px', background: '#0D0D0D', borderBottom: '1px solid #1A1A1A', flexShrink: 0 }}>
-            <button onClick={() => setShowTracking(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, padding: '0 2px' }}>←</button>
-            <span style={{ fontSize: 17, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>Tracking</span>
-          </div>
+          {/* Header — refined for admin/owner, original for everyone else */}
+          {(isOwner || isAdmin) ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '14px 16px 12px', flexShrink: 0,
+              background: 'rgba(255,255,255,0.03)',
+              borderBottom: '0.5px solid rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(20px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            }}>
+              <button onClick={() => setShowTracking(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 22, lineHeight: 1, padding: '0 2px' }}>‹</button>
+              <span style={{
+                fontSize: 17, fontWeight: 700, color: '#FFFFFF',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif',
+                letterSpacing: '-0.015em',
+              }}>Tracking</span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px 12px', background: '#0D0D0D', borderBottom: '1px solid #1A1A1A', flexShrink: 0 }}>
+              <button onClick={() => setShowTracking(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, padding: '0 2px' }}>←</button>
+              <span style={{ fontSize: 17, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>Tracking</span>
+            </div>
+          )}
           <div style={{ flex: 1, overflowY: 'auto' }}>
             <TrackingScreen profile={profile} isStaff={isStaff} onNewPackage={() => setShowPackageCreate(true)} refreshKey={packageRefreshKey} />
           </div>
