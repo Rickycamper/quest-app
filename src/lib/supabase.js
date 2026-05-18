@@ -99,14 +99,21 @@ if (!__supabaseClient) {
         const s = typeof url === 'string' ? url : ''
         const isStorage = s.includes('/storage/v1/')
         const isAuth    = s.includes('/auth/v1/')
-        // Auth & storage ops get 60 s; regular API calls get 30 s
-        const ms = isStorage || isAuth ? 60_000 : 30_000
+        // Mutations (POST/PATCH/PUT/DELETE) get a longer leash than reads
+        // because Safari iOS on cellular can stall for 20+ seconds before
+        // the request actually completes — and aborting mid-mutation leaves
+        // the user with a misleading "verificá tu internet" toast.
+        const method = (options?.method || 'GET').toUpperCase()
+        const isMutation = method !== 'GET' && method !== 'HEAD'
+        const ms = isStorage || isAuth ? 60_000 : (isMutation ? 60_000 : 30_000)
+
         const ctrl = new AbortController()
+        let timedOutByUs = false
+
         // Respect Supabase's own abort signal if it passes one.
         // IMPORTANT: If the original signal is already aborted, do NOT call
         // fetch() — Safari iOS throws "TypeError: load failed" instead of
-        // AbortError when fetch() receives an already-aborted signal, and
-        // that error bubbles up as a hard error to the user.
+        // AbortError when fetch() receives an already-aborted signal.
         const orig = options?.signal
         if (orig) {
           if (orig.aborted) {
@@ -116,17 +123,40 @@ if (!__supabaseClient) {
           }
           orig.addEventListener('abort', () => ctrl.abort(), { once: true })
         }
-        const id = setTimeout(() => ctrl.abort(), ms)
+        const id = setTimeout(() => { timedOutByUs = true; ctrl.abort() }, ms)
+
         return fetch(url, { ...options, signal: ctrl.signal })
           .catch(err => {
-            // Normalise platform-specific network errors into a consistent
-            // NetworkError so callers can show a friendly message:
-            //  • Safari iOS  → "TypeError: Load failed"
-            //  • Chrome      → "TypeError: Failed to fetch"
-            //  • Firefox     → "TypeError: NetworkError when attempting to fetch resource"
+            // Normalise platform-specific network errors into a NetworkError
+            // with a *truthful* friendly message. We used to slap
+            // "verificá tu internet" on every TypeError: Load failed — but
+            // Safari iOS throws that for many reasons (timeout, CORS,
+            // stale session, server stall) so the message lied to users
+            // who were actually online.
+            //
+            //  • Safari iOS → "TypeError: Load failed"
+            //  • Chrome     → "TypeError: Failed to fetch"
+            //  • Firefox    → "TypeError: NetworkError when attempting to fetch resource"
             if (err?.name === 'TypeError' && /load failed|failed to fetch|networkerror/i.test(err?.message)) {
-              const ne = new TypeError('Error de conexión. Verificá tu internet.')
+              const isOnline = typeof navigator === 'undefined' ? true : navigator.onLine !== false
+              let friendlyMsg, kind
+              if (timedOutByUs) {
+                // We aborted because the request didn't finish in time.
+                // 95 % of the time on iPhone Safari this is the actual cause.
+                friendlyMsg = 'La operación tardó demasiado. Intentá de nuevo en unos segundos.'
+                kind = 'timeout'
+              } else if (!isOnline) {
+                friendlyMsg = 'Sin conexión. Verificá tu internet e intentá de nuevo.'
+                kind = 'offline'
+              } else {
+                // Online but the request failed — server, CORS, auth refresh,
+                // ITP, etc. Don't claim it's the user's internet.
+                friendlyMsg = 'No se pudo conectar al servidor. Intentá de nuevo en unos segundos.'
+                kind = 'server'
+              }
+              const ne = new TypeError(friendlyMsg)
               ne.isNetworkError = true
+              ne.networkErrorKind = kind
               ne.cause = err
               throw ne
             }
