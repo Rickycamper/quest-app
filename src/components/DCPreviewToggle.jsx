@@ -1,135 +1,110 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// QUEST — Design Code UI Preview (owner-only, experimental)
+// QUEST — Premium Social Dark (owner-only preview overlay)
 //
-// Re-skins the live app with a "designcode.io" vibe (Meng To's UI kit):
-// glassmorphism cards, aurora gradient background, vibrant gradient buttons,
-// pill-style active tabs, gradient avatar rings, soft multi-layer shadows
-// with color tints, big rounded radii, refined typography.
+// Design philosophy:
+//   • Refined glass, not theatrical. No multi-color blooms inside cards,
+//     no aurora landscapes — just clean translucent surfaces with proper
+//     depth so the content (avatars, photos, text) is the protagonist.
+//   • One signature accent: indigo. Used sparingly on focus rings, active
+//     states, and a single ambient light source in the top-right of the
+//     viewport. Everywhere else stays neutral.
+//   • Generous but disciplined: 24-28px radius, hairline borders, real
+//     multi-layer shadows. Premium = restraint.
+//   • Typography stays as-is (SF Pro system stack already gives the
+//     premium feel). We just make sure nothing competes with it.
+//   • iPhone Control Center DNA: heavy blur + slight saturation boost,
+//     translucent white fills that absorb whatever's behind them.
 //
-// Owner-only. Floating pill in the corner. Tap → CSS injects. Tap again →
-// snaps back. No component or logic changes anywhere in the codebase.
+// Owner-only. Pure CSS overlay. Tap the 🎨 bubble to toggle. Storage in
+// localStorage. No component or logic changes.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useEffect } from 'react'
 
 const STORAGE_KEY = 'quest_dc_preview'
 
-// ─── The DC stylesheet ──────────────────────────────────────────────────────
-// Strategy notes:
-//   • body.dc-preview is the guard — every selector is scoped to it so
-//     nothing leaks when the toggle is off.
-//   • For inline-style backgrounds we use attribute selectors targeting the
-//     exact rgb()/hex strings React renders. !important is necessary to
-//     beat inline style specificity.
-//   • Tag selectors (input, textarea, button) catch generic surfaces.
-//   • A fixed aurora overlay sits below #root for that "ambient depth".
-//   • Pill-style active tab is faked with a glow ring on the icon container.
-// ─────────────────────────────────────────────────────────────────────────────
 const DC_CSS = `
-/* ── 0. Base palette — pure black ──────────────────────────────────────── */
+/* ── 0. Base — deep neutral with one indigo light source ──────────────── */
 body.dc-preview {
-  /* Pure dark. All the color comes from the cards' internal blooms — the
-     bg stays out of the way. */
-  background: #050508 !important;
+  background:
+    /* Single ambient light, top-right. Very faint — feels like a window
+       at the edge of the room, not a sky. */
+    radial-gradient(ellipse 70% 50% at 100% -10%, rgba(99,102,241,0.10) 0%, transparent 60%),
+    /* Tiny warm counter-glow bottom-left to balance the cool top-right.
+       Helps the page not feel one-note. */
+    radial-gradient(ellipse 50% 40% at 0% 110%, rgba(244,114,182,0.04) 0%, transparent 70%),
+    #0A0A0F !important;
   background-attachment: fixed !important;
   color: #F5F5F7 !important;
 }
 
-/* No ambient aurora overlay — keep the field clean */
 body.dc-preview::before {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
   z-index: 0;
+  /* No aurora — keep the field clean. The bg gradients above already
+     do all the ambient work. */
   background: transparent;
 }
 
-/* Very gentle drift — barely perceptible */
-@keyframes dcAurora {
-  0%   { transform: translate3d(0, 0, 0) scale(1); opacity: 0.85; }
-  50%  { transform: translate3d(-1%, 0.5%, 0) scale(1.02); opacity: 1; }
-  100% { transform: translate3d(0.8%, -0.4%, 0) scale(1.03); opacity: 0.9; }
-}
-
-body.dc-preview #root {
-  background: transparent !important;
-  position: relative;
-  z-index: 1;
-}
-
+body.dc-preview #root { background: transparent !important; position: relative; z-index: 1; }
 body.dc-preview .screen-scroll,
 body.dc-preview .filter-scroll,
 body.dc-preview .phone,
 body.dc-preview .phone-wrap,
-body.dc-preview .app-header {
-  background: transparent !important;
-}
+body.dc-preview .app-header { background: transparent !important; }
 
-/* On mobile, a media query in App.jsx overrides body { background: #0A0A0A }.
-   Our body.dc-preview wins on specificity (1,0,1 vs 0,0,1) + !important,
-   but ensure it sticks by re-declaring inside the same media query. */
 @media (max-width: 480px) {
   body.dc-preview {
-    background: #050508 !important;
+    background:
+      radial-gradient(ellipse 70% 50% at 100% -10%, rgba(99,102,241,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 0% 110%, rgba(244,114,182,0.04) 0%, transparent 70%),
+      #0A0A0F !important;
   }
 }
 
-/* Catch any inline #0A0A0A / #000 / near-black wrapper that React is
-   painting between the body and the cards. Without this the purple bg
-   never makes it past the screen container, and posts feel like they're
-   floating on black. The MOST visible offender is each ScreenContainer
-   div in App.jsx that wraps the active screen. */
+/* Kill any other dark inline-background wrappers between body and cards */
 body.dc-preview [style*="background: rgb(10, 10, 10)"],
 body.dc-preview [style*="background:#0A0A0A"],
 body.dc-preview [style*="background: #0A0A0A"],
-body.dc-preview [style*="background:#0a0a0a"],
-body.dc-preview [style*="background: #0a0a0a"],
 body.dc-preview [style*="background: rgb(0, 0, 0)"],
 body.dc-preview [style*="background:#000"],
 body.dc-preview [style*="background: #000"],
 body.dc-preview [style*="background:#000000"],
 body.dc-preview [style*="background: #000000"],
 body.dc-preview [style*="background-color: rgb(10, 10, 10)"],
-body.dc-preview [style*="background-color:#0A0A0A"],
-body.dc-preview [style*="background-color: #0A0A0A"] {
+body.dc-preview [style*="background-color:#0A0A0A"] {
   background: transparent !important;
   background-color: transparent !important;
 }
 
-/* ── 1. Designcode card recipe — tinted glass with gradient hairline ─────── */
-/* Closer to the designcode.io reference: not pure-white frosted (which goes
-   bright on dark bg) but a slightly purple-tinted dark glass with a VISIBLE
-   gradient hairline border that catches light at the top and falls into
-   shadow at the bottom — the signature 'Liquid Glass' edge. */
+/* ── 1. Cards — premium social glass ────────────────────────────────────
+   Translucent white at 4-7% alpha + a soft top sheen + a hairline border
+   tinted very slightly indigo. Heavy blur so the bg's ambient light shows
+   through naturally. Multi-layer shadow with indigo undertone — that's
+   what makes the cards feel like real objects floating, not flat panels. */
 body.dc-preview [style*="background: rgb(17, 17, 17)"],
 body.dc-preview [style*="background:#111"],
 body.dc-preview [style*="background: #111"],
 body.dc-preview [style*="background:#111111"],
 body.dc-preview [style*="background: #111111"] {
-  /* Deep glass with INTERNAL color blooms — orange top-left, pink center,
-     indigo right. Same trick the designcode pricing card uses: dark base
-     + multiple radial gradients scattered inside the surface so each card
-     reads as a self-contained "light show". */
   background:
-    /* Internal color blooms — these live INSIDE each card, not behind it */
-    radial-gradient(ellipse 70% 50% at 20% 20%, rgba(251,146,60,0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 60% at 80% 30%, rgba(236,72,153,0.16) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 50% 80%, rgba(99,102,241,0.20) 0%, transparent 60%),
-    /* Dark base — gives the blooms something to glow against */
-    linear-gradient(180deg, rgba(20,15,38,0.85) 0%, rgba(8,6,20,0.92) 100%) !important;
-  backdrop-filter: blur(40px) saturate(170%) !important;
-  -webkit-backdrop-filter: blur(40px) saturate(170%) !important;
-  /* Very subtle border — almost invisible, like the reference */
-  border: 0.5px solid rgba(255,255,255,0.06) !important;
+    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 28%),
+    rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(40px) saturate(180%) brightness(110%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(110%) !important;
+  border: 0.5px solid rgba(255,255,255,0.10) !important;
   border-image: none !important;
   box-shadow:
-    /* Long soft drop — cards float on the dark bg */
-    0 20px 48px rgba(0,0,0,0.50),
-    0 6px 14px rgba(76,29,149,0.18),
-    /* Subtle inner refraction */
-    0 1px 0 rgba(255,255,255,0.06) inset !important;
+    0 12px 32px rgba(0,0,0,0.45),
+    0 4px 12px rgba(0,0,0,0.25),
+    /* A whisper of indigo so cards feel cohesive with the bg's light */
+    0 2px 12px rgba(99,102,241,0.08),
+    0 1px 0 rgba(255,255,255,0.10) inset,
+    0 -1px 0 rgba(0,0,0,0.15) inset !important;
 }
 
-/* Raised surfaces (#1A1A1A / #1F1F1F) — same blooms, brighter base */
+/* Raised surfaces (#1A1A1A / #1F1F1F) — same recipe, slightly more lift */
 body.dc-preview [style*="background: rgb(26, 26, 26)"],
 body.dc-preview [style*="background:#1A1A1A"],
 body.dc-preview [style*="background: #1A1A1A"],
@@ -137,205 +112,132 @@ body.dc-preview [style*="background: rgb(31, 31, 31)"],
 body.dc-preview [style*="background:#1F1F1F"],
 body.dc-preview [style*="background: #1F1F1F"] {
   background:
-    radial-gradient(ellipse 70% 50% at 20% 20%, rgba(251,146,60,0.22) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 60% at 80% 30%, rgba(236,72,153,0.20) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 50% 80%, rgba(99,102,241,0.24) 0%, transparent 60%),
-    linear-gradient(180deg, rgba(28,22,50,0.85) 0%, rgba(14,10,28,0.90) 100%) !important;
-  border-color: rgba(255,255,255,0.08) !important;
+    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 32%),
+    rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.13) !important;
 }
 
-/* App background (0A0A0A) → transparent so aurora shows through */
-body.dc-preview [style*="background: rgb(10, 10, 10)"],
-body.dc-preview [style*="background:#0A0A0A"],
-body.dc-preview [style*="background: #0A0A0A"] {
-  background: transparent !important;
+/* ── 2. Header — flat glass, restrained ───────────────────────────────── */
+body.dc-preview [style*="rgba(10, 10, 10, 0.95)"],
+body.dc-preview [style*="rgba(10,10,10,0.95)"] {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 100%),
+    rgba(255,255,255,0.03) !important;
+  backdrop-filter: blur(48px) saturate(180%) brightness(108%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(180%) brightness(108%) !important;
+  border-bottom: 0.5px solid rgba(255,255,255,0.08) !important;
+  box-shadow: none !important;
 }
 
-/* ── 2. Primary buttons (white) → purple-pink gradient with glow ────────── */
+/* ── 3. Bottom nav — same flat glass treatment ────────────────────────── */
+body.dc-preview [style*="rgba(10, 10, 10, 0.82)"],
+body.dc-preview [style*="rgba(10,10,10,0.82)"] {
+  background:
+    linear-gradient(0deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 100%),
+    rgba(255,255,255,0.03) !important;
+  backdrop-filter: blur(48px) saturate(180%) brightness(108%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(180%) brightness(108%) !important;
+  border-top: 0.5px solid rgba(255,255,255,0.08) !important;
+  box-shadow: none !important;
+}
+
+/* ── 4. Primary buttons — clean white, premium not flashy ──────────────── */
 body.dc-preview button[style*="background: rgb(255, 255, 255)"],
 body.dc-preview button[style*="background:#FFFFFF"],
 body.dc-preview button[style*="background: #FFFFFF"],
 body.dc-preview button[style*="background:#FFF"],
 body.dc-preview button[style*="background: #FFF"] {
-  background: linear-gradient(135deg, #A78BFA 0%, #F472B6 60%, #FB923C 130%) !important;
-  background-size: 200% 200% !important;
-  color: #FFFFFF !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(245,245,247,1) 100%) !important;
+  color: #0A0A0F !important;
   border: 0 !important;
   box-shadow:
-    0 10px 28px rgba(167,139,250,0.40),
-    0 4px 10px rgba(236,72,153,0.25),
-    0 1px 0 rgba(255,255,255,0.35) inset,
-    0 -1px 0 rgba(0,0,0,0.25) inset !important;
-  text-shadow: 0 1px 0 rgba(0,0,0,0.18) !important;
-  transition: background-position 600ms ease, transform 200ms cubic-bezier(0.34,1.56,0.64,1) !important;
+    0 1px 0 rgba(255,255,255,0.5) inset,
+    0 -1px 0 rgba(0,0,0,0.10) inset,
+    0 6px 16px rgba(0,0,0,0.30),
+    0 0 0 0.5px rgba(255,255,255,0.6) !important;
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms ease !important;
 }
-body.dc-preview button[style*="background: rgb(255, 255, 255)"]:hover,
-body.dc-preview button[style*="background:#FFFFFF"]:hover,
-body.dc-preview button[style*="background: #FFFFFF"]:hover,
-body.dc-preview button[style*="background:#FFF"]:hover,
-body.dc-preview button[style*="background: #FFF"]:hover {
-  background-position: 100% 50% !important;
+body.dc-preview button[style*="background: rgb(255, 255, 255)"]:active,
+body.dc-preview button[style*="background:#FFFFFF"]:active,
+body.dc-preview button[style*="background: #FFFFFF"]:active {
+  transform: scale(0.97) !important;
 }
 
-/* Secondary / outlined buttons get a glass tint */
+/* Secondary buttons — glass pill with hairline */
 body.dc-preview button[style*="border: 1.5px solid rgb(42, 42, 42)"],
 body.dc-preview button[style*="border: 1px solid rgb(42, 42, 42)"] {
-  border-color: rgba(255,255,255,0.12) !important;
   background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.12) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
 }
 
-/* ── 3. Bottom nav — same deep glass recipe as cards ────────────────────── */
-body.dc-preview [style*="rgba(10, 10, 10, 0.82)"],
-body.dc-preview [style*="rgba(10,10,10,0.82)"] {
-  background:
-    radial-gradient(ellipse 80% 100% at 50% 50%, rgba(99,102,241,0.10) 0%, transparent 70%),
-    linear-gradient(180deg, rgba(20,15,38,0.75) 0%, rgba(8,6,20,0.92) 100%) !important;
-  backdrop-filter: blur(48px) saturate(200%) brightness(110%) !important;
-  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(110%) !important;
-  border-top: 0.5px solid rgba(255,255,255,0.10) !important;
-  box-shadow:
-    0 -1px 0 rgba(255,255,255,0.08) inset,
-    0 1px 0 rgba(0,0,0,0.20) inset !important;
-}
-
-/* ── 3b. Top app header — same recipe as nav ──────────────────────────── */
-body.dc-preview [style*="rgba(10, 10, 10, 0.95)"],
-body.dc-preview [style*="rgba(10,10,10,0.95)"] {
-  background:
-    radial-gradient(ellipse 80% 100% at 50% 50%, rgba(99,102,241,0.10) 0%, transparent 70%),
-    linear-gradient(180deg, rgba(20,15,38,0.85) 0%, rgba(8,6,20,0.92) 100%) !important;
-  backdrop-filter: blur(48px) saturate(200%) brightness(110%) !important;
-  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(110%) !important;
-  border-bottom: 0.5px solid rgba(255,255,255,0.10) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.08) inset,
-    0 -1px 0 rgba(0,0,0,0.20) inset !important;
-}
-
-/* ── 4. Inputs — iOS frosted input bar ───────────────────────────────── */
+/* ── 5. Inputs — same glass, indigo focus accent ───────────────────────── */
 body.dc-preview input,
 body.dc-preview textarea,
 body.dc-preview select {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 50%),
-    rgba(255,255,255,0.06) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  border: 0.5px solid rgba(255,255,255,0.18) !important;
+  background: rgba(255,255,255,0.04) !important;
+  border: 0.5px solid rgba(255,255,255,0.12) !important;
   color: #F5F5F7 !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.10) inset,
-    0 -1px 0 rgba(0,0,0,0.15) inset !important;
-  transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset !important;
+  transition: border-color 220ms ease, box-shadow 220ms ease !important;
 }
 body.dc-preview input:focus,
 body.dc-preview textarea:focus,
 body.dc-preview select:focus {
-  border-color: rgba(167,139,250,0.55) !important;
+  border-color: rgba(99,102,241,0.6) !important;
   box-shadow:
-    0 0 0 4px rgba(167,139,250,0.22),
-    0 0 24px rgba(167,139,250,0.18),
-    0 1px 0 rgba(255,255,255,0.14) inset !important;
+    0 0 0 3px rgba(99,102,241,0.20),
+    0 1px 0 rgba(255,255,255,0.08) inset !important;
   outline: none !important;
 }
 body.dc-preview input::placeholder,
-body.dc-preview textarea::placeholder {
-  color: rgba(245,245,247,0.40) !important;
-}
+body.dc-preview textarea::placeholder { color: rgba(245,245,247,0.40) !important; }
 
-/* ── 5. Generous radius — designcode card signature ────────────────────── */
-body.dc-preview [style*="border-radius: 6px"],
-body.dc-preview [style*="border-radius:6px"]   { border-radius: 12px !important; }
-body.dc-preview [style*="border-radius: 8px"],
-body.dc-preview [style*="border-radius:8px"]   { border-radius: 16px !important; }
-body.dc-preview [style*="border-radius: 10px"],
-body.dc-preview [style*="border-radius:10px"]  { border-radius: 20px !important; }
-body.dc-preview [style*="border-radius: 12px"],
-body.dc-preview [style*="border-radius:12px"]  { border-radius: 24px !important; }
-body.dc-preview [style*="border-radius: 14px"],
-body.dc-preview [style*="border-radius:14px"]  { border-radius: 26px !important; }
-body.dc-preview [style*="border-radius: 16px"],
-body.dc-preview [style*="border-radius:16px"]  { border-radius: 30px !important; }
-body.dc-preview [style*="border-radius: 20px"],
-body.dc-preview [style*="border-radius:20px"]  { border-radius: 34px !important; }
+/* ── 6. Generous but disciplined radius scale ───────────────────────────
+   Less pillowy than the last attempt — more like Instagram's measured
+   roundness. */
+body.dc-preview [style*="border-radius: 6px"]   { border-radius: 10px !important; }
+body.dc-preview [style*="border-radius: 8px"]   { border-radius: 14px !important; }
+body.dc-preview [style*="border-radius: 10px"]  { border-radius: 16px !important; }
+body.dc-preview [style*="border-radius: 12px"]  { border-radius: 20px !important; }
+body.dc-preview [style*="border-radius: 14px"]  { border-radius: 22px !important; }
+body.dc-preview [style*="border-radius: 16px"]  { border-radius: 24px !important; }
+body.dc-preview [style*="border-radius: 20px"]  { border-radius: 28px !important; }
 
-/* Pills (full radius 9999) stay full — but make them clearly pill */
-body.dc-preview [style*="border-radius: 9999"] {
-  border-radius: 9999px !important;
-}
-
-/* ── 6. Avatars — gradient ring ─────────────────────────────────────────── */
-/* Targets the avatar container divs across the app */
+/* ── 7. Avatars — clean ring, no gradient flair ────────────────────────── */
 body.dc-preview [style*="border: 1.5px solid rgb(42, 42, 42)"][style*="border-radius: 50%"],
 body.dc-preview [style*="border: 2px solid rgb(42, 42, 42)"][style*="border-radius: 50%"],
 body.dc-preview [style*="border: 1px solid rgb(42, 42, 42)"][style*="border-radius: 50%"] {
-  background:
-    linear-gradient(rgba(20,20,28,1), rgba(20,20,28,1)) padding-box,
-    linear-gradient(135deg, #A78BFA, #F472B6) border-box !important;
-  border: 1.5px solid transparent !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.35),
+    0 0 0 1px rgba(0,0,0,0.3) !important;
 }
 
-/* ── 7. Game / branch chips — punchier ──────────────────────────────────── */
-/* The faded brand pills (rgba(*,0.10)) get a brighter background */
+/* ── 8. Brand-color chips get a soft lift ──────────────────────────────── */
 body.dc-preview [style*="rgba(167,139,250,0.10)"],
 body.dc-preview [style*="rgba(167, 139, 250, 0.10)"] {
-  background: linear-gradient(135deg, rgba(167,139,250,0.20) 0%, rgba(167,139,250,0.08) 100%) !important;
-}
-body.dc-preview [style*="rgba(56,189,248,0.10)"],
-body.dc-preview [style*="rgba(56, 189, 248, 0.10)"] {
-  background: linear-gradient(135deg, rgba(56,189,248,0.22) 0%, rgba(56,189,248,0.08) 100%) !important;
-}
-body.dc-preview [style*="rgba(251,146,60,0.10)"],
-body.dc-preview [style*="rgba(251, 146, 60, 0.10)"] {
-  background: linear-gradient(135deg, rgba(251,146,60,0.22) 0%, rgba(251,146,60,0.08) 100%) !important;
-}
-body.dc-preview [style*="rgba(245,158,11,0.12)"],
-body.dc-preview [style*="rgba(245, 158, 11, 0.12)"] {
-  background: linear-gradient(135deg, rgba(245,158,11,0.22) 0%, rgba(251,191,36,0.10) 100%) !important;
+  background: rgba(167,139,250,0.15) !important;
+  box-shadow: 0 0 16px rgba(167,139,250,0.10) !important;
 }
 
-/* ── 8. Typography refinements ─────────────────────────────────────────── */
-body.dc-preview h1, body.dc-preview h2, body.dc-preview h3 {
-  letter-spacing: -0.025em !important;
-}
-
-/* Big numbers (stats, points) — gradient text where we can target */
-body.dc-preview [style*="font-variant-numeric: tabular-nums"][style*="font-weight: 700"] {
-  /* Skip — gradient text in inline styles is impossible cleanly */
-}
-
-/* ── 9. Selection color ────────────────────────────────────────────────── */
-body.dc-preview ::selection {
-  background: rgba(167,139,250,0.35) !important;
-  color: #FFFFFF !important;
-}
-
-/* ── 10. Scrollbars (where visible) ────────────────────────────────────── */
-body.dc-preview *::-webkit-scrollbar {
-  width: 8px; height: 8px;
-}
+/* ── 9. Selection + scrollbar ──────────────────────────────────────────── */
+body.dc-preview ::selection { background: rgba(99,102,241,0.35) !important; color: #FFFFFF !important; }
+body.dc-preview *::-webkit-scrollbar { width: 6px; height: 6px; }
 body.dc-preview *::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(167,139,250,0.5), rgba(236,72,153,0.5));
-  border-radius: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
 }
-body.dc-preview *::-webkit-scrollbar-track {
-  background: transparent;
-}
+body.dc-preview *::-webkit-scrollbar-track { background: transparent; }
 
-/* ── 11. Tap feedback — universal scale on press ───────────────────────── */
+/* ── 10. Tap feedback — universal subtle press ─────────────────────────── */
 body.dc-preview button:active,
 body.dc-preview [role="button"]:active,
 body.dc-preview .pressable:active {
-  transform: scale(0.96) !important;
+  transform: scale(0.97) !important;
   transition: transform 80ms ease !important;
-}
-
-/* ── 12. Active nav icon — purple glow halo ────────────────────────────── */
-/* The redesigned nav icons scale to 1.12 when active. We add a glow to it. */
-body.dc-preview button[aria-label][style*="scale(1.12)"] {
-  filter: drop-shadow(0 0 14px rgba(167,139,250,0.55));
 }
 `
 
@@ -364,7 +266,7 @@ export default function DCPreviewToggle({ isOwner }) {
       styleEl.textContent = DC_CSS
       document.head.appendChild(styleEl)
     } else {
-      styleEl.textContent = DC_CSS  // refresh CSS if we shipped an update
+      styleEl.textContent = DC_CSS
     }
 
     return () => {
@@ -381,7 +283,7 @@ export default function DCPreviewToggle({ isOwner }) {
     return (
       <button
         onClick={() => setCollapsed(false)}
-        title={enabled ? 'Modo DC activado' : 'Activar modo DC'}
+        title={enabled ? 'Modo Premium activado' : 'Activar modo Premium'}
         style={{
           position: 'fixed',
           bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
@@ -389,17 +291,17 @@ export default function DCPreviewToggle({ isOwner }) {
           zIndex: 9999,
           width: 40, height: 40, borderRadius: '50%',
           background: enabled
-            ? 'linear-gradient(135deg, #A78BFA 0%, #F472B6 60%, #FB923C 130%)'
+            ? 'linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(245,245,247,1) 100%)'
             : 'rgba(20,20,28,0.85)',
           backdropFilter: 'saturate(180%) blur(16px)',
           WebkitBackdropFilter: 'saturate(180%) blur(16px)',
-          border: `1px solid ${enabled ? 'rgba(255,255,255,0.35)' : 'rgba(167,139,250,0.4)'}`,
-          color: '#FFFFFF',
+          border: `1px solid ${enabled ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.12)'}`,
+          color: enabled ? '#0A0A0F' : '#9CA3AF',
           fontSize: 17,
           cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: enabled
-            ? '0 10px 28px rgba(167,139,250,0.55), 0 0 24px rgba(236,72,153,0.35), inset 0 1px 0 rgba(255,255,255,0.35)'
+            ? '0 8px 24px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.6), 0 1px 0 rgba(255,255,255,0.4) inset'
             : '0 4px 16px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)',
           fontFamily: 'inherit',
           opacity: 0.95,
@@ -411,54 +313,48 @@ export default function DCPreviewToggle({ isOwner }) {
     )
   }
 
-  // Expanded pill
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
-        right: 12,
-        zIndex: 9999,
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '8px 8px 8px 14px',
-        background: 'rgba(15,15,22,0.92)',
-        backdropFilter: 'saturate(180%) blur(20px)',
-        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-        border: '1px solid rgba(167,139,250,0.35)',
-        borderRadius: 24,
-        boxShadow: '0 10px 32px rgba(0,0,0,0.55), 0 0 28px rgba(167,139,250,0.22), inset 0 1px 0 rgba(255,255,255,0.06)',
-        animation: 'fadeUp 0.22s ease',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
-      }}
-    >
+    <div style={{
+      position: 'fixed',
+      bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+      right: 12,
+      zIndex: 9999,
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '8px 8px 8px 14px',
+      background: 'rgba(15,15,20,0.92)',
+      backdropFilter: 'saturate(180%) blur(20px)',
+      WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+      border: '0.5px solid rgba(255,255,255,0.16)',
+      borderRadius: 24,
+      boxShadow: '0 10px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
+      animation: 'fadeUp 0.22s ease',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
+    }}>
       <span style={{ fontSize: 13, fontWeight: 600, color: '#E5E7EB', letterSpacing: '-0.005em' }}>
-        🎨 DC Mode
+        🎨 Premium
       </span>
       <button
         onClick={() => setEnabled(v => !v)}
-        aria-label="Toggle Design Code preview"
+        aria-label="Toggle Premium preview"
         style={{
           width: 40, height: 22, borderRadius: 11,
           background: enabled
-            ? 'linear-gradient(135deg, #A78BFA 0%, #F472B6 100%)'
+            ? 'linear-gradient(180deg, #FFFFFF 0%, #E5E7EB 100%)'
             : 'rgba(255,255,255,0.10)',
-          border: '1px solid rgba(255,255,255,0.14)',
+          border: '0.5px solid rgba(255,255,255,0.20)',
           position: 'relative',
           cursor: 'pointer',
           padding: 0,
           transition: 'background 220ms ease',
-          boxShadow: enabled
-            ? '0 0 12px rgba(167,139,250,0.5) inset, 0 0 16px rgba(236,72,153,0.3)'
-            : 'none',
         }}
       >
         <span style={{
           position: 'absolute',
           top: 2, left: enabled ? 20 : 2,
           width: 16, height: 16, borderRadius: '50%',
-          background: '#FFFFFF',
+          background: enabled ? '#6366F1' : '#FFFFFF',
           boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-          transition: 'left 260ms cubic-bezier(0.34,1.56,0.64,1)',
+          transition: 'left 260ms cubic-bezier(0.34,1.56,0.64,1), background 200ms',
         }} />
       </button>
       <button
@@ -467,7 +363,7 @@ export default function DCPreviewToggle({ isOwner }) {
         style={{
           width: 22, height: 22, borderRadius: '50%',
           background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.10)',
+          border: '0.5px solid rgba(255,255,255,0.10)',
           color: '#9CA3AF', cursor: 'pointer', padding: 0,
           fontSize: 11, fontWeight: 700, lineHeight: 1,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
