@@ -714,7 +714,11 @@ function BranchPodium({ entries, branch, game }) {
 // progress bar, and Championship rules. Designed to feel "alive" with subtle
 // motion: pulsing ACTIVA dot, trophy glint, spring chevron, content stagger.
 function SeasonOverviewCard({ season }) {
-  const [expanded, setExpanded] = useState(false)
+  // Default expanded so users immediately see days remaining, dates and
+  // the championship rule — they don't have to discover it via a tap.
+  // The collapse affordance is still there if they want to free up
+  // vertical space.
+  const [expanded, setExpanded] = useState(true)
   const endStr    = safeDate(season?.end_date,   '2026-08-31')
   const startStr  = safeDate(season?.start_date, '2026-05-01')
   const endDate   = new Date(endStr   + 'T23:59:59')
@@ -914,10 +918,12 @@ function SeasonOverviewCard({ season }) {
   )
 }
 
-// ── Champions by TCG (top-1 per game on the ALL/empty state) ───────────────
-// Shown when the user lands on Rankings without a TCG selected. One card per
-// game with its #1 global player and the branch they belong to. Tap a card
-// to drill into that game's leaderboard.
+// ── Champions by TCG (line chart + glass row list) ─────────────────────────
+// Top-1 per TCG visualised first as a comparative line chart (animates
+// drawn-in from left), then below as a list of glass rows so the names
+// are clearly readable. Card surfaces are uniform glass — colour lives
+// only inside data elements (game icon, points number, bar) so the
+// section doesn't read as a rainbow.
 function ChampionsByTcg({ champions, onSelectGame }) {
   const [animateIn, setAnimateIn] = useState(false)
   useEffect(() => {
@@ -928,14 +934,41 @@ function ChampionsByTcg({ champions, onSelectGame }) {
 
   const loaded = Object.keys(champions).length === GAMES.length
 
-  // Max points across all champions — used to scale the bars so the
-  // top champion's bar reaches 100% and the rest scale proportionally.
-  // Visualises relative dominance: the longer your bar, the more your
-  // TCG's #1 has earned this season vs the other TCG #1s.
   const maxChampPts = Math.max(
-    1, // avoid divide-by-zero before any champion is loaded
+    1,
     ...Object.values(champions).map(c => c?.points || 0)
   )
+
+  // ── Line chart geometry ─────────────────────────────────────────────
+  const W = 600, H = 170
+  const PAD = { l: 28, r: 20, t: 14, b: 42 }
+  const innerW = W - PAD.l - PAD.r
+  const innerH = H - PAD.t - PAD.b
+  const stepX = GAMES.length > 1 ? innerW / (GAMES.length - 1) : innerW
+
+  const pts = GAMES.map((g, i) => {
+    const champ = champions[g]
+    const value = champ?.points || 0
+    return {
+      game:   g,
+      champ,
+      color:  GAME_STYLES[g]?.color ?? '#FFFFFF',
+      border: GAME_STYLES[g]?.border ?? 'rgba(255,255,255,0.2)',
+      x:      PAD.l + i * stepX,
+      y:      PAD.t + (1 - (value / maxChampPts)) * innerH,
+      hasChamp: !!champ,
+    }
+  })
+
+  const polyline = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+
+  // Approximate path length (for stroke-dashoffset animation)
+  let pathLen = 0
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i].x - pts[i-1].x
+    const dy = pts[i].y - pts[i-1].y
+    pathLen += Math.hypot(dx, dy)
+  }
 
   return (
     <div style={{
@@ -958,12 +991,104 @@ function ChampionsByTcg({ champions, onSelectGame }) {
         </div>
         <div style={{
           fontSize: 10, color: COLOR.textQuaternary, fontWeight: WEIGHT.medium,
-          letterSpacing: '0.02em',
         }}>
           Tap para ver ranking →
         </div>
       </div>
 
+      {/* ── Line chart ─────────────────────────────────────────────────
+          Animates left-to-right via stroke-dashoffset. Dots at each
+          TCG's point pop in with a per-dot delay that matches when the
+          line passes them. The line itself is white-translucent so the
+          coloured dots are the focal data points. */}
+      <div style={{
+        width: '100%', marginBottom: 12,
+        background: 'rgba(255,255,255,0.02)',
+        borderRadius: RADIUS.md,
+        border: `1px solid ${COLOR.border}`,
+        padding: '6px 4px 4px',
+      }}>
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          style={{ width: '100%', height: 170, display: 'block' }}
+        >
+          {/* Soft horizontal guides */}
+          {[0.25, 0.5, 0.75].map(t => {
+            const y = PAD.t + t * innerH
+            return (
+              <line key={t}
+                x1={PAD.l} x2={W - PAD.r} y1={y} y2={y}
+                stroke="rgba(255,255,255,0.04)" strokeWidth="1"
+              />
+            )
+          })}
+
+          {/* The polyline that connects all TCG champions */}
+          <polyline
+            points={polyline}
+            fill="none"
+            stroke="rgba(255,255,255,0.55)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              strokeDasharray: pathLen,
+              strokeDashoffset: animateIn ? 0 : pathLen,
+              transition: `stroke-dashoffset 1400ms cubic-bezier(0.4,0,0.2,1) 80ms`,
+              filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.18))',
+            }}
+          />
+
+          {/* Dots — one per TCG, fade/scale in as line passes them */}
+          {pts.map((p, i) => {
+            // Time when the line draws past this dot (line animation is 1400 ms)
+            const delay = 80 + (i / Math.max(1, pts.length - 1)) * 1400
+            return (
+              <g key={p.game}
+                style={{
+                  opacity: animateIn ? 1 : 0,
+                  transform: animateIn ? 'scale(1)' : 'scale(0.4)',
+                  transformOrigin: `${p.x}px ${p.y}px`,
+                  transition: `opacity 280ms ease ${delay}ms, transform 380ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
+                }}
+              >
+                {/* Soft glow halo */}
+                <circle cx={p.x} cy={p.y} r="9"
+                  fill={p.color} opacity="0.18"
+                />
+                {/* Dot ring */}
+                <circle cx={p.x} cy={p.y} r="5.5"
+                  fill={p.hasChamp ? p.color : 'rgba(255,255,255,0.15)'}
+                  stroke="#0A0A0A" strokeWidth="2"
+                />
+              </g>
+            )
+          })}
+
+          {/* X-axis: tiny game icons below each dot */}
+          {pts.map(p => (
+            <foreignObject key={`label-${p.game}`}
+              x={p.x - 14} y={H - PAD.b + 6}
+              width="28" height="28"
+              style={{ overflow: 'visible' }}
+            >
+              <div xmlns="http://www.w3.org/1999/xhtml"
+                style={{
+                  width: 28, height: 28,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  opacity: animateIn ? 0.85 : 0,
+                  transition: 'opacity 320ms ease 1200ms',
+                }}
+              >
+                <GameIcon game={p.game} size={18} />
+              </div>
+            </foreignObject>
+          ))}
+        </svg>
+      </div>
+
+      {/* ── Champion rows — uniform glass surface, colour only on data ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {GAMES.map((g, i) => {
           const champ = champions[g]
@@ -972,7 +1097,6 @@ function ChampionsByTcg({ champions, onSelectGame }) {
           const delay = i * 80
           const isLoading = !loaded
           const hasChamp  = !!champ
-
           const pct = hasChamp ? (champ.points / maxChampPts) * 100 : 0
 
           return (
@@ -984,10 +1108,10 @@ function ChampionsByTcg({ champions, onSelectGame }) {
               style={{
                 display: 'flex', flexDirection: 'column', gap: 8,
                 padding: '11px 12px 10px',
-                background: hasChamp
-                  ? `linear-gradient(135deg, ${gs.bg ?? COLOR.background} 0%, transparent 60%)`
-                  : COLOR.background,
-                border: `1px solid ${hasChamp ? gs.border : COLOR.border}`,
+                // UNIFORM glass surface — same for every TCG. Colour only
+                // shows up inside the icon block, points number, and bar.
+                background: 'rgba(255,255,255,0.03)',
+                border: `1px solid ${COLOR.border}`,
                 borderRadius: RADIUS.md,
                 cursor: hasChamp ? 'pointer' : 'default',
                 textAlign: 'left',
@@ -996,12 +1120,11 @@ function ChampionsByTcg({ champions, onSelectGame }) {
                 opacity: animateIn ? 1 : 0,
                 transform: animateIn ? 'translateX(0)' : 'translateX(-8px)',
                 transitionDelay: `${delay}ms`,
-                boxShadow: hasChamp ? `0 0 10px ${gs.border}, inset 0 1px 0 rgba(255,255,255,0.04)` : 'none',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
               }}
             >
-              {/* Top row — icon + game + champion + points */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%' }}>
-                {/* Game icon block */}
+                {/* Game icon — keeps its colour */}
                 <div style={{
                   width: 38, height: 38, borderRadius: RADIUS.sm, flexShrink: 0,
                   background: gs.bg ?? COLOR.surfaceRaised,
@@ -1012,11 +1135,11 @@ function ChampionsByTcg({ champions, onSelectGame }) {
                   <GameIcon game={g} size={20} />
                 </div>
 
-                {/* Middle: game name + champion username + branch */}
+                {/* Game name (neutral white) + champion + branch */}
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <div style={{
                     fontSize: 13.5, fontWeight: WEIGHT.bold,
-                    color: gs.color ?? COLOR.text,
+                    color: COLOR.text,           // neutral, no rainbow
                     letterSpacing: '-0.005em',
                   }}>
                     {g}
@@ -1071,7 +1194,7 @@ function ChampionsByTcg({ champions, onSelectGame }) {
                   )}
                 </div>
 
-                {/* Right: points number */}
+                {/* Points number — keeps the TCG accent colour */}
                 {hasChamp && (
                   <div style={{
                     flexShrink: 0,
@@ -1083,17 +1206,12 @@ function ChampionsByTcg({ champions, onSelectGame }) {
                     minWidth: 56, justifyContent: 'flex-end',
                   }}>
                     <CountUpNum value={champ.points} startWhen={animateIn} delay={delay + 300} duration={1000} />
-                    <span style={{ fontSize: 9.5, opacity: 0.65, fontWeight: WEIGHT.medium }}>pts</span>
+                    <span style={{ fontSize: 9.5, opacity: 0.65, fontWeight: WEIGHT.medium, color: COLOR.textSecondary }}>pts</span>
                   </div>
                 )}
               </div>
 
-              {/* ── Bar chart row ──────────────────────────────────────
-                  Horizontal bar scaled to the champion's share of the
-                  max points across all TCGs. Animates 0% → pct on mount
-                  with a slight delay per row (cascade). The bar uses the
-                  game's accent color with a glow halo so the chart reads
-                  as colored data. */}
+              {/* Bar — keeps the TCG colour */}
               {hasChamp && (
                 <div style={{
                   width: '100%', height: 6, borderRadius: 3,
