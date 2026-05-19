@@ -152,17 +152,18 @@ export function BottomNav({
   active, hidden, onTab, onLifeCounter, onPost, onNotifs,
   unreadCount, isAdminOrOwner,
 }) {
-  // Helper: render a Lucide icon inside a fixed 28×28 frame so all tabs
-  // occupy the same visual footprint regardless of glyph shape. Lucide
-  // is stroke-only so the active state thickens the stroke + brightens
-  // the color (no fill weight to swap to).
-  const Lu = (Icon) => (a) => (
+  // Helper: render a Lucide icon inside a fixed 28×28 frame. Each icon
+  // can pass its own optical size (size arg) because Lucide glyphs have
+  // wildly different ink coverage — a simple Home outline fills the
+  // frame at 22 px while a detailed PiggyBank needs ~27 px to feel the
+  // same visual weight. Tuned per glyph below in the tabs array.
+  const Lu = (Icon, size = 24) => (a) => (
     <div style={{
       width: 28, height: 28,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <Icon
-        size={24}
+        size={size}
         strokeWidth={a ? 2.5 : 1.75}
         color={a ? '#FFFFFF' : 'rgba(255,255,255,0.65)'}
       />
@@ -172,22 +173,27 @@ export function BottomNav({
   // ── REGULAR user nav — original 5-tab layout, neutral Lucide icons ──
   if (!isAdminOrOwner) {
     const tabs = [
-      { id: 'feed',  label: 'Feed',     icon: Lu(Home),         action: () => onTab('feed') },
-      { id: 'shop',  label: 'Tienda',   icon: Lu(ShoppingBag),  action: () => onTab('shop') },
-      { id: 'ranks', label: 'Ranking',  icon: Lu(Trophy),       action: () => onTab('ranks') },
-      { id: 'life',  label: 'Vida',     icon: Lu(Heart),        action: onLifeCounter },
-      { id: 'notif', label: 'Avisos',   icon: Lu(Bell),         action: onNotifs, badge: unreadCount },
+      { id: 'feed',  label: 'Feed',     icon: Lu(Home,        22), action: () => onTab('feed') },
+      { id: 'shop',  label: 'Tienda',   icon: Lu(ShoppingBag, 23), action: () => onTab('shop') },
+      { id: 'ranks', label: 'Ranking',  icon: Lu(Trophy,      24), action: () => onTab('ranks') },
+      { id: 'life',  label: 'Vida',     icon: Lu(Heart,       23), action: onLifeCounter },
+      { id: 'notif', label: 'Avisos',   icon: Lu(Bell,        22), action: onNotifs, badge: unreadCount },
     ]
     return <OwnerBottomNav active={active} hidden={hidden} tabs={tabs} />
   }
 
   // ── ADMIN / OWNER preview nav — medieval vocab + center post button ──
+  // Per-icon optical sizing so the bar feels balanced:
+  //   Castle    → 22  (tall outline, was visually dominant)
+  //   PiggyBank → 27  (lots of internal detail, needs the extra px)
+  //   Crown     → 24  (default — balanced as drawn)
+  //   Swords    → 24  (default)
   const tabs = [
-    { id: 'feed',  label: 'Feed',     icon: Lu(Castle),       action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Lu(PiggyBank),    action: () => onTab('shop') },
-    { id: 'post',  label: 'Crear',    icon: null,             action: onPost, variant: 'primary' },
-    { id: 'ranks', label: 'Ranking',  icon: Lu(Crown),        action: () => onTab('ranks') },
-    { id: 'life',  label: 'Vida',     icon: Lu(Swords),       action: onLifeCounter },
+    { id: 'feed',  label: 'Feed',     icon: Lu(Castle,    22), action: () => onTab('feed') },
+    { id: 'shop',  label: 'Tienda',   icon: Lu(PiggyBank, 27), action: () => onTab('shop') },
+    { id: 'post',  label: 'Crear',    icon: null,              action: onPost, variant: 'primary' },
+    { id: 'ranks', label: 'Ranking',  icon: Lu(Crown,     24), action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: Lu(Swords,    24), action: onLifeCounter },
   ]
   return <OwnerBottomNav active={active} hidden={hidden} tabs={tabs} />
 }
