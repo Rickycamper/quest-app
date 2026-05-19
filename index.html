@@ -65,7 +65,17 @@
     <!-- SF Pro on Apple devices, Inter on others — instant typography upgrade everywhere -->
     <style>
       html,body{
-        background:#0A0A0A;
+        /* Deep base + three subtle radial color sources (blue top-left,
+           violet center-right, warm orange bottom). Low alphas so the
+           overall feel is still 'dark mode' but the cards' backdrop-filter
+           blur now has something to pick up — that's what makes glass
+           read as glass instead of as flat translucent grey. */
+        background:
+          radial-gradient(ellipse 60% 50% at 15% 10%, rgba(59,130,246,0.10) 0%, transparent 65%),
+          radial-gradient(ellipse 55% 45% at 85% 35%, rgba(167,139,250,0.10) 0%, transparent 65%),
+          radial-gradient(ellipse 70% 40% at 50% 110%, rgba(251,146,60,0.07) 0%, transparent 65%),
+          #08080C;
+        background-attachment:fixed;
         font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter",system-ui,sans-serif;
         -webkit-font-smoothing:antialiased;
         -moz-osx-font-smoothing:grayscale;
@@ -89,7 +99,7 @@
     </style>
   </head>
   <body>
-    <div id="root" style="background:#0A0A0A;min-height:100dvh;display:flex;flex-direction:column"></div>
+    <div id="root" style="background:transparent;min-height:100dvh;display:flex;flex-direction:column"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
