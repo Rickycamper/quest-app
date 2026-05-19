@@ -5,7 +5,11 @@
 import { useState, useEffect } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
 import { BRANCH_STYLES } from '../lib/constants'
-import { getPointsHistory, redeemPoints, getMembershipUsageSummary, getMyStats } from '../lib/supabase'
+import { getPointsHistory, redeemPoints, getMembershipUsageSummary, getMyStats, getMyMatchHistory, resetMyMatches } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+import { useConfirm } from '../components/Confirm'
+import { useToast } from '../components/Toast'
+import { RotateCcw } from 'lucide-react'
 import { SAWizardHat, SAGem, SACrown, SATruck, SALock, SABolt, SAGavel, SAFlag, SACircleCheck, SAFire, SADungeon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 import Avatar from '../components/Avatar'
@@ -667,22 +671,46 @@ function QPointsView({ profile, onRedeemed }) {
 }
 
 // ── Hub tiles ─────────────────────────────────
-// ── Mi récord — W/L per TCG ──────────────────────────────────────────────
-// Previously lived as a sheet inside ProfileScreen. Lifted into Quest Hub
-// so the profile stays focused on identity while combat stats get their
-// own dedicated space.
+// ── Mi récord — match history + per-TCG chart ──────────────────────────
+// Premium / admin / owner users can reset their visible record (drops a
+// localStorage cutoff so anything older stops counting in their view).
 function RecordView() {
-  const [stats,   setStats]   = useState([])
-  const [loading, setLoading] = useState(true)
+  const { isPremium } = useAuth()
+  const confirm = useConfirm()
+  const toast   = useToast()
+  const [stats,    setStats]    = useState([])
+  const [matches,  setMatches]  = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
+
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    getMyStats()
-      .then(s => { if (!cancelled) setStats(s ?? []) })
-      .catch(() => { if (!cancelled) setStats([]) })
-      .finally(() => { if (!cancelled) setLoading(false) })
+    Promise.all([
+      getMyStats().catch(() => []),
+      getMyMatchHistory(50).catch(() => []),
+    ]).then(([s, m]) => {
+      if (cancelled) return
+      setStats(s ?? [])
+      setMatches(m ?? [])
+    }).finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [refreshKey])
+
+  const handleReset = async () => {
+    const ok = await confirm(
+      '¿Reiniciar tu récord? Las partidas anteriores dejarán de contar en tu vista. (La info original sigue en la base de datos — solo se oculta de tu perfil.)',
+      { confirmLabel: 'Reiniciar', destructive: true }
+    )
+    if (!ok) return
+    try {
+      await resetMyMatches()
+      toast?.('Récord reiniciado', { type: 'success' })
+      setRefreshKey(k => k + 1)
+    } catch (e) {
+      toast?.(e.message || 'No se pudo reiniciar', { type: 'error' })
+    }
+  }
 
   if (loading) return (
     <div style={{ padding: '40px 20px', textAlign: 'center', color: '#4B5563', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
@@ -690,7 +718,14 @@ function RecordView() {
     </div>
   )
 
-  if (stats.length === 0) return (
+  // Totals across all games (uses already-filtered stats)
+  const totalWins   = stats.reduce((s, r) => s + (r.wins   || 0), 0)
+  const totalLosses = stats.reduce((s, r) => s + (r.losses || 0), 0)
+  const totalGames  = totalWins + totalLosses
+  const overallPct  = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0
+  const overallColor = overallPct >= 60 ? '#4ADE80' : overallPct >= 40 ? '#FBBF24' : '#F87171'
+
+  if (stats.length === 0 && matches.length === 0) return (
     <div style={{ padding: '60px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
       <div style={{ fontSize: 44 }}>📊</div>
       <div style={{ fontSize: 15, fontWeight: 700, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>
@@ -702,12 +737,16 @@ function RecordView() {
     </div>
   )
 
-  // Totals across all games
-  const totalWins   = stats.reduce((s, r) => s + (r.wins   || 0), 0)
-  const totalLosses = stats.reduce((s, r) => s + (r.losses || 0), 0)
-  const totalGames  = totalWins + totalLosses
-  const overallPct  = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0
-  const overallColor = overallPct >= 60 ? '#4ADE80' : overallPct >= 40 ? '#FBBF24' : '#F87171'
+  // Friendly relative date (e.g. "hace 3d", "ayer", "hoy")
+  const fmtAgo = (iso) => {
+    const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
+    if (d <= 0) return 'hoy'
+    if (d === 1) return 'ayer'
+    if (d < 7)  return `hace ${d}d`
+    if (d < 30) return `hace ${Math.floor(d / 7)}sem`
+    if (d < 365) return `hace ${Math.floor(d / 30)}mes`
+    return `hace ${Math.floor(d / 365)}a`
+  }
 
   return (
     <div style={{ padding: '12px 16px 32px', fontFamily: 'Inter, sans-serif' }}>
@@ -735,39 +774,142 @@ function RecordView() {
         </div>
       </div>
 
-      {/* Per-TCG breakdown */}
-      <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.12em', marginBottom: 10 }}>
-        POR JUEGO
+      {/* Match history list — opponent · TCG · W/L · date */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 10,
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.12em' }}>
+          MIS PARTIDAS
+          {matches.length > 0 && (
+            <span style={{ color: '#374151', marginLeft: 6, letterSpacing: 0, fontWeight: 600 }}>
+              · últimas {matches.length}
+            </span>
+          )}
+        </div>
+        {isPremium && (totalGames > 0 || matches.length > 0) && (
+          <button
+            onClick={handleReset}
+            aria-label="Reiniciar récord"
+            title="Reiniciar récord (premium/admin)"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '4px 9px', borderRadius: 8,
+              background: 'rgba(248,113,113,0.08)',
+              border: '1px solid rgba(248,113,113,0.22)',
+              color: '#F87171', cursor: 'pointer',
+              fontSize: 10.5, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+              letterSpacing: '0.04em',
+            }}
+          >
+            <RotateCcw size={11} strokeWidth={2.2} />
+            REINICIAR
+          </button>
+        )}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {stats.map(s => {
-          const pct = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0
-          const color = pct >= 60 ? '#4ADE80' : pct >= 40 ? '#FBBF24' : '#F87171'
-          return (
-            <div key={s.game} style={{
-              background: '#1A1A1A', borderRadius: 12, padding: '12px 14px',
-              border: '1px solid #1F1F1F',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <GameIcon game={s.game} size={16} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>{s.game}</span>
+
+      {matches.length === 0 ? (
+        <div style={{
+          background: '#0F0F0F', borderRadius: 12, padding: '20px 16px',
+          fontSize: 12, color: '#4B5563', textAlign: 'center',
+          border: '1px solid #1A1A1A', marginBottom: 16,
+        }}>
+          Sin partidas en el historial reciente.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+          {matches.map(m => {
+            const gs = GAME_STYLES[m.game] ?? {}
+            return (
+              <div key={m.id} style={{
+                background: '#1A1A1A', borderRadius: 10,
+                border: `1px solid ${m.isWin ? 'rgba(74,222,128,0.18)' : 'rgba(248,113,113,0.18)'}`,
+                padding: '9px 11px',
+                display: 'flex', alignItems: 'center', gap: 9,
+              }}>
+                {/* Opponent avatar */}
+                <div style={{
+                  width: 30, height: 30, borderRadius: '50%',
+                  background: '#0F0F0F', border: '1px solid #2A2A2A',
+                  overflow: 'hidden', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Avatar url={m.opponent?.avatar_url} size={30} role={m.opponent?.role} isOwner={m.opponent?.is_owner} />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                  <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 800 }}>{s.wins}V</span>
-                  <span style={{ fontSize: 11, color: '#333' }}>·</span>
-                  <span style={{ fontSize: 12, color: '#F87171', fontWeight: 800 }}>{s.losses}D</span>
-                  <span style={{ fontSize: 12, fontWeight: 800, color, minWidth: 36, textAlign: 'right' }}>{pct}%</span>
+
+                {/* Opponent name + game */}
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <span style={{
+                    fontSize: 12.5, fontWeight: 700, color: '#E5E7EB',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    vs {m.opponent?.username ?? '—'}
+                  </span>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    fontSize: 10.5, color: '#6B7280',
+                  }}>
+                    <GameIcon game={m.game} size={10} />
+                    <span style={{ color: gs.color ?? '#6B7280', fontWeight: 600 }}>{m.game}</span>
+                    <span style={{ color: '#333' }}>·</span>
+                    <span>{fmtAgo(m.createdAt)}</span>
+                  </div>
                 </div>
+
+                {/* W/L badge */}
+                <span style={{
+                  flexShrink: 0,
+                  fontSize: 11, fontWeight: 800,
+                  padding: '4px 9px', borderRadius: 6,
+                  background: m.isWin ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.10)',
+                  border: `1px solid ${m.isWin ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.28)'}`,
+                  color: m.isWin ? '#4ADE80' : '#F87171',
+                  letterSpacing: '0.04em',
+                }}>
+                  {m.isWin ? 'V' : 'D'}
+                </span>
               </div>
-              {/* Win rate bar */}
-              <div style={{ height: 4, borderRadius: 2, background: '#2A2A2A', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2, transition: 'width 0.4s ease' }} />
-              </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Per-TCG chart — bars proportional to total games per game */}
+      {stats.length > 0 && (
+        <>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.12em', marginBottom: 10 }}>
+            POR JUEGO
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {stats.map(s => {
+              const pct = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0
+              const color = pct >= 60 ? '#4ADE80' : pct >= 40 ? '#FBBF24' : '#F87171'
+              return (
+                <div key={s.game} style={{
+                  background: '#1A1A1A', borderRadius: 12, padding: '12px 14px',
+                  border: '1px solid #1F1F1F',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <GameIcon game={s.game} size={16} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>{s.game}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                      <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 800 }}>{s.wins}V</span>
+                      <span style={{ fontSize: 11, color: '#333' }}>·</span>
+                      <span style={{ fontSize: 12, color: '#F87171', fontWeight: 800 }}>{s.losses}D</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color, minWidth: 36, textAlign: 'right' }}>{pct}%</span>
+                    </div>
+                  </div>
+                  <div style={{ height: 4, borderRadius: 2, background: '#2A2A2A', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2, transition: 'width 0.4s ease' }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
 
       <div style={{ fontSize: 11, color: '#4B5563', textAlign: 'center', marginTop: 14 }}>
         Solo cuenta partidas confirmadas por ambos jugadores

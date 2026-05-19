@@ -2258,14 +2258,45 @@ export async function rejectRedemption(id, note = '') {
 }
 
 /** Returns W/L record grouped by game for the current user (confirmed matches only) */
+// ── Match-record reset (client-side cutoff) ─────────────────────────────────
+// Premium / admin / owner users can reset their visible match record. We
+// store a cutoff timestamp in localStorage (per user-id). getMyStats and
+// getMyMatchHistory honour this cutoff so anything older is hidden from
+// the user's view (but stays in the database — the opponent's record is
+// unaffected, and the data isn't actually destroyed).
+//
+// A future migration could promote this to a column on profiles for cross-
+// device sync, but for now this is a zero-DB-change implementation.
+const MATCH_RESET_KEY_PREFIX = 'quest_match_reset_'
+function getMatchResetCutoff(userId) {
+  if (typeof localStorage === 'undefined' || !userId) return null
+  try { return localStorage.getItem(MATCH_RESET_KEY_PREFIX + userId) || null }
+  catch { return null }
+}
+export function resetMyMatches() {
+  // Inserts a cutoff at "now" so all existing matches drop off the user's
+  // visible record. Returns the cutoff so callers can refresh state.
+  // Auth is consulted async — wrapper is async for API parity.
+  return supabase.auth.getSession().then(({ data: { session } }) => {
+    const id = session?.user?.id
+    if (!id) throw new Error('No hay sesión activa')
+    const cutoff = new Date().toISOString()
+    try { localStorage.setItem(MATCH_RESET_KEY_PREFIX + id, cutoff) } catch {}
+    return cutoff
+  })
+}
+
 export async function getMyStats() {
   const { data: { session } } = await supabase.auth.getSession()
   const me = session.user.id
-  const { data, error } = await supabase
+  const cutoff = getMatchResetCutoff(me)
+  let query = supabase
     .from('matches')
-    .select('game, winner_id')
+    .select('game, winner_id, created_at')
     .or(`player_a.eq.${me},player_b.eq.${me}`)
     .eq('status', 'confirmed')
+  if (cutoff) query = query.gt('created_at', cutoff)
+  const { data, error } = await query
   if (error) throw error
   const map = {}
   for (const m of data ?? []) {
@@ -2276,6 +2307,41 @@ export async function getMyStats() {
   return Object.entries(map)
     .map(([game, { wins, losses }]) => ({ game, wins, losses, total: wins + losses }))
     .sort((a, b) => b.total - a.total)
+}
+
+// ── Match history (per-match, with opponent profile) ────────────────────────
+// Used by Quest Hub → Mi récord to show 'who did I play, when, what TCG'.
+// Honours the local reset cutoff. Returns most-recent first.
+export async function getMyMatchHistory(limit = 50) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const me = session.user.id
+  const cutoff = getMatchResetCutoff(me)
+  let query = supabase
+    .from('matches')
+    .select(`
+      id, game, winner_id, match_type, created_at,
+      player_a, player_b,
+      profile_a:player_a ( id, username, avatar_url, role, is_owner ),
+      profile_b:player_b ( id, username, avatar_url, role, is_owner )
+    `)
+    .or(`player_a.eq.${me},player_b.eq.${me}`)
+    .eq('status', 'confirmed')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (cutoff) query = query.gt('created_at', cutoff)
+  const { data, error } = await query
+  if (error) throw error
+  return (data ?? []).map(m => {
+    const opponent = m.player_a === me ? m.profile_b : m.profile_a
+    return {
+      id: m.id,
+      game: m.game,
+      isWin: m.winner_id === me,
+      opponent,
+      matchType: m.match_type,
+      createdAt: m.created_at,
+    }
+  })
 }
 
 // ── REALTIME ─────────────────────────────────
