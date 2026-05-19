@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────
 // QUEST — RankingsScreen
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react'
 import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, setTournamentPayment, getActiveSeason, staffAwardRankingPoints, staffSetGamePoints, getLeagues, getLeagueDetails, joinLeague, leaveLeague, updateLeagueStatus, updateFechaStatus, upsertLeagueResult, recalcFechaPoints, submitMyResult, addLeagueFecha, addLeagueParticipant, setLeaguePayment, setParticipantTier, deleteLeague } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES, getGameUsername } from '../lib/constants'
@@ -4313,6 +4313,37 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
   const [activeSeason,  setActiveSeason] = useState(null)
   const pulseTimer = useRef(null)
 
+  // ── Sliding indicator for the TCG row ──────────────────────────────
+  // We measure the active button's position and animate a single
+  // absolute-positioned bubble between TCGs so switching feels like
+  // the bubble glides, not flickers. Same vibe as the Rankings/Torneos/
+  // Liga tabs bubble but here it carries the TCG colour scheme.
+  const gameRowRef = useRef(null)
+  const gameBtnRefs = useRef({})
+  const [gameIndicator, setGameIndicator] = useState({ left: 0, width: 0, visible: false })
+  useLayoutEffect(() => {
+    const measure = () => {
+      const row = gameRowRef.current
+      if (!row) return
+      const key = game ?? 'ALL'
+      const btn = gameBtnRefs.current[key]
+      if (!btn) {
+        setGameIndicator(p => ({ ...p, visible: false }))
+        return
+      }
+      const r1 = btn.getBoundingClientRect()
+      const r2 = row.getBoundingClientRect()
+      setGameIndicator({
+        left:    r1.left - r2.left,
+        width:   r1.width,
+        visible: true,
+      })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [game])
+
   // Load active season once on mount
   useEffect(() => {
     getActiveSeason().then(setActiveSeason).catch(() => {})
@@ -4399,32 +4430,78 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
       </div>
     )
 
+    // Sliding indicator colors track the active TCG. When 'ALL' is
+    // selected we fall back to a neutral white-on-glass bubble.
+    const activeStyle = game ? GAME_STYLES[game] : null
+    const indicatorBg     = activeStyle ? activeStyle.bg     : 'rgba(255,255,255,0.10)'
+    const indicatorBorder = activeStyle ? activeStyle.border : 'rgba(255,255,255,0.35)'
+    const indicatorGlow   = activeStyle ? activeStyle.border : 'rgba(255,255,255,0.20)'
+
     const gameRow = (
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-      }}>
-        <button onClick={() => setGame(null)} style={{
-          flex: 1, height: 34, borderRadius: 8,
-          border: !game ? '1.5px solid rgba(255,255,255,0.35)' : '1.5px solid transparent',
-          background: !game ? 'rgba(255,255,255,0.1)' : 'transparent',
-          color: !game ? '#FFFFFF' : '#4B5563',
-          fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>ALL</button>
+      <div
+        ref={gameRowRef}
+        style={{
+          position: 'relative',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}
+      >
+        {/* Sliding indicator — single bubble that glides between TCGs.
+            Springy cubic-bezier so the motion feels playful. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: 0,
+            transform: `translate(${gameIndicator.left}px, -50%)`,
+            width: gameIndicator.width,
+            height: 34,
+            borderRadius: 8,
+            background: indicatorBg,
+            border: `1.5px solid ${indicatorBorder}`,
+            boxShadow: `0 0 14px ${indicatorGlow}66`,
+            opacity: gameIndicator.visible ? 1 : 0,
+            pointerEvents: 'none',
+            transition: gameIndicator.visible
+              ? 'transform 380ms cubic-bezier(0.34,1.45,0.64,1), width 380ms cubic-bezier(0.34,1.45,0.64,1), background 280ms ease, border-color 280ms ease, box-shadow 280ms ease, opacity 200ms ease'
+              : 'opacity 150ms ease',
+            zIndex: 0,
+          }}
+        />
+
+        <button
+          ref={el => { gameBtnRefs.current['ALL'] = el }}
+          onClick={() => setGame(null)}
+          style={{
+            position: 'relative', zIndex: 1,
+            flex: 1, height: 34, borderRadius: 8,
+            border: '1.5px solid transparent',
+            background: 'transparent',
+            color: !game ? '#FFFFFF' : '#4B5563',
+            fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'color 220ms ease',
+          }}
+        >ALL</button>
         <div style={{ width: 1, height: 20, background: '#2A2A2A', flexShrink: 0 }} />
         {GAMES.map(g => {
-          const gs = GAME_STYLES[g]
           const active = game === g
           return (
-            <button key={g} onClick={() => setGame(active ? null : g)} title={g} style={{
-              flex: 1, height: 34, borderRadius: 8,
-              border: `1.5px solid ${active ? gs.border : 'transparent'}`,
-              background: active ? gs.bg : 'transparent',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 0.22s ease, border-color 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease',
-              boxShadow: active ? `0 0 12px ${gs.border}66` : 'none',
-              transform: active ? 'scale(1.08)' : 'scale(1)',
-            }}>
+            <button
+              key={g}
+              ref={el => { gameBtnRefs.current[g] = el }}
+              onClick={() => setGame(active ? null : g)}
+              title={g}
+              style={{
+                position: 'relative', zIndex: 1,
+                flex: 1, height: 34, borderRadius: 8,
+                border: '1.5px solid transparent',
+                background: 'transparent',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'transform 280ms cubic-bezier(0.34,1.45,0.64,1)',
+                transform: active ? 'scale(1.10)' : 'scale(1)',
+              }}
+            >
               <GameIcon game={g} size={18} />
             </button>
           )
