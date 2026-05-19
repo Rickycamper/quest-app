@@ -9,9 +9,9 @@ import { logMatch, searchUsers } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
-// Phosphor — used in the admin/owner refined header only (matches the
-// medieval nav family: Sword for combat / life counter).
-import { SwordIcon } from '@phosphor-icons/react'
+// Lucide — used in the admin/owner refined header (matches the
+// medieval nav family: Swords for combat / life counter).
+import { Swords as SwordIcon } from 'lucide-react'
 import qLogo from '../assets/q-logo.png'
 import biohazardIcon from '../assets/Biohazard--Streamline-Font-Awesome.svg'
 import crownIcon from '../assets/Crown--Streamline-Font-Awesome.svg'
@@ -1662,7 +1662,7 @@ export default function LifeCounterScreen({ onClose, onViewProfile }) {
               display: 'flex', alignItems: 'center', gap: 9,
               letterSpacing: '-0.015em',
             }}>
-              <SwordIcon size={20} weight="fill" color="#FFFFFF" />
+              <SwordIcon size={20} strokeWidth={2.2} color="#FFFFFF" />
               Life Counter
             </div>
           </div>
