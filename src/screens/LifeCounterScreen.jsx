@@ -1502,7 +1502,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
 }
 
 // ── Done screen ───────────────────────────────
-function DoneScreen({ winner, me, opponent, onClose, onViewProfile }) {
+function DoneScreen({ winner, me, opponent, onClose, onViewProfile, onRematch }) {
   const iWon = winner === 'me'
   const hasRealOpponent = opponent && !opponent.isGuest && opponent.id
 
@@ -1528,14 +1528,18 @@ function DoneScreen({ winner, me, opponent, onClose, onViewProfile }) {
         Resultado registrado en tu H2H
       </div>
 
-      {/* Opponent profile card — tap to view their profile */}
+      {/* Opponent profile card — glass, tap to view their profile */}
       {hasRealOpponent && (
         <button
           onClick={() => onViewProfile?.(opponent.id)}
           style={{
             display: 'flex', alignItems: 'center', gap: 12,
             padding: '12px 18px', borderRadius: 16,
-            background: 'rgba(255,255,255,0.05)', border: '1px solid #2A2A2A',
+            background: 'rgba(255,255,255,0.04)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
             cursor: 'pointer', fontFamily: 'Inter, sans-serif',
             width: '100%', maxWidth: 280, textAlign: 'left',
             marginTop: 4,
@@ -1555,15 +1559,46 @@ function DoneScreen({ winner, me, opponent, onClose, onViewProfile }) {
         </button>
       )}
 
-      <button
-        onClick={onClose}
-        style={{
-          marginTop: 8, padding: '13px 40px', borderRadius: 14,
-          background: '#FFF', border: 'none', color: '#111',
-          fontSize: 14, fontWeight: 800, cursor: 'pointer',
-          fontFamily: 'Inter, sans-serif',
-        }}
-      >Cerrar</button>
+      {/* Action buttons — Rematch (Battle Now gradient) + Cerrar (glass) */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 8,
+        width: '100%', maxWidth: 280, marginTop: 8,
+      }}>
+        {onRematch && (
+          <button
+            onClick={onRematch}
+            className="pressable"
+            style={{
+              padding: '14px 24px', borderRadius: 14,
+              background: 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)',
+              border: 'none', color: '#FFFFFF',
+              fontSize: 14, fontWeight: 800, cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+              letterSpacing: '0.01em',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              boxShadow: '0 10px 28px rgba(251,146,60,0.30), 0 4px 10px rgba(167,139,250,0.22), inset 0 1px 0 rgba(255,255,255,0.30)',
+              textShadow: '0 1px 0 rgba(0,0,0,0.18)',
+              transition: 'transform 200ms cubic-bezier(0.34,1.56,0.64,1)',
+            }}
+          >
+            <SwordIcon size={18} strokeWidth={2.3} color="#FFFFFF" />
+            REVANCHA
+          </button>
+        )}
+        <button
+          onClick={onClose}
+          style={{
+            padding: '13px 40px', borderRadius: 14,
+            background: 'rgba(255,255,255,0.04)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            color: '#FFFFFF',
+            fontSize: 14, fontWeight: 800, cursor: 'pointer',
+            fontFamily: 'Inter, sans-serif',
+          }}
+        >Cerrar</button>
+      </div>
     </div>
   )
 }
@@ -1626,15 +1661,34 @@ export default function LifeCounterScreen({ onClose, onViewProfile }) {
   // As a modal overlay (onClose provided), it covers everything absolutely.
   const isModal = !!onClose
 
+  // Rematch — bump key so CounterStep / WLStep remount with fresh state,
+  // and jump straight back into the play step keeping the same config.
+  const [matchKey, setMatchKey] = useState(0)
+  const handleRematch = () => {
+    if (!config) return
+    setResult(null)
+    setMatchKey(k => k + 1)
+    setStep(COUNTER_GAMES.has(config.game) ? 'counter' : 'wl')
+  }
+
   return (
     <div style={isModal ? {
       position: 'absolute', inset: 0, zIndex: 200,
-      background: '#0A0A0A', display: 'flex', flexDirection: 'column',
+      // Translucent glass — deja ver el bg colorido del app detrás para
+      // que la pantalla se sienta layered. backdrop-filter blurea los
+      // posts/feed que están debajo cuando se abre como modal.
+      background: 'rgba(10,10,18,0.72)',
+      backdropFilter: 'blur(40px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+      display: 'flex', flexDirection: 'column',
       paddingTop: 'env(safe-area-inset-top, 0px)',
       animation: 'slideUp 0.22s ease',
     } : {
+      // As a tab inside the nav: transparent so the app's radial
+      // gradient background carries through and the cards inside read
+      // as glass on top of the colored field.
       display: 'flex', flexDirection: 'column',
-      background: '#0A0A0A', minHeight: '100%',
+      background: 'transparent', minHeight: '100%',
     }}>
 
       {/* Header — only on setup and done.
@@ -1692,6 +1746,7 @@ export default function LifeCounterScreen({ onClose, onViewProfile }) {
 
       {step === 'counter' && config && (
         <CounterStep
+          key={`counter-${matchKey}`}
           game={config.game}
           commander={config.commander}
           me={profile}
@@ -1705,6 +1760,7 @@ export default function LifeCounterScreen({ onClose, onViewProfile }) {
 
       {step === 'wl' && config && (
         <WLStep
+          key={`wl-${matchKey}`}
           game={config.game}
           me={profile}
           opponent={config.opponent}
@@ -1720,7 +1776,8 @@ export default function LifeCounterScreen({ onClose, onViewProfile }) {
           me={profile}
           opponent={config?.opponent}
           onViewProfile={onViewProfile}
-          onClose={onClose ?? (() => { setStep('setup'); setConfig(null); setResult(null) })}
+          onRematch={handleRematch}
+          onClose={onClose ?? (() => { setStep('setup'); setConfig(null); setResult(null); setMatchKey(0) })}
         />
       )}
     </div>
