@@ -615,10 +615,13 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
 
   const pct = Math.max(0, Math.min(1, hp / maxHp))
 
-  // Panel bg: solid vivid color (or muted on death)
+  // Panel bg — glass: el color del jugador en bajo alpha sobre el
+  // fondo translúcido del app. backdrop-filter blurea lo que hay
+  // detrás para que se sienta como un cristal pintado. Cuando el
+  // jugador muere, el panel se desatura.
   const panelBg = dead
-    ? `${playerColor}40`
-    : playerColor
+    ? `linear-gradient(135deg, ${playerColor}18 0%, rgba(255,255,255,0.02) 100%)`
+    : `linear-gradient(135deg, ${playerColor}66 0%, ${playerColor}33 60%, ${playerColor}55 100%)`
 
   // HP number: always white
   const hpColor = dead ? 'rgba(255,255,255,0.5)' : '#FFFFFF'
@@ -754,7 +757,10 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
       flex: 1, display: 'flex', flexDirection: 'column',
       position: 'relative', overflow: 'hidden',
       background: panelBg,
-      transition: 'background 0.4s',
+      backdropFilter: 'blur(30px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+      boxShadow: dead ? 'none' : `inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 80px ${playerColor}22`,
+      transition: 'background 0.4s, box-shadow 0.4s',
       userSelect: 'none',
       WebkitUserSelect: 'none',
       WebkitTouchCallout: 'none',
@@ -778,13 +784,13 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
         pointerEvents: 'none', gap: 4, zIndex: 2,
       }}>
         <span style={{
-          fontSize: compact ? (hp >= 100 ? 52 : 68) : (hp >= 100 ? 72 : 96),
+          fontSize: compact ? (hp >= 100 ? 64 : 84) : (hp >= 100 ? 72 : 96),
           fontWeight: 800, color: hpColor,
           fontVariantNumeric: 'tabular-nums',
           fontFamily: 'Inter, sans-serif',
           lineHeight: 1,
           transition: 'color 0.35s, font-size 0.2s',
-          textShadow: dead ? '0 0 30px rgba(0,0,0,0.4)' : 'none',
+          textShadow: dead ? '0 0 30px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.35)',
         }}>{hp}</span>
         {!compact && (
           <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontFamily: 'Inter, sans-serif', fontWeight: 600, letterSpacing: '0.1em' }}>
@@ -798,17 +804,30 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
       {!compact && !flipped && infoRow(false)}
       {!compact && !flipped && expandedPanels}
 
-      {/* Tap zones — fill remaining space, HP number floats above via absolute */}
+      {/* Tap zones — split left/right. En compact (3p/4p) los iconos
+          se alinean a las orillas del panel (flex-start / flex-end)
+          para que NO se solapen con el número de HP grande del centro.
+          Padding lateral genera el aire necesario. */}
       <div style={{ flex: 1, display: 'flex', zIndex: 3 }}>
-        <div {...minusEvents} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}>
+        <div {...minusEvents} style={{
+          flex: 1, display: 'flex', alignItems: 'center',
+          justifyContent: compact ? 'flex-start' : 'center',
+          paddingLeft: compact ? 16 : 0,
+          cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none',
+        }}>
           <svg width="32" height="4" viewBox="0 0 32 4" style={{ pointerEvents: 'none', display: 'block' }}>
-            <rect x="0" y="0" width="32" height="4" rx="2" fill="rgba(255,255,255,0.25)" />
+            <rect x="0" y="0" width="32" height="4" rx="2" fill="rgba(255,255,255,0.35)" />
           </svg>
         </div>
-        <div {...plusEvents} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}>
+        <div {...plusEvents} style={{
+          flex: 1, display: 'flex', alignItems: 'center',
+          justifyContent: compact ? 'flex-end' : 'center',
+          paddingRight: compact ? 16 : 0,
+          cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none',
+        }}>
           <svg width="28" height="28" viewBox="0 0 28 28" style={{ pointerEvents: 'none', display: 'block' }}>
-            <rect x="12" y="0" width="4" height="28" rx="2" fill="rgba(255,255,255,0.25)" />
-            <rect x="0" y="12" width="28" height="4" rx="2" fill="rgba(255,255,255,0.25)" />
+            <rect x="12" y="0" width="4" height="28" rx="2" fill="rgba(255,255,255,0.35)" />
+            <rect x="0" y="12" width="28" height="4" rx="2" fill="rgba(255,255,255,0.35)" />
           </svg>
         </div>
       </div>
@@ -1023,21 +1042,21 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
         {playerCount === 3 && (
           <>
             <PlayerPanel user={allPlayers[1]} hp={hps[1]} maxHp={maxHp} game={game} poison={poisons[1]} onAdjust={d => adjust(1, d)} onPoison={d => addPoison(1, d)} isMTG={game === 'MTG'} isCommander={game === 'MTG' && commander} cmdDmg={cmdDmgs[1]} onCmdDmg={d => addCmdDmg(1, d)} flipped dead={losers.includes(1)} playerColor={PLAYER_COLORS[1]} compact />
-            <div style={{ width: 2, background: 'rgba(0,0,0,0.5)', flexShrink: 0 }} />
+            <div style={{ width: 2, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
             <PlayerPanel user={allPlayers[2]} hp={hps[2]} maxHp={maxHp} game={game} poison={poisons[2]} onAdjust={d => adjust(2, d)} onPoison={d => addPoison(2, d)} isMTG={game === 'MTG'} isCommander={game === 'MTG' && commander} cmdDmg={cmdDmgs[2]} onCmdDmg={d => addCmdDmg(2, d)} flipped dead={losers.includes(2)} playerColor={PLAYER_COLORS[2]} compact />
           </>
         )}
         {playerCount === 4 && (
           <>
             <PlayerPanel user={allPlayers[2]} hp={hps[2]} maxHp={maxHp} game={game} poison={poisons[2]} onAdjust={d => adjust(2, d)} onPoison={d => addPoison(2, d)} isMTG={game === 'MTG'} isCommander={game === 'MTG' && commander} cmdDmg={cmdDmgs[2]} onCmdDmg={d => addCmdDmg(2, d)} flipped dead={losers.includes(2)} playerColor={PLAYER_COLORS[2]} compact />
-            <div style={{ width: 2, background: 'rgba(0,0,0,0.5)', flexShrink: 0 }} />
+            <div style={{ width: 2, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
             <PlayerPanel user={allPlayers[3]} hp={hps[3]} maxHp={maxHp} game={game} poison={poisons[3]} onAdjust={d => adjust(3, d)} onPoison={d => addPoison(3, d)} isMTG={game === 'MTG'} isCommander={game === 'MTG' && commander} cmdDmg={cmdDmgs[3]} onCmdDmg={d => addCmdDmg(3, d)} flipped dead={losers.includes(3)} playerColor={PLAYER_COLORS[3]} compact />
           </>
         )}
       </div>
 
       {/* Center line — Q badge floats over it */}
-      <div style={{ flexShrink: 0, height: 2, background: 'rgba(0,0,0,0.5)', position: 'relative', overflow: 'visible', zIndex: 20 }}>
+      <div style={{ flexShrink: 0, height: 2, background: 'rgba(255,255,255,0.08)', position: 'relative', overflow: 'visible', zIndex: 20 }}>
 
         {/* Q badge — opens menu */}
         <button
@@ -1171,7 +1190,7 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
               playerColor={PLAYER_COLORS[0 % PLAYER_COLORS.length]}
               compact
             />
-            <div style={{ width: 2, background: 'rgba(0,0,0,0.5)', flexShrink: 0 }} />
+            <div style={{ width: 2, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
             <PlayerPanel
               user={allPlayers[1]}
               hp={hps[1]} maxHp={maxHp} game={game}
