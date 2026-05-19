@@ -531,6 +531,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           onClose={() => { setShowHub(false); setHubInitialView(null) }}
           onOpenAuction={() => { setShowHub(false); setShowAuction(true) }}
           onOpenLifeCounter={() => { setShowHub(false); setShowLifeCounter(true) }}
+          onBattleNow={() => { setShowHub(false); setVsUser(null); setShowMatchModal(true) }}
           onOpenTracking={() => { setShowHub(false); setShowTracking(true) }}
           onOpenFolder={() => { setShowHub(false); setActiveTab('folder'); setVisitedTabs(prev => { const n = new Set(prev); n.add('folder'); return n }) }}
           onOpenProfile={() => { setShowHub(false); handleOwnProfile() }}

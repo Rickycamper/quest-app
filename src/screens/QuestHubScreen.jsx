@@ -9,7 +9,7 @@ import { getPointsHistory, redeemPoints, getMembershipUsageSummary, getMyStats, 
 import { useAuth } from '../context/AuthContext'
 import { useConfirm } from '../components/Confirm'
 import { useToast } from '../components/Toast'
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, Swords } from 'lucide-react'
 import { SAWizardHat, SAGem, SACrown, SATruck, SALock, SABolt, SAGavel, SAFlag, SACircleCheck, SAFire, SADungeon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 import Avatar from '../components/Avatar'
@@ -671,10 +671,10 @@ function QPointsView({ profile, onRedeemed }) {
 }
 
 // ── Hub tiles ─────────────────────────────────
-// ── Mi récord — match history + per-TCG chart ──────────────────────────
+// ── Battle Stats — match history + per-TCG volume chart + Battle Now ──
 // Premium / admin / owner users can reset their visible record (drops a
 // localStorage cutoff so anything older stops counting in their view).
-function RecordView() {
+function RecordView({ onBattleNow }) {
   const { isPremium } = useAuth()
   const confirm = useConfirm()
   const toast   = useToast()
@@ -682,6 +682,8 @@ function RecordView() {
   const [matches,  setMatches]  = useState([])
   const [loading,  setLoading]  = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
+  // Tapping a TCG card filters the matches list to just that game.
+  const [selectedGame, setSelectedGame] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -748,8 +750,43 @@ function RecordView() {
     return `hace ${Math.floor(d / 365)}a`
   }
 
+  // Filtered list — when selectedGame is set, only show those matches.
+  const visibleMatches = selectedGame
+    ? matches.filter(m => m.game === selectedGame)
+    : matches
+
+  // Max total games across TCGs — for scaling the volume bars.
+  const maxGames = Math.max(1, ...stats.map(s => s.total))
+
   return (
     <div style={{ padding: '12px 16px 32px', fontFamily: 'Inter, sans-serif' }}>
+
+      {/* ── Battle Now CTA ─────────────────────────────────────────────
+          Top of the view. Closes Quest Hub and opens the LogMatch /
+          opponent-picker modal so the user can start a new battle. */}
+      {onBattleNow && (
+        <button
+          onClick={onBattleNow}
+          className="pressable"
+          style={{
+            width: '100%', marginBottom: 14,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '14px 16px', borderRadius: 14,
+            background: 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)',
+            border: 'none', cursor: 'pointer',
+            color: '#FFFFFF', fontSize: 14, fontWeight: 800,
+            fontFamily: 'Inter, sans-serif',
+            letterSpacing: '0.01em',
+            boxShadow: '0 10px 28px rgba(251,146,60,0.25), 0 4px 10px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.3)',
+            textShadow: '0 1px 0 rgba(0,0,0,0.18)',
+            transition: 'transform 200ms cubic-bezier(0.34,1.56,0.64,1)',
+          }}
+        >
+          <Swords size={18} strokeWidth={2.3} />
+          BATTLE NOW
+        </button>
+      )}
+
       {/* Summary card — overall record */}
       <div style={{
         background: 'linear-gradient(135deg, rgba(74,222,128,0.08) 0%, rgba(167,139,250,0.05) 100%)',
@@ -774,18 +811,117 @@ function RecordView() {
         </div>
       </div>
 
-      {/* Match history list — opponent · TCG · W/L · date */}
+      {/* ── POR JUEGO — informative volume chart, tap to filter list ───
+          Bars scale by total games per TCG so you can see at a glance
+          which game you grind the most. Tap a card → filters the
+          'Mis partidas' list below to that TCG. Tap again → clears. */}
+      {stats.length > 0 && (
+        <>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: 10,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.12em' }}>
+              POR JUEGO
+              <span style={{ color: '#374151', marginLeft: 6, letterSpacing: 0, fontWeight: 600 }}>
+                · tap para filtrar
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+            {stats.map(s => {
+              const pct = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0
+              const volumePct = Math.round((s.total / maxGames) * 100)
+              const winColor = pct >= 60 ? '#4ADE80' : pct >= 40 ? '#FBBF24' : '#F87171'
+              const gs = GAME_STYLES[s.game] ?? {}
+              const isSel = selectedGame === s.game
+              return (
+                <button
+                  key={s.game}
+                  onClick={() => setSelectedGame(isSel ? null : s.game)}
+                  className="pressable"
+                  style={{
+                    background: isSel
+                      ? `linear-gradient(135deg, ${gs.bg ?? 'rgba(74,222,128,0.10)'} 0%, transparent 70%)`
+                      : '#1A1A1A',
+                    borderRadius: 12, padding: '12px 14px',
+                    border: `1px solid ${isSel ? (gs.border ?? 'rgba(74,222,128,0.45)') : '#1F1F1F'}`,
+                    cursor: 'pointer', textAlign: 'left', width: '100%',
+                    fontFamily: 'Inter, sans-serif',
+                    transition: 'all 220ms cubic-bezier(0.34,1.56,0.64,1)',
+                    boxShadow: isSel ? `0 0 14px ${gs.border ?? 'rgba(74,222,128,0.25)'}` : 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <GameIcon game={s.game} size={16} />
+                      <span style={{
+                        fontSize: 13, fontWeight: 700,
+                        color: isSel ? (gs.color ?? '#FFFFFF') : '#FFFFFF',
+                      }}>{s.game}</span>
+                      <span style={{
+                        fontSize: 10.5, color: '#6B7280', fontWeight: 600, marginLeft: 4,
+                      }}>{s.total} {s.total === 1 ? 'partida' : 'partidas'}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                      <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 800 }}>{s.wins}V</span>
+                      <span style={{ fontSize: 11, color: '#333' }}>·</span>
+                      <span style={{ fontSize: 12, color: '#F87171', fontWeight: 800 }}>{s.losses}D</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: winColor, minWidth: 36, textAlign: 'right' }}>{pct}%</span>
+                    </div>
+                  </div>
+                  {/* Volume bar — width = share of total games (NOT win rate).
+                      Tells the user 'this is how much you play this TCG'. */}
+                  <div style={{ height: 6, borderRadius: 3, background: '#2A2A2A', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${volumePct}%`,
+                      background: `linear-gradient(90deg, ${gs.border ?? '#888'} 0%, ${gs.color ?? '#fff'} 100%)`,
+                      borderRadius: 3,
+                      boxShadow: `0 0 8px ${gs.color ?? '#fff'}55`,
+                      transition: 'width 0.6s ease',
+                    }} />
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {/* ── MIS PARTIDAS — filtered when a TCG card above is selected ── */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 10,
       }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.12em' }}>
+        <div style={{
+          fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.12em',
+          display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+        }}>
           MIS PARTIDAS
-          {matches.length > 0 && (
-            <span style={{ color: '#374151', marginLeft: 6, letterSpacing: 0, fontWeight: 600 }}>
+          {selectedGame ? (
+            // Active-filter pill — shows which TCG is being filtered
+            // and offers a clear-x to drop the filter.
+            <button
+              onClick={() => setSelectedGame(null)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: (GAME_STYLES[selectedGame]?.bg) ?? 'rgba(255,255,255,0.08)',
+                border: `1px solid ${(GAME_STYLES[selectedGame]?.border) ?? '#2A2A2A'}`,
+                color: (GAME_STYLES[selectedGame]?.color) ?? '#FFFFFF',
+                padding: '2px 8px', borderRadius: 9999,
+                fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
+                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              }}
+            >
+              {selectedGame}
+              <span style={{ marginLeft: 1, opacity: 0.8 }}>×</span>
+            </button>
+          ) : matches.length > 0 ? (
+            <span style={{ color: '#374151', letterSpacing: 0, fontWeight: 600 }}>
               · últimas {matches.length}
             </span>
-          )}
+          ) : null}
         </div>
         {isPremium && (totalGames > 0 || matches.length > 0) && (
           <button
@@ -808,18 +944,19 @@ function RecordView() {
         )}
       </div>
 
-      {matches.length === 0 ? (
+      {visibleMatches.length === 0 ? (
         <div style={{
           background: '#0F0F0F', borderRadius: 12, padding: '20px 16px',
           fontSize: 12, color: '#4B5563', textAlign: 'center',
           border: '1px solid #1A1A1A', marginBottom: 16,
         }}>
-          Sin partidas en el historial reciente.
+          {selectedGame
+            ? `Sin partidas de ${selectedGame} en tu historial.`
+            : 'Sin partidas en el historial reciente.'}
         </div>
       ) : (
-        // Match list — scrolls inside its own ~4-row window so the
-        // 'Por juego' chart below stays visible without scrolling past
-        // all 50 rows. Soft fade at the bottom hints at more content.
+        // Match list scrolls inside its own ~4-row window so the chart
+        // above stays accessible without scrolling past 50 rows.
         <div style={{
           position: 'relative',
           marginBottom: 18,
@@ -831,66 +968,61 @@ function RecordView() {
               display: 'flex', flexDirection: 'column', gap: 6,
               maxHeight: 280,
               overflowY: 'auto',
-              paddingRight: 2,            // breathing room for the scrollbar
+              paddingRight: 2,
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'thin',
-            }}>
-          {matches.map(m => {
-            const gs = GAME_STYLES[m.game] ?? {}
-            return (
-              <div key={m.id} style={{
-                background: '#1A1A1A', borderRadius: 10,
-                border: `1px solid ${m.isWin ? 'rgba(74,222,128,0.18)' : 'rgba(248,113,113,0.18)'}`,
-                padding: '9px 11px',
-                display: 'flex', alignItems: 'center', gap: 9,
-              }}>
-                {/* Opponent avatar */}
-                <div style={{
-                  width: 30, height: 30, borderRadius: '50%',
-                  background: '#0F0F0F', border: '1px solid #2A2A2A',
-                  overflow: 'hidden', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {visibleMatches.map(m => {
+              const gs = GAME_STYLES[m.game] ?? {}
+              return (
+                <div key={m.id} style={{
+                  background: '#1A1A1A', borderRadius: 10,
+                  border: `1px solid ${m.isWin ? 'rgba(74,222,128,0.18)' : 'rgba(248,113,113,0.18)'}`,
+                  padding: '9px 11px',
+                  display: 'flex', alignItems: 'center', gap: 9,
                 }}>
-                  <Avatar url={m.opponent?.avatar_url} size={30} role={m.opponent?.role} isOwner={m.opponent?.is_owner} />
-                </div>
-
-                {/* Opponent name + game */}
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <span style={{
-                    fontSize: 12.5, fontWeight: 700, color: '#E5E7EB',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    vs {m.opponent?.username ?? '—'}
-                  </span>
                   <div style={{
-                    display: 'flex', alignItems: 'center', gap: 4,
-                    fontSize: 10.5, color: '#6B7280',
+                    width: 30, height: 30, borderRadius: '50%',
+                    background: '#0F0F0F', border: '1px solid #2A2A2A',
+                    overflow: 'hidden', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <GameIcon game={m.game} size={10} />
-                    <span style={{ color: gs.color ?? '#6B7280', fontWeight: 600 }}>{m.game}</span>
-                    <span style={{ color: '#333' }}>·</span>
-                    <span>{fmtAgo(m.createdAt)}</span>
+                    <Avatar url={m.opponent?.avatar_url} size={30} role={m.opponent?.role} isOwner={m.opponent?.is_owner} />
                   </div>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <span style={{
+                      fontSize: 12.5, fontWeight: 700, color: '#E5E7EB',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      vs {m.opponent?.username ?? '—'}
+                    </span>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      fontSize: 10.5, color: '#6B7280',
+                    }}>
+                      <GameIcon game={m.game} size={10} />
+                      <span style={{ color: gs.color ?? '#6B7280', fontWeight: 600 }}>{m.game}</span>
+                      <span style={{ color: '#333' }}>·</span>
+                      <span>{fmtAgo(m.createdAt)}</span>
+                    </div>
+                  </div>
+                  <span style={{
+                    flexShrink: 0,
+                    fontSize: 11, fontWeight: 800,
+                    padding: '4px 9px', borderRadius: 6,
+                    background: m.isWin ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.10)',
+                    border: `1px solid ${m.isWin ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.28)'}`,
+                    color: m.isWin ? '#4ADE80' : '#F87171',
+                    letterSpacing: '0.04em',
+                  }}>
+                    {m.isWin ? 'V' : 'D'}
+                  </span>
                 </div>
-
-                {/* W/L badge */}
-                <span style={{
-                  flexShrink: 0,
-                  fontSize: 11, fontWeight: 800,
-                  padding: '4px 9px', borderRadius: 6,
-                  background: m.isWin ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.10)',
-                  border: `1px solid ${m.isWin ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.28)'}`,
-                  color: m.isWin ? '#4ADE80' : '#F87171',
-                  letterSpacing: '0.04em',
-                }}>
-                  {m.isWin ? 'V' : 'D'}
-                </span>
-              </div>
-            )
-          })}
+              )
+            })}
           </div>
-          {/* Bottom fade — hint that there's more content if list overflows */}
-          {matches.length > 4 && (
+          {visibleMatches.length > 4 && (
             <div style={{
               position: 'absolute',
               bottom: 0, left: 0, right: 0, height: 28,
@@ -900,43 +1032,6 @@ function RecordView() {
             }} />
           )}
         </div>
-      )}
-
-      {/* Per-TCG chart — bars proportional to total games per game */}
-      {stats.length > 0 && (
-        <>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.12em', marginBottom: 10 }}>
-            POR JUEGO
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {stats.map(s => {
-              const pct = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0
-              const color = pct >= 60 ? '#4ADE80' : pct >= 40 ? '#FBBF24' : '#F87171'
-              return (
-                <div key={s.game} style={{
-                  background: '#1A1A1A', borderRadius: 12, padding: '12px 14px',
-                  border: '1px solid #1F1F1F',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <GameIcon game={s.game} size={16} />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>{s.game}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 800 }}>{s.wins}V</span>
-                      <span style={{ fontSize: 11, color: '#333' }}>·</span>
-                      <span style={{ fontSize: 12, color: '#F87171', fontWeight: 800 }}>{s.losses}D</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, color, minWidth: 36, textAlign: 'right' }}>{pct}%</span>
-                    </div>
-                  </div>
-                  <div style={{ height: 4, borderRadius: 2, background: '#2A2A2A', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2, transition: 'width 0.4s ease' }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </>
       )}
 
       <div style={{ fontSize: 11, color: '#4B5563', textAlign: 'center', marginTop: 14 }}>
@@ -1000,8 +1095,8 @@ const TILES = [
   {
     id:      'record',
     icon:    'chart',
-    label:   'Mi récord',
-    desc:    'Wins · Losses',
+    label:   'Battle Stats',
+    desc:    'Tus partidas · W/L',
     color:   '#4ADE80',
     bg:      'rgba(74,222,128,0.08)',
     border:  'rgba(74,222,128,0.2)',
@@ -1010,7 +1105,7 @@ const TILES = [
 ]
 
 // ── Main component ────────────────────────────
-export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, profile, initialView = null }) {
+export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onBattleNow, profile, initialView = null }) {
   const [view, setView] = useState(initialView) // null | 'sucursales' | 'membresia' | 'qpoints'
 
   const handleTile = (tile) => {
@@ -1027,7 +1122,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
     view === 'sucursales' ? 'Sucursales'
     : view === 'membresia' ? 'Membresía'
     : view === 'qpoints'   ? 'Q Coins'
-    : view === 'record'    ? 'Mi récord'
+    : view === 'record'    ? 'Battle Stats'
     : ''
 
   return (
@@ -1097,7 +1192,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
           {view === 'sucursales' && <SucursalesView onBack={() => setView(null)} />}
           {view === 'membresia'  && <MembresiaView profile={profile} />}
           {view === 'qpoints'    && <QPointsView profile={profile} />}
-          {view === 'record'     && <RecordView />}
+          {view === 'record'     && <RecordView onBattleNow={onBattleNow} />}
         </div>
       )}
 
