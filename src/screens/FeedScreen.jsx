@@ -15,7 +15,7 @@ import GameIcon from '../components/GameIcon'
 import EmptyState from '../components/EmptyState'
 import Spinner from '../components/Spinner'
 import { COLOR, RADIUS, SPACING, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
-import { Handshake, HandMetal } from 'lucide-react'
+import { Handshake, HandMetal, MessageCircle, Send } from 'lucide-react'
 
 const sk = (w, h, r = 6) => ({
   width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
@@ -676,7 +676,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
           transition: MOTION.springTransition,
           letterSpacing: '-0.005em',
         }} aria-label="Comentarios">
-          <CommentIcon size={19} /> {commentCount > 0 && commentCount}
+          <MessageCircle size={19} strokeWidth={showComments ? 2.4 : 1.75} /> {commentCount > 0 && commentCount}
         </button>
 
         {/* Share */}
@@ -688,7 +688,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
           fontFamily: FONT_STACK, padding: '2px 0',
           transition: MOTION.springTransition,
         }} aria-label="Compartir">
-          <ShareIcon size={18} />
+          <Send size={18} strokeWidth={shared ? 2.4 : 1.75} />
           {shared && <span style={{ fontSize: 11.5, color: COLOR.green, fontWeight: WEIGHT.semibold }}>Copiado</span>}
         </button>
 
