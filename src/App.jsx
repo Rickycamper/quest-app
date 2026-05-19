@@ -173,7 +173,10 @@ const globalCSS = `
     text-rendering: optimizeLegibility;
   }
   .phone-wrap { display:flex; justify-content:center; align-items:center; height:100vh; padding:20px; overflow:hidden; }
-  .phone { width:390px; height:844px; border-radius:44px; overflow:hidden; position:relative; background:#0A0A0A; box-shadow:0 30px 80px rgba(0,0,0,0.6), 0 0 0 6px #111111; display:flex; flex-direction:column; }
+  /* .phone bg is transparent so the body's ambient gradient bleeds through
+     to whatever's underneath the cards. The desktop "device frame" still
+     shows via the box-shadow (which paints the bezel + drop). */
+  .phone { width:390px; height:844px; border-radius:44px; overflow:hidden; position:relative; background:transparent; box-shadow:0 30px 80px rgba(0,0,0,0.6), 0 0 0 6px #111111; display:flex; flex-direction:column; }
   @media (max-width: 480px) {
     /*
      * URL bar collapse strategy:
@@ -185,13 +188,26 @@ const globalCSS = `
      * - Chrome Android 108+ also collapses from overflow container scroll.
      */
     html { height: 100%; }
-    body { min-height: 100%; background: #0A0A0A; }
+    /* Keep the body's ambient gradient visible on mobile. The original
+       solid #0A0A0A here was killing the glow under .phone — replicating
+       the same radial set so the gradient survives the media query. */
+    body {
+      min-height: 100%;
+      background:
+        radial-gradient(ellipse 60% 50% at 15% 10%, rgba(59,130,246,0.10) 0%, transparent 65%),
+        radial-gradient(ellipse 55% 45% at 85% 35%, rgba(167,139,250,0.10) 0%, transparent 65%),
+        radial-gradient(ellipse 70% 40% at 50% 110%, rgba(251,146,60,0.07) 0%, transparent 65%),
+        #08080C;
+      background-attachment: fixed;
+    }
     .phone-wrap { padding:0; display:flex; align-items:stretch; width:100%; height:100dvh; overflow:hidden; }
-    .phone { width:100%; height:100%; border-radius:0; box-shadow:none; }
+    .phone { width:100%; height:100%; border-radius:0; box-shadow:none; background:transparent; }
     input, textarea, select { font-size: 16px !important; }
   }
   .app-header { flex-shrink:0; }
-  .screen-scroll { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px)); padding-top:calc(56px + env(safe-area-inset-top, 0px)); min-height:0; background:#0A0A0A; }
+  /* screen-scroll bg also transparent so the ambient gradient reaches
+     all the way up to the cards (glass picks it up through blur). */
+  .screen-scroll { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px)); padding-top:calc(56px + env(safe-area-inset-top, 0px)); min-height:0; background:transparent; }
   .screen-scroll::-webkit-scrollbar { display:none; }
   .filter-scroll { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; touch-action:pan-x; -webkit-overflow-scrolling:touch; }
   .filter-scroll::-webkit-scrollbar { display:none; }
