@@ -15,7 +15,7 @@ import GameIcon from '../components/GameIcon'
 import EmptyState from '../components/EmptyState'
 import Spinner from '../components/Spinner'
 import { COLOR, RADIUS, SPACING, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
-import { Handshake } from 'lucide-react'
+import { Handshake, HandMetal } from 'lucide-react'
 
 const sk = (w, h, r = 6) => ({
   width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
@@ -657,7 +657,15 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
           transition: MOTION.springTransition,
           letterSpacing: '-0.005em',
         }} aria-label={liked ? 'Quitar like' : 'Like'} aria-pressed={liked}>
-          <BoltIcon filled={liked} size={19} pop={likeAnim} color={liked ? '#FFFFFF' : COLOR.textQuaternary} /> {likes > 0 && likes}
+          <HandMetal
+            size={20}
+            strokeWidth={liked ? 2.4 : 1.75}
+            color={liked ? '#FFFFFF' : COLOR.textQuaternary}
+            style={{
+              transition: 'transform 220ms cubic-bezier(0.34,1.56,0.64,1)',
+              animation: likeAnim ? 'pop 0.42s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+            }}
+          /> {likes > 0 && likes}
         </button>
         <button onClick={handleOpenComments} className="pressable" style={{
           display: 'flex', alignItems: 'center', gap: 6,
