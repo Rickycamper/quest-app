@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
-import { BRANCH_STYLES } from '../lib/constants'
+import { BRANCH_STYLES, GAME_STYLES } from '../lib/constants'
 import { getPointsHistory, redeemPoints, getMembershipUsageSummary, getMyStats, getMyMatchHistory, resetMyMatches } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useConfirm } from '../components/Confirm'
