@@ -2236,6 +2236,33 @@ export async function getArticles(game = null, limit = 12) {
   return data ?? []
 }
 
+/**
+ * Latest article per game — devuelve UN solo artículo (el más reciente)
+ * por cada TCG. Sirve para el header de noticias del feed en vista 'ALL'
+ * para que el usuario sepa de un pantallazo que hay novedades en cada
+ * juego, en vez de ver todo el log apilado.
+ *
+ * Implementación: traemos los últimos 100 publicados y deduplicamos por
+ * game en JS. Más simple que un DISTINCT ON sobre el cliente PostgREST y
+ * el costo es bajo (tcg_articles es chico).
+ */
+export async function getLatestArticlePerGame() {
+  const { data, error } = await supabase
+    .from('tcg_articles')
+    .select('id, game, source_name, title, url, image_url, published_at')
+    .order('published_at', { ascending: false })
+    .limit(100)
+  if (error) throw error
+  const seen = new Set()
+  const latest = []
+  for (const a of data ?? []) {
+    if (!a.game || seen.has(a.game)) continue
+    seen.add(a.game)
+    latest.push(a)
+  }
+  return latest
+}
+
 export async function getPointsHistory(limit = 80) {
   const { data: { session } } = await supabase.auth.getSession()
   const { data, error } = await supabase

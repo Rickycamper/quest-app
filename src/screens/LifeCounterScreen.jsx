@@ -1927,53 +1927,31 @@ export default function LifeCounterScreen({ onClose, onViewProfile, invite }) {
       background: 'transparent', minHeight: '100%',
     }}>
 
-      {/* Header — only on setup and done.
-          Admin/owner get the refined version matching the medieval nav family
-          (Sword icon, softer borders, glass-tinted bar).
-          Regular users keep the original look (heart-like custom svg) — no
-          surprise UI shift for them. */}
+      {/* Header — only on setup and done. Glass bar + Sword icon, mismo
+          tratamiento que el resto del redesign. */}
       {(step === 'setup' || step === 'done') && (
-        isAdminOrOwner ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '14px 16px 12px', flexShrink: 0,
+          background: 'rgba(255,255,255,0.03)',
+          borderBottom: '0.5px solid rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        }}>
+          {isModal
+            ? <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 22, lineHeight: 1, padding: '0 2px' }}>‹</button>
+            : <div style={{ width: 28 }} />
+          }
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '14px 16px 12px', flexShrink: 0,
-            background: 'rgba(255,255,255,0.03)',
-            borderBottom: '0.5px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            fontSize: 17, fontWeight: 700, color: '#FFFFFF',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif',
+            display: 'flex', alignItems: 'center', gap: 9,
+            letterSpacing: '-0.015em',
           }}>
-            {isModal
-              ? <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 22, lineHeight: 1, padding: '0 2px' }}>‹</button>
-              : <div style={{ width: 28 }} />
-            }
-            <div style={{
-              fontSize: 17, fontWeight: 700, color: '#FFFFFF',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif',
-              display: 'flex', alignItems: 'center', gap: 9,
-              letterSpacing: '-0.015em',
-            }}>
-              <SwordIcon size={20} strokeWidth={2.2} color="#FFFFFF" />
-              Life Counter
-            </div>
+            <SwordIcon size={20} strokeWidth={2.2} color="#FFFFFF" />
+            Life Counter
           </div>
-        ) : (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '14px 16px 12px', flexShrink: 0,
-            background: '#0D0D0D', borderBottom: '1px solid #1A1A1A',
-          }}>
-            {isModal
-              ? <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, padding: '0 2px' }}>←</button>
-              : <div style={{ width: 28 }} />
-            }
-            <div style={{ fontSize: 17, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="#fff" strokeWidth="0">
-                <path d="M13 12.465625c1.828125 -1.284375 3 -3.253125 3 -5.465625C16 3.134375 12.41875 0 8 0S0 3.134375 0 7c0 2.209375 1.171875 4.18125 3 5.465625l0 0.034375v2c0 0.828125 0.671875 1.5 1.5 1.5h1.5v-1.5c0 -0.275 0.225 -0.5 0.5 -0.5s0.5 0.225 0.5 0.5v1.5h2v-1.5c0 -0.275 0.225 -0.5 0.5 -0.5s0.5 0.225 0.5 0.5v1.5h1.5c0.828125 0 1.5 -0.671875 1.5 -1.5v-2l0 -0.034375zM3 8a2 2 0 1 1 4 0 2 2 0 1 1 -4 0zm8 -2a2 2 0 1 1 0 4 2 2 0 1 1 0 -4z"/>
-              </svg>
-              Life Counter
-            </div>
-          </div>
-        )
+        </div>
       )}
 
       {step === 'setup' && (

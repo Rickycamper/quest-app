@@ -201,23 +201,20 @@ body.dc-preview button[style*="border: 1px solid rgb(42, 42, 42)"] {
   -webkit-backdrop-filter: blur(12px) !important;
 }
 
-/* ── 5. Inputs — same glass, indigo focus accent ───────────────────────── */
+/* ── 5. Inputs — color + placeholder solo. Antes pintábamos bg y borde
+       a TODOS los inputs con !important, lo cual le metía un recuadro
+       a los <input> que estaban dentro de un wrapper que ya provee su
+       propio estilo (search bar del Shop, contact form, etc).
+       Ahora solo forzamos color de texto + placeholder, y dejamos que
+       cada componente decida su propio container. */
 body.dc-preview input,
 body.dc-preview textarea,
 body.dc-preview select {
-  background: rgba(255,255,255,0.04) !important;
-  border: 0.5px solid rgba(255,255,255,0.12) !important;
   color: #F5F5F7 !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset !important;
-  transition: border-color 220ms ease, box-shadow 220ms ease !important;
 }
 body.dc-preview input:focus,
 body.dc-preview textarea:focus,
 body.dc-preview select:focus {
-  border-color: rgba(99,102,241,0.6) !important;
-  box-shadow:
-    0 0 0 3px rgba(99,102,241,0.20),
-    0 1px 0 rgba(255,255,255,0.08) inset !important;
   outline: none !important;
 }
 body.dc-preview input::placeholder,

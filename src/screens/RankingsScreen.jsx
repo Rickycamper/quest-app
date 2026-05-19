@@ -4399,45 +4399,24 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
       </div>
     )
 
-    // Admin/owner — one unified card with hairline dividers
-    if (isAdminOrOwner) {
-      return (
-        <div style={{ padding: '10px 14px 4px' }}>
-          <div style={{
-            background: '#111111',
-            border: '1px solid #1E1E1E',
-            borderRadius: 14,
-            padding: '10px 12px',
-            display: 'flex', flexDirection: 'column', gap: 10,
-            boxShadow: '0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03)',
-          }}>
-            {tabsRow}
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
-            {gameRow}
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
-            {branchRow}
-          </div>
-        </div>
-      )
-    }
-
-    // Regular users — original three-card layout, untouched
+    // Unified card with hairline dividers — para todos los usuarios.
     return (
-      <>
-        <div style={{ padding: '12px 20px 4px' }}>{tabsRow}</div>
-        <div style={{ padding: '8px 14px 0' }}>
-          <div style={{
-            background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
-            padding: '8px 10px',
-          }}>{gameRow}</div>
+      <div style={{ padding: '10px 14px 4px' }}>
+        <div style={{
+          background: '#111111',
+          border: '1px solid #1E1E1E',
+          borderRadius: 14,
+          padding: '10px 12px',
+          display: 'flex', flexDirection: 'column', gap: 10,
+          boxShadow: '0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03)',
+        }}>
+          {tabsRow}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
+          {gameRow}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
+          {branchRow}
         </div>
-        <div style={{ padding: '6px 14px 4px' }}>
-          <div style={{
-            background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
-            padding: '6px 8px',
-          }}>{branchRow}</div>
-        </div>
-      </>
+      </div>
     )
   }
 

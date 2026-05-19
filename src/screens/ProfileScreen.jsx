@@ -410,130 +410,16 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           )}
         </div>
 
-        {/* Avisos — only on own profile, and only for admin/owner
-            (regular users still have the bell tab in the bottom nav
-            as their notifications entry point, so they don't need the
-            card here too). */}
-        {isOwn && onNotifs && isAdminOrOwner && (
-          <button
-            onClick={onNotifs}
-            className="pressable"
-            style={{
-              width: '100%', marginBottom: 10,
-              padding: '12px 14px',
-              borderRadius: RADIUS.md,
-              background: unreadCount > 0
-                ? 'linear-gradient(135deg, rgba(167,139,250,0.14) 0%, rgba(167,139,250,0.04) 100%)'
-                : COLOR.surfaceRaised,
-              border: `1px solid ${unreadCount > 0 ? 'rgba(167,139,250,0.32)' : COLOR.borderStrong}`,
-              boxShadow: unreadCount > 0
-                ? '0 0 16px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.05)'
-                : `${ELEVATION.sm}, inset 0 1px 0 rgba(255,255,255,0.04)`,
-              display: 'flex', alignItems: 'center', gap: 12,
-              cursor: 'pointer', fontFamily: FONT_STACK,
-              transition: MOTION.springTransition,
-            }}
-          >
-            {/* Bell icon block with badge */}
-            <div style={{
-              width: 38, height: 38, borderRadius: RADIUS.sm, flexShrink: 0,
-              background: unreadCount > 0 ? 'rgba(167,139,250,0.18)' : COLOR.background,
-              border: `1px solid ${unreadCount > 0 ? 'rgba(167,139,250,0.32)' : COLOR.border}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: unreadCount > 0 ? COLOR.purple : COLOR.textSecondary,
-              position: 'relative',
-              animation: unreadCount > 0 ? 'trophyGlow 2.6s ease-in-out infinite' : 'none',
-            }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-              {unreadCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: -4, right: -4,
-                  minWidth: 18, height: 18, borderRadius: 9,
-                  background: '#EF4444',
-                  border: '2px solid #0A0A0A',
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, fontWeight: WEIGHT.bold, color: '#FFFFFF',
-                  padding: '0 5px',
-                  animation: 'pulseDot 1.6s ease-in-out infinite',
-                }}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </div>
+        {/* Avisos banner removido — la campanita del header del perfil
+            ya da entrada directa a las notificaciones, así que mostrarlo
+            otra vez encima del grid de posts era redundante. */}
 
-            {/* Text */}
-            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-              <div style={{
-                fontSize: 13.5, fontWeight: WEIGHT.bold,
-                color: unreadCount > 0 ? COLOR.text : COLOR.textSecondary,
-                letterSpacing: '-0.005em',
-              }}>
-                Avisos
-              </div>
-              <div style={{
-                fontSize: 11.5,
-                color: unreadCount > 0 ? COLOR.purple : COLOR.textTertiary,
-                fontWeight: WEIGHT.medium,
-                marginTop: 2,
-                letterSpacing: '-0.005em',
-              }}>
-                {unreadCount > 0
-                  ? `${unreadCount} ${unreadCount === 1 ? 'aviso nuevo' : 'avisos nuevos'}`
-                  : 'Sin avisos nuevos'}
-              </div>
-            </div>
-
-            {/* Chevron */}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-              style={{ color: unreadCount > 0 ? COLOR.purple : COLOR.textQuaternary, flexShrink: 0 }}>
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-        )}
-
-        {/* Action buttons.
-            Admin/owner preview: Editar perfil + Duelo inline removed
-              (the pencil in the top bar handles edit, Duelo wasn't useful
-              as a self-action). Cleaner profile for the preview audience.
-            Regular users: keep the original Editar perfil + Duelo row so
-              nothing changes for them in production. */}
+        {/* Action buttons — perfil propio.
+            Edición vive en el pencil del header. Duelo desde tu propio
+            perfil no es útil como acción contra ti mismo, así que se
+            quitó. Mi récord vive en Quest Hub → Battle Stats. */}
         {isOwn ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {!isAdminOrOwner && (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={onEditProfile} style={{
-                  flex: 1, padding: '9px 0',
-                  borderRadius: 8, background: 'transparent',
-                  border: '1.5px solid #2A2A2A',
-                  color: '#9CA3AF', fontSize: 13, fontWeight: 700,
-                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                }}>
-                  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                  Editar perfil
-                </button>
-                <button
-                  onClick={() => onVs?.()}
-                  style={{
-                    flex: 1, padding: '9px 0',
-                    borderRadius: 8, background: 'transparent',
-                    border: '1.5px solid #2A2A2A',
-                    color: '#FB923C', fontSize: 13, fontWeight: 700,
-                    cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  ⚔️ Duelo
-                </button>
-              </div>
-            )}
             {/* Q Points redemption button — shown when user has ≥1000 pts */}
             {(profile?.q_points ?? 0) >= 1000 && (
               <button onClick={() => { setRedeemMsg(''); setShowRedeem(true) }} style={{
@@ -553,32 +439,9 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
               </button>
             )}
 
-            {/* Win rate stats button — regular users only. For admin/owner
-                the record lives in Quest Hub → Mi récord (more breathing room
-                + decluttered profile). */}
-            {myStats.length > 0 && !isAdminOrOwner && (
-              <button onClick={() => setShowStats(true)} style={{
-                width: '100%', padding: '9px 14px',
-                borderRadius: 8, background: 'rgba(74,222,128,0.06)',
-                border: '1.5px solid rgba(74,222,128,0.2)',
-                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#6B7280' }}>📊 Mi récord</span>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  {myStats.slice(0, 3).map(s => {
-                    const pct = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0
-                    return (
-                      <span key={s.game} style={{ fontSize: 11, fontFamily: 'Inter, sans-serif' }}>
-                        <span style={{ color: '#9CA3AF', fontWeight: 600 }}>{s.game}</span>
-                        {' '}
-                        <span style={{ color: pct >= 50 ? '#4ADE80' : '#F87171', fontWeight: 800 }}>{pct}%</span>
-                      </span>
-                    )
-                  })}
-                </div>
-              </button>
-            )}
+            {/* Mi récord chip removida — la información completa vive en
+                Quest Hub → Battle Stats (con gráfica de volumen, historial
+                y filtro por TCG). Mantiene el perfil más limpio. */}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

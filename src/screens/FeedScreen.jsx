@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback, useLayoutEffect, memo } from 
 import questLogo from '../assets/quest-logo-sm.png'
 import { useGuest } from '../context/GuestContext'
 import { supabase } from '../lib/supabase'
-import { getFeed, getUserLikedPosts, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost, getArticles } from '../lib/supabase'
+import { getFeed, getUserLikedPosts, toggleLike, toggleSave, toggleFollow, getFollowing, getComments, addComment, deletePost, updatePost, getArticles, getLatestArticlePerGame } from '../lib/supabase'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import { shareOrCopy } from '../lib/share'
 import { useConfirm } from '../components/Confirm'
@@ -925,6 +925,17 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
   // already ran in the last hour, so this is always safe to call.
   useEffect(() => { maybeAutoRefreshArticles() }, [])
 
+  // En la vista 'ALL' (no TCG seleccionado), pre-cargamos la noticia más
+  // reciente de cada TCG así el usuario abre el app y de una sabe que
+  // hay novedades. Si filtra a un TCG, se reemplaza con el log completo
+  // de ese juego (handleGameSwitch).
+  useEffect(() => {
+    if (game) return
+    getLatestArticlePerGame()
+      .then(rows => { if (!gameRef.current) setArticles(rows) })
+      .catch(() => {})
+  }, [game])
+
   const loadFeed = useCallback((opts = {}) => {
     const { withFollowing = false } = opts
     const key = cacheKey(gameRef.current)
@@ -983,11 +994,14 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
       setBgRefresh(true)
     }
     setGame(g)
-    // Load articles for the selected game
+    // Articles: cuando hay TCG seleccionado, traer TODO el feed de ese
+    // juego. Cuando es 'ALL', mostrar SOLO la noticia más reciente de
+    // cada TCG (6 ítems) para que el usuario sepa que hay novedades sin
+    // tener que entrar a cada juego.
     if (g) {
       getArticles(g).then(setArticles).catch(() => setArticles([]))
     } else {
-      setArticles([])
+      getLatestArticlePerGame().then(setArticles).catch(() => setArticles([]))
     }
   }
 
