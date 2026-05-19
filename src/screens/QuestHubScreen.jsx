@@ -1088,11 +1088,18 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
         </button>
       </div>
 
-      {/* Sub-views */}
-      {view === 'sucursales' && <SucursalesView onBack={() => setView(null)} />}
-      {view === 'membresia'  && <MembresiaView profile={profile} />}
-      {view === 'qpoints'    && <QPointsView profile={profile} />}
-      {view === 'record'     && <RecordView />}
+      {/* Sub-views — wrap in a scroll container so they can grow past
+          viewport height. Without this, the only scroll was on the
+          main tiles grid; sub-views (Mi récord etc.) had no way to
+          reach content below the fold. */}
+      {view && (
+        <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          {view === 'sucursales' && <SucursalesView onBack={() => setView(null)} />}
+          {view === 'membresia'  && <MembresiaView profile={profile} />}
+          {view === 'qpoints'    && <QPointsView profile={profile} />}
+          {view === 'record'     && <RecordView />}
+        </div>
+      )}
 
       {/* Main tiles grid */}
       {!view && (
