@@ -2,7 +2,7 @@
 // QUEST — Supabase client
 // ─────────────────────────────────────────────
 import { createClient } from '@supabase/supabase-js'
-import { RANKING_PTS, GAME_STYLES } from './constants'
+import { RANKING_PTS, GAME_STYLES, GAMES } from './constants'
 
 // ── In-memory rate limiter ────────────────────
 // Tracks last action timestamp per user per action type
@@ -384,10 +384,7 @@ export async function getQPoints(userId) {
 export async function getProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
-    // NOTE: q_points is intentionally NOT selected here — some DBs may not
-    // have the column; the realtime profile-sync channel fills it in from
-    // UPDATE payloads after award_points / redeem_points run.
-    .select('id, username, role, branch, avatar_url, points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, tcg_usernames, social_links, season_badges')
+    .select('id, username, role, branch, avatar_url, points, q_points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, tcg_usernames, social_links, season_badges')
     .eq('id', userId)
     .single()
   if (error) throw error
@@ -2306,7 +2303,7 @@ export async function getMyStats() {
   }
   return Object.entries(map)
     .map(([game, { wins, losses }]) => ({ game, wins, losses, total: wins + losses }))
-    .sort((a, b) => b.total - a.total)
+    .sort((a, b) => GAMES.indexOf(a.game) - GAMES.indexOf(b.game))
 }
 
 // ── Match history (per-match, with opponent profile) ────────────────────────

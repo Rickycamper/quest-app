@@ -65,15 +65,15 @@
     <!-- SF Pro on Apple devices, Inter on others — instant typography upgrade everywhere -->
     <style>
       html,body{
-        /* Deep base + three subtle radial color sources (blue top-left,
-           violet center-right, warm orange bottom). Low alphas so the
-           overall feel is still 'dark mode' but the cards' backdrop-filter
-           blur now has something to pick up — that's what makes glass
-           read as glass instead of as flat translucent grey. */
+        /* PRUEBA — Battle Now gradient como ambient background.
+           Orange → pink → violet, mismas paradas que el CTA pero a
+           opacidad mucho más baja para que el contenido siga legible.
+           Si se siente demasiado vibrante, bajar los alphas o regresar
+           a la versión azul/violeta/naranja. */
         background:
-          radial-gradient(ellipse 60% 50% at 15% 10%, rgba(59,130,246,0.10) 0%, transparent 65%),
-          radial-gradient(ellipse 55% 45% at 85% 35%, rgba(167,139,250,0.10) 0%, transparent 65%),
-          radial-gradient(ellipse 70% 40% at 50% 110%, rgba(251,146,60,0.07) 0%, transparent 65%),
+          radial-gradient(ellipse 70% 55% at 12% 8%,  rgba(251,146,60,0.22) 0%, transparent 65%),
+          radial-gradient(ellipse 65% 50% at 88% 32%, rgba(244,114,182,0.18) 0%, transparent 65%),
+          radial-gradient(ellipse 80% 60% at 50% 115%, rgba(167,139,250,0.22) 0%, transparent 65%),
           #08080C;
         background-attachment:fixed;
         font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter",system-ui,sans-serif;

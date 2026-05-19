@@ -203,6 +203,49 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
           </svg>
         </button>
+        {/* Notifications bell — own profile only. Tap opens the same
+            notifications panel as the bottom-nav bell. The red dot
+            badge mirrors unreadCount so the user notices new avisos
+            without having to leave their profile. */}
+        {isOwn && onNotifs && (
+          <button
+            onClick={onNotifs}
+            title="Avisos"
+            className="pressable"
+            style={{
+              width: 38, height: 38, borderRadius: RADIUS.md,
+              border: `1px solid ${unreadCount > 0 ? 'rgba(167,139,250,0.45)' : COLOR.borderStrong}`,
+              background: unreadCount > 0 ? 'rgba(167,139,250,0.12)' : COLOR.surfaceRaised,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+              color: unreadCount > 0 ? COLOR.purple : COLOR.textSecondary,
+              flexShrink: 0, position: 'relative',
+              boxShadow: unreadCount > 0
+                ? `0 0 12px rgba(167,139,250,0.25), ${ELEVATION.sm}`
+                : `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+              transition: MOTION.springTransition,
+            }}
+          >
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -3, right: -3,
+                minWidth: 16, height: 16, borderRadius: 8,
+                background: '#EF4444',
+                border: '2px solid #0A0A0A',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 9, fontWeight: 800, color: '#FFF',
+                padding: '0 4px', lineHeight: 1,
+                fontFamily: 'Inter, sans-serif',
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+        )}
         {isOwn && (
           <button onClick={onEditProfile} className="pressable" style={{
             width: 38, height: 38, borderRadius: RADIUS.md,

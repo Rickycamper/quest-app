@@ -8,7 +8,7 @@ import riftboundIcon from '../assets/riftbound.png'
 import pokemonIcon from '../assets/pokemon.png'
 import digimonIcon from '../assets/digimon.png'
 
-export const GAMES = ['MTG', 'Pokemon', 'One Piece', 'Digimon', 'Riftbound', 'Gundam']
+export const GAMES = ['MTG', 'One Piece', 'Gundam', 'Pokemon', 'Riftbound', 'Digimon']
 
 // Every game maps to a "platform" — the actual online system (MTG Arena,
 // Pokémon TCG Live, Bandai TCG+) where the user has a separate username.
