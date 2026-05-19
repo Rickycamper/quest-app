@@ -817,9 +817,9 @@ function RecordView() {
           Sin partidas en el historial reciente.
         </div>
       ) : (
-        {/* Match list — scrolls inside its own ~4-row window so the
-            'Por juego' chart below stays visible without scrolling past
-            all 50 rows. Soft fade at the bottom hints at more content. */}
+        // Match list — scrolls inside its own ~4-row window so the
+        // 'Por juego' chart below stays visible without scrolling past
+        // all 50 rows. Soft fade at the bottom hints at more content.
         <div style={{
           position: 'relative',
           marginBottom: 18,
