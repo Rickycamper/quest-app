@@ -641,15 +641,26 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
         : (isAtBottom ? '4px 16px 12px' : '12px 16px 4px'),
       flexShrink: 0, zIndex: 1,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 0 : 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 6 : 8, minWidth: 0 }}>
         <div style={{
-          width: compact ? 26 : 28, height: compact ? 26 : 28,
+          width: compact ? 22 : 28, height: compact ? 22 : 28,
           borderRadius: '50%', overflow: 'hidden',
           background: 'rgba(0,0,0,0.25)', flexShrink: 0,
           border: '2px solid rgba(255,255,255,0.3)',
         }}>
-          <Avatar url={user?.avatar_url} size={compact ? 26 : 28} />
+          <Avatar url={user?.avatar_url} size={compact ? 22 : 28} />
         </div>
+        {compact && user?.username && (
+          <span style={{
+            fontSize: 11, fontWeight: 800, color: '#FFFFFF',
+            fontFamily: 'Inter, sans-serif', letterSpacing: '0.01em',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            maxWidth: 90,
+            textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+          }}>
+            {user?.username ?? ''}
+          </span>
+        )}
         {!compact && (
           <span style={{ fontSize: 14, fontWeight: 800, color: '#FFFFFF', fontFamily: 'Inter, sans-serif', letterSpacing: '0.01em' }}>
             {user?.username ?? '…'}
@@ -784,13 +795,13 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
         pointerEvents: 'none', gap: 4, zIndex: 2,
       }}>
         <span style={{
-          fontSize: compact ? (hp >= 100 ? 64 : 84) : (hp >= 100 ? 72 : 96),
+          fontSize: compact ? (hp >= 100 ? 88 : 112) : (hp >= 100 ? 72 : 96),
           fontWeight: 800, color: hpColor,
           fontVariantNumeric: 'tabular-nums',
           fontFamily: 'Inter, sans-serif',
           lineHeight: 1,
           transition: 'color 0.35s, font-size 0.2s',
-          textShadow: dead ? '0 0 30px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.35)',
+          textShadow: dead ? '0 0 30px rgba(0,0,0,0.4)' : '0 2px 14px rgba(0,0,0,0.45)',
         }}>{hp}</span>
         {!compact && (
           <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontFamily: 'Inter, sans-serif', fontWeight: 600, letterSpacing: '0.1em' }}>
@@ -1237,28 +1248,59 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
 
           {err && <div style={{ fontSize: 12, color: '#F87171', fontFamily: 'Inter, sans-serif' }}>{err}</div>}
 
-          <div style={{ display: 'flex', gap: 10, width: '100%', maxWidth: 300 }}>
-            <button
-              onClick={() => { setWinner(null); setLosers([]) }}
-              style={{
-                flex: 1, padding: '13px 0', borderRadius: 12,
-                background: 'rgba(255,255,255,0.06)', border: '1px solid #2A2A2A',
-                color: '#9CA3AF', fontSize: 13, fontWeight: 700,
-                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-              }}
-            >Fue error</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 320 }}>
             <button
               onClick={handleConfirmResult}
               disabled={logging}
+              className={logging ? '' : 'pressable'}
               style={{
-                flex: 2, padding: '13px 0', borderRadius: 12,
-                background: logging ? '#1A1A1A' : '#FFF',
-                border: 'none', color: logging ? '#555' : '#111',
-                fontSize: 13, fontWeight: 800,
+                padding: '14px 0', borderRadius: 12,
+                background: logging
+                  ? 'rgba(255,255,255,0.04)'
+                  : 'linear-gradient(135deg, #4ADE80 0%, #22D3EE 100%)',
+                border: 'none',
+                color: logging ? '#555' : '#062013',
+                fontSize: 14, fontWeight: 800,
                 cursor: logging ? 'default' : 'pointer',
                 fontFamily: 'Inter, sans-serif',
+                boxShadow: logging ? 'none' : '0 6px 18px rgba(74,222,128,0.30), inset 0 1px 0 rgba(255,255,255,0.30)',
+                textShadow: logging ? 'none' : '0 1px 0 rgba(0,0,0,0.10)',
+                transition: 'transform 200ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms ease',
               }}
-            >{logging ? 'Registrando…' : '✓ Confirmar resultado'}</button>
+            >{logging ? 'Registrando…' : '✓ Confirmar y registrar'}</button>
+            <button
+              onClick={handleReset}
+              className="pressable"
+              style={{
+                padding: '13px 0', borderRadius: 12,
+                background: 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)',
+                border: 'none',
+                color: '#FFFFFF',
+                fontSize: 14, fontWeight: 800,
+                cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif',
+                letterSpacing: '0.01em',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                boxShadow: '0 6px 18px rgba(251,146,60,0.28), 0 2px 6px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.28)',
+                textShadow: '0 1px 0 rgba(0,0,0,0.18)',
+                transition: 'transform 200ms cubic-bezier(0.34,1.56,0.64,1)',
+              }}
+            >
+              <SwordIcon size={16} strokeWidth={2.3} color="#FFFFFF" />
+              REVANCHA
+            </button>
+            <button
+              onClick={() => { setWinner(null); setLosers([]) }}
+              style={{
+                padding: '11px 0', borderRadius: 12,
+                background: 'rgba(255,255,255,0.04)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                color: '#9CA3AF', fontSize: 12, fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              }}
+            >Fue error · seguir jugando</button>
           </div>
         </div>
       )}
