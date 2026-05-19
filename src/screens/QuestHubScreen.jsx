@@ -817,7 +817,24 @@ function RecordView() {
           Sin partidas en el historial reciente.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+        {/* Match list — scrolls inside its own ~4-row window so the
+            'Por juego' chart below stays visible without scrolling past
+            all 50 rows. Soft fade at the bottom hints at more content. */}
+        <div style={{
+          position: 'relative',
+          marginBottom: 18,
+          borderRadius: 12,
+        }}>
+          <div
+            className="record-match-scroll"
+            style={{
+              display: 'flex', flexDirection: 'column', gap: 6,
+              maxHeight: 280,
+              overflowY: 'auto',
+              paddingRight: 2,            // breathing room for the scrollbar
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'thin',
+            }}>
           {matches.map(m => {
             const gs = GAME_STYLES[m.game] ?? {}
             return (
@@ -871,6 +888,17 @@ function RecordView() {
               </div>
             )
           })}
+          </div>
+          {/* Bottom fade — hint that there's more content if list overflows */}
+          {matches.length > 4 && (
+            <div style={{
+              position: 'absolute',
+              bottom: 0, left: 0, right: 0, height: 28,
+              pointerEvents: 'none',
+              background: 'linear-gradient(180deg, transparent 0%, rgba(8,8,12,0.85) 100%)',
+              borderRadius: '0 0 12px 12px',
+            }} />
+          )}
         </div>
       )}
 
