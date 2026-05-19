@@ -5,7 +5,9 @@
 // ─────────────────────────────────────────────
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { logMatch, searchUsers } from '../lib/supabase'
+import { logMatch, searchUsers, createNotification } from '../lib/supabase'
+import { shareOrCopy } from '../lib/share'
+import { useToast } from '../components/Toast'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
@@ -123,13 +125,21 @@ function useTapOrHold(onTap, onHold, holdMs = 600) {
 }
 
 // ── Setup step ────────────────────────────────
-function SetupStep({ profile, onStart }) {
-  const [game,        setGame]       = useState('MTG')
-  const [commander,   setCommander]  = useState(false)
-  const [matchType,   setMatchType]  = useState('casual')
-  const [playerCount, setPlayerCount] = useState(2)
-  const [opponents,   setOpponents]  = useState([null, null, null])
-  const [activeSlot,  setActiveSlot] = useState(0)
+function SetupStep({ profile, invite, onStart }) {
+  // Si llegamos por una invitación, preseleccionamos game/commander/etc
+  // y el host queda preadded como oponente. El usuario sólo tiene que
+  // tap 'Iniciar contador'.
+  const [game,        setGame]       = useState(invite?.g ?? 'MTG')
+  const [commander,   setCommander]  = useState(!!invite?.c)
+  const [matchType,   setMatchType]  = useState(invite?.m ?? 'casual')
+  const [playerCount, setPlayerCount] = useState(invite?.p ?? 2)
+  const [opponents,   setOpponents]  = useState(() => {
+    if (invite?.h && invite?.hi) {
+      return [{ id: invite.hi, username: invite.h, avatar_url: null }, null, null]
+    }
+    return [null, null, null]
+  })
+  const [activeSlot,  setActiveSlot] = useState(invite ? 1 : 0)
   const [query,       setQuery]      = useState('')
   const [allUsers,    setAllUsers]   = useState([])
   const [loadingU,    setLoadingU]   = useState(false)
@@ -198,6 +208,38 @@ function SetupStep({ profile, onStart }) {
   return (
     <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', padding: '20px 16px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
+      {/* Invite banner — solo si llegamos por un link */}
+      {invite && (
+        <div style={{
+          padding: '12px 14px', borderRadius: 12,
+          background: 'linear-gradient(135deg, rgba(251,146,60,0.14) 0%, rgba(244,114,182,0.10) 50%, rgba(167,139,250,0.14) 100%)',
+          backdropFilter: 'blur(18px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+          border: '1px solid rgba(244,114,182,0.30)',
+          boxShadow: '0 0 14px rgba(244,114,182,0.18), inset 0 1px 0 rgba(255,255,255,0.05)',
+          display: 'flex', alignItems: 'center', gap: 10,
+          fontFamily: 'Inter, sans-serif',
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: 'rgba(244,114,182,0.18)',
+            border: '1px solid rgba(244,114,182,0.40)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <SwordIcon size={18} strokeWidth={2.3} color="#F472B6" />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.005em' }}>
+              <span style={{ color: '#F472B6' }}>@{invite.h}</span> te invitó
+            </div>
+            <div style={{ fontSize: 11, color: '#C4B5FD', marginTop: 2 }}>
+              {invite.g}{invite.c ? ' · Commander' : ''}{invite.m === 'final' ? ' · Final' : ' · Casual'}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Game picker */}
       <div>
         <SectionLabel>Juego</SectionLabel>
@@ -208,13 +250,17 @@ function SetupStep({ profile, onStart }) {
             return (
               <button key={g} onClick={() => { setGame(g); setCommander(false); setPlayerCount(2); setOpponents([null, null, null]); setActiveSlot(0) }} style={{
                 padding: '10px 8px', borderRadius: 8, cursor: 'pointer',
-                background: active ? gs.bg : '#111111',
-                border: `1.5px solid ${active ? gs.border : '#1E1E1E'}`,
-                color: active ? gs.color : '#555',
+                background: active ? gs.bg : 'rgba(255,255,255,0.03)',
+                backdropFilter: 'blur(18px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+                border: `1px solid ${active ? gs.border : 'rgba(255,255,255,0.08)'}`,
+                color: active ? gs.color : '#9CA3AF',
                 fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                transition: 'all 0.15s',
-                boxShadow: active ? `0 0 8px ${gs.border}44` : 'none',
+                transition: 'all 0.2s',
+                boxShadow: active
+                  ? `0 0 14px ${gs.border}55, inset 0 1px 0 rgba(255,255,255,0.05)`
+                  : 'inset 0 1px 0 rgba(255,255,255,0.03)',
               }}>
                 <GameIcon game={g} size={14} />{g}
               </button>
@@ -228,11 +274,14 @@ function SetupStep({ profile, onStart }) {
             {[{ v: false, label: 'Standard (20)' }, { v: true, label: 'Commander (40)' }].map(({ v, label }) => (
               <button key={String(v)} onClick={() => { setCommander(v); setPlayerCount(2); setOpponents([null, null, null]); setActiveSlot(0) }} style={{
                 flex: 1, padding: '8px 0', borderRadius: 8, cursor: 'pointer',
-                background: commander === v ? 'rgba(167,139,250,0.12)' : 'transparent',
-                border: `1.5px solid ${commander === v ? 'rgba(167,139,250,0.4)' : '#2A2A2A'}`,
-                color: commander === v ? '#A78BFA' : '#555',
+                background: commander === v ? 'rgba(167,139,250,0.14)' : 'rgba(255,255,255,0.03)',
+                backdropFilter: 'blur(18px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+                border: `1px solid ${commander === v ? 'rgba(167,139,250,0.45)' : 'rgba(255,255,255,0.08)'}`,
+                color: commander === v ? '#A78BFA' : '#9CA3AF',
                 fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
-                transition: 'all 0.15s',
+                transition: 'all 0.2s',
+                boxShadow: commander === v ? '0 0 14px rgba(167,139,250,0.22), inset 0 1px 0 rgba(255,255,255,0.05)' : 'inset 0 1px 0 rgba(255,255,255,0.03)',
               }}>{label}</button>
             ))}
           </div>
@@ -244,11 +293,14 @@ function SetupStep({ profile, onStart }) {
             {[2, 3, 4].map(n => (
               <button key={n} onClick={() => { setPlayerCount(n); setOpponents([null, null, null]); setActiveSlot(0) }} style={{
                 flex: 1, padding: '8px 0', borderRadius: 8, cursor: 'pointer',
-                background: playerCount === n ? 'rgba(167,139,250,0.12)' : 'transparent',
-                border: `1.5px solid ${playerCount === n ? 'rgba(167,139,250,0.4)' : '#2A2A2A'}`,
-                color: playerCount === n ? '#A78BFA' : '#555',
+                background: playerCount === n ? 'rgba(167,139,250,0.14)' : 'rgba(255,255,255,0.03)',
+                backdropFilter: 'blur(18px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+                border: `1px solid ${playerCount === n ? 'rgba(167,139,250,0.45)' : 'rgba(255,255,255,0.08)'}`,
+                color: playerCount === n ? '#A78BFA' : '#9CA3AF',
                 fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
-                transition: 'all 0.15s',
+                transition: 'all 0.2s',
+                boxShadow: playerCount === n ? '0 0 14px rgba(167,139,250,0.22), inset 0 1px 0 rgba(255,255,255,0.05)' : 'inset 0 1px 0 rgba(255,255,255,0.03)',
               }}>{n} jugadores</button>
             ))}
           </div>
@@ -272,10 +324,13 @@ function SetupStep({ profile, onStart }) {
           ].map(({ v, icon, label, desc }) => (
             <button key={v} onClick={() => setMatchType(v)} style={{
               flex: 1, padding: '9px 8px', borderRadius: 10, cursor: 'pointer',
-              background: matchType === v ? 'rgba(167,139,250,0.12)' : 'transparent',
-              border: `1.5px solid ${matchType === v ? 'rgba(167,139,250,0.5)' : '#2A2A2A'}`,
+              background: matchType === v ? 'rgba(167,139,250,0.14)' : 'rgba(255,255,255,0.03)',
+              backdropFilter: 'blur(18px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+              border: `1px solid ${matchType === v ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.08)'}`,
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-              transition: 'all 0.15s',
+              transition: 'all 0.2s',
+              boxShadow: matchType === v ? '0 0 14px rgba(167,139,250,0.22), inset 0 1px 0 rgba(255,255,255,0.05)' : 'inset 0 1px 0 rgba(255,255,255,0.03)',
             }}>
               <img src={icon} alt={label} style={{ width: 22, height: 22, opacity: matchType === v ? 1 : 0.3, filter: matchType === v ? 'invert(1)' : 'invert(0.4)' }} />
               <span style={{ fontSize: 12, fontWeight: 800, color: matchType === v ? '#A78BFA' : '#555', fontFamily: 'Inter, sans-serif' }}>{label}</span>
@@ -317,8 +372,12 @@ function SetupStep({ profile, onStart }) {
               {slotUser ? (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  background: '#1A1A1A', border: `1.5px solid ${slotUser.isGuest ? 'rgba(251,146,60,0.3)' : 'rgba(74,222,128,0.3)'}`,
+                  background: 'rgba(255,255,255,0.04)',
+                  backdropFilter: 'blur(18px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+                  border: `1px solid ${slotUser.isGuest ? 'rgba(251,146,60,0.35)' : 'rgba(74,222,128,0.35)'}`,
                   borderRadius: 10, padding: '10px 12px',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
                 }}>
                   <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', background: '#2A2A2A', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
                     {slotUser.isGuest ? '👤' : <Avatar url={slotUser.avatar_url} size={32} />}
@@ -333,8 +392,12 @@ function SetupStep({ profile, onStart }) {
                 <div
                   onClick={() => setActiveSlot(i)}
                   style={{
-                    background: '#1A1A1A', border: `1.5px solid ${isActive ? '#2A2A2A' : '#1E1E1E'}`,
+                    background: 'rgba(255,255,255,0.03)',
+                    backdropFilter: 'blur(18px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+                    border: `1px solid ${isActive ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)'}`,
                     borderRadius: 10, overflow: 'hidden', cursor: 'pointer',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
                   }}
                 >
                   {isActive ? (
@@ -403,21 +466,133 @@ function SetupStep({ profile, onStart }) {
 
       {error && <div style={{ fontSize: 12, color: '#F87171', textAlign: 'center', fontFamily: 'Inter, sans-serif' }}>{error}</div>}
 
-      {/* Start button */}
-      <button
-        onClick={handleStart}
-        disabled={!allowGuest && opponents.slice(0, neededSlots).some(o => !o)}
-        style={{
-          padding: '15px 0', borderRadius: 14,
-          background: (allowGuest || opponents.slice(0, neededSlots).every(o => !!o)) ? '#FFF' : '#1A1A1A',
-          border: 'none', color: (allowGuest || opponents.slice(0, neededSlots).every(o => !!o)) ? '#111' : '#555',
-          fontSize: 15, fontWeight: 800, cursor: (allowGuest || opponents.slice(0, neededSlots).every(o => !!o)) ? 'pointer' : 'default',
-          fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', flexShrink: 0,
-        }}
-      >
-        {COUNTER_GAMES.has(game) ? '⚔️ Iniciar contador' : '⚔️ Iniciar duelo'}
-      </button>
+      {/* Action buttons — Iniciar contador (gradient) + Compartir invitación
+          (glass). Share genera un link con la config codificada en base64
+          y, si el oponente es un usuario Quest, le manda una notificación. */}
+      {(() => {
+        const canStart = allowGuest || opponents.slice(0, neededSlots).every(o => !!o)
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
+            <button
+              onClick={handleStart}
+              disabled={!canStart}
+              className={canStart ? 'pressable' : ''}
+              style={{
+                padding: '15px 0', borderRadius: 14,
+                background: canStart
+                  ? 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)'
+                  : 'rgba(255,255,255,0.03)',
+                border: canStart ? 'none' : '1px solid rgba(255,255,255,0.06)',
+                color: canStart ? '#FFFFFF' : '#555',
+                fontSize: 15, fontWeight: 800,
+                cursor: canStart ? 'pointer' : 'default',
+                fontFamily: 'Inter, sans-serif',
+                letterSpacing: '0.01em',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: canStart
+                  ? '0 10px 28px rgba(251,146,60,0.30), 0 4px 10px rgba(167,139,250,0.22), inset 0 1px 0 rgba(255,255,255,0.30)'
+                  : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                textShadow: canStart ? '0 1px 0 rgba(0,0,0,0.18)' : 'none',
+                transition: 'transform 200ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms ease',
+              }}
+            >
+              <SwordIcon size={18} strokeWidth={2.3} color={canStart ? '#FFFFFF' : '#555'} />
+              {COUNTER_GAMES.has(game) ? 'Iniciar contador' : 'Iniciar duelo'}
+            </button>
+
+            <ShareInviteButton
+              profile={profile}
+              game={game}
+              commander={commander}
+              matchType={matchType}
+              playerCount={playerCount}
+              opponents={opponents.slice(0, neededSlots)}
+            />
+          </div>
+        )
+      })()}
     </div>
+  )
+}
+
+// ── Share invite ────────────────────────────────────────────────────
+// Genera un link con la config codificada en base64. Si el oponente
+// es un usuario Quest existente, dispara también una notificación
+// in-app + push para que le llegue avisado.
+function ShareInviteButton({ profile, game, commander, matchType, playerCount, opponents }) {
+  const toast = useToast()
+  const [sharing, setSharing] = useState(false)
+  const handleShare = async () => {
+    if (sharing) return
+    setSharing(true)
+    try {
+      const payload = {
+        h:  profile?.username ?? '',
+        hi: profile?.id ?? '',
+        g:  game,
+        c:  commander,
+        m:  matchType,
+        p:  playerCount,
+        t:  Date.now(),
+      }
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+      const url = `${window.location.origin}/?lc-invite=${b64}`
+      const text = `@${profile?.username ?? 'alguien'} te invitó a una partida de ${game}${commander ? ' Commander' : ''}${matchType === 'final' ? ' (Final)' : ''} en Quest TCG`
+
+      const res = await shareOrCopy({ title: 'Invitación Quest TCG', text, url })
+      if (res?.method === 'clipboard' || res?.method === 'legacy') {
+        toast?.('Link copiado — mándalo a tu oponente', { type: 'success' })
+      }
+
+      // Notification + push to selected Quest users (skip guests).
+      // Fire-and-forget so the share UX isn't blocked by network.
+      const realOpps = (opponents ?? []).filter(o => o && o.id && !o.isGuest)
+      for (const opp of realOpps) {
+        createNotification(
+          opp.id,
+          'lc_invite',
+          '⚔️ Te invitaron a una partida',
+          `@${profile?.username ?? 'alguien'} te invitó a ${game}${commander ? ' Commander' : ''}`,
+          { url, game, commander, matchType, host_id: profile?.id }
+        ).catch(() => {})
+      }
+    } catch (e) {
+      toast?.('No se pudo compartir', { type: 'error' })
+    } finally {
+      setSharing(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleShare}
+      disabled={sharing}
+      className="pressable"
+      style={{
+        padding: '12px 0', borderRadius: 12,
+        background: 'rgba(255,255,255,0.03)',
+        backdropFilter: 'blur(18px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+        border: '1px solid rgba(255,255,255,0.10)',
+        color: '#E5E7EB',
+        fontSize: 13, fontWeight: 700,
+        cursor: sharing ? 'wait' : 'pointer',
+        fontFamily: 'Inter, sans-serif',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+        transition: 'all 0.2s',
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+      </svg>
+      {sharing ? 'Compartiendo…' : 'Invitar jugador'}
+    </button>
   )
 }
 
@@ -1614,7 +1789,7 @@ function SectionLabel({ children }) {
 
 // ── Main export ───────────────────────────────
 // Works both as a nav tab (no onClose) and as a modal overlay (onClose provided).
-export default function LifeCounterScreen({ onClose, onViewProfile }) {
+export default function LifeCounterScreen({ onClose, onViewProfile, invite }) {
   const { profile, isOwner, isAdmin } = useAuth()
   const isAdminOrOwner = isOwner || isAdmin
   const [step,    setStep]   = useState('setup') // 'setup' | 'counter' | 'wl' | 'done'
@@ -1741,7 +1916,7 @@ export default function LifeCounterScreen({ onClose, onViewProfile }) {
       )}
 
       {step === 'setup' && (
-        <SetupStep profile={profile} onStart={handleStart} />
+        <SetupStep profile={profile} invite={invite} onStart={handleStart} />
       )}
 
       {step === 'counter' && config && (
