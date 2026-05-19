@@ -14,6 +14,7 @@ import { useToast } from '../components/Toast'
 import { HAPTIC } from '../lib/design-tokens'
 import { shareOrCopy } from '../lib/share'
 import { COLOR, RADIUS, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
+import { Handshake } from 'lucide-react'
 
 const POST_TYPE_COLORS = {
   quiero: '#F59E0B',
@@ -538,18 +539,28 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {/* Follow + Message row */}
+            {/* Follow + Message row.
+                Follow button uses a Handshake icon (Lucide) — replaces the
+                old 'Seguir / Siguiendo' text. The pact metaphor: tap to make
+                the handshake; the filled white state means action available,
+                the outlined dim state means you're already in. */}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={handleFollow} disabled={fBusy} style={{
-                flex: 1, padding: '9px 0',
-                borderRadius: 8,
-                background: isFollowing ? 'transparent' : '#FFFFFF',
-                border: `1.5px solid ${isFollowing ? '#2A2A2A' : '#FFFFFF'}`,
-                color: isFollowing ? '#9CA3AF' : '#111111',
-                fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
-              }}>
-                {isFollowing ? 'Siguiendo' : '+ Seguir'}
+              <button
+                onClick={handleFollow}
+                disabled={fBusy}
+                aria-label={isFollowing ? 'Dejar de seguir' : 'Seguir'}
+                title={isFollowing ? 'Siguiendo' : 'Seguir'}
+                style={{
+                  flex: 1, padding: '9px 0',
+                  borderRadius: 8,
+                  background: isFollowing ? 'transparent' : '#FFFFFF',
+                  border: `1.5px solid ${isFollowing ? '#2A2A2A' : '#FFFFFF'}`,
+                  color: isFollowing ? '#9CA3AF' : '#111111',
+                  cursor: 'pointer', transition: 'all 0.15s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <Handshake size={18} strokeWidth={isFollowing ? 1.75 : 2.2} />
               </button>
               <button
                 onClick={() => onMessage?.({ id: profile.id, username: profile.username, avatar_url: profile.avatar_url })}

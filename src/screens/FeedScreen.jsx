@@ -15,6 +15,7 @@ import GameIcon from '../components/GameIcon'
 import EmptyState from '../components/EmptyState'
 import Spinner from '../components/Spinner'
 import { COLOR, RADIUS, SPACING, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
+import { Handshake } from 'lucide-react'
 
 const sk = (w, h, r = 6) => ({
   width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
@@ -522,23 +523,28 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
             <span style={{ fontSize: 11.5, color: COLOR.textQuaternary, fontWeight: WEIGHT.medium }}>{timeAgo(post.created_at)}</span>
           </div>
 
-          {/* Follow button — pill, refined */}
+          {/* Follow button — handshake icon replaces 'Seguir' / 'Siguiendo'
+              text. Filled white circle = not following yet (action available).
+              Outlined dim = already following (mutual pact, no action needed). */}
           {!isOwnPost && authorId && (
-            <button onClick={handleFollow} disabled={fBusy} style={{
-              alignSelf: 'center',
-              padding: '7px 14px', borderRadius: RADIUS.full,
-              border: `1px solid ${isFollowed ? COLOR.borderStrong : '#FFFFFF'}`,
-              background: isFollowed ? 'transparent' : '#FFFFFF',
-              color: isFollowed ? COLOR.textSecondary : '#0A0A0A',
-              fontSize: 11.5, fontWeight: WEIGHT.bold,
-              cursor: 'pointer',
-              transition: MOTION.springTransition,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0, fontFamily: FONT_STACK,
-              whiteSpace: 'nowrap',
-              letterSpacing: '-0.005em',
-            }}>
-              {isFollowed ? 'Siguiendo' : 'Seguir'}
+            <button
+              onClick={handleFollow}
+              disabled={fBusy}
+              aria-label={isFollowed ? 'Dejar de seguir' : 'Seguir'}
+              title={isFollowed ? 'Siguiendo' : 'Seguir'}
+              style={{
+                alignSelf: 'center',
+                width: 34, height: 34, borderRadius: '50%',
+                border: `1px solid ${isFollowed ? COLOR.borderStrong : '#FFFFFF'}`,
+                background: isFollowed ? 'transparent' : '#FFFFFF',
+                color: isFollowed ? COLOR.textSecondary : '#0A0A0A',
+                cursor: 'pointer',
+                transition: MOTION.springTransition,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, padding: 0,
+              }}
+            >
+              <Handshake size={17} strokeWidth={isFollowed ? 1.75 : 2.2} />
             </button>
           )}
 
