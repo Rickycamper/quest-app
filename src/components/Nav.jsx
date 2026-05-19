@@ -7,7 +7,9 @@ import { HomeIcon, RanksIcon, BellIcon, CounterIcon, ShopIcon } from './Icons'
 // Phosphor icons — only loaded for admins/owner (preview nav).
 // Tree-shaking on the import means regular users still don't pay
 // for these in the bundle they download.
-import { CastleTurretIcon, CoinsIcon, CrownIcon, SwordIcon } from '@phosphor-icons/react'
+// TreasureChest > Coins for the shop metaphor — a chest reads more like
+// 'merchant treasure' and pairs visually with Castle / Crown / Sword.
+import { CastleTurretIcon, TreasureChestIcon, CrownIcon, SwordIcon } from '@phosphor-icons/react'
 import Avatar from './Avatar'
 import { HAPTIC } from '../lib/design-tokens'
 
@@ -27,19 +29,42 @@ function OwnerBottomNav({ active, hidden, tabs }) {
     action()
   }
 
+  // Scroll-edge effect (iOS-style): when the screen-scroll container has
+  // been scrolled at all, the nav material darkens / saturates so icons
+  // stay readable even when bright content (a white image, etc.) is
+  // blurred behind the bar. Listens directly to the scroll container so
+  // we don't need to drill the value down from App.jsx.
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const scroller = document.querySelector('.screen-scroll')
+    if (!scroller) return
+    const onScroll = () => setScrolled(scroller.scrollTop > 16)
+    onScroll()  // sync immediately in case we mount while already scrolled
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    return () => scroller.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
     <div style={{
       position: 'absolute', bottom: 0, left: 0, right: 0,
       height: 'calc(52px + env(safe-area-inset-bottom, 0px))',
-      background: 'rgba(10,10,10,0.82)',
-      backdropFilter: 'saturate(180%) blur(24px)',
-      WebkitBackdropFilter: 'saturate(180%) blur(24px)',
-      borderTop: '1px solid rgba(255,255,255,0.06)',
-      boxShadow: '0 -8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
+      // Bg + filter ramp up when scrolled so icons keep contrast even
+      // over bright content (post images, etc.) behind the glass.
+      background: scrolled ? 'rgba(8,8,11,0.94)' : 'rgba(10,10,10,0.82)',
+      backdropFilter: scrolled
+        ? 'saturate(200%) blur(32px) brightness(95%)'
+        : 'saturate(180%) blur(24px)',
+      WebkitBackdropFilter: scrolled
+        ? 'saturate(200%) blur(32px) brightness(95%)'
+        : 'saturate(180%) blur(24px)',
+      borderTop: `1px solid ${scrolled ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)'}`,
+      boxShadow: scrolled
+        ? '0 -10px 28px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
+        : '0 -8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
       display: 'flex', alignItems: 'center',
       paddingBottom: 'env(safe-area-inset-bottom, 0px)', zIndex: 100,
       transform: hidden ? 'translateY(100%)' : 'translateY(0)',
-      transition: 'transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+      transition: 'transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1), background 250ms ease, backdrop-filter 250ms ease, border-color 250ms ease',
       willChange: 'transform',
     }}>
       {tabs.map(tab => {
@@ -149,14 +174,17 @@ export function BottomNav({
       <Icon
         size={24}
         weight={a ? 'fill' : 'regular'}
-        color={a ? '#FFFFFF' : '#9CA3AF'}
+        // Inactive uses white-with-opacity instead of a hex gray. Reads
+        // well on both dark bg (default) AND on the lighter glass we get
+        // when bright content is blurred behind the bar.
+        color={a ? '#FFFFFF' : 'rgba(255,255,255,0.65)'}
       />
     </div>
   )
 
   const tabs = [
     { id: 'feed',  label: 'Feed',     icon: Ph(CastleTurretIcon), action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Ph(CoinsIcon),        action: () => onTab('shop') },
+    { id: 'shop',  label: 'Tienda',   icon: Ph(TreasureChestIcon), action: () => onTab('shop') },
     { id: 'post',  label: 'Crear',    icon: null,                 action: onPost, variant: 'primary' },
     { id: 'ranks', label: 'Ranking',  icon: Ph(CrownIcon),        action: () => onTab('ranks') },
     { id: 'life',  label: 'Vida',     icon: Ph(SwordIcon),        action: onLifeCounter },
