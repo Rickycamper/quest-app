@@ -3712,7 +3712,7 @@ function ClaimsTab({ isStaff }) {
 }
 
 // ── Main screen ──────────────────────────────
-export default function RankingsScreen({ profile, isStaff, onReportClaim, onCreateTournament, onCreateLeague, onViewProfile, openTournamentId, openLeagueId }) {
+export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = false, onReportClaim, onCreateTournament, onCreateLeague, onViewProfile, openTournamentId, openLeagueId }) {
   // Start on the right tab when arriving via a deep link
   const [tab,           setTab]          = useState(openTournamentId ? 'tournaments' : openLeagueId ? 'liga' : 'leaderboard')
   const [game,          setGame]         = useState(null)
@@ -3749,10 +3749,14 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
     { id: 'liga',        label: 'Liga' },
   ]
 
-  return (
-    <div>
-      {/* Tabs */}
-      <div style={{ padding: '12px 20px 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+  // ── Filter controls renderer ────────────────────────────────────────────
+  // Two layouts:
+  //   isAdminOrOwner: one consolidated card with 3 rows + hairline dividers
+  //                   (user feedback: the 3 separate cards felt fragmented).
+  //   regular users:  original 3-stacked-card layout — no surprise change.
+  const renderFilters = () => {
+    const tabsRow = (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div className="filter-scroll" style={{ flex: 1, gap: 6 }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
@@ -3782,72 +3786,113 @@ export default function RankingsScreen({ profile, isStaff, onReportClaim, onCrea
             }}>+</button>
         ) : null}
       </div>
+    )
 
-      {/* Filters — game + branch */}
-      {true && (
-        <>
-          <div style={{ padding: '8px 14px 0' }}>
-            <div style={{
-              background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
-              display: 'flex', alignItems: 'center', padding: '8px 10px', gap: 6,
+    const gameRow = (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+      }}>
+        <button onClick={() => setGame(null)} style={{
+          flex: 1, height: 34, borderRadius: 8,
+          border: !game ? '1.5px solid rgba(255,255,255,0.35)' : '1.5px solid transparent',
+          background: !game ? 'rgba(255,255,255,0.1)' : 'transparent',
+          color: !game ? '#FFFFFF' : '#4B5563',
+          fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>ALL</button>
+        <div style={{ width: 1, height: 20, background: '#2A2A2A', flexShrink: 0 }} />
+        {GAMES.map(g => {
+          const gs = GAME_STYLES[g]
+          const active = game === g
+          return (
+            <button key={g} onClick={() => setGame(active ? null : g)} title={g} style={{
+              flex: 1, height: 34, borderRadius: 8,
+              border: `1.5px solid ${active ? gs.border : 'transparent'}`,
+              background: active ? gs.bg : 'transparent',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.22s ease, border-color 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease',
+              boxShadow: active ? `0 0 12px ${gs.border}66` : 'none',
+              transform: active ? 'scale(1.08)' : 'scale(1)',
             }}>
-              <button onClick={() => setGame(null)} style={{
-                flex: 1, height: 34, borderRadius: 8,
-                border: !game ? '1.5px solid rgba(255,255,255,0.35)' : '1.5px solid transparent',
-                background: !game ? 'rgba(255,255,255,0.1)' : 'transparent',
-                color: !game ? '#FFFFFF' : '#4B5563',
-                fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>ALL</button>
-              <div style={{ width: 1, height: 20, background: '#2A2A2A', flexShrink: 0 }} />
-              {GAMES.map(g => {
-                const gs = GAME_STYLES[g]
-                const active = game === g
-                return (
-                  <button key={g} onClick={() => setGame(active ? null : g)} title={g} style={{
-                    flex: 1, height: 34, borderRadius: 8,
-                    border: `1.5px solid ${active ? gs.border : 'transparent'}`,
-                    background: active ? gs.bg : 'transparent',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'background 0.22s ease, border-color 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease',
-                    boxShadow: active ? `0 0 12px ${gs.border}66` : 'none',
-                    transform: active ? 'scale(1.08)' : 'scale(1)',
-                  }}>
-                    <GameIcon game={g} size={18} />
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <div style={{ padding: '6px 14px 4px' }}>
-            <div style={{
-              background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
-              display: 'flex', alignItems: 'center', padding: '6px 8px', gap: 4,
+              <GameIcon game={g} size={18} />
+            </button>
+          )
+        })}
+      </div>
+    )
+
+    const branchRow = (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+      }}>
+        {['', ...BRANCHES].map(b => {
+          const bStyle = b ? BRANCH_STYLES[b] : null
+          const active = branch === (b || null)
+          return (
+            <button key={b} onClick={() => setBranch(b || null)} style={{
+              flex: 1, height: 32, borderRadius: 8,
+              border: `1.5px solid ${active ? (bStyle?.border ?? 'rgba(255,255,255,0.35)') : 'transparent'}`,
+              background: active ? (bStyle?.bg ?? 'rgba(255,255,255,0.1)') : 'transparent',
+              color: active ? (bStyle?.color ?? '#FFFFFF') : '#4B5563',
+              fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+              transition: 'background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease',
+              transform: active ? 'scale(1.04)' : 'scale(1)',
+              boxShadow: active && bStyle ? `0 0 12px ${bStyle.border}66` : 'none',
             }}>
-              {['', ...BRANCHES].map(b => {
-                const bStyle = b ? BRANCH_STYLES[b] : null
-                const active = branch === (b || null)
-                return (
-                  <button key={b} onClick={() => setBranch(b || null)} style={{
-                    flex: 1, height: 32, borderRadius: 8,
-                    border: `1.5px solid ${active ? (bStyle?.border ?? 'rgba(255,255,255,0.35)') : 'transparent'}`,
-                    background: active ? (bStyle?.bg ?? 'rgba(255,255,255,0.1)') : 'transparent',
-                    color: active ? (bStyle?.color ?? '#FFFFFF') : '#4B5563',
-                    fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                    transition: 'background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease',
-                    transform: active ? 'scale(1.04)' : 'scale(1)',
-                    boxShadow: active && bStyle ? `0 0 12px ${bStyle.border}66` : 'none',
-                  }}>
-                    {bStyle && <span style={{ width: 5, height: 5, borderRadius: '50%', background: active ? bStyle.dot : '#374151', flexShrink: 0, transition: 'background 0.2s ease' }} />}
-                    {b || 'Global'}
-                  </button>
-                )
-              })}
-            </div>
+              {bStyle && <span style={{ width: 5, height: 5, borderRadius: '50%', background: active ? bStyle.dot : '#374151', flexShrink: 0, transition: 'background 0.2s ease' }} />}
+              {b || 'Global'}
+            </button>
+          )
+        })}
+      </div>
+    )
+
+    // Admin/owner — one unified card with hairline dividers
+    if (isAdminOrOwner) {
+      return (
+        <div style={{ padding: '10px 14px 4px' }}>
+          <div style={{
+            background: '#111111',
+            border: '1px solid #1E1E1E',
+            borderRadius: 14,
+            padding: '10px 12px',
+            display: 'flex', flexDirection: 'column', gap: 10,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03)',
+          }}>
+            {tabsRow}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
+            {gameRow}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
+            {branchRow}
           </div>
-        </>
-      )}
+        </div>
+      )
+    }
+
+    // Regular users — original three-card layout, untouched
+    return (
+      <>
+        <div style={{ padding: '12px 20px 4px' }}>{tabsRow}</div>
+        <div style={{ padding: '8px 14px 0' }}>
+          <div style={{
+            background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
+            padding: '8px 10px',
+          }}>{gameRow}</div>
+        </div>
+        <div style={{ padding: '6px 14px 4px' }}>
+          <div style={{
+            background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
+            padding: '6px 8px',
+          }}>{branchRow}</div>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <div>
+      {renderFilters()}
 
       {/* Season banner — compact version, only when a game is selected (empty state has its own full version) */}
       {tab === 'leaderboard' && game && <SeasonBanner season={activeSeason} />}

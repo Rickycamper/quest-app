@@ -455,7 +455,7 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername } = 
     // Shop is visible to everyone; ShopScreen internally gates add/edit/delete
     // behind canEdit = isOwner || isStaff, so regular users see a read-only catalog.
     shop:     <ShopScreen isOwner={isOwner} isStaff={isStaff} />,
-    ranks:    <RankingsScreen profile={profile} isStaff={isStaff} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onCreateLeague={() => setShowLeague(true)} onViewProfile={handleViewProfile} openTournamentId={openTournamentId} openLeagueId={openLeagueId} />,
+    ranks:    <RankingsScreen profile={profile} isStaff={isStaff} isAdminOrOwner={isOwner || isAdmin} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onCreateLeague={() => setShowLeague(true)} onViewProfile={handleViewProfile} openTournamentId={openTournamentId} openLeagueId={openLeagueId} />,
     folder:   <FolderScreen   profile={profile} />,
     search:   <SearchScreen   onViewProfile={handleViewProfile} />,
   }), [profile, isStaff, isOwner, handleViewProfile, feedRefreshKey])
