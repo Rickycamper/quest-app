@@ -2,14 +2,14 @@
 // QUEST — BottomNav + NotifBell
 // ─────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react'
-// Quest's original SVG icons — used by the regular-user nav layout.
-import { HomeIcon, RanksIcon, BellIcon, CounterIcon, ShopIcon } from './Icons'
-// Phosphor icons — only loaded for admins/owner (preview nav).
-// Tree-shaking on the import means regular users still don't pay
-// for these in the bundle they download.
-// TreasureChest > Coins for the shop metaphor — a chest reads more like
-// 'merchant treasure' and pairs visually with Castle / Crown / Sword.
-import { CastleTurretIcon, TreasureChestIcon, CrownIcon, SwordIcon } from '@phosphor-icons/react'
+// Lucide icons — single library across the whole app. ~3 k stroke-only
+// glyphs, ISC license, tree-shaken so only the imports below ship.
+// We use stroke-weight + color to imply "active" since Lucide is
+// stroke-only (no fill weight like Phosphor).
+import {
+  Home, ShoppingBag, Trophy, Heart, Bell,        // regular-user nav
+  Castle, Coins, Crown, Swords,                  // admin/owner medieval nav
+} from 'lucide-react'
 import Avatar from './Avatar'
 import { HAPTIC } from '../lib/design-tokens'
 
@@ -152,42 +152,42 @@ export function BottomNav({
   active, hidden, onTab, onLifeCounter, onPost, onNotifs,
   unreadCount, isAdminOrOwner,
 }) {
-  // ── REGULAR user nav — original 5-tab layout, original Quest icons ──
-  if (!isAdminOrOwner) {
-    const tabs = [
-      { id: 'feed',  label: 'Feed',     icon: (a) => <HomeIcon active={a} />,    action: () => onTab('feed') },
-      { id: 'shop',  label: 'Tienda',   icon: (a) => <ShopIcon active={a} />,    action: () => onTab('shop') },
-      { id: 'ranks', label: 'Ranking',  icon: (a) => <RanksIcon active={a} />,   action: () => onTab('ranks') },
-      { id: 'life',  label: 'Vida',     icon: (a) => <CounterIcon active={a} />, action: onLifeCounter },
-      { id: 'notif', label: 'Avisos',   icon: (a) => <BellIcon active={a} />,    action: onNotifs, badge: unreadCount },
-    ]
-    return <OwnerBottomNav active={active} hidden={hidden} tabs={tabs} />
-  }
-
-  // ── ADMIN / OWNER preview nav — medieval icons + center post + header avatar ──
-  // Phosphor icons in fixed 28×28 frame, weight regular ↔ fill for active state.
-  const Ph = (Icon) => (a) => (
+  // Helper: render a Lucide icon inside a fixed 28×28 frame so all tabs
+  // occupy the same visual footprint regardless of glyph shape. Lucide
+  // is stroke-only so the active state thickens the stroke + brightens
+  // the color (no fill weight to swap to).
+  const Lu = (Icon) => (a) => (
     <div style={{
       width: 28, height: 28,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <Icon
         size={24}
-        weight={a ? 'fill' : 'regular'}
-        // Inactive uses white-with-opacity instead of a hex gray. Reads
-        // well on both dark bg (default) AND on the lighter glass we get
-        // when bright content is blurred behind the bar.
+        strokeWidth={a ? 2.5 : 1.75}
         color={a ? '#FFFFFF' : 'rgba(255,255,255,0.65)'}
       />
     </div>
   )
 
+  // ── REGULAR user nav — original 5-tab layout, neutral Lucide icons ──
+  if (!isAdminOrOwner) {
+    const tabs = [
+      { id: 'feed',  label: 'Feed',     icon: Lu(Home),         action: () => onTab('feed') },
+      { id: 'shop',  label: 'Tienda',   icon: Lu(ShoppingBag),  action: () => onTab('shop') },
+      { id: 'ranks', label: 'Ranking',  icon: Lu(Trophy),       action: () => onTab('ranks') },
+      { id: 'life',  label: 'Vida',     icon: Lu(Heart),        action: onLifeCounter },
+      { id: 'notif', label: 'Avisos',   icon: Lu(Bell),         action: onNotifs, badge: unreadCount },
+    ]
+    return <OwnerBottomNav active={active} hidden={hidden} tabs={tabs} />
+  }
+
+  // ── ADMIN / OWNER preview nav — medieval vocab + center post button ──
   const tabs = [
-    { id: 'feed',  label: 'Feed',     icon: Ph(CastleTurretIcon), action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Ph(TreasureChestIcon), action: () => onTab('shop') },
-    { id: 'post',  label: 'Crear',    icon: null,                 action: onPost, variant: 'primary' },
-    { id: 'ranks', label: 'Ranking',  icon: Ph(CrownIcon),        action: () => onTab('ranks') },
-    { id: 'life',  label: 'Vida',     icon: Ph(SwordIcon),        action: onLifeCounter },
+    { id: 'feed',  label: 'Feed',     icon: Lu(Castle),       action: () => onTab('feed') },
+    { id: 'shop',  label: 'Tienda',   icon: Lu(Coins),        action: () => onTab('shop') },
+    { id: 'post',  label: 'Crear',    icon: null,             action: onPost, variant: 'primary' },
+    { id: 'ranks', label: 'Ranking',  icon: Lu(Crown),        action: () => onTab('ranks') },
+    { id: 'life',  label: 'Vida',     icon: Lu(Swords),       action: onLifeCounter },
   ]
   return <OwnerBottomNav active={active} hidden={hidden} tabs={tabs} />
 }
