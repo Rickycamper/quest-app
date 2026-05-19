@@ -2312,32 +2312,52 @@ export async function getMyStats() {
 // ── Match history (per-match, with opponent profile) ────────────────────────
 // Used by Quest Hub → Mi récord to show 'who did I play, when, what TCG'.
 // Honours the local reset cutoff. Returns most-recent first.
+//
+// Done in two steps to dodge the PostgREST ambiguity when two FKs from
+// matches (player_a and player_b) point at the same profiles table:
+//   1. Fetch the raw matches rows (no joins).
+//   2. Look up the opponent profiles in one batch query.
+//   3. Merge into the returned shape.
 export async function getMyMatchHistory(limit = 50) {
   const { data: { session } } = await supabase.auth.getSession()
   const me = session.user.id
   const cutoff = getMatchResetCutoff(me)
+
   let query = supabase
     .from('matches')
-    .select(`
-      id, game, winner_id, match_type, created_at,
-      player_a, player_b,
-      profile_a:player_a ( id, username, avatar_url, role, is_owner ),
-      profile_b:player_b ( id, username, avatar_url, role, is_owner )
-    `)
+    .select('id, game, winner_id, match_type, created_at, player_a, player_b')
     .or(`player_a.eq.${me},player_b.eq.${me}`)
     .eq('status', 'confirmed')
     .order('created_at', { ascending: false })
     .limit(limit)
   if (cutoff) query = query.gt('created_at', cutoff)
-  const { data, error } = await query
+
+  const { data: rows, error } = await query
   if (error) throw error
-  return (data ?? []).map(m => {
-    const opponent = m.player_a === me ? m.profile_b : m.profile_a
+  const matches = rows ?? []
+  if (matches.length === 0) return []
+
+  // Batch-fetch opponent profiles
+  const opponentIds = [...new Set(matches.map(m =>
+    m.player_a === me ? m.player_b : m.player_a
+  ).filter(Boolean))]
+
+  let profilesById = {}
+  if (opponentIds.length) {
+    const { data: profs } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, role, is_owner')
+      .in('id', opponentIds)
+    for (const p of profs ?? []) profilesById[p.id] = p
+  }
+
+  return matches.map(m => {
+    const oppId = m.player_a === me ? m.player_b : m.player_a
     return {
       id: m.id,
       game: m.game,
       isWin: m.winner_id === me,
-      opponent,
+      opponent: profilesById[oppId] ?? null,
       matchType: m.match_type,
       createdAt: m.created_at,
     }
