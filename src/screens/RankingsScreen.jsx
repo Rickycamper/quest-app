@@ -928,6 +928,15 @@ function ChampionsByTcg({ champions, onSelectGame }) {
 
   const loaded = Object.keys(champions).length === GAMES.length
 
+  // Max points across all champions — used to scale the bars so the
+  // top champion's bar reaches 100% and the rest scale proportionally.
+  // Visualises relative dominance: the longer your bar, the more your
+  // TCG's #1 has earned this season vs the other TCG #1s.
+  const maxChampPts = Math.max(
+    1, // avoid divide-by-zero before any champion is loaded
+    ...Object.values(champions).map(c => c?.points || 0)
+  )
+
   return (
     <div style={{
       background: COLOR.surface,
@@ -964,6 +973,8 @@ function ChampionsByTcg({ champions, onSelectGame }) {
           const isLoading = !loaded
           const hasChamp  = !!champ
 
+          const pct = hasChamp ? (champ.points / maxChampPts) * 100 : 0
+
           return (
             <button
               key={g}
@@ -971,8 +982,8 @@ function ChampionsByTcg({ champions, onSelectGame }) {
               className={hasChamp ? 'pressable' : ''}
               disabled={!hasChamp}
               style={{
-                display: 'flex', alignItems: 'center', gap: 11,
-                padding: '11px 12px',
+                display: 'flex', flexDirection: 'column', gap: 8,
+                padding: '11px 12px 10px',
                 background: hasChamp
                   ? `linear-gradient(135deg, ${gs.bg ?? COLOR.background} 0%, transparent 60%)`
                   : COLOR.background,
@@ -988,91 +999,116 @@ function ChampionsByTcg({ champions, onSelectGame }) {
                 boxShadow: hasChamp ? `0 0 10px ${gs.border}, inset 0 1px 0 rgba(255,255,255,0.04)` : 'none',
               }}
             >
-              {/* Game icon block */}
-              <div style={{
-                width: 38, height: 38, borderRadius: RADIUS.sm, flexShrink: 0,
-                background: gs.bg ?? COLOR.surfaceRaised,
-                border: `1px solid ${gs.border ?? COLOR.borderStrong}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-              }}>
-                <GameIcon game={g} size={20} />
-              </div>
-
-              {/* Middle: game name + champion username + branch */}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* Top row — icon + game + champion + points */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%' }}>
+                {/* Game icon block */}
                 <div style={{
-                  fontSize: 13.5, fontWeight: WEIGHT.bold,
-                  color: gs.color ?? COLOR.text,
-                  letterSpacing: '-0.005em',
+                  width: 38, height: 38, borderRadius: RADIUS.sm, flexShrink: 0,
+                  background: gs.bg ?? COLOR.surfaceRaised,
+                  border: `1px solid ${gs.border ?? COLOR.borderStrong}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
                 }}>
-                  {g}
+                  <GameIcon game={g} size={20} />
                 </div>
-                {isLoading ? (
+
+                {/* Middle: game name + champion username + branch */}
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <div style={{
-                    width: '60%', height: 12, borderRadius: 4,
-                    background: `linear-gradient(90deg, ${COLOR.surfaceRaised} 0%, ${COLOR.surfaceHover} 50%, ${COLOR.surfaceRaised} 100%)`,
-                    backgroundSize: '200% 100%',
-                    animation: 'shimmer 1.4s ease-in-out infinite',
-                  }} />
-                ) : hasChamp ? (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 5,
-                    fontSize: 11.5, color: COLOR.textSecondary,
-                    fontWeight: WEIGHT.medium,
+                    fontSize: 13.5, fontWeight: WEIGHT.bold,
+                    color: gs.color ?? COLOR.text,
+                    letterSpacing: '-0.005em',
                   }}>
-                    <span style={{ fontSize: 12 }}>🥇</span>
-                    <span style={{
-                      color: COLOR.text, fontWeight: WEIGHT.semibold,
-                      letterSpacing: '-0.005em',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      maxWidth: 100,
-                    }}>
-                      {champ.username}
-                    </span>
-                    {champ.branch && (
-                      <>
-                        <span style={{ color: COLOR.textQuaternary }}>·</span>
-                        <span style={{
-                          width: 5, height: 5, borderRadius: '50%',
-                          background: bs.dot ?? COLOR.textTertiary, flexShrink: 0,
-                          boxShadow: `0 0 6px ${bs.dot}`,
-                        }} />
-                        <span style={{
-                          color: bs.color ?? COLOR.textTertiary,
-                          fontWeight: WEIGHT.bold,
-                          letterSpacing: '0.005em',
-                        }}>
-                          {champ.branch}
-                        </span>
-                      </>
-                    )}
+                    {g}
                   </div>
-                ) : (
+                  {isLoading ? (
+                    <div style={{
+                      width: '60%', height: 12, borderRadius: 4,
+                      background: `linear-gradient(90deg, ${COLOR.surfaceRaised} 0%, ${COLOR.surfaceHover} 50%, ${COLOR.surfaceRaised} 100%)`,
+                      backgroundSize: '200% 100%',
+                      animation: 'shimmer 1.4s ease-in-out infinite',
+                    }} />
+                  ) : hasChamp ? (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      fontSize: 11.5, color: COLOR.textSecondary,
+                      fontWeight: WEIGHT.medium,
+                    }}>
+                      <span style={{ fontSize: 12 }}>🥇</span>
+                      <span style={{
+                        color: COLOR.text, fontWeight: WEIGHT.semibold,
+                        letterSpacing: '-0.005em',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        maxWidth: 100,
+                      }}>
+                        {champ.username}
+                      </span>
+                      {champ.branch && (
+                        <>
+                          <span style={{ color: COLOR.textQuaternary }}>·</span>
+                          <span style={{
+                            width: 5, height: 5, borderRadius: '50%',
+                            background: bs.dot ?? COLOR.textTertiary, flexShrink: 0,
+                            boxShadow: `0 0 6px ${bs.dot}`,
+                          }} />
+                          <span style={{
+                            color: bs.color ?? COLOR.textTertiary,
+                            fontWeight: WEIGHT.bold,
+                            letterSpacing: '0.005em',
+                          }}>
+                            {champ.branch}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{
+                      fontSize: 11.5, color: COLOR.textQuaternary,
+                      fontWeight: WEIGHT.medium,
+                    }}>
+                      Sin ranking aún
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: points number */}
+                {hasChamp && (
                   <div style={{
-                    fontSize: 11.5, color: COLOR.textQuaternary,
-                    fontWeight: WEIGHT.medium,
+                    flexShrink: 0,
+                    color: gs.color ?? COLOR.text,
+                    fontSize: 14, fontWeight: WEIGHT.bold,
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.01em',
+                    display: 'flex', alignItems: 'baseline', gap: 2,
+                    minWidth: 56, justifyContent: 'flex-end',
                   }}>
-                    Sin ranking aún
+                    <CountUpNum value={champ.points} startWhen={animateIn} delay={delay + 300} duration={1000} />
+                    <span style={{ fontSize: 9.5, opacity: 0.65, fontWeight: WEIGHT.medium }}>pts</span>
                   </div>
                 )}
               </div>
 
-              {/* Right: points pill — only when we have a champion */}
+              {/* ── Bar chart row ──────────────────────────────────────
+                  Horizontal bar scaled to the champion's share of the
+                  max points across all TCGs. Animates 0% → pct on mount
+                  with a slight delay per row (cascade). The bar uses the
+                  game's accent color with a glow halo so the chart reads
+                  as colored data. */}
               {hasChamp && (
                 <div style={{
-                  flexShrink: 0,
-                  padding: '5px 11px', borderRadius: RADIUS.full,
-                  background: gs.bg ?? 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${gs.border ?? COLOR.borderStrong}`,
-                  color: gs.color ?? COLOR.text,
-                  fontSize: 12, fontWeight: WEIGHT.bold,
-                  fontVariantNumeric: 'tabular-nums',
-                  letterSpacing: '-0.005em',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                  width: '100%', height: 6, borderRadius: 3,
+                  background: 'rgba(255,255,255,0.04)',
+                  overflow: 'hidden', position: 'relative',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35)',
                 }}>
-                  <CountUpNum value={champ.points} startWhen={animateIn} delay={delay + 300} duration={1000} />
-                  <span style={{ fontSize: 9.5, opacity: 0.7, marginLeft: 1 }}>pts</span>
+                  <div style={{
+                    height: '100%',
+                    width: animateIn ? `${pct}%` : '0%',
+                    background: `linear-gradient(90deg, ${gs.border ?? '#888'} 0%, ${gs.color ?? '#fff'} 100%)`,
+                    borderRadius: 3,
+                    boxShadow: `0 0 10px ${gs.color ?? '#fff'}66`,
+                    transition: `width 1100ms cubic-bezier(0.34, 1.3, 0.64, 1) ${delay + 200}ms`,
+                  }} />
                 </div>
               )}
             </button>
