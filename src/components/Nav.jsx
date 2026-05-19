@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from 'react'
 // stroke-only (no fill weight like Phosphor).
 import {
   Home, ShoppingBag, Trophy, Heart, Bell,        // regular-user nav
-  Castle, Coins, PiggyBank, Swords,              // admin/owner medieval nav
+  Castle, PiggyBank, Crown, Swords,              // admin/owner medieval nav
 } from 'lucide-react'
 import Avatar from './Avatar'
 import { HAPTIC } from '../lib/design-tokens'
@@ -184,9 +184,9 @@ export function BottomNav({
   // ── ADMIN / OWNER preview nav — medieval vocab + center post button ──
   const tabs = [
     { id: 'feed',  label: 'Feed',     icon: Lu(Castle),       action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Lu(Coins),        action: () => onTab('shop') },
+    { id: 'shop',  label: 'Tienda',   icon: Lu(PiggyBank),    action: () => onTab('shop') },
     { id: 'post',  label: 'Crear',    icon: null,             action: onPost, variant: 'primary' },
-    { id: 'ranks', label: 'Ranking',  icon: Lu(PiggyBank),    action: () => onTab('ranks') },
+    { id: 'ranks', label: 'Ranking',  icon: Lu(Crown),        action: () => onTab('ranks') },
     { id: 'life',  label: 'Vida',     icon: Lu(Swords),       action: onLifeCounter },
   ]
   return <OwnerBottomNav active={active} hidden={hidden} tabs={tabs} />
