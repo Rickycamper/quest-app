@@ -16,6 +16,7 @@ import Avatar from '../components/Avatar'
 import {
   MapPin, Gavel, Package, Gem, User, Clock, Phone, Navigation,
   Pencil, Zap, Folder, BarChart3, Heart, ShoppingBag,
+  ChevronLeft, X,
 } from 'lucide-react'
 
 const HUB_ICON_MAP = {
@@ -873,23 +874,48 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
         background: '#0D0D0D', borderBottom: '1px solid #1A1A1A', flexShrink: 0,
       }}>
         {view ? (
-          <button onClick={() => setView(null)} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#6B7280', fontSize: 20, lineHeight: 1, padding: '0 2px',
-          }}>←</button>
+          // Clearer back affordance — circled chevron with proper hit
+          // target. The old plain '←' was easy to miss.
+          <button
+            onClick={() => setView(null)}
+            aria-label="Volver"
+            style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              color: '#FFFFFF', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: 0, flexShrink: 0,
+              transition: 'background 180ms ease',
+            }}
+          >
+            <ChevronLeft size={20} strokeWidth={2.2} />
+          </button>
         ) : (
           <img src={questLogo} alt="Quest" style={{ width: 72, height: 'auto' }} />
         )}
         {view && (
-          <span style={{ fontSize: 16, fontWeight: 800, color: '#FFF' }}>{viewTitle}</span>
+          <span style={{
+            fontSize: 16, fontWeight: 800, color: '#FFF',
+            letterSpacing: '-0.01em',
+          }}>{viewTitle}</span>
         )}
         <div style={{ flex: 1 }} />
-        <button onClick={onClose} style={{
-          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-          background: 'rgba(255,255,255,0.05)', border: '1px solid #222',
-          color: '#6B7280', fontSize: 16, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>✕</button>
+        <button
+          onClick={onClose}
+          aria-label="Cerrar"
+          style={{
+            width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            color: '#FFFFFF', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 0,
+            transition: 'background 180ms ease',
+          }}
+        >
+          <X size={18} strokeWidth={2.2} />
+        </button>
       </div>
 
       {/* Sub-views */}
