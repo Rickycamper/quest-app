@@ -141,22 +141,15 @@ function OwnerBottomNav({ active, hidden, tabs }) {
   )
 }
 
-// ── Two layouts, gated by isAdminOrOwner ─────────────────────────────────
-// Regular users keep the ORIGINAL nav:
-//     Feed · Tienda · Ranking · Vida · Avisos(bell)
-// Admins + owner see the NEW preview nav:
-//     Castillo · Monedas · [+ Crear] · Corona · Espada
-// (avatar moves to the top header for admins; bell stays in this nav
-// only for regular users — they don't have the avatar entry point.)
+// ── Unified nav for everyone ─────────────────────────────────────────────
+// Medieval vocab + center post button. Per-icon optical sizing so the
+// bar feels balanced (Castle/Crown/Swords are tall outlines; PiggyBank
+// needs the extra px because it has more internal detail).
+// Notifications: accessed via the bell icon in the profile header.
 export function BottomNav({
   active, hidden, onTab, onLifeCounter, onPost, onNotifs,
   unreadCount, isAdminOrOwner,
 }) {
-  // Helper: render a Lucide icon inside a fixed 28×28 frame. Each icon
-  // can pass its own optical size (size arg) because Lucide glyphs have
-  // wildly different ink coverage — a simple Home outline fills the
-  // frame at 22 px while a detailed PiggyBank needs ~27 px to feel the
-  // same visual weight. Tuned per glyph below in the tabs array.
   const Lu = (Icon, size = 24) => (a) => (
     <div style={{
       width: 28, height: 28,
@@ -170,24 +163,6 @@ export function BottomNav({
     </div>
   )
 
-  // ── REGULAR user nav — original 5-tab layout, neutral Lucide icons ──
-  if (!isAdminOrOwner) {
-    const tabs = [
-      { id: 'feed',  label: 'Feed',     icon: Lu(Home,        22), action: () => onTab('feed') },
-      { id: 'shop',  label: 'Tienda',   icon: Lu(ShoppingBag, 23), action: () => onTab('shop') },
-      { id: 'ranks', label: 'Ranking',  icon: Lu(Trophy,      24), action: () => onTab('ranks') },
-      { id: 'life',  label: 'Vida',     icon: Lu(Heart,       23), action: onLifeCounter },
-      { id: 'notif', label: 'Avisos',   icon: Lu(Bell,        22), action: onNotifs, badge: unreadCount },
-    ]
-    return <OwnerBottomNav active={active} hidden={hidden} tabs={tabs} />
-  }
-
-  // ── ADMIN / OWNER preview nav — medieval vocab + center post button ──
-  // Per-icon optical sizing so the bar feels balanced:
-  //   Castle    → 22  (tall outline, was visually dominant)
-  //   PiggyBank → 27  (lots of internal detail, needs the extra px)
-  //   Crown     → 24  (default — balanced as drawn)
-  //   Swords    → 24  (default)
   const tabs = [
     { id: 'feed',  label: 'Feed',     icon: Lu(Castle,    22), action: () => onTab('feed') },
     { id: 'shop',  label: 'Tienda',   icon: Lu(PiggyBank, 27), action: () => onTab('shop') },

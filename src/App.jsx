@@ -298,7 +298,7 @@ function AuthFlow({ onGuest, initialScreen, onDone, oauthError }) {
   return null
 }
 
-function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername } = {}) {
+function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcInviteFromUrl } = {}) {
   const { user, profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
   const { isGuest, requireAuth } = useGuest()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
@@ -340,6 +340,16 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername } = 
   const [showHub,           setShowHub]           = useState(false)
   const [hubInitialView,    setHubInitialView]    = useState(null)
   const [showLifeCounter,   setShowLifeCounter]   = useState(false)
+  const [lcInvite,          setLcInvite]          = useState(null) // active invite payload while LC is open
+
+  // Si llegamos por ?lc-invite=, abrimos Life Counter con la config del
+  // host prefilled — el destinatario solo tiene que tap 'Iniciar contador'.
+  useEffect(() => {
+    if (lcInviteFromUrl) {
+      setLcInvite(lcInviteFromUrl)
+      setShowLifeCounter(true)
+    }
+  }, [lcInviteFromUrl])
   const [feedRefreshKey,    setFeedRefreshKey]    = useState(0)
   const [showOnboarding,    setShowOnboarding]    = useState(false)
   const [showFeatureTour,   setShowFeatureTour]   = useState(false)
@@ -531,6 +541,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           onClose={() => { setShowHub(false); setHubInitialView(null) }}
           onOpenAuction={() => { setShowHub(false); setShowAuction(true) }}
           onOpenLifeCounter={() => { setShowHub(false); setShowLifeCounter(true) }}
+          onBattleNow={() => { setShowHub(false); setVsUser(null); setShowMatchModal(true) }}
           onOpenTracking={() => { setShowHub(false); setShowTracking(true) }}
           onOpenFolder={() => { setShowHub(false); setActiveTab('folder'); setVisitedTabs(prev => { const n = new Set(prev); n.add('folder'); return n }) }}
           onOpenProfile={() => { setShowHub(false); handleOwnProfile() }}
@@ -571,8 +582,9 @@ const needsTerms = profile && !profile.terms_accepted_at
       )}
       {showLifeCounter && (
         <LifeCounterScreen
-          onClose={() => setShowLifeCounter(false)}
-          onViewProfile={(id) => { setShowLifeCounter(false); setViewingUserId(id) }}
+          invite={lcInvite}
+          onClose={() => { setShowLifeCounter(false); setLcInvite(null) }}
+          onViewProfile={(id) => { setShowLifeCounter(false); setLcInvite(null); setViewingUserId(id) }}
         />
       )}
 
@@ -857,19 +869,32 @@ function AppInner() {
     const liga       = params.get('liga')       ?? null
     const tab        = params.get('tab')        ?? null
     const username   = params.get('u')          ?? null
+    // Life Counter invite — base64-encoded payload with host + game config.
+    // When present, we open Life Counter directly with the config prefilled.
+    const lcInviteRaw = params.get('lc-invite') ?? null
+    let lcInvite = null
+    if (lcInviteRaw) {
+      try {
+        const padded = lcInviteRaw.replace(/-/g, '+').replace(/_/g, '/')
+          + '='.repeat((4 - lcInviteRaw.length % 4) % 4)
+        const json = decodeURIComponent(escape(atob(padded)))
+        lcInvite = JSON.parse(json)
+      } catch { /* malformed invite payload — ignore */ }
+    }
     // Capture OAuth error from failed redirect (e.g. Discord email conflict)
     const oauthErr   = params.get('error_description') ?? params.get('error') ?? null
     // Track whether we arrived via a Discord/OAuth redirect (?code=).
     // Used to show "Conectando con Discord…" in the loading state and to
     // detect when the exchange timed out (arrived via OAuth but ended up with no session).
     const wasOAuthCallback = params.has('code')
-    if (tournament || tab || liga || username) window.history.replaceState(null, '', window.location.pathname)
-    return { tournament, liga, tab, username, oauthErr, wasOAuthCallback }
+    if (tournament || tab || liga || username || lcInvite) window.history.replaceState(null, '', window.location.pathname)
+    return { tournament, liga, tab, username, lcInvite, oauthErr, wasOAuthCallback }
   })
   const deepLinkTournament = deepLinks.tournament
   const deepLinkLeagueId   = deepLinks.liga
   const deepLinkTab        = deepLinks.tab
   const deepLinkUsername   = deepLinks.username
+  const deepLinkLcInvite   = deepLinks.lcInvite
 
   // Auto-enter guest mode when arriving via tournament or tab deep-link and not logged in.
   // If user is already logged in (from localStorage) this stays false.
@@ -982,6 +1007,7 @@ function AppInner() {
           openTournamentId={deepLinkTournament}
           openLeagueId={deepLinkLeagueId}
           openUsername={deepLinkUsername}
+          lcInviteFromUrl={deepLinkLcInvite}
         />
         {showGateModal && (
           <GuestGateModal

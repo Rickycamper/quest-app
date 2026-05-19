@@ -23,16 +23,24 @@ import { useState, useEffect } from 'react'
 const STORAGE_KEY = 'quest_dc_preview'
 
 const DC_CSS = `
-/* ── 0. Base — deep neutral with one indigo light source ──────────────── */
+/* ── 0. Base — Battle Now palette as ambient field so glass cards have
+       saturated color behind them to refract. Orange → pink → violet +
+       cyan accent, overlapping so wherever a card sits there's color. */
 body.dc-preview {
   background:
-    /* Single ambient light, top-right. Very faint — feels like a window
-       at the edge of the room, not a sky. */
-    radial-gradient(ellipse 70% 50% at 100% -10%, rgba(99,102,241,0.10) 0%, transparent 60%),
-    /* Tiny warm counter-glow bottom-left to balance the cool top-right.
-       Helps the page not feel one-note. */
-    radial-gradient(ellipse 50% 40% at 0% 110%, rgba(244,114,182,0.04) 0%, transparent 70%),
-    #0A0A0F !important;
+    /* Orange — top-left + bottom subtle echo */
+    radial-gradient(ellipse 80% 65% at 8% 5%,    rgba(251,146,60,0.38)  0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 78% 95%,  rgba(251,146,60,0.18)  0%, transparent 65%),
+    /* Pink — center-right + lower-left echo */
+    radial-gradient(ellipse 75% 60% at 92% 38%,  rgba(244,114,182,0.34) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 45% at 18% 70%,  rgba(244,114,182,0.18) 0%, transparent 65%),
+    /* Violet — bottom + center echo */
+    radial-gradient(ellipse 90% 65% at 50% 115%, rgba(167,139,250,0.38) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 50% 45%,  rgba(167,139,250,0.18) 0%, transparent 65%),
+    /* Cool cyan kicker — one cool light source so glass picks up a
+       cool tint somewhere instead of pure warm everywhere. */
+    radial-gradient(ellipse 45% 38% at 32% 30%,  rgba(56,189,248,0.16)  0%, transparent 65%),
+    #0A0A12 !important;
   background-attachment: fixed !important;
   color: #F5F5F7 !important;
 }
@@ -57,9 +65,14 @@ body.dc-preview .app-header { background: transparent !important; }
 @media (max-width: 480px) {
   body.dc-preview {
     background:
-      radial-gradient(ellipse 70% 50% at 100% -10%, rgba(99,102,241,0.10) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at 0% 110%, rgba(244,114,182,0.04) 0%, transparent 70%),
-      #0A0A0F !important;
+      radial-gradient(ellipse 80% 65% at 8% 5%,    rgba(251,146,60,0.38)  0%, transparent 60%),
+      radial-gradient(ellipse 60% 45% at 78% 95%,  rgba(251,146,60,0.18)  0%, transparent 65%),
+      radial-gradient(ellipse 75% 60% at 92% 38%,  rgba(244,114,182,0.34) 0%, transparent 62%),
+      radial-gradient(ellipse 55% 45% at 18% 70%,  rgba(244,114,182,0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 90% 65% at 50% 115%, rgba(167,139,250,0.38) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 50% 45%,  rgba(167,139,250,0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 45% 38% at 32% 30%,  rgba(56,189,248,0.16)  0%, transparent 65%),
+      #0A0A12 !important;
   }
 }
 
@@ -188,23 +201,20 @@ body.dc-preview button[style*="border: 1px solid rgb(42, 42, 42)"] {
   -webkit-backdrop-filter: blur(12px) !important;
 }
 
-/* ── 5. Inputs — same glass, indigo focus accent ───────────────────────── */
+/* ── 5. Inputs — color + placeholder solo. Antes pintábamos bg y borde
+       a TODOS los inputs con !important, lo cual le metía un recuadro
+       a los <input> que estaban dentro de un wrapper que ya provee su
+       propio estilo (search bar del Shop, contact form, etc).
+       Ahora solo forzamos color de texto + placeholder, y dejamos que
+       cada componente decida su propio container. */
 body.dc-preview input,
 body.dc-preview textarea,
 body.dc-preview select {
-  background: rgba(255,255,255,0.04) !important;
-  border: 0.5px solid rgba(255,255,255,0.12) !important;
   color: #F5F5F7 !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset !important;
-  transition: border-color 220ms ease, box-shadow 220ms ease !important;
 }
 body.dc-preview input:focus,
 body.dc-preview textarea:focus,
 body.dc-preview select:focus {
-  border-color: rgba(99,102,241,0.6) !important;
-  box-shadow:
-    0 0 0 3px rgba(99,102,241,0.20),
-    0 1px 0 rgba(255,255,255,0.08) inset !important;
   outline: none !important;
 }
 body.dc-preview input::placeholder,

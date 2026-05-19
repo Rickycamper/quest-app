@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────
 // QUEST — RankingsScreen
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react'
 import { getLeaderboard, getTournaments, getPendingClaims, reviewClaim, joinTournament, leaveTournament, setUserPoints, rejectUserGameClaims, updateTournament, searchUsers, inviteTournament, setTournamentPayment, getActiveSeason, staffAwardRankingPoints, staffSetGamePoints, getLeagues, getLeagueDetails, joinLeague, leaveLeague, updateLeagueStatus, updateFechaStatus, upsertLeagueResult, recalcFechaPoints, submitMyResult, addLeagueFecha, addLeagueParticipant, setLeaguePayment, setParticipantTier, deleteLeague } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES, getGameUsername } from '../lib/constants'
@@ -226,6 +226,66 @@ function useCountUp(target, duration = 1200, startWhen = true) {
   return value
 }
 
+// ── Podium background — animated line graphics for depth ────────────────────
+// Renders a layered SVG behind the top-3 podium content so the area doesn't
+// read as empty. Three polylines (think stock-chart lines) draw themselves
+// from left to right on mount and gently breathe by repeating the dashoffset
+// cycle. A soft grid floor adds the 'data-vis horizon' feel.
+//
+// Drop-in: parent must be position:relative; this component absolutely fills
+// it. pointer-events: none so it never blocks interactions.
+function PodiumLineGraphics({ tint = '#FFFFFF' }) {
+  // Three peaks-and-valleys polylines that each evoke a different shape.
+  // Tuned to land roughly in the upper-mid band of the card so they fade
+  // behind the avatars / medals without colliding with the title row.
+  const lines = [
+    { d: '0,140 40,120 80,135 120,90 160,110 200,70 240,95 280,55 320,80 360,40 400,60', op: 0.22, sw: 1.2, dur: 2200, delay: 0 },
+    { d: '0,170 50,150 100,160 150,130 200,145 250,115 300,135 350,100 400,118',         op: 0.16, sw: 1.0, dur: 2400, delay: 240 },
+    { d: '0,185 60,178 120,182 180,168 240,176 300,160 360,170 400,158',                  op: 0.12, sw: 0.8, dur: 2000, delay: 500 },
+  ]
+  return (
+    <svg
+      viewBox="0 0 400 200" preserveAspectRatio="none"
+      aria-hidden="true"
+      style={{
+        position: 'absolute', inset: 0,
+        width: '100%', height: '100%',
+        pointerEvents: 'none',
+        // Inherit the parent's rounded corners via overflow:hidden on parent.
+      }}
+    >
+      {/* Soft grid floor — two faint horizontal lines */}
+      <line x1="0"   y1="155" x2="400" y2="155" stroke={tint} strokeOpacity="0.06" strokeWidth="0.8" strokeDasharray="2 6" />
+      <line x1="0"   y1="180" x2="400" y2="180" stroke={tint} strokeOpacity="0.04" strokeWidth="0.6" strokeDasharray="2 6" />
+      {lines.map((l, i) => (
+        <polyline
+          key={i}
+          points={l.d}
+          fill="none"
+          stroke={tint}
+          strokeOpacity={l.op}
+          strokeWidth={l.sw}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            // stroke-dasharray ≈ path length; offset cycles to draw + breathe.
+            strokeDasharray: 900,
+            strokeDashoffset: 900,
+            animation: `podiumDraw ${l.dur}ms cubic-bezier(0.34,1.3,0.64,1) ${l.delay}ms forwards`,
+          }}
+        />
+      ))}
+      {/* Inline keyframe so the component is self-contained */}
+      <style>{`
+        @keyframes podiumDraw {
+          0%   { stroke-dashoffset: 900; }
+          100% { stroke-dashoffset: 0; }
+        }
+      `}</style>
+    </svg>
+  )
+}
+
 // ── Rankings Overview (chart-style dashboard) ──────────────────────────────
 // Shown when the user is on Global × [TCG] — instead of the flat list, gives
 // them a "where do I stand?" view: top-3 podium + per-branch totals as
@@ -300,8 +360,12 @@ function RankingsOverview({ entries, game, onSelectBranch }) {
           borderRadius: RADIUS.lg,
           padding: '14px 14px 16px',
           boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+          position: 'relative',
+          overflow: 'hidden',
         }}>
+          <PodiumLineGraphics tint="#FFFFFF" />
           <div style={{
+            position: 'relative', zIndex: 1,
             fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
             letterSpacing: '0.12em', textTransform: 'uppercase',
             marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6,
@@ -311,6 +375,7 @@ function RankingsOverview({ entries, game, onSelectBranch }) {
 
           {/* Podium layout — 2nd | 1st | 3rd, columns of different height for that "podium" feel */}
           <div style={{
+            position: 'relative', zIndex: 1,
             display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around',
             gap: 8, minHeight: 150,
           }}>
@@ -626,8 +691,13 @@ function BranchPodium({ entries, branch, game }) {
         borderRadius: RADIUS.lg,
         padding: '14px 14px 16px',
         boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}, 0 0 24px ${bs.border}`,
+        position: 'relative',
+        overflow: 'hidden',
       }}>
+        {/* Tint the line graphics with the branch accent so it harmonises */}
+        <PodiumLineGraphics tint={bs.color || '#FFFFFF'} />
         <div style={{
+          position: 'relative', zIndex: 1,
           fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
           letterSpacing: '0.12em', textTransform: 'uppercase',
           marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6,
@@ -637,6 +707,7 @@ function BranchPodium({ entries, branch, game }) {
 
         {/* Podium layout — 2nd | 1st | 3rd */}
         <div style={{
+          position: 'relative', zIndex: 1,
           display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around',
           gap: 8, minHeight: 150,
         }}>
@@ -714,7 +785,11 @@ function BranchPodium({ entries, branch, game }) {
 // progress bar, and Championship rules. Designed to feel "alive" with subtle
 // motion: pulsing ACTIVA dot, trophy glint, spring chevron, content stagger.
 function SeasonOverviewCard({ season }) {
-  const [expanded, setExpanded] = useState(false)
+  // Default expanded so users immediately see days remaining, dates and
+  // the championship rule — they don't have to discover it via a tap.
+  // The collapse affordance is still there if they want to free up
+  // vertical space.
+  const [expanded, setExpanded] = useState(true)
   const endStr    = safeDate(season?.end_date,   '2026-08-31')
   const startStr  = safeDate(season?.start_date, '2026-05-01')
   const endDate   = new Date(endStr   + 'T23:59:59')
@@ -914,28 +989,87 @@ function SeasonOverviewCard({ season }) {
   )
 }
 
-// ── Champions by TCG (top-1 per game on the ALL/empty state) ───────────────
-// Shown when the user lands on Rankings without a TCG selected. One card per
-// game with its #1 global player and the branch they belong to. Tap a card
-// to drill into that game's leaderboard.
-function ChampionsByTcg({ champions, onSelectGame }) {
+// ── Champions chart — toggle 'Por TCG' / 'Por Sucursal' ────────────────────
+// Same component renders two flavours of the line chart depending on user
+// toggle. TCG view shows top-1 per game (6 points). Branch view shows
+// top-1 per branch overall (3 points). Below the chart, a list of
+// champion rows for whichever view is active.
+function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, onSelectGame, onSelectBranch }) {
   const [animateIn, setAnimateIn] = useState(false)
+  // Which axis: 'tcg' (game) or 'branch' (sucursal)
+  const [view, setView] = useState('tcg')
   useEffect(() => {
     setAnimateIn(false)
     const t = setTimeout(() => setAnimateIn(true), 100)
     return () => clearTimeout(t)
-  }, [])
+    // Re-run the entry animation on view switch so the new line draws in.
+  }, [view])
 
-  const loaded = Object.keys(champions).length === GAMES.length
+  const loaded = view === 'tcg'
+    ? Object.keys(champions).length === GAMES.length
+    : Object.keys(branchChampions).length === BRANCHES.length
 
-  // Max points across all champions — used to scale the bars so the
-  // top champion's bar reaches 100% and the rest scale proportionally.
-  // Visualises relative dominance: the longer your bar, the more your
-  // TCG's #1 has earned this season vs the other TCG #1s.
-  const maxChampPts = Math.max(
-    1, // avoid divide-by-zero before any champion is loaded
-    ...Object.values(champions).map(c => c?.points || 0)
-  )
+  // Build the unified point set for whichever view is active
+  const items = view === 'tcg'
+    ? GAMES.map(g => {
+        const c = champions[g]
+        return {
+          key:    g,
+          label:  g,
+          champ:  c,
+          color:  GAME_STYLES[g]?.color  ?? '#FFFFFF',
+          border: GAME_STYLES[g]?.border ?? 'rgba(255,255,255,0.2)',
+          // X-axis icon: TCG icon — small, no label. Sirve solo de referencia.
+          renderIcon: () => <GameIcon game={g} size={14} />,
+          onSelect: () => onSelectGame?.(g),
+        }
+      })
+    : BRANCHES.map(b => {
+        const c = branchChampions[b]
+        return {
+          key:    b,
+          label:  b,
+          champ:  c,
+          color:  BRANCH_STYLES[b]?.color  ?? '#FFFFFF',
+          border: BRANCH_STYLES[b]?.border ?? 'rgba(255,255,255,0.2)',
+          // X-axis icon: a branch dot
+          renderIcon: () => (
+            <span style={{
+              width: 10, height: 10, borderRadius: '50%',
+              background: BRANCH_STYLES[b]?.dot ?? '#6B7280',
+              boxShadow: `0 0 8px ${BRANCH_STYLES[b]?.dot ?? '#6B7280'}`,
+              display: 'block',
+            }} />
+          ),
+          onSelect: () => onSelectBranch?.(b),
+        }
+      })
+
+  const maxChampPts = Math.max(1, ...items.map(it => it.champ?.points || 0))
+
+  // ── Line chart geometry ─────────────────────────────────────────────
+  const W = 600, H = 170
+  const PAD = { l: 28, r: 20, t: 14, b: 40 }
+  const innerW = W - PAD.l - PAD.r
+  const innerH = H - PAD.t - PAD.b
+  const stepX = items.length > 1 ? innerW / (items.length - 1) : innerW
+
+  const pts = items.map((it, i) => ({
+    ...it,
+    x:        PAD.l + i * stepX,
+    y:        PAD.t + (1 - ((it.champ?.points || 0) / maxChampPts)) * innerH,
+    hasChamp: !!it.champ,
+  }))
+
+  const polyline = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+
+  // Approximate path length (for stroke-dashoffset animation)
+  let pathLen = 0
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i].x - pts[i-1].x
+    const dy = pts[i].y - pts[i-1].y
+    pathLen += Math.hypot(dx, dy)
+  }
 
   return (
     <div style={{
@@ -947,23 +1081,258 @@ function ChampionsByTcg({ champions, onSelectGame }) {
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: 12,
+        marginBottom: 12, gap: 8,
       }}>
         <div style={{
           fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
           letterSpacing: '0.12em', textTransform: 'uppercase',
           display: 'flex', alignItems: 'center', gap: 6,
         }}>
-          👑 Campeones por TCG
+          👑 Top 1 {view === 'tcg' ? 'por TCG' : 'por Sucursal'}
         </div>
+        {/* Segmented toggle — TCG vs Sucursal */}
         <div style={{
-          fontSize: 10, color: COLOR.textQuaternary, fontWeight: WEIGHT.medium,
-          letterSpacing: '0.02em',
+          display: 'inline-flex', alignItems: 'center',
+          background: 'rgba(255,255,255,0.04)',
+          border: `1px solid ${COLOR.border}`,
+          borderRadius: 9999, padding: 2,
+          flexShrink: 0,
         }}>
-          Tap para ver ranking →
+          {[
+            { id: 'tcg',    label: 'TCG' },
+            { id: 'branch', label: 'Sucursal' },
+          ].map(opt => {
+            const active = view === opt.id
+            return (
+              <button
+                key={opt.id}
+                onClick={() => setView(opt.id)}
+                style={{
+                  padding: '4px 10px', borderRadius: 9999,
+                  border: 'none', cursor: 'pointer',
+                  background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
+                  color: active ? COLOR.text : COLOR.textTertiary,
+                  fontSize: 10.5, fontWeight: WEIGHT.bold,
+                  fontFamily: FONT_STACK,
+                  letterSpacing: '0.04em',
+                  transition: 'background 180ms ease, color 180ms ease',
+                }}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 
+      {/* ── Line chart ─────────────────────────────────────────────────
+          Animates left-to-right via stroke-dashoffset. Dots at each
+          TCG's point pop in with a per-dot delay that matches when the
+          line passes them. The line itself is white-translucent so the
+          coloured dots are the focal data points. */}
+      <div style={{
+        width: '100%', marginBottom: 12,
+        background: 'rgba(255,255,255,0.02)',
+        borderRadius: RADIUS.md,
+        border: `1px solid ${COLOR.border}`,
+        padding: '6px 4px 4px',
+      }}>
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          style={{ width: '100%', height: 170, display: 'block' }}
+        >
+          {/* Soft horizontal guides */}
+          {[0.25, 0.5, 0.75].map(t => {
+            const y = PAD.t + t * innerH
+            return (
+              <line key={t}
+                x1={PAD.l} x2={W - PAD.r} y1={y} y2={y}
+                stroke="rgba(255,255,255,0.04)" strokeWidth="1"
+              />
+            )
+          })}
+
+          {/* The polyline that connects all TCG champions */}
+          <polyline
+            points={polyline}
+            fill="none"
+            stroke="rgba(255,255,255,0.55)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              strokeDasharray: pathLen,
+              strokeDashoffset: animateIn ? 0 : pathLen,
+              transition: `stroke-dashoffset 1400ms cubic-bezier(0.4,0,0.2,1) 80ms`,
+              filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.18))',
+            }}
+          />
+
+          {/* Dots — one per axis point (TCG or branch), fade/scale in.
+              Use p.key (set by items[]) instead of p.game — the latter is
+              undefined when view === 'branch' and caused dup-key warnings. */}
+          {pts.map((p, i) => {
+            const delay = 80 + (i / Math.max(1, pts.length - 1)) * 1400
+            return (
+              <g key={p.key}
+                style={{
+                  opacity: animateIn ? 1 : 0,
+                  transform: animateIn ? 'scale(1)' : 'scale(0.4)',
+                  transformOrigin: `${p.x}px ${p.y}px`,
+                  transition: `opacity 280ms ease ${delay}ms, transform 380ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
+                }}
+              >
+                <circle cx={p.x} cy={p.y} r="9" fill={p.color} opacity="0.18" />
+                <circle cx={p.x} cy={p.y} r="5.5"
+                  fill={p.hasChamp ? p.color : 'rgba(255,255,255,0.15)'}
+                  stroke="#0A0A0A" strokeWidth="2"
+                />
+              </g>
+            )
+          })}
+
+          {/* X-axis: solo el icono del TCG (chiquito, referencia). Sin
+              texto — la lista de campeones abajo ya carga los nombres
+              completos y los puntos. */}
+          {pts.map(p => (
+            <foreignObject key={`label-${p.key}`}
+              x={p.x - 10} y={H - PAD.b + 6}
+              width="20" height="20"
+              style={{ overflow: 'visible' }}
+            >
+              <div xmlns="http://www.w3.org/1999/xhtml"
+                style={{
+                  width: 20, height: 20,
+                  display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  opacity: animateIn ? 0.75 : 0,
+                  transition: 'opacity 320ms ease 1200ms',
+                }}
+              >
+                {p.renderIcon ? p.renderIcon() : null}
+              </div>
+            </foreignObject>
+          ))}
+        </svg>
+      </div>
+
+      {/* ── Puntos por Sucursal — compact summary integrado dentro de la
+          misma card. Suma TODOS los puntos de todos los jugadores en
+          cada sucursal (across all TCGs). Da sensación de escala antes
+          de leer la lista de campeones de abajo. */}
+      {(() => {
+        const branchItems = BRANCHES.map(b => ({
+          branch:  b,
+          total:   branchTotals[b]?.total   ?? 0,
+          players: branchTotals[b]?.players ?? 0,
+          ...(BRANCH_STYLES[b] ?? {}),
+        }))
+        const grandTotal = branchItems.reduce((s, it) => s + it.total, 0)
+        return (
+          <div style={{
+            margin: '12px 0',
+            padding: '10px 12px',
+            borderRadius: RADIUS.md,
+            background: 'rgba(255,255,255,0.02)',
+            border: `1px solid ${COLOR.border}`,
+            display: 'flex', flexDirection: 'column', gap: 8,
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: 8,
+            }}>
+              <div style={{
+                fontSize: 9.5, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+                letterSpacing: '0.12em', textTransform: 'uppercase',
+              }}>
+                🏛️ Puntos por sucursal
+              </div>
+              <div style={{
+                fontSize: 10.5, color: COLOR.textSecondary, fontWeight: WEIGHT.semibold,
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                <span style={{ color: COLOR.text, fontWeight: WEIGHT.bold }}>
+                  <CountUpNum value={grandTotal} startWhen={animateIn} delay={300} duration={1000} />
+                </span>
+                <span style={{ marginLeft: 4, opacity: 0.7 }}>pts comunidad</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {branchItems.map((it, i) => {
+                const share = grandTotal > 0 ? (it.total / grandTotal) * 100 : 0
+                const delay = i * 80
+                return (
+                  <button
+                    key={it.branch}
+                    onClick={() => onSelectBranch?.(it.branch)}
+                    className="pressable"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      padding: 0, margin: 0,
+                      cursor: 'pointer', textAlign: 'left',
+                      fontFamily: FONT_STACK,
+                      display: 'flex', flexDirection: 'column', gap: 4,
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 7,
+                      }}>
+                        <span style={{
+                          width: 7, height: 7, borderRadius: '50%',
+                          background: it.dot,
+                          boxShadow: `0 0 6px ${it.dot}`,
+                          display: 'inline-block',
+                        }} />
+                        <span style={{
+                          fontSize: 12, fontWeight: WEIGHT.bold,
+                          color: it.color,
+                        }}>{it.branch}</span>
+                        <span style={{
+                          fontSize: 10, color: COLOR.textQuaternary, fontWeight: WEIGHT.semibold,
+                        }}>{it.players}{it.players === 1 ? ' jug' : ' jug'}</span>
+                      </div>
+                      <div style={{
+                        display: 'flex', alignItems: 'baseline', gap: 3,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>
+                        <span style={{
+                          fontSize: 12.5, fontWeight: WEIGHT.bold,
+                          color: COLOR.text, letterSpacing: '-0.01em',
+                        }}>
+                          <CountUpNum value={it.total} startWhen={animateIn} delay={delay + 300} duration={1000} />
+                        </span>
+                        <span style={{ fontSize: 9, opacity: 0.55, color: COLOR.textSecondary, fontWeight: WEIGHT.medium }}>pts</span>
+                      </div>
+                    </div>
+                    <div style={{
+                      width: '100%', height: 4, borderRadius: 2,
+                      background: 'rgba(255,255,255,0.04)',
+                      overflow: 'hidden',
+                      boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.3)',
+                    }}>
+                      <div style={{
+                        height: '100%',
+                        width: animateIn ? `${share}%` : '0%',
+                        background: `linear-gradient(90deg, ${it.border} 0%, ${it.dot} 100%)`,
+                        borderRadius: 2,
+                        boxShadow: `0 0 6px ${it.dot}55`,
+                        transition: `width 1100ms cubic-bezier(0.34, 1.3, 0.64, 1) ${delay + 200}ms`,
+                      }} />
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── Champion rows — uniform glass surface, colour only on data ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {GAMES.map((g, i) => {
           const champ = champions[g]
@@ -972,7 +1341,6 @@ function ChampionsByTcg({ champions, onSelectGame }) {
           const delay = i * 80
           const isLoading = !loaded
           const hasChamp  = !!champ
-
           const pct = hasChamp ? (champ.points / maxChampPts) * 100 : 0
 
           return (
@@ -984,10 +1352,10 @@ function ChampionsByTcg({ champions, onSelectGame }) {
               style={{
                 display: 'flex', flexDirection: 'column', gap: 8,
                 padding: '11px 12px 10px',
-                background: hasChamp
-                  ? `linear-gradient(135deg, ${gs.bg ?? COLOR.background} 0%, transparent 60%)`
-                  : COLOR.background,
-                border: `1px solid ${hasChamp ? gs.border : COLOR.border}`,
+                // UNIFORM glass surface — same for every TCG. Colour only
+                // shows up inside the icon block, points number, and bar.
+                background: 'rgba(255,255,255,0.03)',
+                border: `1px solid ${COLOR.border}`,
                 borderRadius: RADIUS.md,
                 cursor: hasChamp ? 'pointer' : 'default',
                 textAlign: 'left',
@@ -996,12 +1364,11 @@ function ChampionsByTcg({ champions, onSelectGame }) {
                 opacity: animateIn ? 1 : 0,
                 transform: animateIn ? 'translateX(0)' : 'translateX(-8px)',
                 transitionDelay: `${delay}ms`,
-                boxShadow: hasChamp ? `0 0 10px ${gs.border}, inset 0 1px 0 rgba(255,255,255,0.04)` : 'none',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
               }}
             >
-              {/* Top row — icon + game + champion + points */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%' }}>
-                {/* Game icon block */}
+                {/* Game icon — keeps its colour */}
                 <div style={{
                   width: 38, height: 38, borderRadius: RADIUS.sm, flexShrink: 0,
                   background: gs.bg ?? COLOR.surfaceRaised,
@@ -1012,11 +1379,11 @@ function ChampionsByTcg({ champions, onSelectGame }) {
                   <GameIcon game={g} size={20} />
                 </div>
 
-                {/* Middle: game name + champion username + branch */}
+                {/* Game name (neutral white) + champion + branch */}
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <div style={{
                     fontSize: 13.5, fontWeight: WEIGHT.bold,
-                    color: gs.color ?? COLOR.text,
+                    color: COLOR.text,           // neutral, no rainbow
                     letterSpacing: '-0.005em',
                   }}>
                     {g}
@@ -1071,7 +1438,7 @@ function ChampionsByTcg({ champions, onSelectGame }) {
                   )}
                 </div>
 
-                {/* Right: points number */}
+                {/* Points number — keeps the TCG accent colour */}
                 {hasChamp && (
                   <div style={{
                     flexShrink: 0,
@@ -1083,17 +1450,12 @@ function ChampionsByTcg({ champions, onSelectGame }) {
                     minWidth: 56, justifyContent: 'flex-end',
                   }}>
                     <CountUpNum value={champ.points} startWhen={animateIn} delay={delay + 300} duration={1000} />
-                    <span style={{ fontSize: 9.5, opacity: 0.65, fontWeight: WEIGHT.medium }}>pts</span>
+                    <span style={{ fontSize: 9.5, opacity: 0.65, fontWeight: WEIGHT.medium, color: COLOR.textSecondary }}>pts</span>
                   </div>
                 )}
               </div>
 
-              {/* ── Bar chart row ──────────────────────────────────────
-                  Horizontal bar scaled to the champion's share of the
-                  max points across all TCGs. Animates 0% → pct on mount
-                  with a slight delay per row (cascade). The bar uses the
-                  game's accent color with a glow halo so the chart reads
-                  as colored data. */}
+              {/* Bar — keeps the TCG colour */}
               {hasChamp && (
                 <div style={{
                   width: '100%', height: 6, borderRadius: 3,
@@ -1119,6 +1481,7 @@ function ChampionsByTcg({ champions, onSelectGame }) {
   )
 }
 
+
 // ── Leaderboard ──────────────────────────────
 function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, onSelectGame }) {
   const toast = useToast()
@@ -1129,6 +1492,12 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
   // Champions per TCG — fetched when no game is selected (empty state).
   // Each entry: { game: 'MTG', champion: <leaderboard row>, loading: bool }.
   const [champions, setChampions] = useState({})
+  // Champions per BRANCH — top-1 by overall profile.points filtered to
+  // the branch. Powers the 'Por Sucursal' view of the line chart.
+  const [branchChampions, setBranchChampions] = useState({})
+  // Aggregate point totals per branch (sum across all players & all TCGs).
+  // Powers the 'Puntos totales por sucursal' chart below the champions one.
+  const [branchTotals, setBranchTotals] = useState({})
   // Editing state — admin only, available in all tabs
   const [editingId, setEditingId] = useState(null)
   const [ptsVal,    setPtsVal]    = useState('')
@@ -1175,6 +1544,41 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
       const next = {}
       for (const r of results) next[r.game] = r.champion
       setChampions(next)
+    })
+    return () => { cancelled = true }
+  }, [game]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Champions per BRANCH + branch point totals ──────────────────────────
+  // Parallel calls to the non-game leaderboard with each branch filter.
+  // From each branch's full row set we extract:
+  //   - rows[0]: the champion (top player) → branchChampions
+  //   - sum(row.points): the branch total across every player & every TCG
+  //     → branchTotals, used by the 'Puntos por sucursal' chart below.
+  useEffect(() => {
+    if (game) return
+    if (Object.keys(branchChampions).length === BRANCHES.length) return
+    let cancelled = false
+    Promise.all(
+      BRANCHES.map(b =>
+        getLeaderboard({ branch: b, game: null })
+          .then(rows => ({
+            branch:   b,
+            champion: rows?.[0] ?? null,
+            total:    (rows ?? []).reduce((s, r) => s + (Number(r.points) || 0), 0),
+            players:  (rows ?? []).length,
+          }))
+          .catch(() => ({ branch: b, champion: null, total: 0, players: 0 }))
+      )
+    ).then(results => {
+      if (cancelled) return
+      const champs = {}
+      const totals = {}
+      for (const r of results) {
+        champs[r.branch] = r.champion
+        totals[r.branch] = { total: r.total, players: r.players }
+      }
+      setBranchChampions(champs)
+      setBranchTotals(totals)
     })
     return () => { cancelled = true }
   }, [game]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -1258,7 +1662,13 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
       {/* ── Campeones por TCG — top 1 de cada juego ────────────────────
           Para cada TCG mostramos al #1 global + sucursal a la que pertenece.
           Tap → drill-in al ranking de ese TCG. Cards animan en stagger. */}
-      <ChampionsByTcg champions={champions} onSelectGame={onSelectGame} />
+      <ChampionsByTcg
+        champions={champions}
+        branchChampions={branchChampions}
+        branchTotals={branchTotals}
+        onSelectGame={onSelectGame}
+        onSelectBranch={onSelectBranch}
+      />
 
       {/* ── Rules card (collapsible) ── */}
       <div style={{
@@ -3758,6 +4168,37 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
   const [activeSeason,  setActiveSeason] = useState(null)
   const pulseTimer = useRef(null)
 
+  // ── Sliding indicator for the TCG row ──────────────────────────────
+  // We measure the active button's position and animate a single
+  // absolute-positioned bubble between TCGs so switching feels like
+  // the bubble glides, not flickers. Same vibe as the Rankings/Torneos/
+  // Liga tabs bubble but here it carries the TCG colour scheme.
+  const gameRowRef = useRef(null)
+  const gameBtnRefs = useRef({})
+  const [gameIndicator, setGameIndicator] = useState({ left: 0, width: 0, visible: false })
+  useLayoutEffect(() => {
+    const measure = () => {
+      const row = gameRowRef.current
+      if (!row) return
+      const key = game ?? 'ALL'
+      const btn = gameBtnRefs.current[key]
+      if (!btn) {
+        setGameIndicator(p => ({ ...p, visible: false }))
+        return
+      }
+      const r1 = btn.getBoundingClientRect()
+      const r2 = row.getBoundingClientRect()
+      setGameIndicator({
+        left:    r1.left - r2.left,
+        width:   r1.width,
+        visible: true,
+      })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [game])
+
   // Load active season once on mount
   useEffect(() => {
     getActiveSeason().then(setActiveSeason).catch(() => {})
@@ -3793,16 +4234,36 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
   const renderFilters = () => {
     const tabsRow = (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div className="filter-scroll" style={{ flex: 1, gap: 6 }}>
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              padding: '7px 14px', borderRadius: 8, flexShrink: 0,
-              border: `1px solid ${tab === t.id ? 'rgba(255,255,255,0.3)' : '#2A2A2A'}`,
-              background: tab === t.id ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: tab === t.id ? '#FFFFFF' : '#4B5563',
-              fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-            }}>{t.label}</button>
-          ))}
+        <div className="filter-scroll" style={{ flex: 1, gap: 18 }}>
+          {tabs.map(t => {
+            const active = tab === t.id
+            return (
+              // Inactive: text-only, no bubble. Active: Battle Now gradient
+              // bubble (orange → pink → violet) — same paleta del CTA para
+              // que se sienta como una selección importante.
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                position: 'relative',
+                padding: active ? '7px 14px' : '7px 0',
+                borderRadius: active ? 9999 : 0,
+                background: active
+                  ? 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)'
+                  : 'none',
+                border: 'none',
+                color: active ? '#FFFFFF' : '#6B7280',
+                fontSize: 13, fontWeight: active ? 800 : 600,
+                letterSpacing: '-0.005em',
+                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                flexShrink: 0,
+                boxShadow: active
+                  ? '0 6px 18px rgba(251,146,60,0.30), 0 2px 6px rgba(167,139,250,0.20), inset 0 1px 0 rgba(255,255,255,0.28)'
+                  : 'none',
+                textShadow: active ? '0 1px 0 rgba(0,0,0,0.18)' : 'none',
+                transition: 'background 220ms ease, color 180ms ease, padding 200ms ease, box-shadow 220ms ease',
+              }}>
+                {t.label}
+              </button>
+            )
+          })}
         </div>
         {tab === 'leaderboard' || (tab === 'tournaments' && isStaff) || (tab === 'liga' && isStaff) ? (
           <button
@@ -3824,32 +4285,78 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
       </div>
     )
 
+    // Sliding indicator colors track the active TCG. When 'ALL' is
+    // selected we fall back to a neutral white-on-glass bubble.
+    const activeStyle = game ? GAME_STYLES[game] : null
+    const indicatorBg     = activeStyle ? activeStyle.bg     : 'rgba(255,255,255,0.10)'
+    const indicatorBorder = activeStyle ? activeStyle.border : 'rgba(255,255,255,0.35)'
+    const indicatorGlow   = activeStyle ? activeStyle.border : 'rgba(255,255,255,0.20)'
+
     const gameRow = (
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-      }}>
-        <button onClick={() => setGame(null)} style={{
-          flex: 1, height: 34, borderRadius: 8,
-          border: !game ? '1.5px solid rgba(255,255,255,0.35)' : '1.5px solid transparent',
-          background: !game ? 'rgba(255,255,255,0.1)' : 'transparent',
-          color: !game ? '#FFFFFF' : '#4B5563',
-          fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>ALL</button>
+      <div
+        ref={gameRowRef}
+        style={{
+          position: 'relative',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}
+      >
+        {/* Sliding indicator — single bubble that glides between TCGs.
+            Springy cubic-bezier so the motion feels playful. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: 0,
+            transform: `translate(${gameIndicator.left}px, -50%)`,
+            width: gameIndicator.width,
+            height: 34,
+            borderRadius: 8,
+            background: indicatorBg,
+            border: `1.5px solid ${indicatorBorder}`,
+            boxShadow: `0 0 14px ${indicatorGlow}66`,
+            opacity: gameIndicator.visible ? 1 : 0,
+            pointerEvents: 'none',
+            transition: gameIndicator.visible
+              ? 'transform 380ms cubic-bezier(0.34,1.45,0.64,1), width 380ms cubic-bezier(0.34,1.45,0.64,1), background 280ms ease, border-color 280ms ease, box-shadow 280ms ease, opacity 200ms ease'
+              : 'opacity 150ms ease',
+            zIndex: 0,
+          }}
+        />
+
+        <button
+          ref={el => { gameBtnRefs.current['ALL'] = el }}
+          onClick={() => setGame(null)}
+          style={{
+            position: 'relative', zIndex: 1,
+            flex: 1, height: 34, borderRadius: 8,
+            border: '1.5px solid transparent',
+            background: 'transparent',
+            color: !game ? '#FFFFFF' : '#4B5563',
+            fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'color 220ms ease',
+          }}
+        >ALL</button>
         <div style={{ width: 1, height: 20, background: '#2A2A2A', flexShrink: 0 }} />
         {GAMES.map(g => {
-          const gs = GAME_STYLES[g]
           const active = game === g
           return (
-            <button key={g} onClick={() => setGame(active ? null : g)} title={g} style={{
-              flex: 1, height: 34, borderRadius: 8,
-              border: `1.5px solid ${active ? gs.border : 'transparent'}`,
-              background: active ? gs.bg : 'transparent',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 0.22s ease, border-color 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease',
-              boxShadow: active ? `0 0 12px ${gs.border}66` : 'none',
-              transform: active ? 'scale(1.08)' : 'scale(1)',
-            }}>
+            <button
+              key={g}
+              ref={el => { gameBtnRefs.current[g] = el }}
+              onClick={() => setGame(active ? null : g)}
+              title={g}
+              style={{
+                position: 'relative', zIndex: 1,
+                flex: 1, height: 34, borderRadius: 8,
+                border: '1.5px solid transparent',
+                background: 'transparent',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'transform 280ms cubic-bezier(0.34,1.45,0.64,1)',
+                transform: active ? 'scale(1.10)' : 'scale(1)',
+              }}
+            >
               <GameIcon game={g} size={18} />
             </button>
           )
@@ -3861,68 +4368,55 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
       <div style={{
         display: 'flex', alignItems: 'center', gap: 4,
       }}>
-        {['', ...BRANCHES].map(b => {
+        {['', ...BRANCHES].map((b, i) => {
           const bStyle = b ? BRANCH_STYLES[b] : null
           const active = branch === (b || null)
           return (
-            <button key={b} onClick={() => setBranch(b || null)} style={{
-              flex: 1, height: 32, borderRadius: 8,
-              border: `1.5px solid ${active ? (bStyle?.border ?? 'rgba(255,255,255,0.35)') : 'transparent'}`,
-              background: active ? (bStyle?.bg ?? 'rgba(255,255,255,0.1)') : 'transparent',
-              color: active ? (bStyle?.color ?? '#FFFFFF') : '#4B5563',
-              fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-              transition: 'background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease',
-              transform: active ? 'scale(1.04)' : 'scale(1)',
-              boxShadow: active && bStyle ? `0 0 12px ${bStyle.border}66` : 'none',
-            }}>
-              {bStyle && <span style={{ width: 5, height: 5, borderRadius: '50%', background: active ? bStyle.dot : '#374151', flexShrink: 0, transition: 'background 0.2s ease' }} />}
-              {b || 'Global'}
-            </button>
+            <span key={b || 'global'} style={{ display: 'contents' }}>
+              {/* Divider after 'Global' — mirrors the 'ALL | …' pattern
+                  the user liked in the TCG row, treating the whole
+                  branch strip as one unified control. */}
+              {i === 1 && (
+                <div style={{ width: 1, height: 18, background: '#2A2A2A', flexShrink: 0 }} />
+              )}
+              <button onClick={() => setBranch(b || null)} style={{
+                flex: 1, height: 32, borderRadius: 8,
+                border: `1.5px solid ${active ? (bStyle?.border ?? 'rgba(255,255,255,0.35)') : 'transparent'}`,
+                background: active ? (bStyle?.bg ?? 'rgba(255,255,255,0.1)') : 'transparent',
+                color: active ? (bStyle?.color ?? '#FFFFFF') : '#4B5563',
+                fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                transition: 'background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease',
+                transform: active ? 'scale(1.04)' : 'scale(1)',
+                boxShadow: active && bStyle ? `0 0 12px ${bStyle.border}66` : 'none',
+              }}>
+                {bStyle && <span style={{ width: 5, height: 5, borderRadius: '50%', background: active ? bStyle.dot : '#374151', flexShrink: 0, transition: 'background 0.2s ease' }} />}
+                {b || 'Global'}
+              </button>
+            </span>
           )
         })}
       </div>
     )
 
-    // Admin/owner — one unified card with hairline dividers
-    if (isAdminOrOwner) {
-      return (
-        <div style={{ padding: '10px 14px 4px' }}>
-          <div style={{
-            background: '#111111',
-            border: '1px solid #1E1E1E',
-            borderRadius: 14,
-            padding: '10px 12px',
-            display: 'flex', flexDirection: 'column', gap: 10,
-            boxShadow: '0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03)',
-          }}>
-            {tabsRow}
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
-            {gameRow}
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
-            {branchRow}
-          </div>
-        </div>
-      )
-    }
-
-    // Regular users — original three-card layout, untouched
+    // Unified card with hairline dividers — para todos los usuarios.
     return (
-      <>
-        <div style={{ padding: '12px 20px 4px' }}>{tabsRow}</div>
-        <div style={{ padding: '8px 14px 0' }}>
-          <div style={{
-            background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
-            padding: '8px 10px',
-          }}>{gameRow}</div>
+      <div style={{ padding: '10px 14px 4px' }}>
+        <div style={{
+          background: '#111111',
+          border: '1px solid #1E1E1E',
+          borderRadius: 14,
+          padding: '10px 12px',
+          display: 'flex', flexDirection: 'column', gap: 10,
+          boxShadow: '0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03)',
+        }}>
+          {tabsRow}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
+          {gameRow}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
+          {branchRow}
         </div>
-        <div style={{ padding: '6px 14px 4px' }}>
-          <div style={{
-            background: '#111111', border: '1px solid #1E1E1E', borderRadius: 12,
-            padding: '6px 8px',
-          }}>{branchRow}</div>
-        </div>
-      </>
+      </div>
     )
   }
 

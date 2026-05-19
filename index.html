@@ -65,16 +65,27 @@
     <!-- SF Pro on Apple devices, Inter on others — instant typography upgrade everywhere -->
     <style>
       html,body{
-        /* Deep base + three subtle radial color sources (blue top-left,
-           violet center-right, warm orange bottom). Low alphas so the
-           overall feel is still 'dark mode' but the cards' backdrop-filter
-           blur now has something to pick up — that's what makes glass
-           read as glass instead of as flat translucent grey. */
+        /* GLASS BG — el efecto glass de las cards necesita color SATURADO
+           detrás para refractar. Aumentamos alphas y agregamos fuentes
+           más grandes y solapadas — la idea es que cada card con
+           backdrop-filter blur tenga siempre algo de color detrás,
+           independientemente de dónde esté en la página.
+           Paleta = Battle Now CTA (naranja → rosa → violeta) + un
+           toque cian/cobalto para variación. */
         background:
-          radial-gradient(ellipse 60% 50% at 15% 10%, rgba(59,130,246,0.10) 0%, transparent 65%),
-          radial-gradient(ellipse 55% 45% at 85% 35%, rgba(167,139,250,0.10) 0%, transparent 65%),
-          radial-gradient(ellipse 70% 40% at 50% 110%, rgba(251,146,60,0.07) 0%, transparent 65%),
-          #08080C;
+          /* Orange — top-left + bottom subtle echo */
+          radial-gradient(ellipse 80% 65% at 8% 5%,    rgba(251,146,60,0.38)  0%, transparent 60%),
+          radial-gradient(ellipse 60% 45% at 78% 95%,  rgba(251,146,60,0.18)  0%, transparent 65%),
+          /* Pink — center-right + lower-left echo */
+          radial-gradient(ellipse 75% 60% at 92% 38%,  rgba(244,114,182,0.34) 0%, transparent 62%),
+          radial-gradient(ellipse 55% 45% at 18% 70%,  rgba(244,114,182,0.18) 0%, transparent 65%),
+          /* Violet — bottom + center echo */
+          radial-gradient(ellipse 90% 65% at 50% 115%, rgba(167,139,250,0.38) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 50% 45%,  rgba(167,139,250,0.18) 0%, transparent 65%),
+          /* Cool accent — small cyan kicker for variety so glass picks up
+             a cool tint somewhere instead of pure warm everywhere. */
+          radial-gradient(ellipse 45% 38% at 32% 30%,  rgba(56,189,248,0.16)  0%, transparent 65%),
+          #0A0A12;
         background-attachment:fixed;
         font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter",system-ui,sans-serif;
         -webkit-font-smoothing:antialiased;

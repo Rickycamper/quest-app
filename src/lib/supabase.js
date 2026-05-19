@@ -2,7 +2,7 @@
 // QUEST — Supabase client
 // ─────────────────────────────────────────────
 import { createClient } from '@supabase/supabase-js'
-import { RANKING_PTS, GAME_STYLES } from './constants'
+import { RANKING_PTS, GAME_STYLES, GAMES } from './constants'
 
 // ── In-memory rate limiter ────────────────────
 // Tracks last action timestamp per user per action type
@@ -384,10 +384,7 @@ export async function getQPoints(userId) {
 export async function getProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
-    // NOTE: q_points is intentionally NOT selected here — some DBs may not
-    // have the column; the realtime profile-sync channel fills it in from
-    // UPDATE payloads after award_points / redeem_points run.
-    .select('id, username, role, branch, avatar_url, points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, tcg_usernames, social_links, season_badges')
+    .select('id, username, role, branch, avatar_url, points, q_points, verified, phone, email, is_owner, terms_accepted_at, tcg_games, tcg_usernames, social_links, season_badges')
     .eq('id', userId)
     .single()
   if (error) throw error
@@ -2239,6 +2236,33 @@ export async function getArticles(game = null, limit = 12) {
   return data ?? []
 }
 
+/**
+ * Latest article per game — devuelve UN solo artículo (el más reciente)
+ * por cada TCG. Sirve para el header de noticias del feed en vista 'ALL'
+ * para que el usuario sepa de un pantallazo que hay novedades en cada
+ * juego, en vez de ver todo el log apilado.
+ *
+ * Implementación: traemos los últimos 100 publicados y deduplicamos por
+ * game en JS. Más simple que un DISTINCT ON sobre el cliente PostgREST y
+ * el costo es bajo (tcg_articles es chico).
+ */
+export async function getLatestArticlePerGame() {
+  const { data, error } = await supabase
+    .from('tcg_articles')
+    .select('id, game, source_name, title, url, image_url, published_at')
+    .order('published_at', { ascending: false })
+    .limit(100)
+  if (error) throw error
+  const seen = new Set()
+  const latest = []
+  for (const a of data ?? []) {
+    if (!a.game || seen.has(a.game)) continue
+    seen.add(a.game)
+    latest.push(a)
+  }
+  return latest
+}
+
 export async function getPointsHistory(limit = 80) {
   const { data: { session } } = await supabase.auth.getSession()
   const { data, error } = await supabase
@@ -2306,7 +2330,7 @@ export async function getMyStats() {
   }
   return Object.entries(map)
     .map(([game, { wins, losses }]) => ({ game, wins, losses, total: wins + losses }))
-    .sort((a, b) => b.total - a.total)
+    .sort((a, b) => GAMES.indexOf(a.game) - GAMES.indexOf(b.game))
 }
 
 // ── Match history (per-match, with opponent profile) ────────────────────────
