@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────
 // QUEST — FeedScreen
 // ─────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback, memo } from 'react'
+import { useState, useEffect, useRef, useCallback, useLayoutEffect, memo } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
 import { useGuest } from '../context/GuestContext'
 import { supabase } from '../lib/supabase'
@@ -897,6 +897,27 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
   const gameRef      = useRef(game)
   const allPostsRef    = useRef([])    // in-memory "All" feed for instant client filtering
   const mountedRef     = useRef(false) // true after initial load fires
+
+  // Sliding bubble indicator for the TCG filter row — measures the
+  // active button and animates a single bubble between TCGs.
+  const tcgRowRef = useRef(null)
+  const tcgBtnRefs = useRef({})
+  const [tcgIndicator, setTcgIndicator] = useState({ left: 0, width: 0, visible: false })
+  useLayoutEffect(() => {
+    const measure = () => {
+      const row = tcgRowRef.current
+      if (!row) return
+      const key = game ?? 'ALL'
+      const btn = tcgBtnRefs.current[key]
+      if (!btn) { setTcgIndicator(p => ({ ...p, visible: false })); return }
+      const r1 = btn.getBoundingClientRect()
+      const r2 = row.getBoundingClientRect()
+      setTcgIndicator({ left: r1.left - r2.left, width: r1.width, visible: true })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [game])
   const hasPreviewRef  = useRef(false) // true when a client-side preview is already showing
   useEffect(() => { gameRef.current = game }, [game])
 
@@ -1124,47 +1145,91 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
           {refreshing ? 'Actualizando…' : pullProgress >= 1 ? '↑ Soltá para recargar' : '↓ Jalá para recargar'}
         </div>
       )}
-      {/* Game filter — glass-style icon strip pinned at top */}
-      <div style={{ padding: '10px 14px 4px' }}>
-        <div style={{
-          background: 'rgba(17,17,17,0.85)',
-          backdropFilter: 'saturate(180%) blur(20px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-          border: `1px solid ${COLOR.border}`,
-          borderRadius: RADIUS.md,
-          boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
-          display: 'flex', alignItems: 'center', padding: '7px 9px', gap: 6,
-        }}>
-          <button onClick={() => handleGameSwitch(null)} className="pressable" style={{
-            flex: 1, height: 36, borderRadius: RADIUS.sm,
-            border: !game ? '1px solid rgba(255,255,255,0.45)' : '1px solid transparent',
-            background: !game ? 'rgba(255,255,255,0.12)' : 'transparent',
-            color: !game ? COLOR.text : COLOR.textTertiary,
-            fontSize: 10.5, fontWeight: WEIGHT.bold,
-            cursor: 'pointer', fontFamily: FONT_STACK,
-            letterSpacing: '0.06em',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: MOTION.springTransition,
-          }}>ALL</button>
-          <div style={{ width: 1, height: 18, background: COLOR.borderStrong, flexShrink: 0, opacity: 0.7 }} />
-          {GAMES.map(g => {
-            const gs = GAME_STYLES[g]
-            const active = game === g
-            return (
-              <button key={g} onClick={() => handleGameSwitch(active ? null : g)} title={g} className="pressable" style={{
-                flex: 1, height: 36, borderRadius: RADIUS.sm,
-                border: `1px solid ${active ? gs.border : 'transparent'}`,
-                background: active ? gs.bg : 'transparent',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: MOTION.springTransition,
-                boxShadow: active ? `0 0 12px ${gs.border}60, inset 0 1px 0 rgba(255,255,255,0.05)` : 'none',
-              }}>
-                <GameIcon game={g} size={18} />
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      {/* Game filter — true glass: translucent so the colorful app bg
+          shows through and refracts. Sliding bubble indicator marca el
+          TCG activo con su color, deslizándose entre opciones. */}
+      {(() => {
+        const activeStyle = game ? GAME_STYLES[game] : null
+        const indBg     = activeStyle ? activeStyle.bg     : 'rgba(255,255,255,0.12)'
+        const indBorder = activeStyle ? activeStyle.border : 'rgba(255,255,255,0.40)'
+        const indGlow   = activeStyle ? activeStyle.border : 'rgba(255,255,255,0.25)'
+        return (
+          <div style={{ padding: '10px 14px 4px' }}>
+            <div
+              ref={tcgRowRef}
+              style={{
+                position: 'relative',
+                background: 'rgba(255,255,255,0.04)',
+                backdropFilter: 'saturate(180%) blur(20px)',
+                WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: RADIUS.md,
+                boxShadow: `${ELEVATION.sm}, inset 0 1px 0 rgba(255,255,255,0.04)`,
+                display: 'flex', alignItems: 'center', padding: '7px 9px', gap: 6,
+              }}
+            >
+              {/* Sliding indicator */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: '50%', left: 9,
+                  transform: `translate(${tcgIndicator.left - 9}px, -50%)`,
+                  width: tcgIndicator.width,
+                  height: 36,
+                  borderRadius: RADIUS.sm,
+                  background: indBg,
+                  border: `1px solid ${indBorder}`,
+                  boxShadow: `0 0 14px ${indGlow}66, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  opacity: tcgIndicator.visible ? 1 : 0,
+                  pointerEvents: 'none',
+                  transition: tcgIndicator.visible
+                    ? 'transform 380ms cubic-bezier(0.34,1.45,0.64,1), width 380ms cubic-bezier(0.34,1.45,0.64,1), background 280ms ease, border-color 280ms ease, box-shadow 280ms ease, opacity 200ms ease'
+                    : 'opacity 150ms ease',
+                  zIndex: 0,
+                }}
+              />
+              <button
+                ref={el => { tcgBtnRefs.current['ALL'] = el }}
+                onClick={() => handleGameSwitch(null)} className="pressable"
+                style={{
+                  position: 'relative', zIndex: 1,
+                  flex: 1, height: 36, borderRadius: RADIUS.sm,
+                  border: '1px solid transparent', background: 'transparent',
+                  color: !game ? COLOR.text : COLOR.textTertiary,
+                  fontSize: 10.5, fontWeight: WEIGHT.bold,
+                  cursor: 'pointer', fontFamily: FONT_STACK,
+                  letterSpacing: '0.06em',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'color 220ms ease',
+                }}
+              >ALL</button>
+              <div style={{ width: 1, height: 18, background: COLOR.borderStrong, flexShrink: 0, opacity: 0.7 }} />
+              {GAMES.map(g => {
+                const active = game === g
+                return (
+                  <button
+                    key={g}
+                    ref={el => { tcgBtnRefs.current[g] = el }}
+                    onClick={() => handleGameSwitch(active ? null : g)}
+                    title={g} className="pressable"
+                    style={{
+                      position: 'relative', zIndex: 1,
+                      flex: 1, height: 36, borderRadius: RADIUS.sm,
+                      border: '1px solid transparent', background: 'transparent',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'transform 280ms cubic-bezier(0.34,1.45,0.64,1)',
+                      transform: active ? 'scale(1.08)' : 'scale(1)',
+                    }}
+                  >
+                    <GameIcon game={g} size={18} />
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Articles strip (shown when a game is selected and articles exist) ── */}
       {articles.length > 0 && (

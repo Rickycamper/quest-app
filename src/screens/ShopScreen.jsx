@@ -4,7 +4,7 @@
 // Sub-filters: by TCG (Sealed/Singles) or type (Accesorios)
 // Search bar across all sections
 // ─────────────────────────────────────────────
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react'
 import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, searchUsers, notifyOwnerOfShopChange } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES } from '../lib/constants'
@@ -1332,41 +1332,100 @@ function FL({ children }) {
 }
 
 // ── Game filter strip (same as Feed) ──────────
+// True glass + sliding indicator that glides between TCGs carrying the
+// active TCG's color scheme. Consistent with Feed and Rankings.
 function GameFilter({ value, onChange }) {
+  const rowRef = useRef(null)
+  const btnRefs = useRef({})
+  const [indicator, setIndicator] = useState({ left: 0, width: 0, visible: false })
+  useLayoutEffect(() => {
+    const measure = () => {
+      const row = rowRef.current
+      if (!row) return
+      const key = value ?? 'ALL'
+      const btn = btnRefs.current[key]
+      if (!btn) { setIndicator(p => ({ ...p, visible: false })); return }
+      const r1 = btn.getBoundingClientRect()
+      const r2 = row.getBoundingClientRect()
+      setIndicator({ left: r1.left - r2.left, width: r1.width, visible: true })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [value])
+
+  const activeStyle = value ? GAME_STYLES[value] : null
+  const indBg     = activeStyle ? activeStyle.bg     : 'rgba(255,255,255,0.12)'
+  const indBorder = activeStyle ? activeStyle.border : 'rgba(255,255,255,0.40)'
+  const indGlow   = activeStyle ? activeStyle.border : 'rgba(255,255,255,0.25)'
+
   return (
-    <div style={{
-      background: 'rgba(17,17,17,0.85)',
-      backdropFilter: 'saturate(180%) blur(20px)',
-      WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-      border: `1px solid ${COLOR.border}`,
-      borderRadius: RADIUS.md,
-      boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
-      display: 'flex', alignItems: 'center', padding: '7px 9px', gap: 6,
-    }}>
-      <button onClick={() => onChange(null)} className="pressable" style={{
-        flex: 1, height: 36, borderRadius: RADIUS.sm,
-        border: !value ? '1px solid rgba(255,255,255,0.45)' : '1px solid transparent',
-        background: !value ? 'rgba(255,255,255,0.12)' : 'transparent',
-        color: !value ? COLOR.text : COLOR.textTertiary,
-        fontSize: 10.5, fontWeight: WEIGHT.bold,
-        cursor: 'pointer', fontFamily: FONT_STACK,
-        letterSpacing: '0.06em',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: MOTION.springTransition,
-      }}>ALL</button>
+    <div
+      ref={rowRef}
+      style={{
+        position: 'relative',
+        background: 'rgba(255,255,255,0.04)',
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: RADIUS.md,
+        boxShadow: `${ELEVATION.sm}, inset 0 1px 0 rgba(255,255,255,0.04)`,
+        display: 'flex', alignItems: 'center', padding: '7px 9px', gap: 6,
+      }}
+    >
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: '50%', left: 9,
+          transform: `translate(${indicator.left - 9}px, -50%)`,
+          width: indicator.width,
+          height: 36,
+          borderRadius: RADIUS.sm,
+          background: indBg,
+          border: `1px solid ${indBorder}`,
+          boxShadow: `0 0 14px ${indGlow}66, inset 0 1px 0 rgba(255,255,255,0.06)`,
+          opacity: indicator.visible ? 1 : 0,
+          pointerEvents: 'none',
+          transition: indicator.visible
+            ? 'transform 380ms cubic-bezier(0.34,1.45,0.64,1), width 380ms cubic-bezier(0.34,1.45,0.64,1), background 280ms ease, border-color 280ms ease, box-shadow 280ms ease, opacity 200ms ease'
+            : 'opacity 150ms ease',
+          zIndex: 0,
+        }}
+      />
+      <button
+        ref={el => { btnRefs.current['ALL'] = el }}
+        onClick={() => onChange(null)} className="pressable"
+        style={{
+          position: 'relative', zIndex: 1,
+          flex: 1, height: 36, borderRadius: RADIUS.sm,
+          border: '1px solid transparent', background: 'transparent',
+          color: !value ? COLOR.text : COLOR.textTertiary,
+          fontSize: 10.5, fontWeight: WEIGHT.bold,
+          cursor: 'pointer', fontFamily: FONT_STACK,
+          letterSpacing: '0.06em',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'color 220ms ease',
+        }}
+      >ALL</button>
       <div style={{ width: 1, height: 18, background: COLOR.borderStrong, flexShrink: 0, opacity: 0.7 }} />
       {GAMES.map(g => {
-        const gs = GAME_STYLES[g]
         const active = value === g
         return (
-          <button key={g} onClick={() => onChange(active ? null : g)} title={g} className="pressable" style={{
-            flex: 1, height: 36, borderRadius: RADIUS.sm,
-            border: `1px solid ${active ? gs.border : 'transparent'}`,
-            background: active ? gs.bg : 'transparent',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: MOTION.springTransition,
-            boxShadow: active ? `0 0 12px ${gs.border}60, inset 0 1px 0 rgba(255,255,255,0.05)` : 'none',
-          }}>
+          <button
+            key={g}
+            ref={el => { btnRefs.current[g] = el }}
+            onClick={() => onChange(active ? null : g)}
+            title={g} className="pressable"
+            style={{
+              position: 'relative', zIndex: 1,
+              flex: 1, height: 36, borderRadius: RADIUS.sm,
+              border: '1px solid transparent', background: 'transparent',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 280ms cubic-bezier(0.34,1.45,0.64,1)',
+              transform: active ? 'scale(1.08)' : 'scale(1)',
+            }}
+          >
             <GameIcon game={g} size={18} />
           </button>
         )
@@ -1640,23 +1699,38 @@ export default function ShopScreen({ isOwner, isStaff }) {
         </div>
       </div>
 
-      {/* ── Category tabs ── */}
+      {/* ── Category tabs — Battle Now gradient bubble en el activo,
+          mismo tratamiento que Rankings/Torneos/Liga para coherencia. */}
       <div style={{ padding: '0 16px', marginBottom: 12 }}>
-        <div style={{ display: 'flex', background: '#111', border: '1px solid #1E1E1E', borderRadius: 12, padding: 4, gap: 4 }}>
+        <div style={{
+          display: 'flex',
+          background: 'rgba(255,255,255,0.04)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 12, padding: 4, gap: 4,
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+        }}>
           {CATEGORIES.map(c => {
             const active = category === c.id
             return (
               <button key={c.id} onClick={() => handleCategory(c.id)} style={{
                 flex: 1, padding: '9px 0', borderRadius: 9, border: 'none',
-                background: active ? '#FFF' : 'transparent',
-                color: active ? '#111' : '#6B7280',
+                background: active
+                  ? 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)'
+                  : 'transparent',
+                color: active ? '#FFFFFF' : '#6B7280',
                 fontSize: 12, fontWeight: 800, cursor: 'pointer',
                 fontFamily: 'Inter, sans-serif',
-                transition: 'all 0.15s',
+                boxShadow: active
+                  ? '0 6px 18px rgba(251,146,60,0.30), 0 2px 6px rgba(167,139,250,0.20), inset 0 1px 0 rgba(255,255,255,0.28)'
+                  : 'none',
+                textShadow: active ? '0 1px 0 rgba(0,0,0,0.18)' : 'none',
+                transition: 'background 220ms ease, color 180ms ease, box-shadow 220ms ease',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
               }}>
                 {c.label}
-                <span style={{ fontSize: 8, fontWeight: 600, opacity: 0.6 }}>{catCounts[c.id]}</span>
+                <span style={{ fontSize: 8, fontWeight: 600, opacity: active ? 0.85 : 0.6 }}>{catCounts[c.id]}</span>
               </button>
             )
           })}

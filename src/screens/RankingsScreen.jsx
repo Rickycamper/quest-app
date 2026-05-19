@@ -994,7 +994,7 @@ function SeasonOverviewCard({ season }) {
 // toggle. TCG view shows top-1 per game (6 points). Branch view shows
 // top-1 per branch overall (3 points). Below the chart, a list of
 // champion rows for whichever view is active.
-function ChampionsByTcg({ champions, branchChampions = {}, onSelectGame, onSelectBranch }) {
+function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, onSelectGame, onSelectBranch }) {
   const [animateIn, setAnimateIn] = useState(false)
   // Which axis: 'tcg' (game) or 'branch' (sucursal)
   const [view, setView] = useState('tcg')
@@ -1019,8 +1019,8 @@ function ChampionsByTcg({ champions, branchChampions = {}, onSelectGame, onSelec
           champ:  c,
           color:  GAME_STYLES[g]?.color  ?? '#FFFFFF',
           border: GAME_STYLES[g]?.border ?? 'rgba(255,255,255,0.2)',
-          // X-axis icon: TCG icon
-          renderIcon: () => <GameIcon game={g} size={22} />,
+          // X-axis icon: TCG icon — small, no label. Sirve solo de referencia.
+          renderIcon: () => <GameIcon game={g} size={14} />,
           onSelect: () => onSelectGame?.(g),
         }
       })
@@ -1048,8 +1048,8 @@ function ChampionsByTcg({ champions, branchChampions = {}, onSelectGame, onSelec
   const maxChampPts = Math.max(1, ...items.map(it => it.champ?.points || 0))
 
   // ── Line chart geometry ─────────────────────────────────────────────
-  const W = 600, H = 200
-  const PAD = { l: 28, r: 20, t: 14, b: 70 }
+  const W = 600, H = 170
+  const PAD = { l: 28, r: 20, t: 14, b: 40 }
   const innerW = W - PAD.l - PAD.r
   const innerH = H - PAD.t - PAD.b
   const stepX = items.length > 1 ? innerW / (items.length - 1) : innerW
@@ -1140,7 +1140,7 @@ function ChampionsByTcg({ champions, branchChampions = {}, onSelectGame, onSelec
         <svg
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
-          style={{ width: '100%', height: 200, display: 'block' }}
+          style={{ width: '100%', height: 170, display: 'block' }}
         >
           {/* Soft horizontal guides */}
           {[0.25, 0.5, 0.75].map(t => {
@@ -1192,42 +1192,145 @@ function ChampionsByTcg({ champions, branchChampions = {}, onSelectGame, onSelec
             )
           })}
 
-          {/* X-axis: icon + tiny text label below each dot. Bigger icons
-              + always-on label so all 6 TCGs are clearly distinguishable
-              even on narrow mobile widths. */}
+          {/* X-axis: solo el icono del TCG (chiquito, referencia). Sin
+              texto — la lista de campeones abajo ya carga los nombres
+              completos y los puntos. */}
           {pts.map(p => (
             <foreignObject key={`label-${p.key}`}
-              x={p.x - 30} y={H - PAD.b + 6}
-              width="60" height="58"
+              x={p.x - 10} y={H - PAD.b + 6}
+              width="20" height="20"
               style={{ overflow: 'visible' }}
             >
               <div xmlns="http://www.w3.org/1999/xhtml"
                 style={{
-                  width: 60, height: 58,
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'flex-start',
-                  gap: 4,
-                  opacity: animateIn ? 1 : 0,
+                  width: 20, height: 20,
+                  display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  opacity: animateIn ? 0.75 : 0,
                   transition: 'opacity 320ms ease 1200ms',
                 }}
               >
-                <div style={{
-                  width: 26, height: 26, display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {p.renderIcon ? p.renderIcon() : null}
-                </div>
-                <div style={{
-                  fontSize: 10, fontWeight: 700,
-                  color: p.color, letterSpacing: '-0.005em',
-                  fontFamily: 'Inter, sans-serif',
-                  whiteSpace: 'nowrap', lineHeight: 1,
-                }}>{p.label}</div>
+                {p.renderIcon ? p.renderIcon() : null}
               </div>
             </foreignObject>
           ))}
         </svg>
       </div>
+
+      {/* ── Puntos por Sucursal — compact summary integrado dentro de la
+          misma card. Suma TODOS los puntos de todos los jugadores en
+          cada sucursal (across all TCGs). Da sensación de escala antes
+          de leer la lista de campeones de abajo. */}
+      {(() => {
+        const branchItems = BRANCHES.map(b => ({
+          branch:  b,
+          total:   branchTotals[b]?.total   ?? 0,
+          players: branchTotals[b]?.players ?? 0,
+          ...(BRANCH_STYLES[b] ?? {}),
+        }))
+        const grandTotal = branchItems.reduce((s, it) => s + it.total, 0)
+        return (
+          <div style={{
+            margin: '12px 0',
+            padding: '10px 12px',
+            borderRadius: RADIUS.md,
+            background: 'rgba(255,255,255,0.02)',
+            border: `1px solid ${COLOR.border}`,
+            display: 'flex', flexDirection: 'column', gap: 8,
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: 8,
+            }}>
+              <div style={{
+                fontSize: 9.5, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
+                letterSpacing: '0.12em', textTransform: 'uppercase',
+              }}>
+                🏛️ Puntos por sucursal
+              </div>
+              <div style={{
+                fontSize: 10.5, color: COLOR.textSecondary, fontWeight: WEIGHT.semibold,
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                <span style={{ color: COLOR.text, fontWeight: WEIGHT.bold }}>
+                  <CountUpNum value={grandTotal} startWhen={animateIn} delay={300} duration={1000} />
+                </span>
+                <span style={{ marginLeft: 4, opacity: 0.7 }}>pts comunidad</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {branchItems.map((it, i) => {
+                const share = grandTotal > 0 ? (it.total / grandTotal) * 100 : 0
+                const delay = i * 80
+                return (
+                  <button
+                    key={it.branch}
+                    onClick={() => onSelectBranch?.(it.branch)}
+                    className="pressable"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      padding: 0, margin: 0,
+                      cursor: 'pointer', textAlign: 'left',
+                      fontFamily: FONT_STACK,
+                      display: 'flex', flexDirection: 'column', gap: 4,
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 7,
+                      }}>
+                        <span style={{
+                          width: 7, height: 7, borderRadius: '50%',
+                          background: it.dot,
+                          boxShadow: `0 0 6px ${it.dot}`,
+                          display: 'inline-block',
+                        }} />
+                        <span style={{
+                          fontSize: 12, fontWeight: WEIGHT.bold,
+                          color: it.color,
+                        }}>{it.branch}</span>
+                        <span style={{
+                          fontSize: 10, color: COLOR.textQuaternary, fontWeight: WEIGHT.semibold,
+                        }}>{it.players}{it.players === 1 ? ' jug' : ' jug'}</span>
+                      </div>
+                      <div style={{
+                        display: 'flex', alignItems: 'baseline', gap: 3,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>
+                        <span style={{
+                          fontSize: 12.5, fontWeight: WEIGHT.bold,
+                          color: COLOR.text, letterSpacing: '-0.01em',
+                        }}>
+                          <CountUpNum value={it.total} startWhen={animateIn} delay={delay + 300} duration={1000} />
+                        </span>
+                        <span style={{ fontSize: 9, opacity: 0.55, color: COLOR.textSecondary, fontWeight: WEIGHT.medium }}>pts</span>
+                      </div>
+                    </div>
+                    <div style={{
+                      width: '100%', height: 4, borderRadius: 2,
+                      background: 'rgba(255,255,255,0.04)',
+                      overflow: 'hidden',
+                      boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.3)',
+                    }}>
+                      <div style={{
+                        height: '100%',
+                        width: animateIn ? `${share}%` : '0%',
+                        background: `linear-gradient(90deg, ${it.border} 0%, ${it.dot} 100%)`,
+                        borderRadius: 2,
+                        boxShadow: `0 0 6px ${it.dot}55`,
+                        transition: `width 1100ms cubic-bezier(0.34, 1.3, 0.64, 1) ${delay + 200}ms`,
+                      }} />
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Champion rows — uniform glass surface, colour only on data ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1378,249 +1481,6 @@ function ChampionsByTcg({ champions, branchChampions = {}, onSelectGame, onSelec
   )
 }
 
-// ── BranchTotalsChart ──────────────────────────
-// Mini line chart + bar list showing the SUM of all ranking points for
-// every player in each branch, across every TCG. Gives the user a feel
-// for the relative scale of each store's community.
-function BranchTotalsChart({ totals = {}, onSelectBranch }) {
-  const [animateIn, setAnimateIn] = useState(false)
-  useEffect(() => {
-    const t = setTimeout(() => setAnimateIn(true), 120)
-    return () => clearTimeout(t)
-  }, [])
-
-  const loaded   = Object.keys(totals).length === BRANCHES.length
-  const items    = BRANCHES.map(b => ({
-    branch: b,
-    total:  totals[b]?.total ?? 0,
-    players: totals[b]?.players ?? 0,
-    color:  BRANCH_STYLES[b]?.color ?? '#FFFFFF',
-    dot:    BRANCH_STYLES[b]?.dot   ?? '#6B7280',
-    border: BRANCH_STYLES[b]?.border ?? 'rgba(255,255,255,0.2)',
-    bg:     BRANCH_STYLES[b]?.bg ?? 'rgba(255,255,255,0.05)',
-  }))
-  const grandTotal = items.reduce((s, it) => s + it.total, 0)
-  const maxTotal   = Math.max(1, ...items.map(it => it.total))
-
-  // ── Mini line chart ────────────────────────────────────────────────
-  const W = 600, H = 150
-  const PAD = { l: 36, r: 24, t: 18, b: 50 }
-  const innerW = W - PAD.l - PAD.r
-  const innerH = H - PAD.t - PAD.b
-  const stepX  = items.length > 1 ? innerW / (items.length - 1) : innerW
-
-  const pts = items.map((it, i) => ({
-    ...it,
-    x: PAD.l + i * stepX,
-    y: PAD.t + (1 - (it.total / maxTotal)) * innerH,
-  }))
-  const polyline = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-  let pathLen = 0
-  for (let i = 1; i < pts.length; i++) {
-    pathLen += Math.hypot(pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y)
-  }
-
-  return (
-    <div style={{
-      background: COLOR.surface,
-      border: `1px solid ${COLOR.border}`,
-      borderRadius: RADIUS.lg,
-      padding: '14px 14px 12px',
-      boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
-    }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: 10, gap: 8,
-      }}>
-        <div style={{
-          fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
-          letterSpacing: '0.12em', textTransform: 'uppercase',
-          display: 'flex', alignItems: 'center', gap: 6,
-        }}>
-          🏛️ Puntos por Sucursal
-        </div>
-        {loaded && (
-          <div style={{
-            fontSize: 10.5, color: COLOR.textSecondary, fontWeight: WEIGHT.semibold,
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            <span style={{ color: COLOR.text, fontWeight: WEIGHT.bold }}>
-              <CountUpNum value={grandTotal} startWhen={animateIn} delay={300} duration={1100} />
-            </span>
-            <span style={{ marginLeft: 4, opacity: 0.7 }}>pts en la comunidad</span>
-          </div>
-        )}
-      </div>
-
-      {/* Line chart */}
-      <div style={{
-        width: '100%', marginBottom: 12,
-        background: 'rgba(255,255,255,0.02)',
-        borderRadius: RADIUS.md,
-        border: `1px solid ${COLOR.border}`,
-        padding: '6px 4px 4px',
-      }}>
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="none"
-          style={{ width: '100%', height: 150, display: 'block' }}
-        >
-          {/* Soft horizontal guides */}
-          {[0.25, 0.5, 0.75].map(t => {
-            const y = PAD.t + t * innerH
-            return (
-              <line key={t}
-                x1={PAD.l} x2={W - PAD.r} y1={y} y2={y}
-                stroke="rgba(255,255,255,0.04)" strokeWidth="1"
-              />
-            )
-          })}
-
-          {/* The polyline */}
-          <polyline
-            points={polyline}
-            fill="none"
-            stroke="rgba(74, 222, 128, 0.65)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{
-              strokeDasharray: pathLen,
-              strokeDashoffset: animateIn ? 0 : pathLen,
-              transition: `stroke-dashoffset 1400ms cubic-bezier(0.4,0,0.2,1) 100ms`,
-              filter: 'drop-shadow(0 0 6px rgba(74, 222, 128, 0.25))',
-            }}
-          />
-
-          {/* Dots per branch */}
-          {pts.map((p, i) => {
-            const delay = 100 + (i / Math.max(1, pts.length - 1)) * 1400
-            return (
-              <g key={p.branch}
-                style={{
-                  opacity: animateIn ? 1 : 0,
-                  transform: animateIn ? 'scale(1)' : 'scale(0.4)',
-                  transformOrigin: `${p.x}px ${p.y}px`,
-                  transition: `opacity 280ms ease ${delay}ms, transform 380ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
-                }}
-              >
-                <circle cx={p.x} cy={p.y} r="9" fill={p.dot} opacity="0.20" />
-                <circle cx={p.x} cy={p.y} r="5.5"
-                  fill={p.dot}
-                  stroke="#0A0A0A" strokeWidth="2"
-                />
-              </g>
-            )
-          })}
-
-          {/* X-axis labels — branch name + points total */}
-          {pts.map(p => (
-            <foreignObject key={`label-${p.branch}`}
-              x={p.x - 50} y={H - PAD.b + 8}
-              width="100" height="44"
-              style={{ overflow: 'visible' }}
-            >
-              <div xmlns="http://www.w3.org/1999/xhtml"
-                style={{
-                  width: 100, display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', gap: 2,
-                  opacity: animateIn ? 1 : 0,
-                  transition: 'opacity 320ms ease 1200ms',
-                  fontFamily: 'Inter, sans-serif',
-                }}
-              >
-                <div style={{
-                  fontSize: 10.5, fontWeight: 800, color: p.color,
-                  letterSpacing: '-0.005em', lineHeight: 1,
-                }}>{p.branch}</div>
-                <div style={{
-                  fontSize: 13, fontWeight: 800, color: '#FFFFFF',
-                  fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                  letterSpacing: '-0.01em',
-                }}>
-                  <CountUpNum value={p.total} startWhen={animateIn} delay={1100} duration={1000} />
-                </div>
-              </div>
-            </foreignObject>
-          ))}
-        </svg>
-      </div>
-
-      {/* Bar list — branch share of community */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-        {items.map((it, i) => {
-          const share = grandTotal > 0 ? (it.total / grandTotal) * 100 : 0
-          const delay = i * 80
-          return (
-            <button
-              key={it.branch}
-              onClick={() => onSelectBranch?.(it.branch)}
-              className="pressable"
-              style={{
-                background: it.bg,
-                border: `1px solid ${it.border}`,
-                borderRadius: RADIUS.md,
-                padding: '9px 12px',
-                cursor: 'pointer', textAlign: 'left',
-                fontFamily: FONT_STACK,
-                display: 'flex', flexDirection: 'column', gap: 6,
-              }}
-            >
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                }}>
-                  <span style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: it.dot,
-                    boxShadow: `0 0 8px ${it.dot}`,
-                    display: 'inline-block',
-                  }} />
-                  <span style={{
-                    fontSize: 12.5, fontWeight: WEIGHT.bold,
-                    color: it.color,
-                  }}>{it.branch}</span>
-                  <span style={{
-                    fontSize: 10.5, color: COLOR.textTertiary, fontWeight: WEIGHT.semibold,
-                  }}>{it.players} {it.players === 1 ? 'jugador' : 'jugadores'}</span>
-                </div>
-                <div style={{
-                  display: 'flex', alignItems: 'baseline', gap: 4,
-                  fontVariantNumeric: 'tabular-nums',
-                }}>
-                  <span style={{
-                    fontSize: 14, fontWeight: WEIGHT.bold,
-                    color: COLOR.text, letterSpacing: '-0.01em',
-                  }}>
-                    <CountUpNum value={it.total} startWhen={animateIn} delay={delay + 300} duration={1000} />
-                  </span>
-                  <span style={{ fontSize: 9.5, opacity: 0.6, color: COLOR.textSecondary, fontWeight: WEIGHT.medium }}>pts</span>
-                </div>
-              </div>
-              <div style={{
-                width: '100%', height: 5, borderRadius: 3,
-                background: 'rgba(255,255,255,0.04)',
-                overflow: 'hidden',
-                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35)',
-              }}>
-                <div style={{
-                  height: '100%',
-                  width: animateIn ? `${share}%` : '0%',
-                  background: `linear-gradient(90deg, ${it.border} 0%, ${it.dot} 100%)`,
-                  borderRadius: 3,
-                  boxShadow: `0 0 8px ${it.dot}66`,
-                  transition: `width 1100ms cubic-bezier(0.34, 1.3, 0.64, 1) ${delay + 200}ms`,
-                }} />
-              </div>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
 
 // ── Leaderboard ──────────────────────────────
 function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, onSelectGame }) {
@@ -1805,15 +1665,10 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
       <ChampionsByTcg
         champions={champions}
         branchChampions={branchChampions}
+        branchTotals={branchTotals}
         onSelectGame={onSelectGame}
         onSelectBranch={onSelectBranch}
       />
-
-      {/* ── Puntos totales por sucursal — community-wide points line ──
-          Suma de TODOS los puntos de TODOS los jugadores en cada
-          sucursal. Da sensación de escala/imponencia: 'mi sucursal
-          acumula X pts entre todos'. */}
-      <BranchTotalsChart totals={branchTotals} onSelectBranch={onSelectBranch} />
 
       {/* ── Rules card (collapsible) ── */}
       <div style={{
