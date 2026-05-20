@@ -611,6 +611,26 @@ export async function getFeed({ game = null, limit = 20, offset = 0 } = {}) {
   return (data ?? []).map(p => ({ ...p, user_has_liked: false }))
 }
 
+/**
+ * Single post by id — usado por el deep link ?post=<id>. Mismo shape
+ * que getFeed para que el PostCard pueda reusar las props sin transformar.
+ */
+export async function getPostById(postId) {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      id, caption, tag, image_url, images, created_at,
+      profiles:user_id ( id, username, avatar_url, role, verified, is_owner ),
+      post_likes ( count ),
+      post_comments ( count )
+    `)
+    .eq('id', postId)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  return { ...data, user_has_liked: false }
+}
+
 // Fetch which post IDs the user has liked — called after posts render so it
 // doesn't block the initial paint. Returns a Set of liked post IDs.
 export async function getUserLikedPosts(postIds) {

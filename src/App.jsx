@@ -148,6 +148,7 @@ import { BottomNav, NotifBell } from './components/Nav'
 import { ShieldIcon, SearchIcon, DiamondIcon } from './components/Icons'
 // NotificationPanel + OnboardingModal + FeatureTour lazy-loaded — none shows on first render
 const NotificationPanel = lazy(() => import('./components/NotificationPanel'))
+const PostDetailOverlay = lazy(() => import('./components/PostDetailOverlay'))
 const OnboardingModal   = lazy(() => import('./components/OnboardingModal'))
 const FeatureTour       = lazy(() => import('./components/FeatureTour'))
 import Avatar from './components/Avatar'
@@ -299,7 +300,7 @@ function AuthFlow({ onGuest, initialScreen, onDone, oauthError }) {
   return null
 }
 
-function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcInviteFromUrl } = {}) {
+function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcInviteFromUrl, openPostId } = {}) {
   const { user, profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
   const { isGuest, requireAuth } = useGuest()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
@@ -342,6 +343,7 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   const [hubInitialView,    setHubInitialView]    = useState(null)
   const [showLifeCounter,   setShowLifeCounter]   = useState(false)
   const [lcInvite,          setLcInvite]          = useState(null) // active invite payload while LC is open
+  const [sharedPostId,      setSharedPostId]      = useState(null) // post abierto por ?post=
 
   // Si llegamos por ?lc-invite=, abrimos Life Counter con la config del
   // host prefilled — el destinatario solo tiene que tap 'Iniciar contador'.
@@ -351,6 +353,11 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
       setShowLifeCounter(true)
     }
   }, [lcInviteFromUrl])
+
+  // Si llegamos por ?post=<id>, mostramos overlay con ese post puntual.
+  useEffect(() => {
+    if (openPostId) setSharedPostId(openPostId)
+  }, [openPostId])
   const [feedRefreshKey,    setFeedRefreshKey]    = useState(0)
   const [showOnboarding,    setShowOnboarding]    = useState(false)
   const [showFeatureTour,   setShowFeatureTour]   = useState(false)
@@ -587,6 +594,17 @@ const needsTerms = profile && !profile.terms_accepted_at
           onClose={() => { setShowLifeCounter(false); setLcInvite(null) }}
           onViewProfile={(id) => { setShowLifeCounter(false); setLcInvite(null); setViewingUserId(id) }}
         />
+      )}
+
+      {/* Shared post overlay — abre directo cuando llegás por ?post=<id> */}
+      {sharedPostId && (
+        <Suspense fallback={null}>
+          <PostDetailOverlay
+            postId={sharedPostId}
+            onClose={() => setSharedPostId(null)}
+            onViewProfile={(id) => { setSharedPostId(null); setViewingUserId(id) }}
+          />
+        </Suspense>
       )}
 
       {/* Profile overlay — slides over everything, including BottomNav (z:100) */}
@@ -870,6 +888,8 @@ function AppInner() {
     const liga       = params.get('liga')       ?? null
     const tab        = params.get('tab')        ?? null
     const username   = params.get('u')          ?? null
+    // Shared post — abre directo este post en un overlay
+    const postId     = params.get('post')       ?? null
     // Life Counter invite — base64-encoded payload with host + game config.
     // When present, we open Life Counter directly with the config prefilled.
     const lcInviteRaw = params.get('lc-invite') ?? null
@@ -888,14 +908,15 @@ function AppInner() {
     // Used to show "Conectando con Discord…" in the loading state and to
     // detect when the exchange timed out (arrived via OAuth but ended up with no session).
     const wasOAuthCallback = params.has('code')
-    if (tournament || tab || liga || username || lcInvite) window.history.replaceState(null, '', window.location.pathname)
-    return { tournament, liga, tab, username, lcInvite, oauthErr, wasOAuthCallback }
+    if (tournament || tab || liga || username || lcInvite || postId) window.history.replaceState(null, '', window.location.pathname)
+    return { tournament, liga, tab, username, lcInvite, postId, oauthErr, wasOAuthCallback }
   })
   const deepLinkTournament = deepLinks.tournament
   const deepLinkLeagueId   = deepLinks.liga
   const deepLinkTab        = deepLinks.tab
   const deepLinkUsername   = deepLinks.username
   const deepLinkLcInvite   = deepLinks.lcInvite
+  const deepLinkPostId     = deepLinks.postId
 
   // Auto-enter guest mode when arriving via tournament or tab deep-link and not logged in.
   // If user is already logged in (from localStorage) this stays false.
@@ -1009,6 +1030,7 @@ function AppInner() {
           openLeagueId={deepLinkLeagueId}
           openUsername={deepLinkUsername}
           lcInviteFromUrl={deepLinkLcInvite}
+          openPostId={deepLinkPostId}
         />
         {showGateModal && (
           <GuestGateModal

@@ -405,13 +405,12 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
   }
 
   const handleShare = async () => {
-    // Include the author's profile URL so the link is actually clickable
-    // on WhatsApp / Telegram / Discord — opens our app at @username.
+    // Estilo Instagram: el link abre directo este post (no el perfil).
+    // El receptor toca el link → app detecta ?post=<id> y abre un
+    // overlay con este post específico, no el feed entero.
     const authorUsername = post.profiles?.username
-    const url  = authorUsername ? `${window.location.origin}?u=${encodeURIComponent(authorUsername)}` : window.location.origin
+    const url  = `${window.location.origin}/?post=${encodeURIComponent(post.id)}`
     const text = `${post.caption}\n— @${authorUsername ?? 'user'} en Quest TCG`
-    // shareOrCopy handles native share → clipboard → legacy execCommand,
-    // so this never silently fails in WhatsApp/Instagram in-app browsers.
     const res = await shareOrCopy({ title: 'Quest TCG', text, url })
     if (res.ok && res.method !== 'cancelled') {
       setShared(true)
