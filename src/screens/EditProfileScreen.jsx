@@ -131,18 +131,32 @@ export default function EditProfileScreen({ userId, onBack, onSaved }) {
     // Block HEIC/HEIF — browsers can't convert them to JPEG via canvas
     const isHeic = /heic|heif/i.test(file.type) || /\.heic$|\.heif$/i.test(file.name)
     if (isHeic) {
-      setError('Formato no compatible. Abre la foto en tu galería y compártela como JPG.')
+      const msg = 'Formato no compatible. Abre la foto en tu galería y compártela como JPG.'
+      setError(msg)
+      toast(msg, { type: 'error' })
       e.target.value = ''
       return
     }
     if (file.size > 30 * 1024 * 1024) {
-      setError('La imagen es demasiado grande. Máximo 30 MB.')
+      const msg = 'La imagen es demasiado grande. Máximo 30 MB.'
+      setError(msg)
+      toast(msg, { type: 'error' })
+      e.target.value = ''
+      return
+    }
+    // Catch-all: si el browser detectó algún tipo que no sea image/* (raro,
+    // pero pasa en algunos pickers de Android al elegir desde Files app)
+    if (file.type && !file.type.startsWith('image/')) {
+      const msg = 'Ese archivo no es una imagen válida. Usa JPG o PNG.'
+      setError(msg)
+      toast(msg, { type: 'error' })
       e.target.value = ''
       return
     }
     setError('')
     setAvatarFile(file)
     setAvatarPreview(URL.createObjectURL(file))
+    toast('Foto lista — toca Guardar para subirla', { type: 'info' })
   }
 
   const handleSave = async () => {
