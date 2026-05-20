@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './components/Toast'
 import { ConfirmProvider } from './components/Confirm'
 import { FollowSuccessProvider } from './components/FollowSuccess'
+import UpdateBanner from './components/UpdateBanner'
 import { useNotifications } from './hooks/useNotifications'
 import { OpeningScreen, SignupScreen, EmailSignupScreen, LoginScreen, ForgotPasswordScreen, ResetPasswordScreen, TermsModal, friendlyOAuthError } from './screens/AuthScreens'
 import FeedScreen            from './screens/FeedScreen'
@@ -1089,6 +1090,9 @@ export default function App() {
           </div>
           {/* Offline indicator — sits above everything (z:9999), only renders when offline */}
           <OfflineBanner />
+          {/* Update banner — detecta cuando hay un bundle más nuevo en el CDN
+              que el que está corriendo y ofrece un tap para forzar reload */}
+          <UpdateBanner />
           {/* Vercel Analytics — page views, traffic, referrers (zero config) */}
           <Analytics />
           {/* Speed Insights — real-user Core Web Vitals (LCP, FCP, CLS) */}
