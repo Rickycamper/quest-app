@@ -785,11 +785,10 @@ function BranchPodium({ entries, branch, game }) {
 // progress bar, and Championship rules. Designed to feel "alive" with subtle
 // motion: pulsing ACTIVA dot, trophy glint, spring chevron, content stagger.
 function SeasonOverviewCard({ season }) {
-  // Default expanded so users immediately see days remaining, dates and
-  // the championship rule — they don't have to discover it via a tap.
-  // The collapse affordance is still there if they want to free up
-  // vertical space.
-  const [expanded, setExpanded] = useState(true)
+  // Collapsed by default — el header siempre muestra nombre + días
+  // restantes + barra de progreso, así el usuario tiene la info clave
+  // sin scroll. Tap para expandir y ver fechas + regla del Championship.
+  const [expanded, setExpanded] = useState(false)
   const endStr    = safeDate(season?.end_date,   '2026-08-31')
   const startStr  = safeDate(season?.start_date, '2026-05-01')
   const endDate   = new Date(endStr   + 'T23:59:59')
@@ -996,83 +995,83 @@ function SeasonOverviewCard({ season }) {
 // champion rows for whichever view is active.
 function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, onSelectGame, onSelectBranch }) {
   const [animateIn, setAnimateIn] = useState(false)
-  // Which axis: 'tcg' (game) or 'branch' (sucursal)
-  const [view, setView] = useState('tcg')
   useEffect(() => {
     setAnimateIn(false)
     const t = setTimeout(() => setAnimateIn(true), 100)
     return () => clearTimeout(t)
-    // Re-run the entry animation on view switch so the new line draws in.
-  }, [view])
+  }, [])
 
-  const loaded = view === 'tcg'
-    ? Object.keys(champions).length === GAMES.length
-    : Object.keys(branchChampions).length === BRANCHES.length
+  const loaded = Object.keys(champions).length === GAMES.length
 
-  // Build the unified point set for whichever view is active
-  const items = view === 'tcg'
-    ? GAMES.map(g => {
-        const c = champions[g]
-        return {
-          key:    g,
-          label:  g,
-          champ:  c,
-          color:  GAME_STYLES[g]?.color  ?? '#FFFFFF',
-          border: GAME_STYLES[g]?.border ?? 'rgba(255,255,255,0.2)',
-          // X-axis icon: TCG icon — small, no label. Sirve solo de referencia.
-          renderIcon: () => <GameIcon game={g} size={14} />,
-          onSelect: () => onSelectGame?.(g),
-        }
-      })
-    : BRANCHES.map(b => {
-        const c = branchChampions[b]
-        return {
-          key:    b,
-          label:  b,
-          champ:  c,
-          color:  BRANCH_STYLES[b]?.color  ?? '#FFFFFF',
-          border: BRANCH_STYLES[b]?.border ?? 'rgba(255,255,255,0.2)',
-          // X-axis icon: a branch dot
-          renderIcon: () => (
-            <span style={{
-              width: 10, height: 10, borderRadius: '50%',
-              background: BRANCH_STYLES[b]?.dot ?? '#6B7280',
-              boxShadow: `0 0 8px ${BRANCH_STYLES[b]?.dot ?? '#6B7280'}`,
-              display: 'block',
-            }} />
-          ),
-          onSelect: () => onSelectBranch?.(b),
-        }
-      })
-
-  const maxChampPts = Math.max(1, ...items.map(it => it.champ?.points || 0))
-
-  // ── Line chart geometry ─────────────────────────────────────────────
-  // PAD.l/r aumentados para que los iconos del primero y último TCG no
-  // queden tocando el borde de la card — todos los dots quedan
-  // claramente DENTRO del área de la gráfica.
-  const W = 600, H = 170
-  const PAD = { l: 48, r: 48, t: 14, b: 40 }
-  const innerW = W - PAD.l - PAD.r
-  const innerH = H - PAD.t - PAD.b
-  const stepX = items.length > 1 ? innerW / (items.length - 1) : innerW
-
-  const pts = items.map((it, i) => ({
-    ...it,
-    x:        PAD.l + i * stepX,
-    y:        PAD.t + (1 - ((it.champ?.points || 0) / maxChampPts)) * innerH,
-    hasChamp: !!it.champ,
+  // ── Build BOTH datasets (TCG champions + Sucursal totals) ──────────
+  // Cada línea normaliza a SU PROPIO max para que ambas ocupen toda la
+  // altura del chart y se vean variaciones claras en cada una.
+  const tcgItems = GAMES.map(g => {
+    const c = champions[g]
+    return {
+      key:    g,
+      label:  g,
+      champ:  c,
+      color:  GAME_STYLES[g]?.color  ?? '#FFFFFF',
+      points: c?.points || 0,
+      hasChamp: !!c,
+    }
+  })
+  const branchItems = BRANCHES.map(b => ({
+    key:     b,
+    label:   b,
+    color:   BRANCH_STYLES[b]?.color  ?? '#FFFFFF',
+    dot:     BRANCH_STYLES[b]?.dot    ?? '#6B7280',
+    points:  branchTotals[b]?.total ?? 0,
   }))
 
-  const polyline = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  const maxTcgPts    = Math.max(1, ...tcgItems.map(it => it.points))
+  const maxBranchPts = Math.max(1, ...branchItems.map(it => it.points))
+  // Keep maxChampPts for the existing per-TCG row bars below the chart
+  const maxChampPts = maxTcgPts
 
-  // Approximate path length (for stroke-dashoffset animation)
-  let pathLen = 0
-  for (let i = 1; i < pts.length; i++) {
-    const dx = pts[i].x - pts[i-1].x
-    const dy = pts[i].y - pts[i-1].y
-    pathLen += Math.hypot(dx, dy)
-  }
+  // ── Geometry ─────────────────────────────────────────────────────
+  // PAD generoso a izq/der para que ningún dot ni icono toque el borde
+  // del panel interior incluso en mobile angosto.
+  const W = 600, H = 180
+  const PAD = { l: 70, r: 70, t: 18, b: 42 }
+  const innerW = W - PAD.l - PAD.r
+  const innerH = H - PAD.t - PAD.b
+
+  // TCG: 6 puntos uniformemente distribuidos
+  const tcgStepX = innerW / (tcgItems.length - 1)
+  const tcgPts = tcgItems.map((it, i) => ({
+    ...it,
+    x: PAD.l + i * tcgStepX,
+    y: PAD.t + (1 - (it.points / maxTcgPts)) * innerH,
+  }))
+
+  // Sucursal: 3 puntos uniformemente distribuidos (mismo span horizontal)
+  const branchStepX = innerW / (branchItems.length - 1)
+  const branchPts = branchItems.map((it, i) => ({
+    ...it,
+    x: PAD.l + i * branchStepX,
+    y: PAD.t + (1 - (it.points / maxBranchPts)) * innerH,
+  }))
+
+  const tcgPolyline    = tcgPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  const branchPolyline = branchPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+
+  // Path lengths para animación stroke-dashoffset
+  const pathLen = (() => {
+    let l = 0
+    for (let i = 1; i < tcgPts.length; i++) {
+      l += Math.hypot(tcgPts[i].x - tcgPts[i-1].x, tcgPts[i].y - tcgPts[i-1].y)
+    }
+    return l
+  })()
+  const branchPathLen = (() => {
+    let l = 0
+    for (let i = 1; i < branchPts.length; i++) {
+      l += Math.hypot(branchPts[i].x - branchPts[i-1].x, branchPts[i].y - branchPts[i-1].y)
+    }
+    return l
+  })()
 
   return (
     <div style={{
@@ -1091,40 +1090,26 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
           letterSpacing: '0.12em', textTransform: 'uppercase',
           display: 'flex', alignItems: 'center', gap: 6,
         }}>
-          👑 Top 1 {view === 'tcg' ? 'por TCG' : 'por Sucursal'}
+          👑 Top 1 · TCG · Sucursal
         </div>
-        {/* Segmented toggle — TCG vs Sucursal */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center',
-          background: 'rgba(255,255,255,0.04)',
-          border: `1px solid ${COLOR.border}`,
-          borderRadius: 9999, padding: 2,
-          flexShrink: 0,
-        }}>
-          {[
-            { id: 'tcg',    label: 'TCG' },
-            { id: 'branch', label: 'Sucursal' },
-          ].map(opt => {
-            const active = view === opt.id
-            return (
-              <button
-                key={opt.id}
-                onClick={() => setView(opt.id)}
-                style={{
-                  padding: '4px 10px', borderRadius: 9999,
-                  border: 'none', cursor: 'pointer',
-                  background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
-                  color: active ? COLOR.text : COLOR.textTertiary,
-                  fontSize: 10.5, fontWeight: WEIGHT.bold,
-                  fontFamily: FONT_STACK,
-                  letterSpacing: '0.04em',
-                  transition: 'background 180ms ease, color 180ms ease',
-                }}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
+        {/* Mini leyenda — qué representa cada línea */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: FONT_STACK }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{
+              width: 14, height: 2, borderRadius: 1,
+              background: 'rgba(255,255,255,0.7)',
+              boxShadow: '0 0 6px rgba(255,255,255,0.4)',
+            }} />
+            <span style={{ fontSize: 9.5, color: COLOR.textTertiary, fontWeight: WEIGHT.bold, letterSpacing: '0.04em' }}>TCG</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{
+              width: 14, height: 2, borderRadius: 1,
+              background: '#4ADE80',
+              boxShadow: '0 0 6px rgba(74,222,128,0.45)',
+            }} />
+            <span style={{ fontSize: 9.5, color: COLOR.textTertiary, fontWeight: WEIGHT.bold, letterSpacing: '0.04em' }}>SUCURSAL</span>
+          </div>
         </div>
       </div>
 
@@ -1143,7 +1128,7 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
         <svg
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
-          style={{ width: '100%', height: 170, display: 'block' }}
+          style={{ width: '100%', height: 180, display: 'block' }}
         >
           {/* Soft horizontal guides */}
           {[0.25, 0.5, 0.75].map(t => {
@@ -1156,9 +1141,25 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
             )
           })}
 
-          {/* The polyline that connects all TCG champions */}
+          {/* ── Sucursal polyline (dashed, green-cyan) ──────────────── */}
           <polyline
-            points={polyline}
+            points={branchPolyline}
+            fill="none"
+            stroke="rgba(74,222,128,0.65)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="6 4"
+            style={{
+              strokeDashoffset: animateIn ? 0 : branchPathLen,
+              transition: `stroke-dashoffset 1400ms cubic-bezier(0.4,0,0.2,1) 200ms`,
+              filter: 'drop-shadow(0 0 6px rgba(74,222,128,0.25))',
+            }}
+          />
+
+          {/* ── TCG polyline (solid, white-translucent) ─────────────── */}
+          <polyline
+            points={tcgPolyline}
             fill="none"
             stroke="rgba(255,255,255,0.55)"
             strokeWidth="2"
@@ -1172,13 +1173,11 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
             }}
           />
 
-          {/* Dots — one per axis point (TCG or branch), fade/scale in.
-              Use p.key (set by items[]) instead of p.game — the latter is
-              undefined when view === 'branch' and caused dup-key warnings. */}
-          {pts.map((p, i) => {
-            const delay = 80 + (i / Math.max(1, pts.length - 1)) * 1400
+          {/* ── Branch dots (3) — slightly bigger ring para diferenciar */}
+          {branchPts.map((p, i) => {
+            const delay = 240 + (i / Math.max(1, branchPts.length - 1)) * 1400
             return (
-              <g key={p.key}
+              <g key={`b-${p.key}`}
                 style={{
                   opacity: animateIn ? 1 : 0,
                   transform: animateIn ? 'scale(1)' : 'scale(0.4)',
@@ -1186,8 +1185,29 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
                   transition: `opacity 280ms ease ${delay}ms, transform 380ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
                 }}
               >
-                <circle cx={p.x} cy={p.y} r="9" fill={p.color} opacity="0.18" />
-                <circle cx={p.x} cy={p.y} r="5.5"
+                <circle cx={p.x} cy={p.y} r="11" fill={p.dot} opacity="0.18" />
+                <circle cx={p.x} cy={p.y} r="6.5"
+                  fill={p.dot}
+                  stroke="#0A0A0A" strokeWidth="2"
+                />
+              </g>
+            )
+          })}
+
+          {/* ── TCG dots (6) — anillo más pequeño para no competir */}
+          {tcgPts.map((p, i) => {
+            const delay = 80 + (i / Math.max(1, tcgPts.length - 1)) * 1400
+            return (
+              <g key={`t-${p.key}`}
+                style={{
+                  opacity: animateIn ? 1 : 0,
+                  transform: animateIn ? 'scale(1)' : 'scale(0.4)',
+                  transformOrigin: `${p.x}px ${p.y}px`,
+                  transition: `opacity 280ms ease ${delay}ms, transform 380ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
+                }}
+              >
+                <circle cx={p.x} cy={p.y} r="8" fill={p.color} opacity="0.18" />
+                <circle cx={p.x} cy={p.y} r="4.5"
                   fill={p.hasChamp ? p.color : 'rgba(255,255,255,0.15)'}
                   stroke="#0A0A0A" strokeWidth="2"
                 />
@@ -1195,10 +1215,8 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
             )
           })}
 
-          {/* X-axis: solo el icono del TCG (chiquito, referencia). Sin
-              texto — la lista de campeones abajo ya carga los nombres
-              completos y los puntos. */}
-          {pts.map(p => (
+          {/* X-axis: TCG icons (6) bajo la gráfica */}
+          {tcgPts.map(p => (
             <foreignObject key={`label-${p.key}`}
               x={p.x - 10} y={H - PAD.b + 6}
               width="20" height="20"
@@ -1213,7 +1231,7 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
                   transition: 'opacity 320ms ease 1200ms',
                 }}
               >
-                {p.renderIcon ? p.renderIcon() : null}
+                <GameIcon game={p.key} size={14} />
               </div>
             </foreignObject>
           ))}
