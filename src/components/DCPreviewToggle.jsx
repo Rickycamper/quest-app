@@ -418,23 +418,10 @@ body.dc-preview .pressable:active {
 }
 `
 
-export default function DCPreviewToggle({ canPreview }) {
-  const [enabled, setEnabled] = useState(() => {
-    try { return localStorage.getItem(STORAGE_KEY) === 'on' } catch { return false }
-  })
-  const [collapsed, setCollapsed] = useState(true)
-
+export default function DCPreviewToggle() {
+  // Glass redesign está prendido siempre para todos. Sin toggle.
+  // Mantenemos este componente solo para inyectar el CSS global.
   useEffect(() => {
-    if (!canPreview) return
-    try { localStorage.setItem(STORAGE_KEY, enabled ? 'on' : 'off') } catch {}
-
-    if (!enabled) {
-      document.body.classList.remove('dc-preview')
-      const existing = document.getElementById('quest-dc-preview-style')
-      if (existing) existing.remove()
-      return
-    }
-
     document.body.classList.add('dc-preview')
     let styleEl = document.getElementById('quest-dc-preview-style')
     if (!styleEl) {
@@ -445,15 +432,22 @@ export default function DCPreviewToggle({ canPreview }) {
     } else {
       styleEl.textContent = DC_CSS
     }
-
     return () => {
       document.body.classList.remove('dc-preview')
       const el = document.getElementById('quest-dc-preview-style')
       if (el) el.remove()
     }
-  }, [enabled, canPreview])
+  }, [])
 
-  if (!canPreview) return null
+  // Sin botón visible — el toggle se removió porque la nueva versión
+  // ya es la única.
+  return null
+
+  // eslint-disable-next-line no-unreachable
+  const enabled = true
+  const collapsed = true
+  const setCollapsed = () => {}
+  const setEnabled = () => {}
 
   // Collapsed bubble
   if (collapsed) {

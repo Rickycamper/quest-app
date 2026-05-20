@@ -1048,8 +1048,11 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
   const maxChampPts = Math.max(1, ...items.map(it => it.champ?.points || 0))
 
   // ── Line chart geometry ─────────────────────────────────────────────
+  // PAD.l/r aumentados para que los iconos del primero y último TCG no
+  // queden tocando el borde de la card — todos los dots quedan
+  // claramente DENTRO del área de la gráfica.
   const W = 600, H = 170
-  const PAD = { l: 28, r: 20, t: 14, b: 40 }
+  const PAD = { l: 48, r: 48, t: 14, b: 40 }
   const innerW = W - PAD.l - PAD.r
   const innerH = H - PAD.t - PAD.b
   const stepX = items.length > 1 ? innerW / (items.length - 1) : innerW
