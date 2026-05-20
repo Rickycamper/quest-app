@@ -1031,12 +1031,12 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
   const maxChampPts = maxTcgPts
 
   // ── Geometry ─────────────────────────────────────────────────────
-  // PAD muy generoso a izq/der + W reducido al espacio útil. Los 6 TCGs
-  // quedan agrupados en el centro 60% del SVG, dejando ~20% de margen
-  // a cada lado para que NUNCA se salgan del panel interior, incluso
-  // en mobile angosto o con preserveAspectRatio stretching.
-  const W = 600, H = 180
-  const PAD = { l: 110, r: 110, t: 18, b: 42 }
+  // PAD 60/600 = 10% inset cada lado. Las líneas ocupan el 80% central
+  // horizontalmente. Los íconos viven AFUERA del SVG en una fila HTML
+  // (no clipean) con el mismo 10% de padding lateral + space-between
+  // para alinearse perfecto con los dots.
+  const W = 600, H = 150
+  const PAD = { l: 60, r: 60, t: 18, b: 12 }
   const innerW = W - PAD.l - PAD.r
   const innerH = H - PAD.t - PAD.b
 
@@ -1130,7 +1130,7 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
         <svg
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
-          style={{ width: '100%', height: 180, display: 'block' }}
+          style={{ width: '100%', height: 150, display: 'block' }}
         >
           {/* Soft horizontal guides */}
           {[0.25, 0.5, 0.75].map(t => {
@@ -1217,27 +1217,31 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
             )
           })}
 
-          {/* X-axis: TCG icons (6) bajo la gráfica */}
-          {tcgPts.map(p => (
-            <foreignObject key={`label-${p.key}`}
-              x={p.x - 10} y={H - PAD.b + 6}
-              width="20" height="20"
-              style={{ overflow: 'visible' }}
-            >
-              <div xmlns="http://www.w3.org/1999/xhtml"
-                style={{
-                  width: 20, height: 20,
-                  display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  opacity: animateIn ? 0.75 : 0,
-                  transition: 'opacity 320ms ease 1200ms',
-                }}
-              >
-                <GameIcon game={p.key} size={14} />
-              </div>
-            </foreignObject>
-          ))}
         </svg>
+
+        {/* Fila HTML de iconos — alineada con los dots del SVG. Padding
+            10% = PAD.l/W. space-between distribuye los 6 íconos en las
+            mismas posiciones X que los dots (0, 20, 40, 60, 80, 100%
+            del 80% interior). Render HTML normal: nunca se clipean. */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between',
+          padding: `4px ${(PAD.l / W) * 100}% 0`,
+          opacity: animateIn ? 0.85 : 0,
+          transition: 'opacity 320ms ease 1100ms',
+        }}>
+          {GAMES.map(g => (
+            <div
+              key={g}
+              style={{
+                width: 20, height: 20,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <GameIcon game={g} size={16} />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── Puntos por Sucursal — compact summary integrado dentro de la
