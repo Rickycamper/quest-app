@@ -166,6 +166,11 @@ const globalCSS = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { height: 100%; }
+  /* iOS Safari zooms in cuando hace focus en un input con font-size <16px
+     y a veces no des-zoomea al cerrar el teclado — la viewport queda
+     descuadrada después de un post. Forzamos 16px en todos los inputs
+     para prevenir el zoom. */
+  input, textarea, select { font-size: 16px !important; }
   body {
     height: 100%; background: #1A1A1A;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
