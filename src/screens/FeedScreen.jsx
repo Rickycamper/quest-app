@@ -16,6 +16,7 @@ import EmptyState from '../components/EmptyState'
 import Spinner from '../components/Spinner'
 import { COLOR, RADIUS, SPACING, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
 import { Handshake, HandMetal, MessageCircle, Send } from 'lucide-react'
+import { useFollowSuccess } from '../components/FollowSuccess'
 
 const sk = (w, h, r = 6) => ({
   width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
@@ -327,6 +328,7 @@ function VideoPlayer({ src }) {
 function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange, onViewProfile, onDeleted, animDelay = 0 }) {
   const { requireAuth } = useGuest()
   const confirmAction   = useConfirm()
+  const showFollowSuccess = useFollowSuccess()
   const [liked,          setLiked]         = useState(post.user_has_liked ?? false)
   const [likeAnim,       setLikeAnim]      = useState(false)
   const [saved,          setSaved]         = useState(false)
@@ -468,7 +470,12 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
     try { if (navigator?.vibrate) navigator.vibrate(8) } catch {}  // tap haptic
     try {
       await toggleFollow(authorId)
-      onFollowChange(authorId, !isFollowed)
+      const nowFollowing = !isFollowed
+      onFollowChange(authorId, nowFollowing)
+      // Popup celebratorio solo al EMPEZAR a seguir
+      if (nowFollowing && post.profiles?.username) {
+        showFollowSuccess?.(post.profiles)
+      }
     } catch {}
     setFBusy(false)
   }

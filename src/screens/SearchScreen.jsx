@@ -9,9 +9,11 @@ import Avatar from '../components/Avatar'
 import { SearchIcon } from '../components/Icons'
 import EmptyState from '../components/EmptyState'
 import Spinner from '../components/Spinner'
+import { useFollowSuccess } from '../components/FollowSuccess'
 
 export default function SearchScreen({ onViewProfile }) {
   const { profile } = useAuth()
+  const showFollowSuccess = useFollowSuccess()
   const [query,     setQuery]     = useState('')
   const [allUsers,  setAllUsers]  = useState([])
   const [following, setFollowing] = useState(new Set())
@@ -51,7 +53,14 @@ export default function SearchScreen({ onViewProfile }) {
       wasFollowing ? next.delete(userId) : next.add(userId)
       return next
     })
-    try { await toggleFollow(userId) }
+    try {
+      await toggleFollow(userId)
+      // Celebración solo al EMPEZAR a seguir, no al unfollow
+      if (!wasFollowing) {
+        const user = allUsers.find(u => u.id === userId)
+        if (user?.username) showFollowSuccess?.(user)
+      }
+    }
     catch { setFollowing(prev => { const next = new Set(prev); wasFollowing ? next.add(userId) : next.delete(userId); return next }) }
     finally { setFBusy(prev => { const next = new Set(prev); next.delete(userId); return next }) }
   }

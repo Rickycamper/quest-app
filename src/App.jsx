@@ -8,6 +8,7 @@ import { GuestContext, useGuest } from './context/GuestContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './components/Toast'
 import { ConfirmProvider } from './components/Confirm'
+import { FollowSuccessProvider } from './components/FollowSuccess'
 import { useNotifications } from './hooks/useNotifications'
 import { OpeningScreen, SignupScreen, EmailSignupScreen, LoginScreen, ForgotPasswordScreen, ResetPasswordScreen, TermsModal, friendlyOAuthError } from './screens/AuthScreens'
 import FeedScreen            from './screens/FeedScreen'
@@ -1048,6 +1049,7 @@ export default function App() {
     <ErrorBoundary>
       <ToastProvider>
         <ConfirmProvider>
+          <FollowSuccessProvider>
           <style>{globalCSS}</style>
           <div className="phone-wrap">
             <div className="phone">
@@ -1064,6 +1066,7 @@ export default function App() {
           <Analytics />
           {/* Speed Insights — real-user Core Web Vitals (LCP, FCP, CLS) */}
           <SpeedInsights />
+          </FollowSuccessProvider>
         </ConfirmProvider>
       </ToastProvider>
     </ErrorBoundary>

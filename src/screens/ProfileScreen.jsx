@@ -11,6 +11,7 @@ import GameIcon from '../components/GameIcon'
 import H2HModal from '../components/H2HModal'
 import Spinner from '../components/Spinner'
 import { useToast } from '../components/Toast'
+import { useFollowSuccess } from '../components/FollowSuccess'
 import { HAPTIC } from '../lib/design-tokens'
 import { shareOrCopy } from '../lib/share'
 import { COLOR, RADIUS, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
@@ -36,6 +37,7 @@ function EditIcon() {
 export default function ProfileScreen({ userId, currentUserId, onBack, onEditProfile, onMessage, onVs, onNotifs, unreadCount = 0, isAdminOrOwner = false }) {
   const { profile: myProfile } = useAuth()
   const toast = useToast()
+  const showFollowSuccess = useFollowSuccess()
   const isPremium = myProfile?.role === 'premium' || myProfile?.role === 'admin'
   const [profile,   setProfile]   = useState(null)
   const [posts,     setPosts]     = useState([])
@@ -94,6 +96,10 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
       const now = !isFollowing
       setIsFollowing(now)
       setCounts(c => ({ ...c, followers: c.followers + (now ? 1 : -1) }))
+      // Solo celebramos cuando empezás a seguir — unfollow no muestra popup.
+      if (now && profile?.username) {
+        showFollowSuccess?.({ username: profile.username, avatar_url: profile.avatar_url })
+      }
     } catch {}
     setFBusy(false)
   }
