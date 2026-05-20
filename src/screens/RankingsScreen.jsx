@@ -1031,10 +1031,12 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
   const maxChampPts = maxTcgPts
 
   // ── Geometry ─────────────────────────────────────────────────────
-  // PAD generoso a izq/der para que ningún dot ni icono toque el borde
-  // del panel interior incluso en mobile angosto.
+  // PAD muy generoso a izq/der + W reducido al espacio útil. Los 6 TCGs
+  // quedan agrupados en el centro 60% del SVG, dejando ~20% de margen
+  // a cada lado para que NUNCA se salgan del panel interior, incluso
+  // en mobile angosto o con preserveAspectRatio stretching.
   const W = 600, H = 180
-  const PAD = { l: 70, r: 70, t: 18, b: 42 }
+  const PAD = { l: 110, r: 110, t: 18, b: 42 }
   const innerW = W - PAD.l - PAD.r
   const innerH = H - PAD.t - PAD.b
 
