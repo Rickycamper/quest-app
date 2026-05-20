@@ -1,4 +1,7 @@
 {
+  "rewrites": [
+    { "source": "/p/:id", "destination": "/api/p?id=:id" }
+  ],
   "headers": [
     {
       "source": "/sw.js",

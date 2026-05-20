@@ -405,11 +405,13 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
   }
 
   const handleShare = async () => {
-    // Estilo Instagram: el link abre directo este post (no el perfil).
-    // El receptor toca el link → app detecta ?post=<id> y abre un
-    // overlay con este post específico, no el feed entero.
+    // /p/<id> → serverless function /api/p devuelve HTML con OG tags
+    // dinámicos (imagen del post, caption, autor). Cuando alguien lo
+    // pega en WhatsApp/Discord/Twitter, el crawler scrappea y se ve
+    // un PREVIEW con la foto del post. Usuarios reales son redirigidos
+    // automáticamente a /?post=<id> donde el SPA abre el overlay.
     const authorUsername = post.profiles?.username
-    const url  = `${window.location.origin}/?post=${encodeURIComponent(post.id)}`
+    const url  = `${window.location.origin}/p/${encodeURIComponent(post.id)}`
     const text = `${post.caption}\n— @${authorUsername ?? 'user'} en Quest TCG`
     const res = await shareOrCopy({ title: 'Quest TCG', text, url })
     if (res.ok && res.method !== 'cancelled') {
