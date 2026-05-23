@@ -66,6 +66,76 @@ async function fetchScryfall(code, name) {
   }
 }
 
+/**
+ * Resuelve un BATCH de cartas MTG por nombre via Scryfall /cards/collection.
+ * Soporta hasta 75 nombres por request, los partimos en chunks si hay más.
+ * Cada carta input debe tener { name }; el output completa { code, image_url,
+ * set_code, card_number, rarity, name (canonical) } y mantiene la qty original.
+ *
+ * @param {Array<{ qty, name, code? }>} list
+ * @returns {Promise<Array<{ qty, code, name, image_url?, set_code?, card_number?, rarity?, resolvedFromName? }>>}
+ */
+export async function resolveScryfallByNames(list) {
+  const needsResolve = list.filter(c => !c.code && c.name)
+  const already = list.filter(c => c.code || !c.name)
+  if (!needsResolve.length) return list
+
+  const BATCH = 75
+  const resolved = new Map()  // nameKey → { code, name, image_url, ... }
+  const notFound = new Set()
+
+  for (let i = 0; i < needsResolve.length; i += BATCH) {
+    const chunk = needsResolve.slice(i, i + BATCH)
+    const body = {
+      identifiers: chunk.map(c => ({ name: c.name })),
+    }
+    try {
+      const r = await fetch(`${SCRYFALL}/cards/collection`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!r.ok) {
+        chunk.forEach(c => notFound.add(c.name.toLowerCase()))
+        continue
+      }
+      const d = await r.json()
+      for (const card of d.data ?? []) {
+        const img = card.image_uris?.normal || card.image_uris?.large || card.card_faces?.[0]?.image_uris?.normal
+        // Scryfall returns multiple results sometimes — match against original
+        // name (case-insensitive) for proper key
+        resolved.set(card.name.toLowerCase(), {
+          code:        `${card.set?.toUpperCase()}-${(card.collector_number || '').padStart(3, '0')}`,
+          name:        card.name,
+          image_url:   img || null,
+          set_code:    card.set?.toUpperCase() || null,
+          card_number: card.collector_number || null,
+          rarity:      card.rarity || null,
+        })
+      }
+      for (const nf of d.not_found ?? []) {
+        if (nf?.name) notFound.add(nf.name.toLowerCase())
+      }
+    } catch {
+      chunk.forEach(c => notFound.add(c.name.toLowerCase()))
+    }
+  }
+
+  // Merge: cartas resueltas → reciben código + imagen; cartas no encontradas
+  // mantienen { needsLookup: true } para que el UI pueda marcarlas.
+  const out = already.slice()
+  for (const c of needsResolve) {
+    const key = c.name.toLowerCase()
+    const meta = resolved.get(key)
+    if (meta) {
+      out.push({ ...c, ...meta, resolvedFromName: true, needsLookup: false })
+    } else {
+      out.push({ ...c, notFound: true })
+    }
+  }
+  return out
+}
+
 async function fetchScryfallByName(name) {
   if (!name) return null
   const url = `${SCRYFALL}/cards/named?fuzzy=${encodeURIComponent(name)}`

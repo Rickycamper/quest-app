@@ -28,24 +28,80 @@ export default function ImportDeckModal({ onClose, onCreated }) {
   const [deckName, setDeckName] = useState('')
   const [format, setFormat]   = useState('')
   const [saving, setSaving]   = useState(false)
+  // Cuando el deck pasteado son SOLO nombres (Moxfield style), llamamos
+  // a Scryfall /cards/collection para resolver cada nombre a un código
+  // oficial + image_url. resolved es null mientras no se haya intentado.
+  const [resolved, setResolved]   = useState(null)
+  const [resolving, setResolving] = useState(false)
 
   const parsed = useMemo(() => raw.trim() ? parseDeck(raw, game) : null, [raw, game])
   const detectedGame = parsed?.game
   const finalGame = game || detectedGame
-  const totalMain = parsed ? deckCardCount(parsed) : 0
-  const totalSide = parsed ? parsed.sideboard.reduce((s, c) => s + c.qty, 0) : 0
+  // El list que mostramos en preview y guardamos: prefer resolved sobre raw parsed
+  const previewMain = resolved?.main ?? parsed?.main ?? []
+  const previewSide = resolved?.sideboard ?? parsed?.sideboard ?? []
+  const totalMain = previewMain.reduce((s, c) => s + (c.qty || 0), 0)
+  const totalSide = previewSide.reduce((s, c) => s + (c.qty || 0), 0)
+  const needsResolution = !resolved && (parsed?.main ?? []).some(c => c.needsLookup)
+  const notFoundCount = (resolved ? [...resolved.main, ...resolved.sideboard] : []).filter(c => c.notFound).length
 
   const canPreview  = raw.trim().length > 10 && parsed?.main.length > 0
-  const canSave     = step === 'preview' && finalGame && deckName.trim() && parsed?.main.length > 0 && !saving
+  const canSave     = step === 'preview' && finalGame && deckName.trim() && previewMain.length > 0 && !saving && !resolving
+
+  // Cuando entramos a preview con cartas que necesitan lookup, resolvemos
+  // contra Scryfall. Solo soportamos resolución por nombre para MTG.
+  const goToPreview = async () => {
+    setStep('preview')
+    setResolved(null)
+    if (!parsed) return
+    const allCards = [...parsed.main, ...parsed.sideboard]
+    const hasUnresolved = allCards.some(c => c.needsLookup)
+    if (!hasUnresolved) return
+
+    const game = finalGame
+    if (game !== 'MTG') {
+      // Para otros TCGs no podemos resolver por nombre solo. Dejamos
+      // como están y el usuario verá warnings.
+      return
+    }
+
+    setResolving(true)
+    try {
+      const { resolveScryfallByNames } = await import('../lib/cardImages')
+      const [mainResolved, sideResolved] = await Promise.all([
+        resolveScryfallByNames(parsed.main),
+        resolveScryfallByNames(parsed.sideboard),
+      ])
+      setResolved({ main: mainResolved, sideboard: sideResolved })
+    } catch (e) {
+      toast?.('No se pudieron resolver algunas cartas', { type: 'error' })
+      // Caemos al parsed original
+      setResolved({ main: parsed.main, sideboard: parsed.sideboard })
+    } finally {
+      setResolving(false)
+    }
+  }
 
   const handleSave = async () => {
     if (!canSave) return
     setSaving(true)
     try {
+      // Filtrar las cartas sin código (notFound o needsLookup sin resolver)
+      // No podemos guardar cartas sin código porque deck_cards requiere
+      // game + code como UNIQUE key.
+      const validMain = previewMain.filter(c => c.code)
+      const validSide = previewSide.filter(c => c.code)
+      const skipped = (previewMain.length - validMain.length) + (previewSide.length - validSide.length)
+
       const list = [
-        ...parsed.main.map(c => ({ code: c.code, qty: c.qty, name: c.name || c.code })),
-        ...parsed.sideboard.map(c => ({ code: c.code, qty: c.qty, name: c.name || c.code, sideboard: true })),
+        ...validMain.map(c => ({ code: c.code, qty: c.qty, name: c.name || c.code })),
+        ...validSide.map(c => ({ code: c.code, qty: c.qty, name: c.name || c.code, sideboard: true })),
       ]
+      if (!list.length) {
+        toast?.('Ninguna carta tiene código resuelto — no se puede guardar', { type: 'error' })
+        setSaving(false)
+        return
+      }
       const deck = await createDeck({
         game: finalGame,
         name: deckName.trim(),
@@ -53,7 +109,11 @@ export default function ImportDeckModal({ onClose, onCreated }) {
         list,
         visibility: 'private',
       })
-      toast?.('Deck guardado', { type: 'success' })
+      if (skipped > 0) {
+        toast?.(`Deck guardado · ${skipped} carta(s) sin código se omitieron`, { type: 'info' })
+      } else {
+        toast?.('Deck guardado', { type: 'success' })
+      }
       onCreated?.(deck)
       onClose?.()
     } catch (e) {
@@ -94,7 +154,7 @@ export default function ImportDeckModal({ onClose, onCreated }) {
           {step === 'paste' ? 'Importar deck' : 'Confirmar deck'}
         </div>
         {step === 'paste' && (
-          <button onClick={() => setStep('preview')} disabled={!canPreview} className={canPreview ? 'pressable' : ''} style={{
+          <button onClick={goToPreview} disabled={!canPreview} className={canPreview ? 'pressable' : ''} style={{
             background: canPreview
               ? 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)'
               : 'rgba(255,255,255,0.04)',
@@ -247,14 +307,42 @@ export default function ImportDeckModal({ onClose, onCreated }) {
               </div>
             </div>
 
+            {/* Resolution banner — solo si estamos esperando a Scryfall */}
+            {resolving && (
+              <div style={{
+                padding: '10px 12px', borderRadius: 10, marginBottom: 12,
+                background: 'rgba(96,165,250,0.08)',
+                border: '1px solid rgba(96,165,250,0.25)',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 12, color: '#93C5FD',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                <Spinner size="xs" color="#60A5FA" inline />
+                Resolviendo cartas con Scryfall…
+              </div>
+            )}
+
+            {/* Not-found banner — cartas que Scryfall no encontró */}
+            {!resolving && notFoundCount > 0 && (
+              <div style={{
+                padding: '10px 12px', borderRadius: 10, marginBottom: 12,
+                background: 'rgba(251,191,36,0.08)',
+                border: '1px solid rgba(251,191,36,0.25)',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 12, color: '#FBBF24',
+              }}>
+                ⚠️ {notFoundCount} carta(s) no resuelta(s) por Scryfall — se omiten al guardar
+              </div>
+            )}
+
             {/* Mainboard list */}
             <SectionLabel>Mainboard ({totalMain})</SectionLabel>
-            <CardList cards={parsed.main} accent={finalGame ? GAME_STYLES[finalGame] : null} />
+            <CardList cards={previewMain} accent={finalGame ? GAME_STYLES[finalGame] : null} />
 
             {totalSide > 0 && (
               <>
                 <SectionLabel>Sideboard ({totalSide})</SectionLabel>
-                <CardList cards={parsed.sideboard} accent={finalGame ? GAME_STYLES[finalGame] : null} />
+                <CardList cards={previewSide} accent={finalGame ? GAME_STYLES[finalGame] : null} />
               </>
             )}
 
@@ -329,41 +417,47 @@ function CardList({ cards, accent }) {
       border: '1px solid rgba(255,255,255,0.06)',
       padding: '6px 8px',
     }}>
-      {cards.map((c, i) => (
-        <div key={`${c.code}-${i}`} style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '7px 8px', borderRadius: 7,
-          background: i % 2 ? 'transparent' : 'rgba(255,255,255,0.02)',
-          fontFamily: 'Inter, sans-serif',
-        }}>
-          {/* Qty chip */}
-          <div style={{
-            minWidth: 28, height: 22, borderRadius: 6,
-            background: accent?.bg || 'rgba(255,255,255,0.08)',
-            border: `1px solid ${accent?.border || 'rgba(255,255,255,0.15)'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: accent?.color || '#FFFFFF',
-            fontSize: 11, fontWeight: 800, letterSpacing: '-0.005em',
-            flexShrink: 0,
-          }}>×{c.qty}</div>
+      {cards.map((c, i) => {
+        const isNotFound = c.notFound
+        const isPending  = c.needsLookup && !c.code
+        return (
+          <div key={`${c.code || c.name}-${i}`} style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '7px 8px', borderRadius: 7,
+            background: isNotFound ? 'rgba(251,191,36,0.06)' : (i % 2 ? 'transparent' : 'rgba(255,255,255,0.02)'),
+            fontFamily: 'Inter, sans-serif',
+            opacity: isPending ? 0.5 : 1,
+          }}>
+            {/* Qty chip */}
+            <div style={{
+              minWidth: 28, height: 22, borderRadius: 6,
+              background: accent?.bg || 'rgba(255,255,255,0.08)',
+              border: `1px solid ${accent?.border || 'rgba(255,255,255,0.15)'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: accent?.color || '#FFFFFF',
+              fontSize: 11, fontWeight: 800, letterSpacing: '-0.005em',
+              flexShrink: 0,
+            }}>×{c.qty}</div>
 
-          {/* Code */}
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: '#9CA3AF',
-            fontFamily: 'Menlo, Monaco, "SF Mono", monospace',
-            minWidth: 86,
-            flexShrink: 0,
-          }}>{c.code}</div>
+            {/* Code (o '?' si todavía no se resolvió) */}
+            <div style={{
+              fontSize: 11, fontWeight: 700,
+              color: c.code ? '#9CA3AF' : (isNotFound ? '#FBBF24' : '#6B7280'),
+              fontFamily: 'Menlo, Monaco, "SF Mono", monospace',
+              minWidth: 86,
+              flexShrink: 0,
+            }}>{c.code || (isNotFound ? '⚠ no encontrada' : '…')}</div>
 
-          {/* Name */}
-          <div style={{
-            flex: 1, minWidth: 0,
-            fontSize: 13, color: '#E5E7EB',
-            fontWeight: 600,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>{c.name || <span style={{ color: '#4B5563', fontStyle: 'italic' }}>sin nombre</span>}</div>
-        </div>
-      ))}
+            {/* Name */}
+            <div style={{
+              flex: 1, minWidth: 0,
+              fontSize: 13, color: '#E5E7EB',
+              fontWeight: 600,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>{c.name || <span style={{ color: '#4B5563', fontStyle: 'italic' }}>sin nombre</span>}</div>
+          </div>
+        )
+      })}
     </div>
   )
 }

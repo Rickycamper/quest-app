@@ -76,9 +76,25 @@ const LINE_PATTERNS = [
   // Este formato lo manejamos como CASO ESPECIAL antes del split por líneas
   // (porque viene todo en un string sin newlines). Ver parseCompactOnePiece() abajo.
 
-  // Fallback: solo qty + name (sin código). Útil para listas legacy.
-  // "4 Lightning Bolt"
-  // No lo aceptamos por ahora — sin código no podemos identificar la carta única.
+  // Moxfield / Archidekt / TCGPlayer plain text: "1 Abrade", "14 Island"
+  // Solo qty + name, sin código. Marcamos `needsLookup: true` así
+  // resolveDeckByName() llama a Scryfall después del parseo para
+  // resolver cada nombre a su código oficial.
+  // Solo lo aplicamos como FALLBACK — los patrones anteriores tienen prioridad.
+  {
+    re: /^(\d+)\s+(.+?)$/,
+    extract: (m) => {
+      const name = m[2].trim()
+      // No matchear si parece código residual o garbage corto
+      if (name.length < 2) return null
+      return {
+        qty: parseInt(m[1], 10),
+        code: null,                  // se rellena por Scryfall después
+        name,
+        needsLookup: true,
+      }
+    },
+  },
 ]
 
 /**
@@ -106,10 +122,18 @@ function expandCompactOnePiece(text) {
 /**
  * Detecta el TCG del deck mirando los códigos parseados.
  * Si la mayoría matchea el patrón de un juego, retorna ese juego.
+ *
+ * Si NINGUNA carta tiene código (formato Moxfield de solo nombres),
+ * defaulteamos a MTG — es el único TCG con un API público que resuelve
+ * por nombre fuzzy (Scryfall). Los otros TCGs requieren código.
  */
 function detectGame(cards) {
+  if (!cards.length) return null
+  const withCode = cards.filter(c => c.code)
+  if (!withCode.length) return 'MTG'  // todo el deck es names-only → MTG
+
   const counts = { 'One Piece': 0, 'Digimon': 0, 'Gundam': 0, 'Pokemon': 0, 'MTG': 0 }
-  for (const c of cards) {
+  for (const c of withCode) {
     for (const [game, pattern] of Object.entries(CODE_PATTERNS)) {
       if (pattern.test(c.code)) counts[game]++
     }
@@ -119,10 +143,9 @@ function detectGame(cards) {
     }
   }
   const sorted = Object.entries(counts).sort(([, a], [, b]) => b - a)
-  // Solo confirmamos si hay un ganador claro (al menos 50% de los códigos)
   const [topGame, topCount] = sorted[0]
   if (topCount === 0) return null
-  if (topCount / cards.length >= 0.5) return topGame
+  if (topCount / withCode.length >= 0.5) return topGame
   return null
 }
 
@@ -154,11 +177,16 @@ export function parseDeck(raw, hintedGame = null) {
     if (SECTION_HEADERS.sideboard.test(line)) { inSideboard = true; continue }
     if (SECTION_HEADERS.ignore.test(line))    { continue }
 
-    // Probar los patrones en orden
+    // Probar los patrones en orden — un extract que retorna null cuenta
+    // como no-match (e.g. el fallback name-only rechaza nombres demasiado
+    // cortos)
     let parsed = null
     for (const p of LINE_PATTERNS) {
       const m = line.match(p.re)
-      if (m) { parsed = p.extract(m); break }
+      if (m) {
+        const out = p.extract(m)
+        if (out) { parsed = out; break }
+      }
     }
 
     if (!parsed) {
@@ -170,14 +198,24 @@ export function parseDeck(raw, hintedGame = null) {
       continue
     }
 
-    // Mergear duplicados (mismo código → sumar qty)
+    // Mergear duplicados:
+    //   - Si la línea tiene código, dedupe por código
+    //   - Si no tiene código (formato Moxfield), dedupe por nombre lowercased
     const bucket = inSideboard ? sideboard : main
-    const existing = bucket.find(c => c.code === parsed.code)
+    const matchKey = parsed.code
+      ? (c) => c.code && c.code === parsed.code
+      : (c) => !c.code && c.name?.toLowerCase() === parsed.name?.toLowerCase()
+    const existing = bucket.find(matchKey)
     if (existing) {
       existing.qty += parsed.qty
       if (!existing.name && parsed.name) existing.name = parsed.name
     } else {
-      bucket.push({ qty: parsed.qty, code: parsed.code, name: parsed.name || null })
+      bucket.push({
+        qty: parsed.qty,
+        code: parsed.code,
+        name: parsed.name || null,
+        ...(parsed.needsLookup ? { needsLookup: true } : {}),
+      })
     }
   }
 
