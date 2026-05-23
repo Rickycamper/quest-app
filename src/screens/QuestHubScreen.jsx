@@ -843,13 +843,24 @@ function DeckDetailOverlay({ deck, onClose, onUpdated }) {
     setLoading(true)
     ;(async () => {
       try {
-        const { getDeckById, hydrateDeckList } = await import('../lib/supabase')
+        const { getDeckById, hydrateDeckList, enrichDeckCardsImages } = await import('../lib/supabase')
         const full = await getDeckById(deck.id)
         if (cancelled || !full) return
         const hydratedList = await hydrateDeckList(full.game, full.list)
         if (cancelled) return
         setHydrated({ ...full, list: hydratedList })
         setEditList(hydratedList)
+
+        // Background: para cartas sin imagen, fetcheamos de las APIs
+        // públicas (Scryfall, pokemontcg.io, digimoncard.io). No bloquea
+        // el render — las thumbnails aparecen progresivamente.
+        const updates = await enrichDeckCardsImages(full.game, hydratedList)
+        if (cancelled || !updates || Object.keys(updates).length === 0) return
+        const apply = (lst) => lst.map(c => updates[c.code]
+          ? { ...c, image_url: updates[c.code].image_url || c.image_url, rarity: updates[c.code].rarity || c.rarity }
+          : c)
+        setHydrated(prev => prev ? { ...prev, list: apply(prev.list) } : prev)
+        setEditList(prev => apply(prev))
       } catch { /* leave loading */ }
       finally { if (!cancelled) setLoading(false) }
     })()
@@ -1129,47 +1140,104 @@ const qtyBtnStyle = {
 }
 
 function DeckCardRow({ card, accent, editing = false, onMinus, onPlus, onRemove }) {
+  const [showZoom, setShowZoom] = useState(false)
+  const [imgError, setImgError] = useState(false)
+  const hasImage = card.image_url && !imgError
+
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      padding: '7px 8px', borderRadius: 7,
-      fontFamily: 'Inter, sans-serif',
-    }}>
-      {!editing ? (
-        <div style={{
-          minWidth: 28, height: 22, borderRadius: 6,
-          background: accent?.bg || 'rgba(255,255,255,0.08)',
-          border: `1px solid ${accent?.border || 'rgba(255,255,255,0.15)'}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: accent?.color || '#FFFFFF', fontSize: 11, fontWeight: 800,
-          flexShrink: 0,
-        }}>×{card.qty}</div>
-      ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-          <button onClick={onMinus} aria-label="-1" style={qtyBtnStyle}>−</button>
+    <>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '7px 8px', borderRadius: 7,
+        fontFamily: 'Inter, sans-serif',
+      }}>
+        {!editing ? (
           <div style={{
-            minWidth: 26, height: 22, borderRadius: 6,
+            minWidth: 28, height: 22, borderRadius: 6,
             background: accent?.bg || 'rgba(255,255,255,0.08)',
             border: `1px solid ${accent?.border || 'rgba(255,255,255,0.15)'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: accent?.color || '#FFFFFF', fontSize: 11, fontWeight: 800,
-          }}>{card.qty}</div>
-          <button onClick={onPlus} aria-label="+1" style={qtyBtnStyle}>+</button>
+            flexShrink: 0,
+          }}>×{card.qty}</div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <button onClick={onMinus} aria-label="-1" style={qtyBtnStyle}>−</button>
+            <div style={{
+              minWidth: 26, height: 22, borderRadius: 6,
+              background: accent?.bg || 'rgba(255,255,255,0.08)',
+              border: `1px solid ${accent?.border || 'rgba(255,255,255,0.15)'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: accent?.color || '#FFFFFF', fontSize: 11, fontWeight: 800,
+            }}>{card.qty}</div>
+            <button onClick={onPlus} aria-label="+1" style={qtyBtnStyle}>+</button>
+          </div>
+        )}
+
+        {/* Thumbnail (si tenemos imagen). Tap → zoom modal. */}
+        {hasImage && (
+          <button
+            onClick={() => setShowZoom(true)}
+            aria-label="Ver carta grande"
+            style={{
+              width: 26, height: 36, borderRadius: 4,
+              padding: 0, border: '1px solid rgba(255,255,255,0.10)',
+              background: '#000',
+              flexShrink: 0, cursor: 'pointer', overflow: 'hidden',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <img
+              src={card.image_url}
+              alt=""
+              onError={() => setImgError(true)}
+              loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          </button>
+        )}
+
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', fontFamily: 'Menlo, Monaco, monospace', minWidth: 86, flexShrink: 0 }}>
+          {card.code}
+        </div>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#E5E7EB', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {card.name}
+        </div>
+        {editing && (
+          <button onClick={onRemove} aria-label="Eliminar carta" style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: '#F87171', padding: 4, flexShrink: 0, fontSize: 13,
+          }}>🗑</button>
+        )}
+      </div>
+
+      {/* Zoom modal — full screen image preview */}
+      {showZoom && hasImage && (
+        <div
+          onClick={() => setShowZoom(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.92)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20, cursor: 'zoom-out',
+            animation: 'fadeUp 180ms ease',
+          }}
+        >
+          <img
+            src={card.image_url}
+            alt={card.name}
+            style={{
+              maxWidth: '100%', maxHeight: '100%',
+              objectFit: 'contain', borderRadius: 12,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+            }}
+            onError={() => { setImgError(true); setShowZoom(false) }}
+          />
         </div>
       )}
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', fontFamily: 'Menlo, Monaco, monospace', minWidth: 86, flexShrink: 0 }}>
-        {card.code}
-      </div>
-      <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#E5E7EB', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {card.name}
-      </div>
-      {editing && (
-        <button onClick={onRemove} aria-label="Eliminar carta" style={{
-          background: 'transparent', border: 'none', cursor: 'pointer',
-          color: '#F87171', padding: 4, flexShrink: 0, fontSize: 13,
-        }}>🗑</button>
-      )}
-    </div>
+    </>
   )
 }
 

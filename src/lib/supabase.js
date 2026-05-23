@@ -2546,6 +2546,62 @@ export async function hydrateDeckList(game, list) {
 }
 
 /**
+ * Escribe image_url + metadata para una carta del catálogo via RPC
+ * SECURITY DEFINER. El RPC valida que la URL venga de un dominio
+ * trusted (Scryfall, pokemontcg.io, digimoncard.io).
+ *
+ * Usado por enrichDeckCardsImages() después del fetch a las APIs.
+ */
+export async function setDeckCardImage(game, code, payload) {
+  const { data, error } = await supabase.rpc('set_deck_card_image', {
+    p_game:        game,
+    p_code:        code,
+    p_image_url:   payload.image_url ?? null,
+    p_set_code:    payload.set_code ?? null,
+    p_card_number: payload.card_number ?? null,
+    p_rarity:      payload.rarity ?? null,
+    p_name:        payload.name ?? null,
+  })
+  if (error) throw error
+  return data
+}
+
+/**
+ * Para cada carta de `list` que NO tenga image_url, fetcha del API del
+ * TCG correspondiente y persiste en deck_cards. Best-effort: si una
+ * carta falla, el resto siguen. Retorna las cartas actualizadas.
+ *
+ * Throttle: corre las requests en parallel pero con un cap de 6 a la
+ * vez para no martillar las APIs externas.
+ */
+export async function enrichDeckCardsImages(game, list) {
+  const missing = (list ?? []).filter(c => !c.image_url)
+  if (!missing.length) return {}
+
+  const { fetchCardImage } = await import('./cardImages.js')
+
+  const results = {}
+  // Pool simple de 6 concurrentes
+  const queue = [...missing]
+  const workers = Array.from({ length: Math.min(6, queue.length) }, async () => {
+    while (queue.length) {
+      const card = queue.shift()
+      if (!card) break
+      const meta = await fetchCardImage(game, card.code, card.name).catch(() => null)
+      if (!meta?.image_url) continue
+      try {
+        await setDeckCardImage(game, card.code, meta)
+        results[card.code] = meta
+      } catch (e) {
+        console.warn(`[enrichDeckCardsImages] write failed for ${card.code}:`, e.message)
+      }
+    }
+  })
+  await Promise.all(workers)
+  return results
+}
+
+/**
  * Borra un deck. RLS asegura que solo el owner pueda.
  */
 export async function deleteDeck(deckId) {
