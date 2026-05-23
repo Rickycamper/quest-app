@@ -40,11 +40,12 @@ const SECTION_HEADERS = {
 //
 // Order matters: probamos del más específico al más genérico.
 const LINE_PATTERNS = [
-  // "4x OP01-001 Monkey D. Luffy"
+  // "4x OP01-001 Monkey D. Luffy"  (con espacio)
   // "4 OP01-001 Monkey D. Luffy"
-  // "4x OP01-001"
+  // "4xST22-015"                     (sin espacio — formato onepiecetopdeck)
+  // "1xOP13-002"
   {
-    re: /^(\d+)\s*x?\s+([A-Z]{1,5}[A-Z0-9]*[-\.]\d{1,4}[a-z]?)\s*(.*)$/i,
+    re: /^(\d+)\s*x?\s*([A-Z]{2,5}[A-Z0-9]*[-\.]\d{1,4}[a-z]?)\s*(.*)$/i,
     extract: (m) => ({ qty: parseInt(m[1], 10), code: m[2].toUpperCase().replace('.', '-'), name: m[3]?.trim() || null }),
   },
 
