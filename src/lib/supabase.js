@@ -2408,6 +2408,151 @@ export async function getMyMatchHistory(limit = 50) {
   })
 }
 
+// ── DECKS ──────────────────────────────────────────────────────────
+// Fase 1: importar/guardar decks pasteando texto desde sitios externos.
+// El parser ya entregó { code, qty, name } por carta; estas funciones
+// se encargan del round-trip a Supabase.
+
+/**
+ * Inserta/upsert cartas en el catálogo central durante el import.
+ * Cartas que ya existen (matching game+code) no se duplican.
+ * Llama al RPC SECURITY DEFINER para que el INSERT use el rol del
+ * caller pero salte las validaciones inline.
+ *
+ * @param {Array<{game, code, name?}>} cards
+ * @returns {Promise<Array>}  cartas resultantes (con image_url si ya estaban)
+ */
+export async function upsertCardsBatch(cards) {
+  if (!cards?.length) return []
+  const { data, error } = await supabase.rpc('upsert_cards_batch', { p_cards: cards })
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * Crea un deck nuevo para el usuario logueado.
+ * Antes de insertar el deck, se asegura que cada carta del list exista
+ * en el catálogo (upsertCardsBatch).
+ *
+ * @param {object} params
+ * @param {string} params.game        TCG ('MTG', 'One Piece', etc.)
+ * @param {string} params.name        Nombre del deck
+ * @param {string} [params.format]    Formato libre ('Standard', 'OP01-OP15')
+ * @param {Array}  params.list        [{ code, qty, name, sideboard? }]
+ * @param {string} [params.visibility] 'private' | 'public' | 'tournament'
+ * @param {string} [params.notes]
+ * @returns {Promise<object>}  el deck guardado
+ */
+export async function createDeck({ game, name, format, list, visibility = 'private', notes }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Iniciá sesión para guardar decks')
+  const userId = session.user.id
+
+  // 1) Asegurar que todas las cartas del list existan en el catálogo
+  const uniqueCards = []
+  const seen = new Set()
+  for (const c of list ?? []) {
+    const key = `${game}::${c.code}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    uniqueCards.push({ game, code: c.code, name: c.name || c.code })
+  }
+  if (uniqueCards.length) {
+    await upsertCardsBatch(uniqueCards).catch(e => {
+      // Logueamos pero no bloqueamos el save del deck — el catálogo es
+      // best-effort. Si el RPC falla por RLS, igual el deck queda con
+      // sus códigos guardados en el JSONB.
+      console.warn('[createDeck] upsertCardsBatch failed:', e)
+    })
+  }
+
+  // 2) Insertar el deck. card_count excluye sideboard.
+  const cardCount = (list ?? [])
+    .filter(c => !c.sideboard)
+    .reduce((sum, c) => sum + (c.qty || 0), 0)
+
+  const { data, error } = await supabase
+    .from('decks')
+    .insert({
+      user_id: userId,
+      game, name, format: format ?? null,
+      list: list ?? [],
+      card_count: cardCount,
+      visibility,
+      notes: notes ?? null,
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+/**
+ * Lista todos los decks del usuario logueado.
+ * Ordenados por updated_at desc (lo más reciente arriba).
+ */
+export async function getMyDecks(game = null) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return []
+  let q = supabase
+    .from('decks')
+    .select('id, game, name, format, card_count, visibility, created_at, updated_at')
+    .eq('user_id', session.user.id)
+    .order('updated_at', { ascending: false })
+  if (game) q = q.eq('game', game)
+  const { data, error } = await q
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * Trae un deck completo (con list) por id. Aplica RLS:
+ *   - El owner puede ver siempre
+ *   - Cualquiera puede ver si visibility = 'public'
+ */
+export async function getDeckById(deckId) {
+  const { data, error } = await supabase
+    .from('decks')
+    .select('*')
+    .eq('id', deckId)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+/**
+ * Hidrata el list de un deck con metadata del catálogo (image_url, name oficial).
+ * Hace un batch fetch a `cards` por todos los códigos del list.
+ *
+ * Retorna el mismo list con image_url y name "oficial" cuando están disponibles.
+ */
+export async function hydrateDeckList(game, list) {
+  const codes = [...new Set((list ?? []).map(c => c.code))]
+  if (!codes.length) return list ?? []
+  const { data, error } = await supabase
+    .from('cards')
+    .select('code, name, image_url, set_code, rarity')
+    .eq('game', game)
+    .in('code', codes)
+  if (error) throw error
+  const byCode = {}
+  for (const c of data ?? []) byCode[c.code] = c
+  return (list ?? []).map(c => ({
+    ...c,
+    name: c.name || byCode[c.code]?.name || c.code,
+    image_url: byCode[c.code]?.image_url || null,
+    rarity:    byCode[c.code]?.rarity    || null,
+  }))
+}
+
+/**
+ * Borra un deck. RLS asegura que solo el owner pueda.
+ */
+export async function deleteDeck(deckId) {
+  const { error } = await supabase.from('decks').delete().eq('id', deckId)
+  if (error) throw error
+}
+
 // ── REALTIME ─────────────────────────────────
 export function subscribeToNotifications(userId, callback) {
   return supabase

@@ -13,13 +13,14 @@ import { RotateCcw, Swords } from 'lucide-react'
 import { SAWizardHat, SAGem, SACrown, SATruck, SALock, SABolt, SAGavel, SAFlag, SACircleCheck, SAFire, SADungeon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 import Avatar from '../components/Avatar'
+import ImportDeckModal from './ImportDeckModal'
 
 // ── Icons (Lucide) ────────────────────────────
 // One small lookup so all the inline string-ids ('map-pin', 'gavel',
 // etc.) keep working without rewriting every call site.
 import {
   MapPin, Gavel, Package, Gem, User, Clock, Phone, Navigation,
-  Pencil, Zap, Folder, BarChart3, Heart, ShoppingBag,
+  Pencil, Zap, Folder, BarChart3, Heart, ShoppingBag, Layers,
   ChevronLeft, X,
 } from 'lucide-react'
 
@@ -40,6 +41,7 @@ const HUB_ICON_MAP = {
   'chart':    BarChart3,
   'heart':    Heart,
   'shop':     ShoppingBag,
+  'deck':     Layers,
 }
 
 function Icon({ id, size = 24, color = 'currentColor' }) {
@@ -674,6 +676,280 @@ function QPointsView({ profile, onRedeemed }) {
 // ── Battle Stats — match history + per-TCG volume chart + Battle Now ──
 // Premium / admin / owner users can reset their visible record (drops a
 // localStorage cutoff so anything older stops counting in their view).
+// ── DecksView — Mis Decks ────────────────────────────────────────
+// Lista de decks guardados del usuario + acceso al import modal.
+// Tap un deck → muestra el list completo en una mini-vista.
+function DecksView() {
+  const toast = useToast()
+  const [decks, setDecks]       = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [showImport, setShowImport] = useState(false)
+  const [selectedDeck, setSelectedDeck] = useState(null)
+
+  const reload = () => {
+    setLoading(true)
+    import('../lib/supabase').then(m => m.getMyDecks())
+      .then(rows => setDecks(rows ?? []))
+      .catch(() => setDecks([]))
+      .finally(() => setLoading(false))
+  }
+  useEffect(() => { reload() }, [])
+
+  const handleDelete = async (deck) => {
+    if (!confirm(`¿Borrar el deck "${deck.name}"?`)) return
+    try {
+      const { deleteDeck } = await import('../lib/supabase')
+      await deleteDeck(deck.id)
+      setDecks(prev => prev.filter(d => d.id !== deck.id))
+      toast?.('Deck borrado', { type: 'success' })
+    } catch (e) {
+      toast?.(e?.message || 'No se pudo borrar', { type: 'error' })
+    }
+  }
+
+  return (
+    <div style={{ padding: '12px 16px 32px', fontFamily: 'Inter, sans-serif' }}>
+      {/* + Importar deck CTA — Battle Now gradient */}
+      <button
+        onClick={() => setShowImport(true)}
+        className="pressable"
+        style={{
+          width: '100%', marginBottom: 14,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          padding: '14px 16px', borderRadius: 14,
+          background: 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)',
+          border: 'none', cursor: 'pointer',
+          color: '#FFFFFF', fontSize: 14, fontWeight: 800,
+          fontFamily: 'Inter, sans-serif',
+          letterSpacing: '0.01em',
+          boxShadow: '0 10px 28px rgba(251,146,60,0.25), 0 4px 10px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.3)',
+          textShadow: '0 1px 0 rgba(0,0,0,0.18)',
+        }}
+      >
+        <Layers size={18} strokeWidth={2.3} />
+        IMPORTAR DECK
+      </button>
+
+      {loading && (
+        <div style={{ padding: 40, textAlign: 'center', color: '#6B7280', fontSize: 13 }}>Cargando…</div>
+      )}
+
+      {!loading && decks.length === 0 && (
+        <div style={{
+          padding: '32px 16px', textAlign: 'center',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 14,
+          fontFamily: 'Inter, sans-serif',
+        }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>
+          <div style={{ fontSize: 14, color: '#FFFFFF', fontWeight: 800, marginBottom: 6 }}>
+            Aún no tenés decks
+          </div>
+          <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
+            Importá tu primero pegando un deck list de egmanevents,<br/>
+            onepiecetopdecks, MTG Arena o Pokemon TCG Live.
+          </div>
+        </div>
+      )}
+
+      {!loading && decks.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {decks.map(d => {
+            const gs = GAME_STYLES[d.game] ?? {}
+            return (
+              <button
+                key={d.id}
+                onClick={() => setSelectedDeck(d)}
+                className="pressable"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px 14px', borderRadius: 12,
+                  background: 'rgba(255,255,255,0.03)',
+                  backdropFilter: 'blur(18px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+                  border: `1px solid ${gs.border || 'rgba(255,255,255,0.10)'}`,
+                  cursor: 'pointer', textAlign: 'left',
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                <div style={{
+                  width: 38, height: 38, borderRadius: 9, flexShrink: 0,
+                  background: gs.bg || 'rgba(255,255,255,0.06)',
+                  border: `1px solid ${gs.border || 'rgba(255,255,255,0.12)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <GameIcon game={d.game} size={20} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 14, fontWeight: 800, color: '#FFFFFF',
+                    letterSpacing: '-0.005em',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{d.name}</div>
+                  <div style={{
+                    fontSize: 11, color: '#9CA3AF', marginTop: 2,
+                    fontWeight: 600,
+                  }}>
+                    {d.card_count} cartas · {d.game}
+                    {d.format && <> · <span style={{ color: gs.color || '#9CA3AF' }}>{d.format}</span></>}
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDelete(d) }}
+                  aria-label="Borrar"
+                  style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    color: '#6B7280', padding: 6, fontSize: 16,
+                  }}
+                >🗑</button>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {showImport && (
+        <ImportDeckModal
+          onClose={() => setShowImport(false)}
+          onCreated={(deck) => {
+            setDecks(prev => [deck, ...prev])
+            setShowImport(false)
+          }}
+        />
+      )}
+
+      {selectedDeck && (
+        <DeckDetailOverlay deck={selectedDeck} onClose={() => setSelectedDeck(null)} />
+      )}
+    </div>
+  )
+}
+
+// ── DeckDetailOverlay — vista completa de un deck guardado ──
+function DeckDetailOverlay({ deck, onClose }) {
+  const [hydrated, setHydrated] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    ;(async () => {
+      try {
+        const { getDeckById, hydrateDeckList } = await import('../lib/supabase')
+        const full = await getDeckById(deck.id)
+        if (cancelled || !full) return
+        const hydratedList = await hydrateDeckList(full.game, full.list)
+        if (cancelled) return
+        setHydrated({ ...full, list: hydratedList })
+      } catch { /* leave loading */ }
+      finally { if (!cancelled) setLoading(false) }
+    })()
+    return () => { cancelled = true }
+  }, [deck.id])
+
+  const main = (hydrated?.list ?? []).filter(c => !c.sideboard)
+  const side = (hydrated?.list ?? []).filter(c => c.sideboard)
+  const gs = GAME_STYLES[deck.game] ?? {}
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 250,
+      background: 'rgba(0,0,0,0.65)',
+      backdropFilter: 'blur(18px) saturate(140%)',
+      WebkitBackdropFilter: 'blur(18px) saturate(140%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 14px 14px',
+      animation: 'fadeUp 220ms ease',
+    }}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 480,
+          maxHeight: 'calc(100vh - 32px)',
+          background: 'rgba(20,20,30,0.92)',
+          backdropFilter: 'blur(30px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          borderRadius: 18,
+          display: 'flex', flexDirection: 'column',
+          overflow: 'hidden',
+          fontFamily: 'Inter, sans-serif',
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          padding: '14px 14px 12px', display: 'flex', alignItems: 'center', gap: 12,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 9,
+            background: gs.bg || 'rgba(255,255,255,0.06)',
+            border: `1px solid ${gs.border || 'rgba(255,255,255,0.12)'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <GameIcon game={deck.game} size={18} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#FFF', letterSpacing: '-0.005em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {deck.name}
+            </div>
+            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
+              {deck.card_count} cartas · {deck.game}{deck.format ? ` · ${deck.format}` : ''}
+            </div>
+          </div>
+          <button onClick={onClose} aria-label="Cerrar" style={{
+            background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.10)',
+            color: '#FFF', width: 30, height: 30, borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+          }}><X size={14} strokeWidth={2.5} /></button>
+        </div>
+        {/* List */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px 16px' }}>
+          {loading && <div style={{ padding: 30, textAlign: 'center', color: '#6B7280', fontSize: 12 }}>Cargando…</div>}
+          {!loading && (
+            <>
+              {main.map((c, i) => <DeckCardRow key={`m-${i}`} card={c} accent={gs} />)}
+              {side.length > 0 && (
+                <>
+                  <div style={{ fontSize: 10, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '12px 6px 6px' }}>Sideboard</div>
+                  {side.map((c, i) => <DeckCardRow key={`s-${i}`} card={c} accent={gs} />)}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DeckCardRow({ card, accent }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '7px 8px', borderRadius: 7,
+      fontFamily: 'Inter, sans-serif',
+    }}>
+      <div style={{
+        minWidth: 28, height: 22, borderRadius: 6,
+        background: accent?.bg || 'rgba(255,255,255,0.08)',
+        border: `1px solid ${accent?.border || 'rgba(255,255,255,0.15)'}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: accent?.color || '#FFFFFF', fontSize: 11, fontWeight: 800,
+        flexShrink: 0,
+      }}>×{card.qty}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', fontFamily: 'Menlo, Monaco, monospace', minWidth: 86, flexShrink: 0 }}>
+        {card.code}
+      </div>
+      <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#E5E7EB', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {card.name}
+      </div>
+    </div>
+  )
+}
+
 function RecordView({ onBattleNow }) {
   const { isPremium } = useAuth()
   const confirm = useConfirm()
@@ -1102,6 +1378,16 @@ const TILES = [
     border:  'rgba(74,222,128,0.2)',
     enabled: true,
   },
+  {
+    id:      'decks',
+    icon:    'deck',
+    label:   'Mis Decks',
+    desc:    'Guardá tus decks',
+    color:   '#FB923C',
+    bg:      'rgba(251,146,60,0.08)',
+    border:  'rgba(251,146,60,0.2)',
+    enabled: true,
+  },
 ]
 
 // ── Main component ────────────────────────────
@@ -1123,6 +1409,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
     : view === 'membresia' ? 'Membresía'
     : view === 'qpoints'   ? 'Q Coins'
     : view === 'record'    ? 'Battle Stats'
+    : view === 'decks'     ? 'Mis Decks'
     : ''
 
   return (
@@ -1193,6 +1480,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
           {view === 'membresia'  && <MembresiaView profile={profile} />}
           {view === 'qpoints'    && <QPointsView profile={profile} />}
           {view === 'record'     && <RecordView onBattleNow={onBattleNow} />}
+          {view === 'decks'      && <DecksView />}
         </div>
       )}
 
