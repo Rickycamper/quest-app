@@ -2,7 +2,12 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- maximum-scale=1.0 evita el auto-zoom en iOS cuando se enfoca un input.
+         Combina con `input { font-size: 16px !important }` para que el viewport
+         NUNCA se escale al tipear. Trade-off: el usuario pierde pinch-zoom
+         manual de la página entera, pero la accesibilidad de zoom del sistema
+         iOS (Settings → Accessibility → Zoom) sigue funcionando. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
     <title>Quest TCG — La comunidad TCG de Panamá</title>
 
     <!-- LCP optimization — preload the loading-screen logo so it paints in <1 s.
