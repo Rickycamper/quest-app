@@ -2553,6 +2553,96 @@ export async function deleteDeck(deckId) {
   if (error) throw error
 }
 
+/**
+ * Actualiza el list (y derivados) de un deck. Recalcula card_count
+ * automáticamente. RLS asegura que solo el owner pueda. Cualquier
+ * código nuevo (no presente en deck_cards todavía) se auto-inserta
+ * en el catálogo igual que en createDeck.
+ *
+ * @param {string} deckId
+ * @param {object} updates  { name?, format?, list?, notes?, visibility? }
+ */
+export async function updateDeck(deckId, updates) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Iniciá sesión para editar decks')
+
+  // Si actualizamos el list, asegurar que las cartas nuevas vivan en el
+  // catálogo (igual que createDeck).
+  if (Array.isArray(updates.list) && updates.list.length) {
+    // Necesitamos el `game` del deck para insertar en deck_cards. Si el
+    // caller no lo pasó, lo leemos.
+    let game = updates.game
+    if (!game) {
+      const { data: existing } = await supabase
+        .from('decks')
+        .select('game')
+        .eq('id', deckId)
+        .maybeSingle()
+      game = existing?.game
+    }
+    if (game) {
+      const uniqueCards = []
+      const seen = new Set()
+      for (const c of updates.list) {
+        const key = `${game}::${c.code}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        uniqueCards.push({ game, code: c.code, name: c.name || c.code })
+      }
+      if (uniqueCards.length) {
+        await upsertCardsBatch(uniqueCards).catch(e => {
+          console.warn('[updateDeck] upsertCardsBatch failed:', e)
+        })
+      }
+    }
+  }
+
+  // Calcular card_count si actualizamos list
+  const dbUpdates = { ...updates }
+  if (Array.isArray(dbUpdates.list)) {
+    dbUpdates.card_count = dbUpdates.list
+      .filter(c => !c.sideboard)
+      .reduce((s, c) => s + (c.qty || 0), 0)
+  }
+  // game no se cambia desde la UI, sacarlo si vino accidentalmente
+  delete dbUpdates.game
+
+  const { data, error } = await supabase
+    .from('decks')
+    .update(dbUpdates)
+    .eq('id', deckId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+/**
+ * Búsqueda fuzzy en el catálogo deck_cards. Usado por el editor cuando
+ * el usuario quiere agregar una carta a su deck por nombre.
+ *
+ * @param {string} game   TCG ('MTG', 'One Piece', etc.)
+ * @param {string} query  texto libre (matchea por nombre o código)
+ * @param {number} [limit=20]
+ */
+export async function searchDeckCards(game, query, limit = 20) {
+  if (!game) return []
+  const q = (query || '').trim()
+  let req = supabase
+    .from('deck_cards')
+    .select('code, name, image_url, set_code, rarity')
+    .eq('game', game)
+    .order('name', { ascending: true })
+    .limit(limit)
+  if (q) {
+    // ILIKE en name + code — el trigram index acelera el name match
+    req = req.or(`name.ilike.%${q}%,code.ilike.%${q}%`)
+  }
+  const { data, error } = await req
+  if (error) throw error
+  return data ?? []
+}
+
 // ── REALTIME ─────────────────────────────────
 export function subscribeToNotifications(userId, callback) {
   return supabase

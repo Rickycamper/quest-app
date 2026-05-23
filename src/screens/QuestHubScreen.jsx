@@ -827,9 +827,16 @@ function DecksView() {
 }
 
 // ── DeckDetailOverlay — vista completa de un deck guardado ──
-function DeckDetailOverlay({ deck, onClose }) {
+function DeckDetailOverlay({ deck, onClose, onUpdated }) {
+  const toast = useToast()
   const [hydrated, setHydrated] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading,  setLoading]  = useState(true)
+  const [editing,  setEditing]  = useState(false)
+  const [saving,   setSaving]   = useState(false)
+  const [editList, setEditList] = useState([])
+  const [searchQuery,   setSearchQuery]   = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searching,     setSearching]     = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -842,15 +849,82 @@ function DeckDetailOverlay({ deck, onClose }) {
         const hydratedList = await hydrateDeckList(full.game, full.list)
         if (cancelled) return
         setHydrated({ ...full, list: hydratedList })
+        setEditList(hydratedList)
       } catch { /* leave loading */ }
       finally { if (!cancelled) setLoading(false) }
     })()
     return () => { cancelled = true }
   }, [deck.id])
 
-  const main = (hydrated?.list ?? []).filter(c => !c.sideboard)
-  const side = (hydrated?.list ?? []).filter(c => c.sideboard)
+  // Búsqueda debounced cuando el usuario tipea en modo edición
+  useEffect(() => {
+    if (!editing) { setSearchResults([]); return }
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+      setSearchResults([]); return
+    }
+    let cancelled = false
+    setSearching(true)
+    const t = setTimeout(async () => {
+      try {
+        const { searchDeckCards } = await import('../lib/supabase')
+        const rows = await searchDeckCards(deck.game, searchQuery.trim(), 12)
+        if (!cancelled) setSearchResults(rows)
+      } catch { if (!cancelled) setSearchResults([]) }
+      finally { if (!cancelled) setSearching(false) }
+    }, 220)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [searchQuery, editing, deck.game])
+
+  const visibleList = editing ? editList : (hydrated?.list ?? [])
+  const main = visibleList.filter(c => !c.sideboard)
+  const side = visibleList.filter(c => c.sideboard)
+  const totalMain = main.reduce((s, c) => s + (c.qty || 0), 0)
   const gs = GAME_STYLES[deck.game] ?? {}
+
+  const adjustQty = (code, delta) => {
+    setEditList(prev => prev.flatMap(c => {
+      if (c.code !== code) return [c]
+      const newQty = (c.qty || 0) + delta
+      if (newQty <= 0) return []
+      return [{ ...c, qty: newQty }]
+    }))
+  }
+  const removeCard = (code) => setEditList(prev => prev.filter(c => c.code !== code))
+  const addSearchedCard = (card) => {
+    setEditList(prev => {
+      const existing = prev.find(c => c.code === card.code && !c.sideboard)
+      if (existing) {
+        return prev.map(c => c.code === card.code && !c.sideboard ? { ...c, qty: c.qty + 1 } : c)
+      }
+      return [...prev, { code: card.code, name: card.name, qty: 1, image_url: card.image_url }]
+    })
+    setSearchQuery('')
+    setSearchResults([])
+  }
+
+  const handleSave = async () => {
+    if (saving) return
+    setSaving(true)
+    try {
+      const { updateDeck } = await import('../lib/supabase')
+      const updated = await updateDeck(deck.id, { list: editList })
+      setHydrated(prev => ({ ...prev, ...updated, list: editList }))
+      setEditing(false)
+      toast?.('Deck actualizado', { type: 'success' })
+      onUpdated?.(updated)
+    } catch (e) {
+      toast?.(e?.message || 'No se pudo guardar', { type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditList(hydrated?.list ?? [])
+    setSearchQuery('')
+    setSearchResults([])
+    setEditing(false)
+  }
 
   return (
     <div onClick={onClose} style={{
@@ -879,7 +953,7 @@ function DeckDetailOverlay({ deck, onClose }) {
       >
         {/* Header */}
         <div style={{
-          padding: '14px 14px 12px', display: 'flex', alignItems: 'center', gap: 12,
+          padding: '14px 14px 12px', display: 'flex', alignItems: 'center', gap: 10,
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}>
           <div style={{
@@ -887,6 +961,7 @@ function DeckDetailOverlay({ deck, onClose }) {
             background: gs.bg || 'rgba(255,255,255,0.06)',
             border: `1px solid ${gs.border || 'rgba(255,255,255,0.12)'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
           }}>
             <GameIcon game={deck.game} size={18} />
           </div>
@@ -895,26 +970,136 @@ function DeckDetailOverlay({ deck, onClose }) {
               {deck.name}
             </div>
             <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
-              {deck.card_count} cartas · {deck.game}{deck.format ? ` · ${deck.format}` : ''}
+              {totalMain} cartas · {deck.game}{deck.format ? ` · ${deck.format}` : ''}
             </div>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" style={{
-            background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.10)',
-            color: '#FFF', width: 30, height: 30, borderRadius: 8,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-          }}><X size={14} strokeWidth={2.5} /></button>
+          {!editing ? (
+            <>
+              <button onClick={() => setEditing(true)} aria-label="Editar" style={headerBtnStyle}>✎</button>
+              <button onClick={onClose} aria-label="Cerrar" style={headerBtnStyle}>
+                <X size={14} strokeWidth={2.5} />
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={handleCancelEdit} disabled={saving} style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                color: '#9CA3AF', padding: '7px 12px', borderRadius: 8,
+                fontSize: 11, fontWeight: 700, cursor: saving ? 'default' : 'pointer',
+                fontFamily: 'Inter, sans-serif',
+              }}>Cancelar</button>
+              <button onClick={handleSave} disabled={saving} style={{
+                background: saving
+                  ? 'rgba(255,255,255,0.04)'
+                  : 'linear-gradient(135deg, #4ADE80 0%, #22D3EE 100%)',
+                border: 'none', color: saving ? '#555' : '#062013',
+                padding: '7px 12px', borderRadius: 8,
+                fontSize: 11, fontWeight: 800, cursor: saving ? 'default' : 'pointer',
+                fontFamily: 'Inter, sans-serif',
+                boxShadow: saving ? 'none' : '0 4px 12px rgba(74,222,128,0.28), inset 0 1px 0 rgba(255,255,255,0.25)',
+              }}>{saving ? '...' : '✓ Guardar'}</button>
+            </>
+          )}
         </div>
+
+        {/* Search bar — solo en modo edición */}
+        {editing && (
+          <div style={{ padding: '10px 12px 0' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '9px 12px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.10)',
+            }}>
+              <span style={{ fontSize: 13, color: '#9CA3AF' }}>🔍</span>
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Buscar carta para agregar…"
+                style={{
+                  flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                  color: '#FFF', fontFamily: 'Inter, sans-serif',
+                }}
+              />
+              {searching && <span style={{ fontSize: 11, color: '#6B7280' }}>…</span>}
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} style={{
+                  background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: 14, padding: 0,
+                }}>✕</button>
+              )}
+            </div>
+            {searchResults.length > 0 && (
+              <div style={{
+                marginTop: 6, maxHeight: 200, overflowY: 'auto',
+                background: 'rgba(0,0,0,0.35)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 10,
+              }}>
+                {searchResults.map(r => (
+                  <button key={r.code} onClick={() => addSearchedCard(r)} style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '8px 10px', background: 'transparent', border: 'none',
+                    borderBottom: '1px solid rgba(255,255,255,0.04)',
+                    cursor: 'pointer', textAlign: 'left',
+                    fontFamily: 'Inter, sans-serif',
+                  }}>
+                    <span style={{
+                      fontSize: 11, color: '#9CA3AF', fontFamily: 'Menlo, monospace',
+                      minWidth: 86, flexShrink: 0,
+                    }}>{r.code}</span>
+                    <span style={{
+                      flex: 1, fontSize: 13, color: '#E5E7EB', fontWeight: 600,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{r.name}</span>
+                    <span style={{ fontSize: 11, color: gs.color || '#FB923C', fontWeight: 800 }}>+ Agregar</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {searchQuery.trim().length >= 2 && !searching && searchResults.length === 0 && (
+              <div style={{ marginTop: 6, padding: '8px 12px', fontSize: 11, color: '#6B7280' }}>
+                Sin resultados. Solo aparecen cartas que ya fueron importadas alguna vez.
+              </div>
+            )}
+          </div>
+        )}
+
         {/* List */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px 16px' }}>
           {loading && <div style={{ padding: 30, textAlign: 'center', color: '#6B7280', fontSize: 12 }}>Cargando…</div>}
           {!loading && (
             <>
-              {main.map((c, i) => <DeckCardRow key={`m-${i}`} card={c} accent={gs} />)}
+              {main.length === 0 && (
+                <div style={{ padding: '24px 12px', textAlign: 'center', color: '#6B7280', fontSize: 12 }}>
+                  Sin cartas — usá el buscador arriba para agregar.
+                </div>
+              )}
+              {main.map((c, i) => (
+                <DeckCardRow
+                  key={`m-${c.code}-${i}`}
+                  card={c}
+                  accent={gs}
+                  editing={editing}
+                  onMinus={() => adjustQty(c.code, -1)}
+                  onPlus={()  => adjustQty(c.code, +1)}
+                  onRemove={() => removeCard(c.code)}
+                />
+              ))}
               {side.length > 0 && (
                 <>
                   <div style={{ fontSize: 10, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '12px 6px 6px' }}>Sideboard</div>
-                  {side.map((c, i) => <DeckCardRow key={`s-${i}`} card={c} accent={gs} />)}
+                  {side.map((c, i) => (
+                    <DeckCardRow
+                      key={`s-${c.code}-${i}`}
+                      card={c}
+                      accent={gs}
+                      editing={editing}
+                      onMinus={() => adjustQty(c.code, -1)}
+                      onPlus={()  => adjustQty(c.code, +1)}
+                      onRemove={() => removeCard(c.code)}
+                    />
+                  ))}
                 </>
               )}
             </>
@@ -925,27 +1110,65 @@ function DeckDetailOverlay({ deck, onClose }) {
   )
 }
 
-function DeckCardRow({ card, accent }) {
+const headerBtnStyle = {
+  background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.10)',
+  color: '#FFF', width: 30, height: 30, borderRadius: 8,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  cursor: 'pointer', flexShrink: 0,
+  fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 700,
+}
+
+const qtyBtnStyle = {
+  width: 22, height: 22, borderRadius: 5,
+  background: 'rgba(255,255,255,0.06)',
+  border: '1px solid rgba(255,255,255,0.12)',
+  color: '#FFF', fontSize: 13, fontWeight: 800,
+  cursor: 'pointer', padding: 0, lineHeight: 1,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  fontFamily: 'Inter, sans-serif',
+}
+
+function DeckCardRow({ card, accent, editing = false, onMinus, onPlus, onRemove }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '7px 8px', borderRadius: 7,
       fontFamily: 'Inter, sans-serif',
     }}>
-      <div style={{
-        minWidth: 28, height: 22, borderRadius: 6,
-        background: accent?.bg || 'rgba(255,255,255,0.08)',
-        border: `1px solid ${accent?.border || 'rgba(255,255,255,0.15)'}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: accent?.color || '#FFFFFF', fontSize: 11, fontWeight: 800,
-        flexShrink: 0,
-      }}>×{card.qty}</div>
+      {!editing ? (
+        <div style={{
+          minWidth: 28, height: 22, borderRadius: 6,
+          background: accent?.bg || 'rgba(255,255,255,0.08)',
+          border: `1px solid ${accent?.border || 'rgba(255,255,255,0.15)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: accent?.color || '#FFFFFF', fontSize: 11, fontWeight: 800,
+          flexShrink: 0,
+        }}>×{card.qty}</div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+          <button onClick={onMinus} aria-label="-1" style={qtyBtnStyle}>−</button>
+          <div style={{
+            minWidth: 26, height: 22, borderRadius: 6,
+            background: accent?.bg || 'rgba(255,255,255,0.08)',
+            border: `1px solid ${accent?.border || 'rgba(255,255,255,0.15)'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: accent?.color || '#FFFFFF', fontSize: 11, fontWeight: 800,
+          }}>{card.qty}</div>
+          <button onClick={onPlus} aria-label="+1" style={qtyBtnStyle}>+</button>
+        </div>
+      )}
       <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', fontFamily: 'Menlo, Monaco, monospace', minWidth: 86, flexShrink: 0 }}>
         {card.code}
       </div>
       <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#E5E7EB', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {card.name}
       </div>
+      {editing && (
+        <button onClick={onRemove} aria-label="Eliminar carta" style={{
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          color: '#F87171', padding: 4, flexShrink: 0, fontSize: 13,
+        }}>🗑</button>
+      )}
     </div>
   )
 }
