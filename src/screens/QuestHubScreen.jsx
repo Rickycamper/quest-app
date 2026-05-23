@@ -1139,10 +1139,24 @@ const qtyBtnStyle = {
   fontFamily: 'Inter, sans-serif',
 }
 
+// Hosts cuyos servers serven con Cross-Origin-Resource-Policy: same-site,
+// lo cual bloquea el render directo del <img> desde otro dominio. Para esos,
+// envolvemos la URL en nuestro propio proxy (/api/img-proxy) que el browser
+// puede usar sin restricción.
+const CORP_BLOCKED_HOSTS = ['onepiece-cardgame.com', 'gundam-gcg.com']
+function proxyIfNeeded(url) {
+  if (!url) return url
+  if (CORP_BLOCKED_HOSTS.some(h => url.includes(h))) {
+    return `/api/img-proxy?url=${encodeURIComponent(url)}`
+  }
+  return url
+}
+
 function DeckCardRow({ card, accent, editing = false, onMinus, onPlus, onRemove }) {
   const [showZoom, setShowZoom] = useState(false)
   const [imgError, setImgError] = useState(false)
   const hasImage = card.image_url && !imgError
+  const renderedImageUrl = proxyIfNeeded(card.image_url)
 
   return (
     <>
@@ -1188,7 +1202,7 @@ function DeckCardRow({ card, accent, editing = false, onMinus, onPlus, onRemove 
             }}
           >
             <img
-              src={card.image_url}
+              src={renderedImageUrl}
               alt=""
               onError={() => setImgError(true)}
               loading="lazy"
