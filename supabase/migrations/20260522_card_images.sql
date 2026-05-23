@@ -38,6 +38,8 @@ BEGIN
        AND p_image_url NOT LIKE 'https://assets.pokemon.com/%'
        AND p_image_url NOT LIKE 'https://images.digimoncard.io/%'
        AND p_image_url NOT LIKE 'https://digimoncard.io/%'
+       AND p_image_url NOT LIKE 'https://en.onepiece-cardgame.com/%'
+       AND p_image_url NOT LIKE 'https://asia-en.onepiece-cardgame.com/%'
     THEN
       RAISE EXCEPTION 'untrusted image url: %', p_image_url;
     END IF;

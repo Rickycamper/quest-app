@@ -25,9 +25,10 @@ const POKEMONTCG = 'https://api.pokemontcg.io/v2'
  */
 export async function fetchCardImage(game, code, name) {
   try {
-    if (game === 'MTG')     return await fetchScryfall(code, name)
-    if (game === 'Pokemon') return await fetchPokemonTCG(code, name)
-    if (game === 'Digimon') return await fetchDigimonCard(code)
+    if (game === 'MTG')       return await fetchScryfall(code, name)
+    if (game === 'Pokemon')   return await fetchPokemonTCG(code, name)
+    if (game === 'Digimon')   return await fetchDigimonCard(code)
+    if (game === 'One Piece') return await fetchOnePieceCard(code)
     return null
   } catch (e) {
     console.warn(`[cardImages] ${game} ${code} failed:`, e.message)
@@ -135,6 +136,22 @@ function mapPokemonCard(card) {
 //
 // No hace falta API call — el código de la carta YA es la URL. Lo
 // validamos con HEAD para no escribir URLs muertas al catálogo.
+// ── One Piece ─────────────────────────────────────────────────────
+// Patrón estable del sitio oficial Bandai (EN):
+//   https://en.onepiece-cardgame.com/images/cardlist/card/{CODE}.png
+// Probado con OP01-001, OP13-002, ST22-002, EB04-007, PRB02-008 — todos 200.
+// No requiere API call: el código YA es la URL. Confiamos en el patrón.
+async function fetchOnePieceCard(code) {
+  if (!code) return null
+  const upperCode = code.toUpperCase()
+  const url = `https://en.onepiece-cardgame.com/images/cardlist/card/${upperCode}.png`
+  return {
+    image_url:   url,
+    set_code:    upperCode.split('-')[0],
+    card_number: upperCode.split('-')[1] || null,
+  }
+}
+
 async function fetchDigimonCard(code) {
   if (!code) return null
   const upperCode = code.toUpperCase()
