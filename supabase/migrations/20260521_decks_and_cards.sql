@@ -1,6 +1,11 @@
 -- ─────────────────────────────────────────────
 -- QUEST — Decks + Cards System
 -- ─────────────────────────────────────────────
+-- NOTE: usa `deck_cards` como nombre de la tabla del catálogo porque
+-- ya existe una tabla `cards` separada para el feature Folder/Collection
+-- con schema diferente. Mantenemos namespacing claro: deck_cards es el
+-- catálogo central para el sistema de decks, cards es la colección
+-- personal del usuario.
 -- Fase 1: foundation para que usuarios puedan importar/guardar decks
 -- pasteando desde sitios externos (egmanevents, onepiecetopdecks, MTG
 -- Arena export, etc.). El parser extrae qty + código de cada línea y
@@ -12,7 +17,7 @@
 -- Integración con torneos viene en Fase 3.
 
 -- ── cards — catálogo central, una row por carta única ──────────────
-CREATE TABLE IF NOT EXISTS cards (
+CREATE TABLE IF NOT EXISTS deck_cards (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   game        text NOT NULL,           -- 'MTG', 'Pokemon', 'One Piece', etc.
   code        text NOT NULL,           -- 'OP01-001', 'M21-162', 'PAL-254', etc.
@@ -32,36 +37,36 @@ CREATE TABLE IF NOT EXISTS cards (
   UNIQUE (game, code)
 );
 
-CREATE INDEX IF NOT EXISTS idx_cards_game        ON cards (game);
-CREATE INDEX IF NOT EXISTS idx_cards_game_code   ON cards (game, code);
+CREATE INDEX IF NOT EXISTS idx_deck_cards_game        ON deck_cards (game);
+CREATE INDEX IF NOT EXISTS idx_deck_cards_game_code   ON deck_cards (game, code);
 -- Trigram index para búsqueda fuzzy por nombre (e.g. "lightning bolt" → Lightning Bolt)
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE INDEX IF NOT EXISTS idx_cards_name_trgm   ON cards USING gin (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_deck_cards_name_trgm   ON deck_cards USING gin (name gin_trgm_ops);
 
-ALTER TABLE cards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE deck_cards ENABLE ROW LEVEL SECURITY;
 
 -- Cualquiera puede LEER el catálogo
-CREATE POLICY "cards: read all"
-  ON cards FOR SELECT
+CREATE POLICY "deck_cards: read all"
+  ON deck_cards FOR SELECT
   USING (true);
 
 -- Cualquier usuario autenticado puede INSERTAR cartas nuevas (se auto-creates
 -- durante el import de un deck). created_by debe matchear el caller.
-CREATE POLICY "cards: insert authenticated"
-  ON cards FOR INSERT TO authenticated
+CREATE POLICY "deck_cards: insert authenticated"
+  ON deck_cards FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = created_by);
 
 -- Solo admins/owner pueden ACTUALIZAR/borrar cartas (image_url, verified, etc.)
-CREATE POLICY "cards: update admin"
-  ON cards FOR UPDATE TO authenticated
+CREATE POLICY "deck_cards: update admin"
+  ON deck_cards FOR UPDATE TO authenticated
   USING (EXISTS (
     SELECT 1 FROM profiles p
     WHERE p.id = auth.uid()
       AND (p.role = 'admin' OR p.is_owner = true)
   ));
 
-CREATE POLICY "cards: delete admin"
-  ON cards FOR DELETE TO authenticated
+CREATE POLICY "deck_cards: delete admin"
+  ON deck_cards FOR DELETE TO authenticated
   USING (EXISTS (
     SELECT 1 FROM profiles p
     WHERE p.id = auth.uid()
@@ -138,15 +143,15 @@ CREATE TRIGGER trg_decks_updated_at
   FOR EACH ROW EXECUTE FUNCTION decks_touch_updated_at();
 
 
--- ── upsert_cards_batch — usado durante el import del deck ──────────
+-- ── upsert_deck_cards_batch — usado durante el import del deck ──────────
 -- Toma un array de { game, code, name } y para cada uno:
 --   - Si (game, code) ya existe → no hace nada
 --   - Si no existe → INSERT con created_by = caller
 -- Retorna las rows resultantes (las que ya existían + las nuevas)
 -- así el frontend puede mostrarlas con cualquier metadata adicional
 -- (image_url) si ya estaba guardada de un import anterior.
-CREATE OR REPLACE FUNCTION upsert_cards_batch(p_cards jsonb)
-RETURNS SETOF cards
+CREATE OR REPLACE FUNCTION upsert_deck_cards_batch(p_cards jsonb)
+RETURNS SETOF deck_cards
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
@@ -162,7 +167,7 @@ BEGIN
   -- Insert cualquier carta nueva, ignorando duplicates (game, code)
   FOR v_card IN SELECT * FROM jsonb_array_elements(p_cards)
   LOOP
-    INSERT INTO cards (game, code, name, created_by)
+    INSERT INTO deck_cards (game, code, name, created_by)
     VALUES (
       v_card->>'game',
       v_card->>'code',
@@ -174,7 +179,7 @@ BEGIN
 
   -- Retornar todas las cartas mencionadas (para que el frontend hidrate)
   RETURN QUERY
-    SELECT c.* FROM cards c
+    SELECT c.* FROM deck_cards c
     WHERE EXISTS (
       SELECT 1 FROM jsonb_array_elements(p_cards) elt
       WHERE elt->>'game' = c.game AND elt->>'code' = c.code
@@ -182,4 +187,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION upsert_cards_batch(jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION upsert_deck_cards_batch(jsonb) TO authenticated;

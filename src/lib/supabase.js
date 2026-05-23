@@ -2424,7 +2424,7 @@ export async function getMyMatchHistory(limit = 50) {
  */
 export async function upsertCardsBatch(cards) {
   if (!cards?.length) return []
-  const { data, error } = await supabase.rpc('upsert_cards_batch', { p_cards: cards })
+  const { data, error } = await supabase.rpc('upsert_deck_cards_batch', { p_cards: cards })
   if (error) throw error
   return data ?? []
 }
@@ -2522,7 +2522,7 @@ export async function getDeckById(deckId) {
 
 /**
  * Hidrata el list de un deck con metadata del catálogo (image_url, name oficial).
- * Hace un batch fetch a `cards` por todos los códigos del list.
+ * Hace un batch fetch a `deck_cards` por todos los códigos del list.
  *
  * Retorna el mismo list con image_url y name "oficial" cuando están disponibles.
  */
@@ -2530,7 +2530,7 @@ export async function hydrateDeckList(game, list) {
   const codes = [...new Set((list ?? []).map(c => c.code))]
   if (!codes.length) return list ?? []
   const { data, error } = await supabase
-    .from('cards')
+    .from('deck_cards')
     .select('code, name, image_url, set_code, rarity')
     .eq('game', game)
     .in('code', codes)
