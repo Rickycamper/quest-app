@@ -14,6 +14,7 @@ import { SAWizardHat, SAGem, SACrown, SATruck, SALock, SABolt, SAGavel, SAFlag, 
 import GameIcon from '../components/GameIcon'
 import Avatar from '../components/Avatar'
 import ImportDeckModal from './ImportDeckModal'
+import CreateDeckBuilder from './CreateDeckBuilder'
 
 // ── Icons (Lucide) ────────────────────────────
 // One small lookup so all the inline string-ids ('map-pin', 'gavel',
@@ -684,6 +685,7 @@ function DecksView() {
   const [decks, setDecks]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [showImport, setShowImport] = useState(false)
+  const [showBuilder, setShowBuilder] = useState(false)
   const [selectedDeck, setSelectedDeck] = useState(null)
 
   const reload = () => {
@@ -709,26 +711,46 @@ function DecksView() {
 
   return (
     <div style={{ padding: '12px 16px 32px', fontFamily: 'Inter, sans-serif' }}>
-      {/* + Importar deck CTA — Battle Now gradient */}
-      <button
-        onClick={() => setShowImport(true)}
-        className="pressable"
-        style={{
-          width: '100%', marginBottom: 14,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          padding: '14px 16px', borderRadius: 14,
-          background: 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)',
-          border: 'none', cursor: 'pointer',
-          color: '#FFFFFF', fontSize: 14, fontWeight: 800,
-          fontFamily: 'Inter, sans-serif',
-          letterSpacing: '0.01em',
-          boxShadow: '0 10px 28px rgba(251,146,60,0.25), 0 4px 10px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.3)',
-          textShadow: '0 1px 0 rgba(0,0,0,0.18)',
-        }}
-      >
-        <Layers size={18} strokeWidth={2.3} />
-        IMPORTAR DECK
-      </button>
+      {/* CTAs: Crear desde cero (con buscador) + Importar deck (paste) */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        <button
+          onClick={() => setShowBuilder(true)}
+          className="pressable"
+          style={{
+            flex: 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: '12px 12px', borderRadius: 12,
+            background: 'rgba(255,255,255,0.04)',
+            backdropFilter: 'blur(18px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            cursor: 'pointer',
+            color: '#E5E7EB', fontSize: 13, fontWeight: 800,
+            fontFamily: 'Inter, sans-serif',
+            letterSpacing: '0.005em',
+          }}
+        >
+          🔍 CREAR
+        </button>
+        <button
+          onClick={() => setShowImport(true)}
+          className="pressable"
+          style={{
+            flex: 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: '12px 12px', borderRadius: 12,
+            background: 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)',
+            border: 'none', cursor: 'pointer',
+            color: '#FFFFFF', fontSize: 13, fontWeight: 800,
+            fontFamily: 'Inter, sans-serif',
+            letterSpacing: '0.005em',
+            boxShadow: '0 6px 18px rgba(251,146,60,0.22), 0 2px 6px rgba(167,139,250,0.14), inset 0 1px 0 rgba(255,255,255,0.28)',
+            textShadow: '0 1px 0 rgba(0,0,0,0.18)',
+          }}
+        ><Layers size={16} strokeWidth={2.3} />
+          IMPORTAR
+        </button>
+      </div>
 
       {loading && (
         <div style={{ padding: 40, textAlign: 'center', color: '#6B7280', fontSize: 13 }}>Cargando…</div>
@@ -815,6 +837,16 @@ function DecksView() {
           onCreated={(deck) => {
             setDecks(prev => [deck, ...prev])
             setShowImport(false)
+          }}
+        />
+      )}
+
+      {showBuilder && (
+        <CreateDeckBuilder
+          onClose={() => setShowBuilder(false)}
+          onCreated={(deck) => {
+            setDecks(prev => [deck, ...prev])
+            setShowBuilder(false)
           }}
         />
       )}
