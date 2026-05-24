@@ -869,6 +869,14 @@ function DeckDetailOverlay({ deck, onClose, onUpdated }) {
   const [searchQuery,   setSearchQuery]   = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [searching,     setSearching]     = useState(false)
+  // Vista: 'list' (compacta) o 'cards' (grid de imágenes). Persistimos
+  // en localStorage para que tu última preferencia se mantenga.
+  const [viewMode, setViewMode] = useState(() => {
+    try { return localStorage.getItem('quest_deck_view') || 'list' } catch { return 'list' }
+  })
+  useEffect(() => {
+    try { localStorage.setItem('quest_deck_view', viewMode) } catch {}
+  }, [viewMode])
 
   useEffect(() => {
     let cancelled = false
@@ -1018,6 +1026,15 @@ function DeckDetailOverlay({ deck, onClose, onUpdated }) {
           </div>
           {!editing ? (
             <>
+              {/* Toggle vista lista / cartas */}
+              <button
+                onClick={() => setViewMode(v => v === 'list' ? 'cards' : 'list')}
+                aria-label={viewMode === 'list' ? 'Vista de cartas' : 'Vista de lista'}
+                title={viewMode === 'list' ? 'Vista de cartas' : 'Vista de lista'}
+                style={headerBtnStyle}
+              >
+                {viewMode === 'list' ? '▦' : '☰'}
+              </button>
               <button onClick={() => setEditing(true)} aria-label="Editar" style={headerBtnStyle}>✎</button>
               <button onClick={onClose} aria-label="Cerrar" style={headerBtnStyle}>
                 <X size={14} strokeWidth={2.5} />
@@ -1108,16 +1125,16 @@ function DeckDetailOverlay({ deck, onClose, onUpdated }) {
           </div>
         )}
 
-        {/* List */}
+        {/* List o Cards view (toggle desde header) */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px 16px' }}>
           {loading && <div style={{ padding: 30, textAlign: 'center', color: '#6B7280', fontSize: 12 }}>Cargando…</div>}
-          {!loading && (
+          {!loading && main.length === 0 && (
+            <div style={{ padding: '24px 12px', textAlign: 'center', color: '#6B7280', fontSize: 12 }}>
+              Sin cartas — usá el buscador arriba para agregar.
+            </div>
+          )}
+          {!loading && main.length > 0 && viewMode === 'list' && (
             <>
-              {main.length === 0 && (
-                <div style={{ padding: '24px 12px', textAlign: 'center', color: '#6B7280', fontSize: 12 }}>
-                  Sin cartas — usá el buscador arriba para agregar.
-                </div>
-              )}
               {main.map((c, i) => (
                 <DeckCardRow
                   key={`m-${c.code}-${i}`}
@@ -1143,6 +1160,31 @@ function DeckDetailOverlay({ deck, onClose, onUpdated }) {
                       onRemove={() => removeCard(c.code)}
                     />
                   ))}
+                </>
+              )}
+            </>
+          )}
+          {!loading && main.length > 0 && viewMode === 'cards' && (
+            <>
+              <DeckCardGrid
+                cards={main}
+                accent={gs}
+                editing={editing}
+                onMinus={code => adjustQty(code, -1)}
+                onPlus={code  => adjustQty(code, +1)}
+                onRemove={code => removeCard(code)}
+              />
+              {side.length > 0 && (
+                <>
+                  <div style={{ fontSize: 10, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '12px 4px 8px' }}>Sideboard</div>
+                  <DeckCardGrid
+                    cards={side}
+                    accent={gs}
+                    editing={editing}
+                    onMinus={code => adjustQty(code, -1)}
+                    onPlus={code  => adjustQty(code, +1)}
+                    onRemove={code => removeCard(code)}
+                  />
                 </>
               )}
             </>
@@ -1280,6 +1322,132 @@ function DeckCardRow({ card, accent, editing = false, onMinus, onPlus, onRemove 
               boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
             }}
             onError={() => { setImgError(true); setShowZoom(false) }}
+          />
+        </div>
+      )}
+    </>
+  )
+}
+
+// ── DeckCardGrid — vista alterna: grid de cartas con imagen grande y
+//    qty overlay arriba a la derecha. Standard TCG aspect ratio ~5:7.
+function DeckCardGrid({ cards, accent, editing = false, onMinus, onPlus, onRemove }) {
+  const [zoomCard, setZoomCard] = useState(null)
+  return (
+    <>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 8,
+      }}>
+        {cards.map((c, i) => {
+          const url = proxyIfNeeded(c.image_url)
+          return (
+            <div
+              key={`g-${c.code}-${i}`}
+              style={{
+                position: 'relative',
+                aspectRatio: '5 / 7',
+                borderRadius: 8,
+                overflow: 'hidden',
+                background: '#0A0A0F',
+                border: `1px solid ${accent?.border || 'rgba(255,255,255,0.12)'}`,
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+                transition: 'transform 200ms cubic-bezier(0.34,1.45,0.64,1)',
+              }}
+              className="pressable"
+              onClick={() => url && setZoomCard(c)}
+            >
+              {url ? (
+                <img
+                  src={url}
+                  alt={c.name}
+                  loading="lazy"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none' }}
+                />
+              ) : (
+                <div style={{
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  width: '100%', height: '100%',
+                  padding: 8, textAlign: 'center',
+                  fontFamily: 'Inter, sans-serif',
+                }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: '#6B7280', fontFamily: 'Menlo, monospace', marginBottom: 4 }}>
+                    {c.code}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#E5E7EB', fontWeight: 600, lineHeight: 1.25 }}>
+                    {c.name}
+                  </div>
+                </div>
+              )}
+
+              {/* Qty badge — arriba a la derecha. Multiplica visualmente. */}
+              <div style={{
+                position: 'absolute', top: 4, right: 4,
+                minWidth: 26, height: 26, borderRadius: 7,
+                background: 'rgba(0,0,0,0.78)',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+                border: `1.5px solid ${accent?.border || 'rgba(255,255,255,0.30)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#FFFFFF', fontSize: 13, fontWeight: 900,
+                letterSpacing: '-0.005em',
+                fontFamily: 'Inter, sans-serif',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
+                pointerEvents: 'none',
+              }}>×{c.qty}</div>
+
+              {/* Edit controls — overlay abajo */}
+              {editing && (
+                <div
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    position: 'absolute', bottom: 4, left: 4, right: 4,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4,
+                    padding: '4px 6px', borderRadius: 6,
+                    background: 'rgba(0,0,0,0.78)',
+                    backdropFilter: 'blur(6px)',
+                    WebkitBackdropFilter: 'blur(6px)',
+                  }}
+                >
+                  <button onClick={() => onMinus(c.code)} style={qtyBtnStyle}>−</button>
+                  <button onClick={() => onPlus(c.code)}  style={qtyBtnStyle}>+</button>
+                  <button onClick={() => onRemove(c.code)} style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    color: '#F87171', padding: '0 4px', fontSize: 14,
+                  }}>🗑</button>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Zoom modal — comparte el patrón con DeckCardRow */}
+      {zoomCard && (
+        <div
+          onClick={() => setZoomCard(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.92)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20, cursor: 'zoom-out',
+            animation: 'fadeUp 180ms ease',
+          }}
+        >
+          <img
+            src={proxyIfNeeded(zoomCard.image_url)}
+            alt={zoomCard.name}
+            style={{
+              maxWidth: '100%', maxHeight: '100%',
+              objectFit: 'contain', borderRadius: 12,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+            }}
           />
         </div>
       )}
