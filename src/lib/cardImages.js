@@ -12,6 +12,22 @@
 const SCRYFALL = 'https://api.scryfall.com'
 const POKEMONTCG = 'https://api.pokemontcg.io/v2'
 
+// Hosts que sirven con Cross-Origin-Resource-Policy: same-site → el browser
+// bloquea el <img> render directo. Para esos, wrapeamos en /api/img-proxy.
+const CORP_BLOCKED_HOSTS = ['onepiece-cardgame.com', 'gundam-gcg.com']
+
+/**
+ * Si la URL apunta a un host CORP-blocked, la envuelve en nuestro
+ * proxy serverless (/api/img-proxy?url=...). Si no, la devuelve tal cual.
+ */
+export function proxyIfNeeded(url) {
+  if (!url) return url
+  if (CORP_BLOCKED_HOSTS.some(h => url.includes(h))) {
+    return `/api/img-proxy?url=${encodeURIComponent(url)}`
+  }
+  return url
+}
+
 /**
  * Fetch image + metadata para una carta. Retorna `null` si:
  *   - El TCG no tiene API soportada (Gundam, One Piece, etc.)

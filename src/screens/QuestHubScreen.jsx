@@ -15,6 +15,7 @@ import GameIcon from '../components/GameIcon'
 import Avatar from '../components/Avatar'
 import ImportDeckModal from './ImportDeckModal'
 import CreateDeckBuilder from './CreateDeckBuilder'
+import { proxyIfNeeded } from '../lib/cardImages'
 
 // ── Icons (Lucide) ────────────────────────────
 // One small lookup so all the inline string-ids ('map-pin', 'gavel',
@@ -1097,23 +1098,12 @@ function DeckDetailOverlay({ deck, onClose, onUpdated }) {
                 borderRadius: 10,
               }}>
                 {searchResults.map(r => (
-                  <button key={r.code} onClick={() => addSearchedCard(r)} style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '8px 10px', background: 'transparent', border: 'none',
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    cursor: 'pointer', textAlign: 'left',
-                    fontFamily: 'Inter, sans-serif',
-                  }}>
-                    <span style={{
-                      fontSize: 11, color: '#9CA3AF', fontFamily: 'Menlo, monospace',
-                      minWidth: 86, flexShrink: 0,
-                    }}>{r.code}</span>
-                    <span style={{
-                      flex: 1, fontSize: 13, color: '#E5E7EB', fontWeight: 600,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{r.name}</span>
-                    <span style={{ fontSize: 11, color: gs.color || '#FB923C', fontWeight: 800 }}>+ Agregar</span>
-                  </button>
+                  <SearchResultRow
+                    key={r.code}
+                    result={r}
+                    accent={gs}
+                    onPick={() => addSearchedCard(r)}
+                  />
                 ))}
               </div>
             )}
@@ -1211,19 +1201,6 @@ const qtyBtnStyle = {
   cursor: 'pointer', padding: 0, lineHeight: 1,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   fontFamily: 'Inter, sans-serif',
-}
-
-// Hosts cuyos servers serven con Cross-Origin-Resource-Policy: same-site,
-// lo cual bloquea el render directo del <img> desde otro dominio. Para esos,
-// envolvemos la URL en nuestro propio proxy (/api/img-proxy) que el browser
-// puede usar sin restricción.
-const CORP_BLOCKED_HOSTS = ['onepiece-cardgame.com', 'gundam-gcg.com']
-function proxyIfNeeded(url) {
-  if (!url) return url
-  if (CORP_BLOCKED_HOSTS.some(h => url.includes(h))) {
-    return `/api/img-proxy?url=${encodeURIComponent(url)}`
-  }
-  return url
 }
 
 function DeckCardRow({ card, accent, editing = false, onMinus, onPlus, onRemove }) {
@@ -1452,6 +1429,71 @@ function DeckCardGrid({ cards, accent, editing = false, onMinus, onPlus, onRemov
         </div>
       )}
     </>
+  )
+}
+
+// ── SearchResultRow — usado en el buscador del edit mode y del builder
+//    desde cero. Muestra thumbnail + código + nombre. Si hay varias
+//    versiones de la misma carta, el thumb permite distinguirlas
+//    visualmente.
+export function SearchResultRow({ result, accent, onPick, sourceLabel }) {
+  const [imgErr, setImgErr] = useState(false)
+  const url = !imgErr && result.image_url ? proxyIfNeeded(result.image_url) : null
+  return (
+    <button onClick={onPick} style={{
+      width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+      padding: '7px 10px', background: 'transparent', border: 'none',
+      borderBottom: '1px solid rgba(255,255,255,0.04)',
+      cursor: 'pointer', textAlign: 'left',
+      fontFamily: 'Inter, sans-serif',
+    }}>
+      {/* Thumbnail — si hay imagen */}
+      <div style={{
+        width: 32, height: 44, borderRadius: 5,
+        background: '#0A0A0F',
+        border: '1px solid rgba(255,255,255,0.08)',
+        overflow: 'hidden', flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {url ? (
+          <img
+            src={url}
+            alt=""
+            loading="lazy"
+            onError={() => setImgErr(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <span style={{ fontSize: 14, color: '#374151' }}>🎴</span>
+        )}
+      </div>
+
+      {/* Code (o fuente Scryfall) */}
+      {result.code ? (
+        <span style={{
+          fontSize: 11, color: '#9CA3AF', fontFamily: 'Menlo, monospace',
+          minWidth: 80, flexShrink: 0,
+        }}>{result.code}</span>
+      ) : (
+        <span style={{
+          fontSize: 9, color: '#60A5FA', fontWeight: 800,
+          minWidth: 80, flexShrink: 0,
+          letterSpacing: '0.06em',
+        }}>{sourceLabel || 'SCRYFALL'}</span>
+      )}
+
+      {/* Name */}
+      <span style={{
+        flex: 1, minWidth: 0,
+        fontSize: 13, color: '#E5E7EB', fontWeight: 600,
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>{result.name}</span>
+
+      <span style={{
+        fontSize: 11, color: accent?.color || '#FB923C', fontWeight: 800,
+        flexShrink: 0,
+      }}>+</span>
+    </button>
   )
 }
 

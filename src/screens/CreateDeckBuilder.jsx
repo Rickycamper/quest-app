@@ -15,6 +15,7 @@
 //
 import { useEffect, useMemo, useState } from 'react'
 import { searchDeckCards, createDeck } from '../lib/supabase'
+import { proxyIfNeeded } from '../lib/cardImages'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import { useToast } from '../components/Toast'
 import GameIcon from '../components/GameIcon'
@@ -291,34 +292,12 @@ export default function CreateDeckBuilder({ onClose, onCreated, initialGame = nu
                 fontFamily: 'Inter, sans-serif',
               }}>
                 {results.map((r, i) => (
-                  <button
+                  <BuilderSearchResultRow
                     key={`${r.source}-${r.code || r.name}-${i}`}
-                    onClick={() => addCardFromResult(r)}
-                    style={{
-                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                      padding: '8px 10px', background: 'transparent', border: 'none',
-                      borderBottom: '1px solid rgba(255,255,255,0.04)',
-                      cursor: 'pointer', textAlign: 'left',
-                      fontFamily: 'Inter, sans-serif',
-                    }}
-                  >
-                    {r.code ? (
-                      <span style={{
-                        fontSize: 11, color: '#9CA3AF', fontFamily: 'Menlo, monospace',
-                        minWidth: 86, flexShrink: 0,
-                      }}>{r.code}</span>
-                    ) : (
-                      <span style={{
-                        fontSize: 10, color: '#60A5FA', fontWeight: 700,
-                        minWidth: 86, flexShrink: 0,
-                      }}>SCRYFALL</span>
-                    )}
-                    <span style={{
-                      flex: 1, fontSize: 13, color: '#E5E7EB', fontWeight: 600,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{r.name}</span>
-                    <span style={{ fontSize: 11, color: gs.color || '#FB923C', fontWeight: 800 }}>+ Agregar</span>
-                  </button>
+                    result={r}
+                    accent={gs}
+                    onPick={() => addCardFromResult(r)}
+                  />
                 ))}
               </div>
             )}
@@ -436,6 +415,65 @@ const qtyBtnStyle = {
   cursor: 'pointer', padding: 0, lineHeight: 1,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   fontFamily: 'Inter, sans-serif',
+}
+
+// Resultado del buscador del builder. Muestra thumbnail + código (o
+// fuente Scryfall si la carta todavía no está en deck_cards) + nombre.
+// El thumbnail es clave cuando hay varias versiones de la misma carta
+// (ej. Greymon en BT1, BT5, EX1 con arte distinto).
+function BuilderSearchResultRow({ result, accent, onPick }) {
+  const [imgErr, setImgErr] = useState(false)
+  const url = !imgErr && result.image_url ? proxyIfNeeded(result.image_url) : null
+  return (
+    <button onClick={onPick} style={{
+      width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+      padding: '7px 10px', background: 'transparent', border: 'none',
+      borderBottom: '1px solid rgba(255,255,255,0.04)',
+      cursor: 'pointer', textAlign: 'left',
+      fontFamily: 'Inter, sans-serif',
+    }}>
+      <div style={{
+        width: 32, height: 44, borderRadius: 5,
+        background: '#0A0A0F',
+        border: '1px solid rgba(255,255,255,0.08)',
+        overflow: 'hidden', flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {url ? (
+          <img
+            src={url}
+            alt=""
+            loading="lazy"
+            onError={() => setImgErr(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <span style={{ fontSize: 14, color: '#374151' }}>🎴</span>
+        )}
+      </div>
+      {result.code ? (
+        <span style={{
+          fontSize: 11, color: '#9CA3AF', fontFamily: 'Menlo, monospace',
+          minWidth: 80, flexShrink: 0,
+        }}>{result.code}</span>
+      ) : (
+        <span style={{
+          fontSize: 9, color: '#60A5FA', fontWeight: 800,
+          letterSpacing: '0.06em',
+          minWidth: 80, flexShrink: 0,
+        }}>SCRYFALL</span>
+      )}
+      <span style={{
+        flex: 1, minWidth: 0,
+        fontSize: 13, color: '#E5E7EB', fontWeight: 600,
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>{result.name}</span>
+      <span style={{
+        fontSize: 11, color: accent?.color || '#FB923C', fontWeight: 800,
+        flexShrink: 0,
+      }}>+</span>
+    </button>
+  )
 }
 
 function BuilderCardRow({ card, accent, onMinus, onPlus, onRemove }) {
