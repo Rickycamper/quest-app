@@ -20,6 +20,7 @@ import { GAMES, GAME_STYLES } from '../lib/constants'
 import { useToast } from '../components/Toast'
 import GameIcon from '../components/GameIcon'
 import Spinner from '../components/Spinner'
+import DeckCardGrid from '../components/DeckCardGrid'
 import { X } from 'lucide-react'
 
 const SCRYFALL = 'https://api.scryfall.com'
@@ -32,6 +33,14 @@ export default function CreateDeckBuilder({ onClose, onCreated, initialGame = nu
   const [deckName, setDeckName] = useState('')
   const [format, setFormat] = useState('')
   const [saving, setSaving] = useState(false)
+  // Vista: 'cards' (visual, default) o 'list' (compacta texto). Persiste
+  // en localStorage compartido con DeckDetailOverlay.
+  const [viewMode, setViewMode] = useState(() => {
+    try { return localStorage.getItem('quest_deck_view') || 'cards' } catch { return 'cards' }
+  })
+  useEffect(() => {
+    try { localStorage.setItem('quest_deck_view', viewMode) } catch {}
+  }, [viewMode])
 
   // Search state
   const [query, setQuery] = useState('')
@@ -285,7 +294,7 @@ export default function CreateDeckBuilder({ onClose, onCreated, initialGame = nu
             {results.length > 0 && (
               <div style={{
                 marginBottom: 12,
-                maxHeight: 240, overflowY: 'auto',
+                maxHeight: 360, overflowY: 'auto',
                 background: 'rgba(0,0,0,0.35)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 10,
@@ -310,30 +319,62 @@ export default function CreateDeckBuilder({ onClose, onCreated, initialGame = nu
 
             {/* Current list */}
             <div style={{
-              fontSize: 10, color: '#6B7280', fontWeight: 700,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              fontFamily: 'Inter, sans-serif', margin: '14px 4px 8px',
-            }}>Tu deck ({totalCards})</div>
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              margin: '14px 4px 8px',
+              fontFamily: 'Inter, sans-serif',
+            }}>
+              <div style={{
+                fontSize: 10, color: '#6B7280', fontWeight: 700,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+              }}>Tu deck ({totalCards})</div>
+              {list.length > 0 && (
+                <button
+                  onClick={() => setViewMode(v => v === 'cards' ? 'list' : 'cards')}
+                  aria-label={viewMode === 'cards' ? 'Ver como lista' : 'Ver como cartas'}
+                  style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.10)',
+                    color: '#FFFFFF',
+                    width: 28, height: 28, borderRadius: 7,
+                    cursor: 'pointer', padding: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13, fontFamily: 'Inter, sans-serif',
+                  }}
+                >{viewMode === 'cards' ? '☰' : '▦'}</button>
+              )}
+            </div>
             <div style={{
               background: 'rgba(255,255,255,0.02)',
               border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 10, padding: '6px 8px',
+              borderRadius: 10, padding: viewMode === 'cards' ? 8 : '6px 8px',
               minHeight: 80,
             }}>
               {list.length === 0 ? (
                 <div style={{ padding: '20px 12px', textAlign: 'center', color: '#6B7280', fontSize: 12, fontFamily: 'Inter, sans-serif' }}>
                   Buscá y agregá cartas arriba ↑
                 </div>
-              ) : list.map((c, i) => (
-                <BuilderCardRow
-                  key={`${c.code}-${i}`}
-                  card={c}
+              ) : viewMode === 'cards' ? (
+                <DeckCardGrid
+                  cards={list}
                   accent={gs}
-                  onMinus={() => adjustQty(c.code, -1)}
-                  onPlus={() => adjustQty(c.code, +1)}
-                  onRemove={() => removeCard(c.code)}
+                  editing
+                  columns={3}
+                  onMinus={code => adjustQty(code, -1)}
+                  onPlus={code => adjustQty(code, +1)}
+                  onRemove={code => removeCard(code)}
                 />
-              ))}
+              ) : (
+                list.map((c, i) => (
+                  <BuilderCardRow
+                    key={`${c.code}-${i}`}
+                    card={c}
+                    accent={gs}
+                    onMinus={() => adjustQty(c.code, -1)}
+                    onPlus={() => adjustQty(c.code, +1)}
+                    onRemove={() => removeCard(c.code)}
+                  />
+                ))
+              )}
             </div>
           </>
         )}
@@ -427,17 +468,18 @@ function BuilderSearchResultRow({ result, accent, onPick }) {
   return (
     <button onClick={onPick} style={{
       width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-      padding: '7px 10px', background: 'transparent', border: 'none',
+      padding: '8px 10px', background: 'transparent', border: 'none',
       borderBottom: '1px solid rgba(255,255,255,0.04)',
       cursor: 'pointer', textAlign: 'left',
       fontFamily: 'Inter, sans-serif',
     }}>
       <div style={{
-        width: 32, height: 44, borderRadius: 5,
+        width: 52, height: 72, borderRadius: 6,
         background: '#0A0A0F',
-        border: '1px solid rgba(255,255,255,0.08)',
+        border: '1px solid rgba(255,255,255,0.10)',
         overflow: 'hidden', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
       }}>
         {url ? (
           <img
@@ -448,7 +490,7 @@ function BuilderSearchResultRow({ result, accent, onPick }) {
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         ) : (
-          <span style={{ fontSize: 14, color: '#374151' }}>🎴</span>
+          <span style={{ fontSize: 18, color: '#374151' }}>🎴</span>
         )}
       </div>
       {result.code ? (

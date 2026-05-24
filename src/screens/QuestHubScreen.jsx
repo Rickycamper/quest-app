@@ -15,6 +15,7 @@ import GameIcon from '../components/GameIcon'
 import Avatar from '../components/Avatar'
 import ImportDeckModal from './ImportDeckModal'
 import CreateDeckBuilder from './CreateDeckBuilder'
+import DeckCardGrid from '../components/DeckCardGrid'
 import { proxyIfNeeded } from '../lib/cardImages'
 
 // ── Icons (Lucide) ────────────────────────────
@@ -873,7 +874,7 @@ function DeckDetailOverlay({ deck, onClose, onUpdated }) {
   // Vista: 'list' (compacta) o 'cards' (grid de imágenes). Persistimos
   // en localStorage para que tu última preferencia se mantenga.
   const [viewMode, setViewMode] = useState(() => {
-    try { return localStorage.getItem('quest_deck_view') || 'list' } catch { return 'list' }
+    try { return localStorage.getItem('quest_deck_view') || 'cards' } catch { return 'cards' }
   })
   useEffect(() => {
     try { localStorage.setItem('quest_deck_view', viewMode) } catch {}
@@ -1092,7 +1093,7 @@ function DeckDetailOverlay({ deck, onClose, onUpdated }) {
             </div>
             {searchResults.length > 0 && (
               <div style={{
-                marginTop: 6, maxHeight: 200, overflowY: 'auto',
+                marginTop: 6, maxHeight: 320, overflowY: 'auto',
                 background: 'rgba(0,0,0,0.35)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 10,
@@ -1306,131 +1307,6 @@ function DeckCardRow({ card, accent, editing = false, onMinus, onPlus, onRemove 
   )
 }
 
-// ── DeckCardGrid — vista alterna: grid de cartas con imagen grande y
-//    qty overlay arriba a la derecha. Standard TCG aspect ratio ~5:7.
-function DeckCardGrid({ cards, accent, editing = false, onMinus, onPlus, onRemove }) {
-  const [zoomCard, setZoomCard] = useState(null)
-  return (
-    <>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 8,
-      }}>
-        {cards.map((c, i) => {
-          const url = proxyIfNeeded(c.image_url)
-          return (
-            <div
-              key={`g-${c.code}-${i}`}
-              style={{
-                position: 'relative',
-                aspectRatio: '5 / 7',
-                borderRadius: 8,
-                overflow: 'hidden',
-                background: '#0A0A0F',
-                border: `1px solid ${accent?.border || 'rgba(255,255,255,0.12)'}`,
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
-                transition: 'transform 200ms cubic-bezier(0.34,1.45,0.64,1)',
-              }}
-              className="pressable"
-              onClick={() => url && setZoomCard(c)}
-            >
-              {url ? (
-                <img
-                  src={url}
-                  alt={c.name}
-                  loading="lazy"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  onError={(e) => { e.currentTarget.style.display = 'none' }}
-                />
-              ) : (
-                <div style={{
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
-                  width: '100%', height: '100%',
-                  padding: 8, textAlign: 'center',
-                  fontFamily: 'Inter, sans-serif',
-                }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: '#6B7280', fontFamily: 'Menlo, monospace', marginBottom: 4 }}>
-                    {c.code}
-                  </div>
-                  <div style={{ fontSize: 10, color: '#E5E7EB', fontWeight: 600, lineHeight: 1.25 }}>
-                    {c.name}
-                  </div>
-                </div>
-              )}
-
-              {/* Qty badge — arriba a la derecha. Multiplica visualmente. */}
-              <div style={{
-                position: 'absolute', top: 4, right: 4,
-                minWidth: 26, height: 26, borderRadius: 7,
-                background: 'rgba(0,0,0,0.78)',
-                backdropFilter: 'blur(6px)',
-                WebkitBackdropFilter: 'blur(6px)',
-                border: `1.5px solid ${accent?.border || 'rgba(255,255,255,0.30)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#FFFFFF', fontSize: 13, fontWeight: 900,
-                letterSpacing: '-0.005em',
-                fontFamily: 'Inter, sans-serif',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
-                pointerEvents: 'none',
-              }}>×{c.qty}</div>
-
-              {/* Edit controls — overlay abajo */}
-              {editing && (
-                <div
-                  onClick={e => e.stopPropagation()}
-                  style={{
-                    position: 'absolute', bottom: 4, left: 4, right: 4,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4,
-                    padding: '4px 6px', borderRadius: 6,
-                    background: 'rgba(0,0,0,0.78)',
-                    backdropFilter: 'blur(6px)',
-                    WebkitBackdropFilter: 'blur(6px)',
-                  }}
-                >
-                  <button onClick={() => onMinus(c.code)} style={qtyBtnStyle}>−</button>
-                  <button onClick={() => onPlus(c.code)}  style={qtyBtnStyle}>+</button>
-                  <button onClick={() => onRemove(c.code)} style={{
-                    background: 'transparent', border: 'none', cursor: 'pointer',
-                    color: '#F87171', padding: '0 4px', fontSize: 14,
-                  }}>🗑</button>
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Zoom modal — comparte el patrón con DeckCardRow */}
-      {zoomCard && (
-        <div
-          onClick={() => setZoomCard(null)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
-            background: 'rgba(0,0,0,0.92)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 20, cursor: 'zoom-out',
-            animation: 'fadeUp 180ms ease',
-          }}
-        >
-          <img
-            src={proxyIfNeeded(zoomCard.image_url)}
-            alt={zoomCard.name}
-            style={{
-              maxWidth: '100%', maxHeight: '100%',
-              objectFit: 'contain', borderRadius: 12,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
-            }}
-          />
-        </div>
-      )}
-    </>
-  )
-}
 
 // ── SearchResultRow — usado en el buscador del edit mode y del builder
 //    desde cero. Muestra thumbnail + código + nombre. Si hay varias
@@ -1442,18 +1318,19 @@ export function SearchResultRow({ result, accent, onPick, sourceLabel }) {
   return (
     <button onClick={onPick} style={{
       width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-      padding: '7px 10px', background: 'transparent', border: 'none',
+      padding: '8px 10px', background: 'transparent', border: 'none',
       borderBottom: '1px solid rgba(255,255,255,0.04)',
       cursor: 'pointer', textAlign: 'left',
       fontFamily: 'Inter, sans-serif',
     }}>
-      {/* Thumbnail — si hay imagen */}
+      {/* Thumbnail — si hay imagen. Más grande para distinguir versiones */}
       <div style={{
-        width: 32, height: 44, borderRadius: 5,
+        width: 52, height: 72, borderRadius: 6,
         background: '#0A0A0F',
-        border: '1px solid rgba(255,255,255,0.08)',
+        border: '1px solid rgba(255,255,255,0.10)',
         overflow: 'hidden', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
       }}>
         {url ? (
           <img
