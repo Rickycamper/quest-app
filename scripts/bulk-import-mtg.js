@@ -23,8 +23,8 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync, createWriteStream, createReadStream, unlinkSync, statSync } from 'node:fs'
-import { parser } from 'stream-json'
-import { streamArray } from 'stream-json/streamers/StreamArray.js'
+import { parser } from 'stream-json/parser.js'
+import { streamArray } from 'stream-json/streamers/stream-array.js'
 
 const SUPABASE_URL = process.env.SUPABASE_URL || readEnvFile('VITE_SUPABASE_URL')
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY
