@@ -1,0 +1,70 @@
+name: Bulk Import — TCG catalog
+
+# Cómo correrlo:
+#   1. Andá a https://github.com/Rickycamper/quest-app/actions
+#   2. Click izquierdo "Bulk Import — TCG catalog"
+#   3. Click derecho "Run workflow"
+#   4. Elegí qué TCG querés importar (digimon, pokemon, mtg, all)
+#   5. Click verde "Run workflow"
+#   6. Mirá el progreso en tiempo real en la página
+
+on:
+  # Solo manual desde la UI de GitHub. No corre automático en cada push.
+  workflow_dispatch:
+    inputs:
+      tcg:
+        description: 'TCG a importar'
+        required: true
+        default: 'digimon'
+        type: choice
+        options:
+          - digimon
+          - pokemon
+          - mtg
+          - all       # corre los 3 en orden (digimon → pokemon → mtg)
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60   # MTG puede tardar hasta 15 min, dejamos buffer
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run import (${{ inputs.tcg }})
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          set -e
+          case "${{ inputs.tcg }}" in
+            digimon)
+              node scripts/bulk-import-digimon.js
+              ;;
+            pokemon)
+              node scripts/bulk-import-pokemon.js
+              ;;
+            mtg)
+              node scripts/bulk-import-mtg.js
+              ;;
+            all)
+              echo "▶ Corriendo los 3 en orden…"
+              node scripts/bulk-import-digimon.js
+              node scripts/bulk-import-pokemon.js
+              node scripts/bulk-import-mtg.js
+              ;;
+            *)
+              echo "❌ TCG inválido: ${{ inputs.tcg }}"
+              exit 1
+              ;;
+          esac
