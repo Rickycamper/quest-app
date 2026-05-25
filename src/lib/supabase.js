@@ -1219,9 +1219,15 @@ export async function setUserPoints(userId, points) {
     .update({ points: newPoints })
     .eq('id', userId)
     .select('id, points')
-    .single()
-  if (error) throw error
-  if (!data) throw new Error('Usuario no encontrado.')
+    .maybeSingle()
+  if (error) {
+    // Mapear "row-level security" a un mensaje accionable
+    if (/row-level security|new row violates|permission denied/i.test(error.message || '')) {
+      throw new Error('Tu rol no tiene permisos para asignar puntos. Pedile a un admin que te active el flag o te dé rol staff/admin.')
+    }
+    throw error
+  }
+  if (!data) throw new Error('No se pudo actualizar los puntos. (Posible: RLS bloqueó el update, o el usuario fue eliminado.)')
   return data.points
 }
 
