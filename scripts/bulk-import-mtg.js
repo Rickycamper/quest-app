@@ -22,9 +22,9 @@
 // que parsea línea por línea.
 
 import { createClient } from '@supabase/supabase-js'
-import { readFileSync, createWriteStream, unlinkSync, statSync } from 'node:fs'
-import { Readable } from 'node:stream'
-import { pipeline } from 'node:stream/promises'
+import { readFileSync, createWriteStream, createReadStream, unlinkSync, statSync } from 'node:fs'
+import { parser } from 'stream-json'
+import { streamArray } from 'stream-json/streamers/StreamArray.js'
 
 const SUPABASE_URL = process.env.SUPABASE_URL || readEnvFile('VITE_SUPABASE_URL')
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY
@@ -144,23 +144,42 @@ async function main() {
   await downloadTo(bulkUrl, TMP_FILE)
 
   const fileSize = statSync(TMP_FILE).size
-  console.log(`📖 Parseando JSON (${(fileSize / 1024 / 1024).toFixed(1)} MB)…`)
-  console.log('   ⚠ Esto puede tardar 30s-1min y usar ~1.5 GB RAM')
-  const rawData = JSON.parse(readFileSync(TMP_FILE, 'utf-8'))
-  console.log(`   ✓ ${rawData.length} cartas en el dump`)
+  console.log(`📖 Parseando JSON via stream (${(fileSize / 1024 / 1024).toFixed(1)} MB)…`)
+  console.log('   ℹ Modo streaming: no carga todo el archivo a memoria')
 
-  console.log('🔄 Transformando…')
-  const cards = rawData.map(transformCard).filter(Boolean)
-  // Dedupe por code dentro del dump
+  // Stream-parse: leemos el array de Scryfall carta-por-carta, lo
+  // transformamos y deduplicamos al vuelo. Mantenemos solo el resultado
+  // final en memoria (~85k cartas livianas) en vez del JSON crudo (~1.5GB).
   const seen = new Set()
-  const unique = cards.filter(c => {
-    if (seen.has(c.code)) return false
-    seen.add(c.code)
-    return true
+  const unique = []
+  let totalRaw = 0
+  let skipped = 0
+
+  await new Promise((resolve, reject) => {
+    const pipeline = createReadStream(TMP_FILE)
+      .pipe(parser())
+      .pipe(streamArray())
+
+    pipeline.on('data', ({ value }) => {
+      totalRaw++
+      const card = transformCard(value)
+      if (!card) { skipped++; return }
+      if (seen.has(card.code)) { skipped++; return }
+      seen.add(card.code)
+      unique.push(card)
+      if (totalRaw % 10000 === 0) {
+        process.stdout.write(`\r   📖 Procesadas ${totalRaw} cartas · ${unique.length} únicas listas   `)
+      }
+    })
+    pipeline.on('end', resolve)
+    pipeline.on('error', reject)
   })
+
+  console.log('')
+  console.log(`   ✓ ${totalRaw} cartas en el dump`)
   console.log(`   ✓ ${unique.length} cartas únicas listas para upsert`)
-  if (unique.length !== cards.length) {
-    console.log(`   ℹ ${cards.length - unique.length} duplicadas filtradas`)
+  if (skipped > 0) {
+    console.log(`   ℹ ${skipped} descartadas (tokens, art series o duplicadas)`)
   }
 
   console.log('💾 Upserting a deck_cards…')
