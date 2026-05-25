@@ -22,7 +22,8 @@ on:
           - pokemon
           - mtg
           - onepiece
-          - all       # corre los 4 en orden
+          - gundam
+          - all       # corre los 5 en orden
 
 jobs:
   import:
@@ -61,12 +62,16 @@ jobs:
             onepiece)
               node scripts/bulk-import-onepiece.js
               ;;
+            gundam)
+              node scripts/bulk-import-gundam.js
+              ;;
             all)
-              echo "▶ Corriendo los 4 en orden…"
+              echo "▶ Corriendo los 5 en orden…"
               node scripts/bulk-import-digimon.js
               node scripts/bulk-import-pokemon.js
               node scripts/bulk-import-mtg.js
               node scripts/bulk-import-onepiece.js
+              node scripts/bulk-import-gundam.js
               ;;
             *)
               echo "❌ TCG inválido: ${{ inputs.tcg }}"
