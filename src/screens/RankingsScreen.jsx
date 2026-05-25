@@ -290,7 +290,7 @@ function PodiumLineGraphics({ tint = '#FFFFFF' }) {
 // Shown when the user is on Global × [TCG] — instead of the flat list, gives
 // them a "where do I stand?" view: top-3 podium + per-branch totals as
 // animated bars. Tap a branch → drills into its filtered ranking list.
-function RankingsOverview({ entries, game, onSelectBranch }) {
+function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEditEntry }) {
   // Aggregate by branch: total points + player count + best (lowest) rank
   const byBranch = (() => {
     const map = {}
@@ -393,13 +393,22 @@ function RankingsOverview({ entries, game, onSelectBranch }) {
               const c = colors[podiumIdx]
               const bs = BRANCH_STYLES[e.branch] ?? {}
               const delay = layoutIdx === 1 ? 0 : layoutIdx === 0 ? 220 : 340
+              const interactive = canEdit && onEditEntry
+              const Wrapper = interactive ? 'button' : 'div'
               return (
-                <div key={e.id} style={{
-                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  opacity: animateIn ? 1 : 0,
-                  transform: animateIn ? 'translateY(0)' : 'translateY(12px)',
-                  transition: `opacity 500ms ease ${delay}ms, transform 600ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
-                }}>
+                <Wrapper
+                  key={e.id}
+                  onClick={interactive ? () => onEditEntry(e) : undefined}
+                  title={interactive ? `Editar puntos de @${e.username}` : undefined}
+                  style={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    opacity: animateIn ? 1 : 0,
+                    transform: animateIn ? 'translateY(0)' : 'translateY(12px)',
+                    transition: `opacity 500ms ease ${delay}ms, transform 600ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
+                    background: 'none', border: 'none', padding: 0,
+                    cursor: interactive ? 'pointer' : 'default',
+                    fontFamily: 'inherit',
+                  }}>
                   <div style={{ fontSize: 24, marginBottom: 4 }}>{medals[podiumIdx]}</div>
                   <div style={{
                     width: 50, height: 50, borderRadius: '50%',
@@ -449,7 +458,7 @@ function RankingsOverview({ entries, game, onSelectBranch }) {
                       <CountUpNum value={e.points} startWhen={animateIn} delay={delay + 200} />pts
                     </span>
                   </div>
-                </div>
+                </Wrapper>
               )
             })}
           </div>
@@ -619,7 +628,7 @@ function CountUpNum({ value, startWhen, delay = 0, duration = 1200 }) {
 // Same podium UI as the global overview but tinted with the branch accent
 // color. Used at the top of the branch-specific leaderboard so the top-3 of
 // that branch get a "spotlight" before the long list of everyone else.
-function BranchPodium({ entries, branch, game }) {
+function BranchPodium({ entries, branch, game, canEdit = false, onEditEntry }) {
   const top3 = entries.slice(0, 3)
   const bs   = BRANCH_STYLES[branch] ?? {}
   const gs   = GAME_STYLES[game] ?? GAME_STYLES['MTG']
@@ -723,14 +732,22 @@ function BranchPodium({ entries, branch, game }) {
             }
             const c = colors[podiumIdx]
             const delay = layoutIdx === 1 ? 0 : layoutIdx === 0 ? 220 : 340
+            const interactive = canEdit && onEditEntry
+            const Wrapper = interactive ? 'button' : 'div'
             return (
-              <div key={e.id} style={{
-                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                opacity: animateIn ? 1 : 0,
-                transform: animateIn ? 'translateY(0)' : 'translateY(12px)',
-                transition: `opacity 500ms ease ${delay}ms, transform 600ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
-                cursor: 'pointer',
-              }}>
+              <Wrapper
+                key={e.id}
+                onClick={interactive ? () => onEditEntry(e) : undefined}
+                title={interactive ? `Editar puntos de @${e.username}` : undefined}
+                style={{
+                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  opacity: animateIn ? 1 : 0,
+                  transform: animateIn ? 'translateY(0)' : 'translateY(12px)',
+                  transition: `opacity 500ms ease ${delay}ms, transform 600ms cubic-bezier(0.34,1.56,0.64,1) ${delay}ms`,
+                  background: 'none', border: 'none', padding: 0,
+                  cursor: interactive ? 'pointer' : 'default',
+                  fontFamily: 'inherit',
+                }}>
                 <div style={{ fontSize: 24, marginBottom: 4 }}>{medals[podiumIdx]}</div>
                 <div style={{
                   width: 50, height: 50, borderRadius: '50%',
@@ -770,7 +787,7 @@ function BranchPodium({ entries, branch, game }) {
                     <CountUpNum value={e.points} startWhen={animateIn} delay={delay + 200} />pts
                   </span>
                 </div>
-              </div>
+              </Wrapper>
             )
           })}
         </div>
@@ -1530,6 +1547,17 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
   const [ptsVal,    setPtsVal]    = useState('')
   const [saving,    setSaving]    = useState(false)
   const [editErr,   setEditErr]   = useState('')
+  // Cuando el edit se dispara desde el podio (no de la lista) renderizamos
+  // un modal en vez del editor inline, así funciona también en Global view
+  // donde la lista de top-3 no se renderiza abajo.
+  const [editingFromPodium, setEditingFromPodium] = useState(false)
+  const [editingEntry,      setEditingEntry]      = useState(null)
+  const closeEdit = () => {
+    setEditingId(null)
+    setEditingFromPodium(false)
+    setEditingEntry(null)
+    setEditErr('')
+  }
   // Staff: award points panel
   const [showAward,      setShowAward]      = useState(false)
   const [awardQuery,     setAwardQuery]     = useState('')
@@ -1610,11 +1638,14 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
     return () => { cancelled = true }
   }, [game]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const openEdit = (entry) => {
+  const openEdit = (entry, fromPodium = false) => {
     setEditingId(entry.id)
     setPtsVal(String(entry.points ?? 0))
     setEditErr('')
+    setEditingFromPodium(fromPodium)
+    setEditingEntry(fromPodium ? entry : null)
   }
+  const openEditFromPodium = (entry) => openEdit(entry, true)
 
   const savePts = async (userId) => {
     const n = Math.max(0, Math.round(Number(ptsVal) || 0))
@@ -1635,7 +1666,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
         const saved = await setUserPoints(userId, n)
         setEntries(prev => prev.map(e => e.id === userId ? { ...e, points: saved } : e))
       }
-      setEditingId(null)
+      closeEdit()
     } catch (e) {
       setEditErr(e.message || 'Error al guardar puntos')
     }
@@ -2022,13 +2053,24 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
       ) : !branch ? (
         // Global view (no specific branch) — show animated overview chart
         // instead of the flat list. Lets the user pick a branch to drill in.
-        <RankingsOverview entries={entries} game={game} onSelectBranch={onSelectBranch} />
+        <RankingsOverview
+          entries={entries} game={game}
+          onSelectBranch={onSelectBranch}
+          canEdit={canEdit}
+          onEditEntry={openEditFromPodium}
+        />
       ) : (
         <>
           {/* Branch view — podium for top-3 (if branch has 3+ entries),
               then the rest of the list starting at rank 4. With fewer than
               3 entries the podium looks weird, so fall back to a flat list. */}
-          {entries.length >= 3 && <BranchPodium entries={entries} branch={branch} game={game} />}
+          {entries.length >= 3 && (
+            <BranchPodium
+              entries={entries} branch={branch} game={game}
+              canEdit={canEdit}
+              onEditEntry={openEditFromPodium}
+            />
+          )}
 
           {entries.length >= 3 && (
             <div style={{
@@ -2151,6 +2193,136 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
       })}
         </>
       )}
+
+      {/* Modal de edición de puntos — se abre cuando el admin toca un
+          player del podio (Global view no renderiza lista, así que el
+          inline editor no aplica acá). */}
+      {editingFromPodium && editingEntry && (
+        <PointsEditModal
+          entry={editingEntry}
+          ptsVal={ptsVal}
+          setPtsVal={setPtsVal}
+          onSave={() => savePts(editingEntry.id)}
+          onClose={closeEdit}
+          saving={saving}
+          error={editErr}
+          context={game ? `${game}${branch ? ` · ${branch}` : ' · Global'}` : null}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── PointsEditModal ────────────────────────────────────────────────
+// Editor de puntos full-screen. Usado cuando el edit se dispara desde
+// el podio del Top 3, donde la lista de entries no está renderizada
+// abajo y no se puede mostrar el editor inline.
+function PointsEditModal({ entry, ptsVal, setPtsVal, onSave, onClose, saving, error, context }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 9990,
+      background: 'rgba(0,0,0,0.72)',
+      backdropFilter: 'blur(18px) saturate(140%)',
+      WebkitBackdropFilter: 'blur(18px) saturate(140%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 16,
+      animation: 'fadeUp 200ms ease',
+    }}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 360,
+          background: 'rgba(20,20,30,0.94)',
+          backdropFilter: 'blur(30px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          borderRadius: 16,
+          padding: 18,
+          fontFamily: 'Inter, sans-serif',
+          display: 'flex', flexDirection: 'column', gap: 12,
+        }}
+      >
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 11,
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: '50%', overflow: 'hidden',
+            background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.12)',
+            flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Avatar url={entry.avatar_url} size={44} role={entry.role} isOwner={entry.is_owner} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: 9.5, color: '#6B7280', fontWeight: 700,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+            }}>EDITAR PUNTOS</div>
+            <div style={{
+              fontSize: 15, fontWeight: 800, color: '#FFFFFF',
+              letterSpacing: '-0.005em', marginTop: 2,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>@{entry.username}</div>
+            {context && (
+              <div style={{
+                fontSize: 10.5, color: '#9CA3AF', marginTop: 1,
+              }}>{context}</div>
+            )}
+          </div>
+        </div>
+
+        <input
+          type="number" min="0"
+          value={ptsVal}
+          onChange={e => setPtsVal(e.target.value)}
+          autoFocus
+          onKeyDown={e => { if (e.key === 'Enter') onSave() }}
+          style={{
+            width: '100%', padding: '11px 14px', borderRadius: 10,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            color: '#FFFFFF', outline: 'none',
+            fontFamily: 'Inter, sans-serif', fontWeight: 700,
+            boxSizing: 'border-box',
+          }}
+        />
+
+        {error && (
+          <div style={{
+            padding: '8px 12px', borderRadius: 8,
+            background: 'rgba(239,68,68,0.10)',
+            border: '1px solid rgba(239,68,68,0.25)',
+            color: '#F87171', fontSize: 12,
+          }}>{error}</div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onClose} disabled={saving} style={{
+            flex: 1, padding: '10px 0', borderRadius: 10,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            color: '#9CA3AF', fontSize: 13, fontWeight: 700,
+            cursor: saving ? 'default' : 'pointer',
+            fontFamily: 'Inter, sans-serif',
+          }}>Cancelar</button>
+          <button onClick={onSave} disabled={saving} style={{
+            flex: 1.4, padding: '10px 0', borderRadius: 10,
+            background: saving
+              ? 'rgba(255,255,255,0.04)'
+              : 'linear-gradient(135deg, #4ADE80 0%, #22D3EE 100%)',
+            border: 'none', color: saving ? '#555' : '#062013',
+            fontSize: 13, fontWeight: 800,
+            cursor: saving ? 'default' : 'pointer',
+            fontFamily: 'Inter, sans-serif',
+            boxShadow: saving ? 'none' : '0 4px 14px rgba(74,222,128,0.30), inset 0 1px 0 rgba(255,255,255,0.30)',
+          }}>{saving ? 'Guardando…' : '✓ Guardar'}</button>
+        </div>
+      </div>
     </div>
   )
 }
