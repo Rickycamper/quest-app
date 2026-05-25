@@ -25,6 +25,7 @@ import { createClient } from '@supabase/supabase-js'
 import { readFileSync, createWriteStream, createReadStream, unlinkSync, statSync } from 'node:fs'
 import { parser } from 'stream-json/parser.js'
 import { streamArray } from 'stream-json/streamers/stream-array.js'
+import { chain } from 'stream-chain'
 
 const SUPABASE_URL = process.env.SUPABASE_URL || readEnvFile('VITE_SUPABASE_URL')
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY
@@ -156,9 +157,11 @@ async function main() {
   let discarded = 0
 
   await new Promise((resolve, reject) => {
-    const pipeline = createReadStream(TMP_FILE)
-      .pipe(parser())
-      .pipe(streamArray())
+    const pipeline = chain([
+      createReadStream(TMP_FILE),
+      parser(),
+      streamArray(),
+    ])
 
     pipeline.on('data', ({ value }) => {
       totalRaw++
