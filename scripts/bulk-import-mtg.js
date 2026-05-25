@@ -153,7 +153,7 @@ async function main() {
   const seen = new Set()
   const unique = []
   let totalRaw = 0
-  let skipped = 0
+  let discarded = 0
 
   await new Promise((resolve, reject) => {
     const pipeline = createReadStream(TMP_FILE)
@@ -163,8 +163,8 @@ async function main() {
     pipeline.on('data', ({ value }) => {
       totalRaw++
       const card = transformCard(value)
-      if (!card) { skipped++; return }
-      if (seen.has(card.code)) { skipped++; return }
+      if (!card) { discarded++; return }
+      if (seen.has(card.code)) { discarded++; return }
       seen.add(card.code)
       unique.push(card)
       if (totalRaw % 10000 === 0) {
@@ -178,8 +178,8 @@ async function main() {
   console.log('')
   console.log(`   ✓ ${totalRaw} cartas en el dump`)
   console.log(`   ✓ ${unique.length} cartas únicas listas para upsert`)
-  if (skipped > 0) {
-    console.log(`   ℹ ${skipped} descartadas (tokens, art series o duplicadas)`)
+  if (discarded > 0) {
+    console.log(`   ℹ ${discarded} descartadas (tokens, art series o duplicadas)`)
   }
 
   console.log('💾 Upserting a deck_cards…')
