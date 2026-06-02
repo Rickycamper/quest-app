@@ -4628,8 +4628,12 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
 
       {['leaderboard', 'tournaments', 'liga'].map(t => (
         <div key={t} style={{ display: t === tab ? 'block' : 'none' }}>
-          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={profile?.role === 'admin'} activeSeason={activeSeason} onSelectBranch={setBranch} onSelectGame={setGame} />}
-          {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={profile?.role === 'admin'} openTournamentId={openTournamentId} />}
+          {/* isAdmin acá significa "puede editar/asignar puntos". Antes era role==='admin'
+              (excluía owners y staff aunque la DB los autoriza); ahora usamos isStaff
+              del AuthContext que ya cubre admin + staff + is_owner=true y matchea
+              exactamente las policies de profiles_update / ranking_claims / rpo_write. */}
+          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={isStaff} activeSeason={activeSeason} onSelectBranch={setBranch} onSelectGame={setGame} />}
+          {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={isStaff} openTournamentId={openTournamentId} />}
           {t === 'liga' && <LeagueTab key={`${game}-${branch}`} game={game} branch={branch} profile={profile} isStaff={isStaff} onViewProfile={onViewProfile} onCreateLeague={onCreateLeague} openLeagueId={openLeagueId} />}
         </div>
       ))}

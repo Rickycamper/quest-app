@@ -1140,7 +1140,9 @@ export async function staffAwardRankingPoints(targetUserId, { game, branch, posi
 
   const pts = RANKING_PTS[position] ?? 1
 
-  // Insert approved claim for the target user
+  // Paper trail first: insert approved claim. La RLS de ranking_claims
+  // (ranking_claims_staff_insert) ya incluye is_owner OR role IN
+  // ('admin','staff'), así que esto funciona para todos los roles válidos.
   const { data: claim, error: ce } = await supabase
     .from('ranking_claims')
     .insert({
@@ -1155,8 +1157,22 @@ export async function staffAwardRankingPoints(targetUserId, { game, branch, posi
     .single()
   if (ce) throw ce
 
-  // Add points to their profile
-  await adjustUserPoints(targetUserId, pts)
+  // Atomicidad sin transacciones: si bump de profiles.points falla
+  // (típico: profiles_update RLS sin is_owner), revertimos el claim
+  // para no dejar estado inconsistente (claim aprobado sin reflejo
+  // en el ranking general).
+  try {
+    await adjustUserPoints(targetUserId, pts)
+  } catch (e) {
+    // Best-effort revert — si falla también, al menos la app ya
+    // tiró el error original al caller.
+    try {
+      await supabase.from('ranking_claims').delete().eq('id', claim.id)
+    } catch (revertErr) {
+      console.warn('[staffAwardRankingPoints] revert del claim falló:', revertErr?.message)
+    }
+    throw e
+  }
 
   return { claimId: claim?.id, ptsAdded: pts }
 }
@@ -1396,7 +1412,7 @@ export async function getPendingClaims(branch = null) {
 }
 
 export async function reviewClaim(claimId, status) {
-  // Fetch session + claim data in parallel
+  // Fetch session + claim data in parallel — ambos son reads independientes
   const [{ data: { session } }, { data: claim }] = await Promise.all([
     supabase.auth.getSession(),
     supabase.from('ranking_claims')
@@ -1404,42 +1420,63 @@ export async function reviewClaim(claimId, status) {
       .eq('id', claimId).single(),
   ])
 
-  // Update claim status + adjust points in parallel (independent operations)
-  const updateClaim = supabase
+  if (!claim) throw new Error('Claim no encontrado')
+
+  const pts = RANKING_PTS[claim.position] ?? 1
+  const isApproved = status === 'approved'
+
+  // Antes corría updateClaim + adjustUserPoints en Promise.all. Problema:
+  // si adjustUserPoints fallaba por RLS (profiles_update sin is_owner),
+  // el claim igual quedaba aprobado pero el ranking general no se
+  // actualizaba → bug silencioso "le aprobé el claim y no le sumó pts".
+  //
+  // Nuevo orden: si vamos a aprobar, ajustamos puntos PRIMERO. Si eso
+  // explota, el claim se queda pendiente y el caller ve el error real.
+  // Después marcamos el claim — y si esa segunda etapa falla, hacemos
+  // best-effort revert del bump de puntos para no dejar inconsistencia.
+  if (isApproved) {
+    await adjustUserPoints(claim.user_id, pts)
+  }
+
+  const { error } = await supabase
     .from('ranking_claims')
     .update({ status, reviewed_by: session?.user?.id, reviewed_at: new Date().toISOString() })
     .eq('id', claimId)
 
-  const updatePoints = (status === 'approved' && claim)
-    ? adjustUserPoints(claim.user_id, RANKING_PTS[claim.position] ?? 1)
-    : Promise.resolve()
-
-  const [{ error }] = await Promise.all([updateClaim, updatePoints])
-
   if (error) {
     const isSchemaError = error.code === 'PGRST204' || error.message?.includes('reviewed_by') || error.message?.includes('reviewed_at')
     if (isSchemaError) {
+      // Schema antigua: reintentamos sin reviewed_by/reviewed_at
       const fallback = await supabase.from('ranking_claims').update({ status }).eq('id', claimId)
-      if (fallback.error) throw fallback.error
+      if (fallback.error) {
+        // Best-effort: revertimos los puntos que acabamos de sumar
+        if (isApproved) {
+          try { await adjustUserPoints(claim.user_id, -pts) } catch {}
+        }
+        throw fallback.error
+      }
     } else {
+      // Revertimos los puntos antes de re-throw
+      if (isApproved) {
+        try { await adjustUserPoints(claim.user_id, -pts) } catch (revertErr) {
+          console.warn('[reviewClaim] revert de puntos falló:', revertErr?.message)
+        }
+      }
       throw error
     }
   }
 
-  // Notify fire-and-forget — doesn't block the UI
-  if (claim) {
-    const pts = RANKING_PTS[claim.position] ?? 1
-    const isApproved = status === 'approved'
-    createNotification(
-      claim.user_id,
-      isApproved ? 'claim_approved' : 'claim_rejected',
-      isApproved ? '✅ Claim aprobado' : '❌ Claim rechazado',
-      isApproved
-        ? `Tu claim de ${claim.tournament_name} fue aprobado. +${pts} punto${pts !== 1 ? 's' : ''} sumados a tu perfil.`
-        : `Tu claim de ${claim.tournament_name} fue revisado y no pudo ser aprobado esta vez.`,
-      { claimId }
-    )
-  }
+  // Notify fire-and-forget — doesn't block the UI. claim/pts/isApproved
+  // ya están en scope desde arriba (guarda de null + cálculo único).
+  createNotification(
+    claim.user_id,
+    isApproved ? 'claim_approved' : 'claim_rejected',
+    isApproved ? '✅ Claim aprobado' : '❌ Claim rechazado',
+    isApproved
+      ? `Tu claim de ${claim.tournament_name} fue aprobado. +${pts} punto${pts !== 1 ? 's' : ''} sumados a tu perfil.`
+      : `Tu claim de ${claim.tournament_name} fue revisado y no pudo ser aprobado esta vez.`,
+    { claimId }
+  )
 }
 
 // ── FOLDER / CARDS ───────────────────────────
