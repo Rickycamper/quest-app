@@ -58,6 +58,16 @@ function Icon({ id, size = 24, color = 'currentColor' }) {
       </svg>
     )
   }
+  // 'live' — punto rojo con ondas de transmisión (badge en vivo)
+  if (id === 'live') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" style={{ display: 'block' }}>
+        <circle cx="12" cy="12" r="2.5" fill={color} stroke="none" />
+        <path d="M8 8a5.5 5.5 0 0 0 0 8M16 8a5.5 5.5 0 0 1 0 8" />
+        <path d="M5 5a9 9 0 0 0 0 14M19 5a9 9 0 0 1 0 14" opacity="0.55" />
+      </svg>
+    )
+  }
   const Lucide = HUB_ICON_MAP[id]
   if (!Lucide) return null
   return <Lucide size={size} color={color} strokeWidth={1.8} />
@@ -1815,11 +1825,20 @@ const TILES = [
 ]
 
 // ── Main component ────────────────────────────
-export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onBattleNow, profile, initialView = null }) {
+export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onOpenLive, onBattleNow, profile, canLive = false, initialView = null }) {
   const [view, setView] = useState(initialView) // null | 'sucursales' | 'membresia' | 'qpoints'
+
+  // Tile LIVE — sorteo en vivo. Por ahora solo visible para owner/staff
+  // (lo estamos probando primero). Va primero en el grid para destacar.
+  const LIVE_TILE = {
+    id: 'live', icon: 'live', label: 'LIVE', desc: 'Sorteo en vivo',
+    color: '#F87171', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.22)', enabled: true,
+  }
+  const tiles = canLive ? [LIVE_TILE, ...TILES] : TILES
 
   const handleTile = (tile) => {
     if (!tile.enabled) return
+    if (tile.id === 'live')        { onOpenLive?.(); onClose(); return }
     if (tile.id === 'subastas')    { onOpenAuction(); onClose(); return }
     if (tile.id === 'lifecounter') { onOpenLifeCounter(); onClose(); return }
     if (tile.id === 'folder')      { onOpenFolder?.(); onClose(); return }
@@ -1933,7 +1952,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
             ¿Qué querés explorar?
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {TILES.map(tile => (
+            {tiles.map(tile => (
               <button
                 key={tile.id}
                 onClick={() => handleTile(tile)}

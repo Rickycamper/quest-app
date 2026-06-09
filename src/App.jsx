@@ -31,6 +31,7 @@ const AdminScreen           = lazy(() => import('./screens/AdminScreen'))
 const AuctionScreen         = lazy(() => import('./screens/AuctionScreen'))
 const QuestHubScreen        = lazy(() => import('./screens/QuestHubScreen'))
 const LifeCounterScreen     = lazy(() => import('./screens/LifeCounterScreen'))
+const LiveDrawScreen        = lazy(() => import('./screens/LiveDrawScreen'))
 const ChatScreen            = lazy(() => import('./screens/ChatScreen'))
 const LogMatchModal         = lazy(() => import('./screens/LogMatchModal'))
 const SearchScreen          = lazy(() => import('./screens/SearchScreen'))
@@ -348,6 +349,7 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   const [showHub,           setShowHub]           = useState(false)
   const [hubInitialView,    setHubInitialView]    = useState(null)
   const [showLifeCounter,   setShowLifeCounter]   = useState(false)
+  const [showLive,          setShowLive]          = useState(false)
   const [lcInvite,          setLcInvite]          = useState(null) // active invite payload while LC is open
   const [sharedPostId,      setSharedPostId]      = useState(null) // post abierto por ?post=
 
@@ -555,6 +557,8 @@ const needsTerms = profile && !profile.terms_accepted_at
           onClose={() => { setShowHub(false); setHubInitialView(null) }}
           onOpenAuction={() => { setShowHub(false); setShowAuction(true) }}
           onOpenLifeCounter={() => { setShowHub(false); setShowLifeCounter(true) }}
+          onOpenLive={() => { setShowHub(false); setShowLive(true) }}
+          canLive={true}
           onBattleNow={() => { setShowHub(false); setVsUser(null); setShowMatchModal(true) }}
           onOpenTracking={() => { setShowHub(false); setShowTracking(true) }}
           onOpenFolder={() => { setShowHub(false); setActiveTab('folder'); setVisitedTabs(prev => { const n = new Set(prev); n.add('folder'); return n }) }}
@@ -601,6 +605,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           onViewProfile={(id) => { setShowLifeCounter(false); setLcInvite(null); setViewingUserId(id) }}
         />
       )}
+      {showLive && <LiveDrawScreen onClose={() => setShowLive(false)} />}
 
       {/* Shared post overlay — abre directo cuando llegás por ?post=<id> */}
       {sharedPostId && (
