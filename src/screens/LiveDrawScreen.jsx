@@ -51,7 +51,7 @@ const DEFAULT_PLAYERS = [
   { name: 'Dubin',     country: 'Bélgica',       flag: '🇧🇪' },
   { name: 'Mario',     country: 'Nueva Zelanda', flag: '🇳🇿' },
   { name: 'Jairo',     country: 'Haití',         flag: '🇭🇹' },
-  { name: 'Licky',     country: 'Inglaterra',    flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { name: 'Dilan',     country: 'Canadá',        flag: '🇨🇦' },
 ]
 
 function shuffle(arr) {
