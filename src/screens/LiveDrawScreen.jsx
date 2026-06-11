@@ -5,7 +5,7 @@
 // 100% client-side — no toca Supabase.
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { X, Plus, Trash2, Shuffle, RotateCcw, Dices } from 'lucide-react'
+import { X, Plus, Trash2, Shuffle, RotateCcw, Dices, Download } from 'lucide-react'
 
 // Acento One Piece (rojo pirata)
 const RED = '#EF4444'
@@ -29,6 +29,82 @@ function groupCapacity(total, n, gi) {
 function sizeLabel(total, n) {
   const base = Math.floor(total / n), rem = total % n
   return rem === 0 ? `${base}` : `${base}–${base + 1}`
+}
+
+// rect redondeado (fallback por si el browser no tiene ctx.roundRect)
+function roundRect(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); return }
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
+
+// Genera una imagen PNG LIMPIA de los grupos (sin confeti ni animaciones)
+// usando canvas, y dispara la descarga. Sin librerías externas.
+function downloadGroupsImage(title, groups, numGroups, total) {
+  const SCALE = 2
+  const COLS = numGroups > 1 ? 2 : 1
+  const rows = Math.ceil(numGroups / COLS)
+  const maxPer = Math.max(1, ...groups.map(g => g.length))
+  const PAD = 40, GAP = 24, cardW = 440, rowH = 58, headH = 56, hdr = 140
+  const cardH = headH + maxPer * rowH + 16
+  const W = PAD * 2 + COLS * cardW + (COLS - 1) * GAP
+  const H = hdr + rows * cardH + (rows - 1) * GAP + PAD
+  const cv = document.createElement('canvas')
+  cv.width = W * SCALE; cv.height = H * SCALE
+  const ctx = cv.getContext('2d')
+  ctx.scale(SCALE, SCALE)
+  const FONT = "-apple-system, 'Inter', sans-serif"
+
+  // Fondo limpio con un glow rojo estático (sin animación, sin confeti)
+  ctx.fillStyle = '#0A0A0A'; ctx.fillRect(0, 0, W, H)
+  const gr = ctx.createRadialGradient(W * 0.3, 10, 0, W * 0.3, 10, W * 0.85)
+  gr.addColorStop(0, 'rgba(239,68,68,0.13)'); gr.addColorStop(1, 'rgba(239,68,68,0)')
+  ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H)
+
+  // Título
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'center'
+  ctx.fillStyle = '#FFFFFF'; ctx.font = `800 36px ${FONT}`
+  ctx.fillText(`🏴‍☠️ ${title || 'Sorteo'}`, W / 2, 56)
+  ctx.fillStyle = '#9CA3AF'; ctx.font = `600 17px ${FONT}`
+  ctx.fillText(`${numGroups} grupos de ${sizeLabel(total, numGroups)} · ${total} jugadores`, W / 2, 96)
+
+  groups.forEach((grp, gi) => {
+    const col = gi % COLS, row = Math.floor(gi / COLS)
+    const x = PAD + col * (cardW + GAP)
+    const y = hdr + row * (cardH + GAP)
+    // card
+    ctx.fillStyle = 'rgba(255,255,255,0.03)'; roundRect(ctx, x, y, cardW, cardH, 18); ctx.fill()
+    ctx.strokeStyle = 'rgba(255,255,255,0.09)'; ctx.lineWidth = 1; roundRect(ctx, x, y, cardW, cardH, 18); ctx.stroke()
+    // header pill
+    ctx.fillStyle = 'rgba(239,68,68,0.14)'; roundRect(ctx, x + 16, y + 13, 138, 32, 9); ctx.fill()
+    ctx.fillStyle = '#F87171'; ctx.font = `900 17px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
+    ctx.fillText(`GRUPO ${LETTERS[gi]}`, x + 30, y + 30)
+    // players
+    grp.forEach((p, pi) => {
+      const py = y + headH + pi * rowH + rowH / 2
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
+      ctx.font = '30px sans-serif'
+      ctx.fillText(p.flag || '🏴', x + 24, py)
+      ctx.fillStyle = '#FFFFFF'; ctx.font = `800 22px ${FONT}`
+      ctx.fillText(p.name, x + 72, py - 9)
+      if (p.country) { ctx.fillStyle = '#9CA3AF'; ctx.font = `600 14px ${FONT}`; ctx.fillText(p.country, x + 72, py + 13) }
+    })
+  })
+
+  cv.toBlob((blob) => {
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${(title || 'sorteo').trim().replace(/\s+/g, '_')}_grupos.png`
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }, 'image/png')
 }
 
 // ── Lista pre-cargada (24 jugadores) ──────────
@@ -509,7 +585,16 @@ export default function LiveDrawScreen({ onClose }) {
                   <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{numGroups} grupos de {sizeLabel(order.length, numGroups)} · {order.length} jugadores</div>
                 </div>
                 <GroupsGrid committed={committed} numGroups={numGroups} total={order.length} nextGroupIdx={-1} lastLockedIdx={-1} />
-                <button onClick={reset} style={{ width: '100%', marginTop: 20, padding: '14px 0', borderRadius: 14, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: '#FFF', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <button
+                  onClick={() => {
+                    const groups = Array.from({ length: numGroups }, () => [])
+                    committed.forEach((p, i) => groups[i % numGroups].push(p))
+                    downloadGroupsImage(title, groups, numGroups, order.length)
+                  }}
+                  style={{ width: '100%', marginTop: 20, padding: '15px 0', borderRadius: 14, background: `linear-gradient(135deg, ${RED} 0%, #B91C1C 100%)`, border: 'none', color: '#FFF', fontSize: 15, fontWeight: 900, letterSpacing: '0.02em', cursor: 'pointer', fontFamily: 'Inter, sans-serif', boxShadow: '0 8px 24px rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
+                  <Download size={18} strokeWidth={2.4} /> Descargar imagen
+                </button>
+                <button onClick={reset} style={{ width: '100%', marginTop: 10, padding: '14px 0', borderRadius: 14, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: '#FFF', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <Shuffle size={17} /> Sortear de nuevo
                 </button>
               </>
