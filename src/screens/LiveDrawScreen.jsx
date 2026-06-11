@@ -13,7 +13,8 @@ const RED_SOFT = '#F87171'
 const GOLD = '#FBBF24'
 const CONFETTI = ['#EF4444', '#F87171', '#FBBF24', '#FB923C', '#FFFFFF', '#F472B6']
 
-const NUM_GROUPS = 4           // siempre 4 grupos; el tamaño se reparte parejo
+const DEFAULT_NUM_GROUPS = 6   // configurable en pantalla
+const GROUP_OPTIONS = [2, 4, 6, 8]
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 const FLICKER_MS = 65          // velocidad de la ruleta
 const SPIN_MS = 1700           // cuánto gira antes de fijar
@@ -30,28 +31,32 @@ function sizeLabel(total, n) {
   return rem === 0 ? `${base}` : `${base}–${base + 1}`
 }
 
-// ── Lista mundial pre-cargada ─────────────────
+// ── Lista pre-cargada (24 jugadores) ──────────
 const DEFAULT_PLAYERS = [
-  { name: 'Ricky',     country: 'Japón',         flag: '🇯🇵' },
-  { name: 'Aldair',    country: 'Brasil',        flag: '🇧🇷' },
-  { name: 'Criss',     country: 'Noruega',       flag: '🇳🇴' },
-  { name: 'Beermann',  country: 'Esuatini',      flag: '🇸🇿' },
-  { name: 'Ángel',     country: 'Portugal',      flag: '🇵🇹' },
-  { name: 'Caribu',    country: 'Italia',        flag: '🇮🇹' },
-  { name: 'Aaron',     country: 'Francia',       flag: '🇫🇷' },
-  { name: 'Flufal',    country: 'Perú',          flag: '🇵🇪' },
-  { name: 'Dani',      country: 'Colombia',      flag: '🇨🇴' },
-  { name: 'Orlando',   country: 'Alemania',      flag: '🇩🇪' },
-  { name: 'Franklin',  country: 'Argentina',     flag: '🇦🇷' },
-  { name: 'Nochi',     country: 'China',         flag: '🇨🇳' },
-  { name: 'caro',      country: 'Suecia',        flag: '🇸🇪' },
-  { name: 'smigol',    country: 'Holanda',       flag: '🇳🇱' },
-  { name: 'Jeffrey',   country: 'España',        flag: '🇪🇸' },
-  { name: 'Xexe',      country: 'Panamá',        flag: '🇵🇦' },
-  { name: 'Dubin',     country: 'Bélgica',       flag: '🇧🇪' },
-  { name: 'Mario',     country: 'Nueva Zelanda', flag: '🇳🇿' },
-  { name: 'Jairo',     country: 'Haití',         flag: '🇭🇹' },
-  { name: 'Dilan',     country: 'Canadá',        flag: '🇨🇦' },
+  { name: 'Polar',         country: 'Portugal',      flag: '🇵🇹' },
+  { name: 'Fredy A',       country: 'Brasil',        flag: '🇧🇷' },
+  { name: 'Ninbor',        country: 'Panamá',        flag: '🇵🇦' },
+  { name: 'epicliu',       country: 'Corea del Sur', flag: '🇰🇷' },
+  { name: 'Marcos',        country: 'Uzbekistán',    flag: '🇺🇿' },
+  { name: 'Yemil',         country: 'Irak',          flag: '🇮🇶' },
+  { name: 'Rolo',          country: 'R.D. del Congo',flag: '🇨🇩' },
+  { name: 'Josetel',       country: 'Japón',         flag: '🇯🇵' },
+  { name: 'Pipe',          country: 'Argentina',     flag: '🇦🇷' },
+  { name: 'Ricardo F',     country: 'México',        flag: '🇲🇽' },
+  { name: 'Sebas',         country: 'España',        flag: '🇪🇸' },
+  { name: 'Diego',         country: 'Alemania',      flag: '🇩🇪' },
+  { name: '🥫',            country: 'Noruega',       flag: '🇳🇴' },
+  { name: 'Profe',         country: 'Países Bajos',  flag: '🇳🇱' },
+  { name: 'Omar',          country: 'Canadá',        flag: '🇨🇦' },
+  { name: 'Joel',          country: 'Uruguay',       flag: '🇺🇾' },
+  { name: 'Derian F',      country: 'Francia',       flag: '🇫🇷' },
+  { name: 'Rey Pirata',    country: 'Rusia',         flag: '🇷🇺' },
+  { name: 'Carlos',        country: 'Cabo Verde',    flag: '🇨🇻' },
+  { name: 'Gabriel',       country: 'Jordania',      flag: '🇯🇴' },
+  { name: 'FreezerPoint',  country: 'Inglaterra',    flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { name: 'Aris Mendieta', country: 'Arabia Saudí',  flag: '🇸🇦' },
+  { name: 'BeamerSam',     country: 'Croacia',       flag: '🇭🇷' },
+  { name: 'Gus',           country: 'Turquía',       flag: '🇹🇷' },
 ]
 
 function shuffle(arr) {
@@ -257,7 +262,7 @@ function PlayerChip({ player, justLocked = false }) {
 }
 
 // ── Setup ─────────────────────────────────────
-function SetupView({ title, setTitle, players, setPlayers, onStart }) {
+function SetupView({ title, setTitle, players, setPlayers, groupsWanted, setGroupsWanted, onStart }) {
   const [name, setName] = useState('')
   const [flag, setFlag] = useState('')
   const add = () => {
@@ -267,13 +272,29 @@ function SetupView({ title, setTitle, players, setPlayers, onStart }) {
   }
   const remove = (i) => setPlayers(p => p.filter((_, idx) => idx !== i))
   const canStart = players.length >= 2
-  const numGroups = Math.min(NUM_GROUPS, players.length) || 1
+  const numGroups = Math.min(groupsWanted, players.length) || 1
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 120px', fontFamily: 'Inter, sans-serif' }}>
       <label style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', letterSpacing: '0.06em' }}>EVENTO</label>
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Mundial One Piece"
         style={{ width: '100%', marginTop: 6, marginBottom: 16, padding: '12px 14px', borderRadius: 12, background: '#111', border: '1px solid #2A2A2A', color: '#FFF', fontWeight: 700, outline: 'none' }} />
+
+      {/* Selector de cantidad de grupos */}
+      <label style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', letterSpacing: '0.06em' }}>GRUPOS</label>
+      <div style={{ display: 'flex', gap: 8, marginTop: 6, marginBottom: 14 }}>
+        {GROUP_OPTIONS.map(n => (
+          <button key={n} onClick={() => setGroupsWanted(n)} disabled={n > players.length} style={{
+            flex: 1, padding: '10px 0', borderRadius: 10,
+            cursor: n > players.length ? 'default' : 'pointer',
+            opacity: n > players.length ? 0.35 : 1,
+            background: groupsWanted === n ? 'rgba(239,68,68,0.12)' : '#111',
+            border: `1.5px solid ${groupsWanted === n ? RED : '#2A2A2A'}`,
+            color: groupsWanted === n ? RED_SOFT : '#9CA3AF', fontWeight: 800, fontSize: 14,
+            fontFamily: 'Inter, sans-serif',
+          }}>{n}</button>
+        ))}
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18, padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
         <span style={{ fontSize: 20 }}>🏴‍☠️</span>
@@ -367,6 +388,7 @@ export default function LiveDrawScreen({ onClose }) {
   const [phase, setPhase] = useState('setup')   // 'setup' | 'drawing' | 'done'
   const [title, setTitle] = useState('Mundial One Piece')
   const [players, setPlayers] = useState(DEFAULT_PLAYERS)
+  const [groupsWanted, setGroupsWanted] = useState(DEFAULT_NUM_GROUPS)
 
   const [order, setOrder] = useState([])
   const [revealCount, setRevealCount] = useState(0)  // commiteados al grid
@@ -374,7 +396,9 @@ export default function LiveDrawScreen({ onClose }) {
   const [lastLocked, setLastLocked] = useState(-1)
   const timers = useRef([])
 
-  const numGroups = Math.min(NUM_GROUPS, order.length) || 1
+  // Durante el sorteo usamos la cantidad de grupos elegida, acotada a la
+  // cantidad de jugadores (no puede haber más grupos que jugadores).
+  const numGroups = Math.min(groupsWanted, order.length) || 1
   const finished = phase === 'done'
 
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = [] }
@@ -456,7 +480,7 @@ export default function LiveDrawScreen({ onClose }) {
 
       {/* SETUP */}
       {phase === 'setup' && (
-        <SetupView title={title} setTitle={setTitle} players={players} setPlayers={setPlayers} onStart={start} />
+        <SetupView title={title} setTitle={setTitle} players={players} setPlayers={setPlayers} groupsWanted={groupsWanted} setGroupsWanted={setGroupsWanted} onStart={start} />
       )}
 
       {/* DRAWING / DONE */}
