@@ -772,10 +772,10 @@ const needsTerms = profile && !profile.terms_accepted_at
                 </button>
               )
             )}
-            {/* Admin/owner: avatar button (opens own profile, where the
-                Avisos card lives). Regular users: the original '+'
-                post button — they keep the existing UX. */}
-            {activeTab !== 'shop' && !isGuest && (isOwner || isAdmin) && (
+            {/* Todos los usuarios logueados (regular, admin, owner) ven el
+                avatar que abre su perfil (donde están Avisos/notificaciones).
+                Antes los usuarios regulares veían un '+' — versión vieja. */}
+            {activeTab !== 'shop' && !isGuest && (
               <button
                 onClick={() => { if (profile?.id) setViewingUserId(profile.id) }}
                 aria-label="Abrir mi perfil"
@@ -810,8 +810,8 @@ const needsTerms = profile && !profile.terms_accepted_at
                 )}
               </button>
             )}
-            {/* Regular users: original '+' post button in header */}
-            {activeTab !== 'shop' && !(isOwner || isAdmin) && (
+            {/* Invitados: botón '+' que dispara el registro al intentar postear */}
+            {activeTab !== 'shop' && isGuest && (
               <button
                 onClick={() => requireAuth(() => setShowPost(true))}
                 aria-label="Crear post"
