@@ -92,3 +92,38 @@ CREATE POLICY "package_events_insert_staff" ON public.package_events
         AND ( (SELECT auth.uid()) = pk.sender_id OR (SELECT auth.uid()) = pk.recipient_id )
     )
   );
+
+-- ─────────────────────────────────────────────
+-- Otros casos del MISMO bug (drift cliente↔DB) detectados en la auditoría.
+-- El cliente ya habilita estas acciones a staff/admin/owner; la DB las
+-- limitaba a 'admin' (excluyendo staff y el owner-booleano). Alineamos con
+-- is_staff() = owner | staff | admin.
+-- ─────────────────────────────────────────────
+
+-- 5) Subastas: terminar/editar estaba limitado a role='admin'
+--    (excluía staff y owner-booleano).
+DROP POLICY IF EXISTS "auctions_update_admin" ON public.auctions;
+CREATE POLICY "auctions_update_admin" ON public.auctions
+  FOR UPDATE USING ( public.is_staff() );
+
+-- 6) Subastas: crear excluía al owner-booleano. (No agrego premium/tiers
+--    pagos acá: eso es decisión de producto — ver nota en el resumen.)
+DROP POLICY IF EXISTS "auctions_insert_staff" ON public.auctions;
+CREATE POLICY "auctions_insert_staff" ON public.auctions
+  FOR INSERT WITH CHECK ( public.is_staff() );
+
+-- 7) Catálogo de cartas (deck_cards): actualizar/borrar excluía a 'staff'.
+DROP POLICY IF EXISTS "deck_cards: update admin" ON public.deck_cards;
+CREATE POLICY "deck_cards: update admin" ON public.deck_cards
+  FOR UPDATE TO authenticated USING ( public.is_staff() );
+
+DROP POLICY IF EXISTS "deck_cards: delete admin" ON public.deck_cards;
+CREATE POLICY "deck_cards: delete admin" ON public.deck_cards
+  FOR DELETE TO authenticated USING ( public.is_staff() );
+
+-- 8) Canjes de Q Coins (q_redemptions): la policy listaba el literal 'owner'
+--    (que NO es un valor válido del enum role) y no chequeaba el owner-booleano,
+--    así que un owner no-admin/staff no podía ver los canjes pendientes.
+DROP POLICY IF EXISTS "admins manage redemptions" ON public.q_redemptions;
+CREATE POLICY "admins manage redemptions" ON public.q_redemptions
+  FOR ALL USING ( public.is_staff() ) WITH CHECK ( public.is_staff() );
