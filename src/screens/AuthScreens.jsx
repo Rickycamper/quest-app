@@ -1145,7 +1145,7 @@ export function ResetPasswordScreen({ onDone, recoverySession }) {
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', marginBottom: 6 }}>New password</div>
         <div style={{ position: 'relative' }}>
-          <input type={showPw ? 'text' : 'password'} placeholder="Mínimo 6 caracteres" value={newPw}
+          <input type={showPw ? 'text' : 'password'} placeholder="Mínimo 8 caracteres" value={newPw}
             onChange={e => setNewPw(e.target.value)}
             autoComplete="new-password"
             style={{ ...inputLight, paddingRight: 44 }}

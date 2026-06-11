@@ -106,11 +106,20 @@ DROP POLICY IF EXISTS "auctions_update_admin" ON public.auctions;
 CREATE POLICY "auctions_update_admin" ON public.auctions
   FOR UPDATE USING ( public.is_staff() );
 
--- 6) Subastas: crear excluía al owner-booleano. (No agrego premium/tiers
---    pagos acá: eso es decisión de producto — ver nota en el resumen.)
+-- 6) Subastas: crear. "Poder subastar" es un beneficio de los planes pagos
+--    (wizard/mage/archmage + premium legacy), además de staff/admin/owner.
+--    Antes excluía a esos planes y al owner-booleano.
 DROP POLICY IF EXISTS "auctions_insert_staff" ON public.auctions;
 CREATE POLICY "auctions_insert_staff" ON public.auctions
-  FOR INSERT WITH CHECK ( public.is_staff() );
+  FOR INSERT WITH CHECK (
+    public.is_staff()
+    OR EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = (SELECT auth.uid())
+        AND role = ANY (ARRAY['premium'::user_role, 'wizard'::user_role,
+                              'mage'::user_role, 'archmage'::user_role])
+    )
+  );
 
 -- 7) Catálogo de cartas (deck_cards): actualizar/borrar excluía a 'staff'.
 DROP POLICY IF EXISTS "deck_cards: update admin" ON public.deck_cards;
@@ -127,3 +136,46 @@ CREATE POLICY "deck_cards: delete admin" ON public.deck_cards
 DROP POLICY IF EXISTS "admins manage redemptions" ON public.q_redemptions;
 CREATE POLICY "admins manage redemptions" ON public.q_redemptions
   FOR ALL USING ( public.is_staff() ) WITH CHECK ( public.is_staff() );
+
+-- 9) SEGURIDAD: approve_redemption / reject_redemption eran SECURITY DEFINER,
+--    estaban granteadas a 'authenticated' y NO chequeaban rol → cualquier
+--    usuario logueado podía aprobar/rechazar canjes (y disparar reembolsos)
+--    llamando la función directo. Re-creadas con el mismo cuerpo + guard is_staff().
+CREATE OR REPLACE FUNCTION public.approve_redemption(p_id uuid)
+RETURNS void
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.is_staff() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+  UPDATE q_redemptions
+  SET status = 'approved', reviewed_by = auth.uid(), reviewed_at = now()
+  WHERE id = p_id AND status = 'pending';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.reject_redemption(p_id uuid, p_note text DEFAULT NULL)
+RETURNS void
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_r q_redemptions;
+BEGIN
+  IF NOT public.is_staff() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+  SELECT * INTO v_r FROM q_redemptions WHERE id = p_id AND status = 'pending';
+  IF NOT FOUND THEN RETURN; END IF;
+
+  UPDATE q_redemptions
+  SET status = 'rejected', admin_note = p_note,
+      reviewed_by = auth.uid(), reviewed_at = now()
+  WHERE id = p_id;
+
+  -- Reembolso de los puntos al usuario
+  UPDATE profiles SET q_points = q_points + v_r.points WHERE id = v_r.user_id;
+  INSERT INTO q_points_log (user_id, amount, reason)
+  VALUES (v_r.user_id, v_r.points, 'Reembolso — canje rechazado');
+END;
+$$;

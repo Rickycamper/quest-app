@@ -131,11 +131,17 @@ export default function LiveAuctionScreen({ auction, onClose, onAuctionEnded }) 
   useEffect(() => {
     const now = Date.now()
     const ids = []
+    // setTimeout usa un entero de 32 bits: un delay > ~24.8 días desborda y
+    // dispara INMEDIATAMENTE (marcaría la subasta inactiva al instante). Solo
+    // agendamos flips dentro del rango seguro; tiempos más lejanos no aplican
+    // a una subasta en vivo.
+    const MAX_DELAY = 2_147_483_647
+    const schedule = (fn, delay) => { if (delay > 0 && delay <= MAX_DELAY) ids.push(setTimeout(fn, delay)) }
     if (now < startTimeMs) {
-      ids.push(setTimeout(() => setIsActive(true),  startTimeMs - now))
-      ids.push(setTimeout(() => setIsActive(false), endTimeMs   - now))
+      schedule(() => setIsActive(true),  startTimeMs - now)
+      schedule(() => setIsActive(false), endTimeMs   - now)
     } else if (now < endTimeMs) {
-      ids.push(setTimeout(() => setIsActive(false), endTimeMs - now))
+      schedule(() => setIsActive(false), endTimeMs - now)
     } else {
       setIsActive(false)
     }

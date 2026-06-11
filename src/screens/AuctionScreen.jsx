@@ -218,7 +218,11 @@ function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
 // ── Main Screen ───────────────────────────────
 export default function AuctionScreen({ isStaff, onClose }) {
   const { profile, isPremium } = useAuth()
-  const canCreateAuction = isPremium || isStaff
+  // "Poder subastar" es un beneficio de los planes pagos (wizard/mage/archmage
+  // + premium legacy) y de staff/admin/owner. Alineado con la RLS
+  // auctions_insert en 20260609_fix_admin_perms.sql.
+  const PAID_AUCTION_ROLES = ['premium', 'wizard', 'mage', 'archmage']
+  const canCreateAuction = isStaff || PAID_AUCTION_ROLES.includes(profile?.role)
   const [auctions,    setAuctions]    = useState([])
   const [loading,     setLoading]     = useState(true)
   const [liveAuction, setLiveAuction] = useState(null)

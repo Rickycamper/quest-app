@@ -187,6 +187,10 @@ export default function CreatePostModal({ onClose }) {
   const videoRef = useRef()
   const cropRef  = useRef()
   const lastDrag = useRef(null)
+  // Anti-doble-publicación: bloquea reentradas aunque el safety timer
+  // re-habilite el botón mientras la subida sigue en vuelo (evita posts duplicados).
+  const inFlight = useRef(false)
+  const timedOut = useRef(false)
 
   const POST_TO_STATUS = { tengo: 'have', quiero: 'want', tradeo: 'trade', vendo: 'sell' }
 
@@ -294,11 +298,18 @@ export default function CreatePostModal({ onClose }) {
 
   const handleShare = async () => {
     if (!caption.trim()) return
+    // Guard against re-entry: if a publish is already running, ignore further
+    // taps — even if the safety timer re-enabled the button, the network call
+    // may still be in flight, and a second createPost() would duplicate the post.
+    if (inFlight.current) return
+    inFlight.current = true
+    timedOut.current = false
     setLoading(true); setError('')
 
     // Videos need more time: compression runs in real-time + upload
     const safetyMs = video ? 180_000 : 30_000
     const safetyTimer = setTimeout(() => {
+      timedOut.current = true
       setLoading(false)
       setError('La publicación tardó demasiado. Revisá tu conexión e intentá de nuevo.')
     }, safetyMs)
@@ -333,16 +344,22 @@ export default function CreatePostModal({ onClose }) {
       }
 
       clearTimeout(safetyTimer)
+      inFlight.current = false
       // Success haptic pattern (double tap) — gives the user a physical
       // confirmation the post landed before the toast even appears.
       try { if (navigator?.vibrate) navigator.vibrate([0, 12, 40, 12]) } catch {}
+      // Even if the safety timer already fired ("tardó demasiado"), the post
+      // actually landed — recover by confirming success and closing instead of
+      // leaving a misleading error on screen.
       toast('¡Publicación creada!', { type: 'success' })
       onClose()
     } catch (e) {
       clearTimeout(safetyTimer)
+      inFlight.current = false
       if (e?.message === 'POST_LIMIT_REACHED') {
         setLimitReached(true)
-      } else {
+      } else if (!timedOut.current) {
+        // If we already showed the timeout error, don't pile a second one on.
         setError(e?.message || 'Error al publicar. Intentá de nuevo.')
         toast(e?.message || 'Error al publicar', { type: 'error' })
       }

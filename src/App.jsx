@@ -492,15 +492,18 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
     return s
   })
 
-  const screenMap = useMemo(() => ({
-    feed:     <FeedScreen     profile={profile} isStaff={isStaff} isOwner={isOwner} onViewProfile={(id) => requireAuth(() => handleViewProfile(id))} onPost={() => requireAuth(() => setShowPost(true))} refreshKey={feedRefreshKey} />,
-    // Shop is visible to everyone; ShopScreen internally gates add/edit/delete
-    // behind canEdit = isOwner || isStaff, so regular users see a read-only catalog.
-    shop:     <ShopScreen isOwner={isOwner} isStaff={isStaff} />,
-    ranks:    <RankingsScreen profile={profile} isStaff={isStaff} isAdminOrOwner={isOwner || isAdmin} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onCreateLeague={() => setShowLeague(true)} onViewProfile={handleViewProfile} openTournamentId={openTournamentId} openLeagueId={openLeagueId} />,
-    folder:   <FolderScreen   profile={profile} />,
-    search:   <SearchScreen   onViewProfile={handleViewProfile} />,
-  }), [profile, isStaff, isOwner, handleViewProfile, feedRefreshKey])
+  const screenMap = useMemo(() => {
+    const m = {
+      feed:   <FeedScreen     profile={profile} isStaff={isStaff} isOwner={isOwner} onViewProfile={(id) => requireAuth(() => handleViewProfile(id))} onPost={() => requireAuth(() => setShowPost(true))} refreshKey={feedRefreshKey} />,
+      ranks:  <RankingsScreen profile={profile} isStaff={isStaff} isAdminOrOwner={isOwner || isAdmin} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onCreateLeague={() => setShowLeague(true)} onViewProfile={handleViewProfile} openTournamentId={openTournamentId} openLeagueId={openLeagueId} />,
+      folder: <FolderScreen   profile={profile} />,
+      search: <SearchScreen   onViewProfile={handleViewProfile} />,
+    }
+    // Shop solo para owner: los precios no están listos y no deben exponerse
+    // a otros usuarios (la RLS shop_owner_write también es owner-only).
+    if (isOwner) m.shop = <ShopScreen isOwner={isOwner} isStaff={isStaff} />
+    return m
+  }, [profile, isStaff, isOwner, isAdmin, handleViewProfile, feedRefreshKey])
 
 const needsTerms = profile && !profile.terms_accepted_at
 
@@ -563,7 +566,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           onOpenTracking={() => { setShowHub(false); setShowTracking(true) }}
           onOpenFolder={() => { setShowHub(false); setActiveTab('folder'); setVisitedTabs(prev => { const n = new Set(prev); n.add('folder'); return n }) }}
           onOpenProfile={() => { setShowHub(false); handleOwnProfile() }}
-          onOpenShop={() => { setShowHub(false); setActiveTab('shop'); setVisitedTabs(prev => { const n = new Set(prev); n.add('shop'); return n }) }}
+          onOpenShop={() => { if (!isOwner) return; setShowHub(false); setActiveTab('shop'); setVisitedTabs(prev => { const n = new Set(prev); n.add('shop'); return n }) }}
           profile={profile}
           initialView={hubInitialView}
         />
@@ -857,6 +860,7 @@ const needsTerms = profile && !profile.terms_accepted_at
         active={activeTab}
         hidden={navHidden}
         isAdminOrOwner={isOwner || isAdmin}
+        isOwner={isOwner}
         onPost={() => requireAuth(() => setShowPost(true))}
         onNotifs={() => setShowNotifs(true)}
         unreadCount={unreadCount}

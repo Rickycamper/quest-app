@@ -882,15 +882,23 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
   // Keep screen awake while counter is active
   useEffect(() => {
     let wakeLock = null
+    let cancelled = false
     const acquire = async () => {
       try {
-        if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen')
+        if ('wakeLock' in navigator) {
+          const l = await navigator.wakeLock.request('screen')
+          // Si el efecto ya se limpió mientras esperábamos, soltamos el lock
+          // recién obtenido para no dejarlo huérfano.
+          if (cancelled) l.release().catch(() => {})
+          else wakeLock = l
+        }
       } catch {}
     }
     acquire()
     const onVisible = () => { if (document.visibilityState === 'visible') acquire() }
     document.addEventListener('visibilitychange', onVisible)
     return () => {
+      cancelled = true
       document.removeEventListener('visibilitychange', onVisible)
       wakeLock?.release().catch(() => {})
     }
@@ -1448,6 +1456,10 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
   const holdStart = useRef(0)
   const HOLD_MS  = 5000
 
+  // Cancelar cualquier requestAnimationFrame en vuelo al desmontar (si la
+  // pantalla se cierra mientras se mantiene presionado para ganar).
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), [])
+
   // For Digimon: derive whose clock ticks from memory side.
   // mem <= 0 → P1's turn ('me'), mem > 0 → P2's turn ('them').
   // Game auto-starts the moment it loads (no tap needed to begin).
@@ -1861,10 +1873,11 @@ export default function LifeCounterScreen({ onClose, onViewProfile, invite }) {
   useEffect(() => {
     if (step !== 'counter' && step !== 'wl') return
     let lock = null
+    let cancelled = false
     navigator.wakeLock?.request('screen')
-      .then(l => { lock = l })
+      .then(l => { if (cancelled) l.release().catch(() => {}); else lock = l })
       .catch(() => {})
-    return () => { lock?.release().catch(() => {}) }
+    return () => { cancelled = true; lock?.release().catch(() => {}) }
   }, [step])
 
   // Check for saved state on mount — if valid, jump straight to counter

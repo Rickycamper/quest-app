@@ -148,7 +148,7 @@ function OwnerBottomNav({ active, hidden, tabs }) {
 // Notifications: accessed via the bell icon in the profile header.
 export function BottomNav({
   active, hidden, onTab, onLifeCounter, onPost, onNotifs,
-  unreadCount, isAdminOrOwner,
+  unreadCount, isAdminOrOwner, isOwner,
 }) {
   const Lu = (Icon, size = 24) => (a) => (
     <div style={{
@@ -163,9 +163,10 @@ export function BottomNav({
     </div>
   )
 
+  // Shop (Tienda) solo se muestra al owner — precios no listos / no exponer.
   const tabs = [
     { id: 'feed',  label: 'Feed',     icon: Lu(Castle,    22), action: () => onTab('feed') },
-    { id: 'shop',  label: 'Tienda',   icon: Lu(PiggyBank, 27), action: () => onTab('shop') },
+    ...(isOwner ? [{ id: 'shop', label: 'Tienda', icon: Lu(PiggyBank, 27), action: () => onTab('shop') }] : []),
     { id: 'post',  label: 'Crear',    icon: null,              action: onPost, variant: 'primary' },
     { id: 'ranks', label: 'Ranking',  icon: Lu(Crown,     24), action: () => onTab('ranks') },
     { id: 'life',  label: 'Vida',     icon: Lu(Swords,    24), action: onLifeCounter },

@@ -73,7 +73,7 @@ export function AuthProvider({ children }) {
       })
     } catch (e) {
       console.warn(`[auth] getProfile failed (attempt ${attempt}):`, e?.message || e)
-      if (attempt < 2) {
+      if (attempt < 3) {
         setTimeout(() => loadProfile(authUser, attempt + 1), 1500)
         return
       }
@@ -150,6 +150,22 @@ export function AuthProvider({ children }) {
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [user?.id])
+
+  // ── Recovery: si hay sesión pero el perfil quedó null (todos los reintentos
+  // fallaron por un blip de red), reintentamos automáticamente cuando vuelve la
+  // conexión o cuando la pestaña recupera foco. Sin esto, el usuario quedaba
+  // sin rol/puntos/owner-UI hasta recargar la página a mano.
+  useEffect(() => {
+    if (!user?.id || profile) return
+    const retry = () => loadProfile(user)
+    const onVisible = () => { if (document.visibilityState === 'visible') loadProfile(user) }
+    window.addEventListener('online', retry)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('online', retry)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [user?.id, profile]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isOwner   = profile?.is_owner === true
   const isStaff   = profile?.role === 'staff' || profile?.role === 'admin' || isOwner
