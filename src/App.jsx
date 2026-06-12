@@ -499,10 +499,10 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
       folder: <FolderScreen   profile={profile} />,
       search: <SearchScreen   onViewProfile={handleViewProfile} />,
     }
-    // Shop visible al equipo (owner + admin) para gestionar productos y
-    // reservas. Sigue oculto a usuarios regulares e invitados (precios no
-    // listos / no exponer al público).
-    if (isOwner || isAdmin) m.shop = <ShopScreen isOwner={isOwner} isStaff={isStaff} />
+    // Shop visible para TODOS los usuarios (catálogo de solo-lectura).
+    // ShopScreen usa canEdit = isOwner || isStaff para mostrar la gestión
+    // (editar productos, inventario, reservas) solo al equipo.
+    m.shop = <ShopScreen isOwner={isOwner} isStaff={isStaff} />
     return m
   }, [profile, isStaff, isOwner, isAdmin, handleViewProfile, feedRefreshKey])
 
@@ -567,7 +567,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           onOpenTracking={() => { setShowHub(false); setShowTracking(true) }}
           onOpenFolder={() => { setShowHub(false); setActiveTab('folder'); setVisitedTabs(prev => { const n = new Set(prev); n.add('folder'); return n }) }}
           onOpenProfile={() => { setShowHub(false); handleOwnProfile() }}
-          onOpenShop={() => { if (!(isOwner || isAdmin)) return; setShowHub(false); setActiveTab('shop'); setVisitedTabs(prev => { const n = new Set(prev); n.add('shop'); return n }) }}
+          onOpenShop={() => { setShowHub(false); setActiveTab('shop'); setVisitedTabs(prev => { const n = new Set(prev); n.add('shop'); return n }) }}
           profile={profile}
           initialView={hubInitialView}
         />
@@ -861,7 +861,7 @@ const needsTerms = profile && !profile.terms_accepted_at
         active={activeTab}
         hidden={navHidden}
         isAdminOrOwner={isOwner || isAdmin}
-        canShop={isOwner || isAdmin}
+        canShop={true}
         onPost={() => requireAuth(() => setShowPost(true))}
         onNotifs={() => setShowNotifs(true)}
         unreadCount={unreadCount}
