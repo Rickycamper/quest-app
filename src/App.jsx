@@ -32,6 +32,7 @@ const AuctionScreen         = lazy(() => import('./screens/AuctionScreen'))
 const QuestHubScreen        = lazy(() => import('./screens/QuestHubScreen'))
 const LifeCounterScreen     = lazy(() => import('./screens/LifeCounterScreen'))
 const LiveDrawScreen        = lazy(() => import('./screens/LiveDrawScreen'))
+const LiveStreamScreen      = lazy(() => import('./screens/LiveStreamScreen'))
 const ChatScreen            = lazy(() => import('./screens/ChatScreen'))
 const LogMatchModal         = lazy(() => import('./screens/LogMatchModal'))
 const SearchScreen          = lazy(() => import('./screens/SearchScreen'))
@@ -145,7 +146,7 @@ class ErrorBoundary extends Component {
   }
 }
 
-import { acceptTerms, subscribeToPush, supabase } from './lib/supabase'
+import { acceptTerms, subscribeToPush, supabase, getActiveLiveStream } from './lib/supabase'
 import { BottomNav, NotifBell } from './components/Nav'
 import { ShieldIcon, SearchIcon, DiamondIcon } from './components/Icons'
 // NotificationPanel + OnboardingModal + FeatureTour lazy-loaded — none shows on first render
@@ -350,6 +351,8 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   const [hubInitialView,    setHubInitialView]    = useState(null)
   const [showLifeCounter,   setShowLifeCounter]   = useState(false)
   const [showLive,          setShowLive]          = useState(false)
+  const [showLiveStream,    setShowLiveStream]    = useState(false)
+  const [liveStream,        setLiveStream]        = useState(null) // transmisión activa (o null)
   const [lcInvite,          setLcInvite]          = useState(null) // active invite payload while LC is open
   const [sharedPostId,      setSharedPostId]      = useState(null) // post abierto por ?post=
 
@@ -413,6 +416,19 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   useEffect(() => {
     window.__questOpenSearch = () => setShowSearch(true)
     return () => { delete window.__questOpenSearch }
+  }, [])
+
+  // Transmisión EN VIVO: detectar si hay una activa (banner para todos).
+  // Fetch al montar + poll cada 30s + al volver al foreground.
+  useEffect(() => {
+    let alive = true
+    const check = () => { getActiveLiveStream().then(l => { if (alive) setLiveStream(l ?? null) }).catch(() => {}) }
+    check()
+    const id = setInterval(check, 30_000)
+    const onFocus = () => { if (document.visibilityState === 'visible') check() }
+    document.addEventListener('visibilitychange', onFocus)
+    window.addEventListener('focus', onFocus)
+    return () => { alive = false; clearInterval(id); document.removeEventListener('visibilitychange', onFocus); window.removeEventListener('focus', onFocus) }
   }, [])
 
   // Show onboarding once per user (tracked in localStorage).
@@ -562,7 +578,9 @@ const needsTerms = profile && !profile.terms_accepted_at
           onOpenAuction={() => { setShowHub(false); setShowAuction(true) }}
           onOpenLifeCounter={() => { setShowHub(false); setShowLifeCounter(true) }}
           onOpenLive={() => { setShowHub(false); setShowLive(true) }}
+          onOpenLiveStream={() => { setShowHub(false); setShowLiveStream(true) }}
           canLive={true}
+          canStream={isOwner || isStaff}
           onBattleNow={() => { setShowHub(false); setVsUser(null); setShowMatchModal(true) }}
           onOpenTracking={() => { setShowHub(false); setShowTracking(true) }}
           onOpenFolder={() => { setShowHub(false); setActiveTab('folder'); setVisitedTabs(prev => { const n = new Set(prev); n.add('folder'); return n }) }}
@@ -610,6 +628,36 @@ const needsTerms = profile && !profile.terms_accepted_at
         />
       )}
       {showLive && <LiveDrawScreen onClose={() => setShowLive(false)} />}
+      {showLiveStream && (
+        <LiveStreamScreen
+          isStaff={isStaff}
+          onClose={() => setShowLiveStream(false)}
+          onLiveChange={setLiveStream}
+        />
+      )}
+
+      {/* Banner 🔴 EN VIVO — visible para todos cuando hay transmisión activa */}
+      {liveStream && !showLiveStream && !showHub && (
+        <button
+          onClick={() => setShowLiveStream(true)}
+          style={{
+            position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', left: '50%',
+            transform: 'translateX(-50%)', zIndex: 130,
+            display: 'flex', alignItems: 'center', gap: 8, maxWidth: 'calc(100% - 28px)',
+            padding: '8px 14px 8px 11px', borderRadius: 999, border: 'none', cursor: 'pointer',
+            background: 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)', color: '#FFF',
+            fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 800,
+            boxShadow: '0 8px 24px rgba(239,68,68,0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
+            animation: 'fadeUp 0.3s ease',
+          }}
+        >
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFF', animation: 'pulse 1.1s ease-in-out infinite' }} />
+          <span style={{ letterSpacing: '0.06em' }}>● EN VIVO</span>
+          <span style={{ fontWeight: 600, opacity: 0.9, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>
+            {liveStream.title || 'Mirá las partidas'}
+          </span>
+        </button>
+      )}
 
       {/* Shared post overlay — abre directo cuando llegás por ?post=<id> */}
       {sharedPostId && (

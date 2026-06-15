@@ -1825,20 +1825,29 @@ const TILES = [
 ]
 
 // ── Main component ────────────────────────────
-export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onOpenLive, onBattleNow, profile, canLive = false, initialView = null }) {
+export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onOpenLive, onOpenLiveStream, onBattleNow, profile, canLive = false, canStream = false, initialView = null }) {
   const [view, setView] = useState(initialView) // null | 'sucursales' | 'membresia' | 'qpoints'
 
-  // Tile LIVE — sorteo en vivo. Por ahora solo visible para owner/staff
-  // (lo estamos probando primero). Va primero en el grid para destacar.
+  // Tile LIVE — sorteo en vivo (sorteos de grupos). Visible para todos.
   const LIVE_TILE = {
     id: 'live', icon: 'live', label: 'LIVE', desc: 'Sorteo en vivo',
     color: '#F87171', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.22)', enabled: true,
   }
-  const tiles = canLive ? [LIVE_TILE, ...TILES] : TILES
+  // Tile Transmisión — iniciar/ver stream (solo equipo).
+  const STREAM_TILE = {
+    id: 'livestream', icon: 'live', label: 'Transmisión', desc: 'Stream en vivo',
+    color: '#FB7185', bg: 'rgba(244,63,94,0.08)', border: 'rgba(244,63,94,0.22)', enabled: true,
+  }
+  const tiles = [
+    ...(canLive ? [LIVE_TILE] : []),
+    ...(canStream ? [STREAM_TILE] : []),
+    ...TILES,
+  ]
 
   const handleTile = (tile) => {
     if (!tile.enabled) return
     if (tile.id === 'live')        { onOpenLive?.(); onClose(); return }
+    if (tile.id === 'livestream')  { onOpenLiveStream?.(); onClose(); return }
     if (tile.id === 'subastas')    { onOpenAuction(); onClose(); return }
     if (tile.id === 'lifecounter') { onOpenLifeCounter(); onClose(); return }
     if (tile.id === 'folder')      { onOpenFolder?.(); onClose(); return }

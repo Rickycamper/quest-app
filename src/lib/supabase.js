@@ -3075,6 +3075,40 @@ export async function deleteReservation(reservation) {
   return { qtyUpdate }
 }
 
+// ── LIVE STREAMS (embed Twitch/YouTube) ──────────────────────────
+
+/** Transmisión activa (o null) */
+export async function getActiveLiveStream() {
+  const { data, error } = await supabase
+    .from('live_streams')
+    .select('id, platform, url, channel, title, is_live, created_at')
+    .eq('is_live', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) return null
+  return data ?? null
+}
+
+/** Staff: inicia una transmisión (termina cualquier otra activa antes) */
+export async function startLiveStream({ platform, url, channel, title }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  await supabase.from('live_streams').update({ is_live: false }).eq('is_live', true)
+  const { data, error } = await supabase
+    .from('live_streams')
+    .insert({ platform, url, channel, title: title || null, is_live: true, created_by: session?.user?.id })
+    .select('id, platform, url, channel, title, is_live, created_at')
+    .single()
+  if (error) throw error
+  return data
+}
+
+/** Staff: termina la transmisión activa */
+export async function stopLiveStream() {
+  const { error } = await supabase.from('live_streams').update({ is_live: false }).eq('is_live', true)
+  if (error) throw error
+}
+
 // ── SEASONS ──────────────────────────────────────────────────────
 
 /** Returns the currently active season (or null) */
