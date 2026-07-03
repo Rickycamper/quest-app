@@ -1798,6 +1798,31 @@ export async function getPackageStats(months = 6) {
   return data ?? []
 }
 
+/** Corregir datos de un envío (por error de carga): destinatario, sucursales,
+ *  notas. La RLS packages_update permite sender_id = auth.uid() OR is_staff(),
+ *  así que el que lo creó puede corregirlo. */
+export async function updatePackageDetails(packageId, { originBranch, destinationBranch, recipientId, notes }) {
+  const patch = {}
+  if (originBranch      !== undefined) patch.origin_branch      = originBranch
+  if (destinationBranch !== undefined) patch.destination_branch = destinationBranch
+  if (recipientId       !== undefined) patch.recipient_id       = recipientId
+  if (notes             !== undefined) patch.notes              = notes
+  const { data, error } = await supabase
+    .from('packages')
+    .update(patch)
+    .eq('id', packageId)
+    .select('id, origin_branch, destination_branch, recipient_id, notes')
+    .maybeSingle()
+  if (error) {
+    if (/row-level security|permission denied/i.test(error.message || '')) {
+      throw new Error('No tenés permiso para editar este envío.')
+    }
+    throw error
+  }
+  if (!data) throw new Error('No se pudo actualizar (paquete no encontrado o sin permisos).')
+  return data
+}
+
 /** Delete a package permanently (user can only delete their own delivered ones; staff can delete any) */
 export async function deletePackage(packageId) {
   const { error } = await supabase.from('packages').delete().eq('id', packageId)

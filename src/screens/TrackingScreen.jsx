@@ -2,7 +2,7 @@
 // QUEST — TrackingScreen
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef } from 'react'
-import { getMyPackages, getAllPackages, createPackage, updatePackageStatus, deletePackage, searchUsers, uploadPackageImage } from '../lib/supabase'
+import { getMyPackages, getAllPackages, createPackage, updatePackageStatus, updatePackageDetails, deletePackage, searchUsers, uploadPackageImage } from '../lib/supabase'
 import { PKG_STATUS, PKG_STEPS, BRANCHES } from '../lib/constants'
 import { CameraIcon } from '../components/Icons'
 
@@ -111,7 +111,7 @@ const STEP_LABELS = {
 }
 
 // ── Package card ──────────────────────────────
-function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, currentUserId }) {
+function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, onEdit, currentUserId }) {
   const [expanded,   setExpanded]   = useState(false)
   const [advancing,  setAdvancing]  = useState(false)
   const [notes,      setNotes]      = useState('')
@@ -387,6 +387,25 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, curren
                   )
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Corregir envío — el que lo creó (o staff) puede arreglar un error
+              de carga (destinatario/sucursal/notas) mientras el paquete no haya
+              salido en tránsito. */}
+          {(isSender || isStaff) && cs.step <= 1 && onEdit && (
+            <div style={{ marginBottom: 8 }}>
+              <button
+                onClick={() => onEdit(pkg)}
+                style={{
+                  width: '100%', padding: '9px', borderRadius: 8,
+                  border: '1px solid #2A2A2A', background: 'transparent',
+                  color: '#9CA3AF', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+              >
+                ✎ Corregir envío
+              </button>
             </div>
           )}
 
@@ -751,6 +770,142 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId, initialR
   )
 }
 
+// ── Editar / corregir envío ───────────────────
+// Reusa el patrón del create pero solo con los campos que suelen tener
+// errores: destinatario, sucursales y notas. La foto e items no se tocan.
+export function EditPackageModal({ pkg, onClose, onSaved, currentUserId }) {
+  const [origin,      setOrigin]      = useState(pkg.origin_branch || 'Panama')
+  const [dest,        setDest]        = useState(pkg.destination_branch || 'David')
+  const [recipQuery,  setRecipQuery]  = useState('')
+  const [recipResult, setRecipResult] = useState([])
+  const [recipient,   setRecipient]   = useState(pkg.recipient || null)
+  const [notes,       setNotes]       = useState(pkg.notes || '')
+  const [saving,      setSaving]      = useState(false)
+  const [searching,   setSearching]   = useState(false)
+  const [error,       setError]       = useState('')
+  const searchTimer = useRef(null)
+  useEffect(() => () => clearTimeout(searchTimer.current), [])
+
+  const handleRecipInput = (val) => {
+    setRecipQuery(val)
+    setRecipient(null)
+    clearTimeout(searchTimer.current)
+    if (val.length < 2) { setRecipResult([]); setSearching(false); return }
+    setSearching(true)
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const results = await searchUsers(val.replace('@', ''))
+        setRecipResult((results ?? []).filter(u => u.id !== currentUserId))
+      } catch { setRecipResult([]) }
+      setSearching(false)
+    }, 350)
+  }
+
+  const handleSave = async () => {
+    if (!recipient) { setError('Elegí un destinatario'); return }
+    setSaving(true); setError('')
+    try {
+      await updatePackageDetails(pkg.id, {
+        originBranch: origin, destinationBranch: dest,
+        recipientId: recipient.id, notes,
+      })
+      onSaved({
+        ...pkg,
+        origin_branch: origin, destination_branch: dest,
+        recipient_id: recipient.id, recipient, notes,
+      })
+      onClose()
+    } catch (e) { setError(e.message || 'No se pudo guardar') }
+    setSaving(false)
+  }
+
+  const inputStyle = {
+    width: '100%', padding: '11px 14px', background: '#111111',
+    border: '1.5px solid #2A2A2A', borderRadius: 10, color: '#FFFFFF',
+    fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box',
+  }
+  const labelStyle = { fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8, display: 'block' }
+  const canSave = !!recipient && !!notes.trim()
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: '#0A0A0A', zIndex: 210, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)', animation: 'slideUp 0.3s ease both' }}>
+      <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1F1F1F', flexShrink: 0 }}>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Cancelar</button>
+        <span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter, sans-serif' }}>✎ Corregir envío</span>
+        <button onClick={handleSave} disabled={saving || !canSave} style={{
+          background: canSave ? '#FFFFFF' : '#1F1F1F', border: 'none', color: canSave ? '#111111' : '#4B5563',
+          fontSize: 13, fontWeight: 700, cursor: canSave ? 'pointer' : 'default', padding: '6px 14px', borderRadius: 8, fontFamily: 'Inter, sans-serif',
+        }}>{saving ? '...' : 'Guardar'}</button>
+      </div>
+
+      {error && (
+        <div style={{ margin: '12px 16px 0', padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13, flexShrink: 0 }}>{error}</div>
+      )}
+
+      <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none' }}>
+        <div style={{ padding: '14px 16px 4px' }}>
+          <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
+            Envío <span style={{ color: '#9CA3AF', fontWeight: 700 }}>#{pkg.tracking_code}</span> — corregí lo que se cargó mal. La foto e items no cambian.
+          </div>
+        </div>
+
+        {/* Ruta */}
+        <div style={{ padding: '14px 16px 0', display: 'flex', gap: 8 }}>
+          {[{ label: 'ORIGEN', val: origin, set: setOrigin }, { label: 'DESTINO', val: dest, set: setDest }].map(f => (
+            <div key={f.label} style={{ flex: 1 }}>
+              <div style={labelStyle}>{f.label}</div>
+              <select value={f.val} onChange={e => f.set(e.target.value)} style={{ ...inputStyle, padding: '11px 10px' }}>
+                {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+          ))}
+        </div>
+
+        {/* Destinatario */}
+        <div style={{ padding: '14px 16px 0' }}>
+          <div style={labelStyle}>DESTINATARIO <span style={{ color: '#EF4444' }}>*</span></div>
+          {recipient ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#111111', border: '1.5px solid #2A2A2A', borderRadius: 10 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>👤</div>
+              <span style={{ flex: 1, fontSize: 14, color: '#FFFFFF', fontWeight: 600 }}>{recipient.username}</span>
+              <button onClick={() => { setRecipient(null); setRecipQuery('') }} style={{ background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', fontSize: 20, padding: 0, lineHeight: 1 }}>×</button>
+            </div>
+          ) : (
+            <>
+              <div style={{ position: 'relative' }}>
+                <input placeholder="Buscar @usuario..." value={recipQuery} onChange={e => handleRecipInput(e.target.value)} style={inputStyle} />
+                {searching && (
+                  <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)' }}>
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite' }} />
+                  </div>
+                )}
+              </div>
+              {recipResult.length > 0 && (
+                <div style={{ background: '#111111', border: '1.5px solid #2A2A2A', borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+                  {recipResult.map(u => (
+                    <button key={u.id} onClick={() => { setRecipient(u); setRecipQuery(''); setRecipResult([]) }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid #1A1A1A', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>👤</div>
+                      <span style={{ fontSize: 14, color: '#FFFFFF', fontWeight: 600 }}>{u.username}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Observaciones */}
+        <div style={{ padding: '14px 16px 28px' }}>
+          <div style={labelStyle}>OBSERVACIONES <span style={{ color: '#EF4444' }}>*</span></div>
+          <textarea value={notes} onChange={e => setNotes(e.target.value.slice(0, 400))}
+            style={{ ...inputStyle, resize: 'none', minHeight: 90, lineHeight: 1.5, padding: '12px 14px', borderColor: notes.trim() ? '#2A2A2A' : 'rgba(239,68,68,0.3)' }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main screen ───────────────────────────────
 export default function TrackingScreen({ profile, isStaff, onNewPackage, refreshKey }) {
   const [packages,    setPackages]    = useState([])
@@ -759,6 +914,7 @@ export default function TrackingScreen({ profile, isStaff, onNewPackage, refresh
   const [activeTab,   setActiveTab]   = useState('mine') // mine | all (staff)
   const [filterBranch, setFilterBranch] = useState(null)   // null = all
   const [searchUser,   setSearchUser]   = useState('')
+  const [editingPkg,   setEditingPkg]   = useState(null)
   const dismissedIds = useRef(new Set())
 
   const load = () => {
@@ -960,8 +1116,21 @@ export default function TrackingScreen({ profile, isStaff, onNewPackage, refresh
             dismissedIds.current.add(id)
             setPackages(prev => prev.filter(p => p.id !== id))
           } : undefined}
+          onEdit={setEditingPkg}
         />
       ))}
+
+      {editingPkg && (
+        <EditPackageModal
+          pkg={editingPkg}
+          currentUserId={profile?.id}
+          onClose={() => setEditingPkg(null)}
+          onSaved={(updated) => {
+            setPackages(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p))
+            setEditingPkg(null)
+          }}
+        />
+      )}
     </div>
   )
 }
