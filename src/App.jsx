@@ -983,10 +983,13 @@ function AppInner() {
   const deepLinkLcInvite   = deepLinks.lcInvite
   const deepLinkPostId     = deepLinks.postId
 
-  // Auto-enter guest mode when arriving via tournament or tab deep-link and not logged in.
-  // If user is already logged in (from localStorage) this stays false.
-  const [isGuest,       setIsGuest]       = useState(() => !user && (!!deepLinkTournament || !!deepLinkLeagueId || deepLinkTab === 'ranks' || !!deepLinkUsername))
-  const [gateScreen,    setGateScreen]    = useState(null) // null | 'login' | 'signup'
+  // Modo INVITADO por defecto: si no hay sesión, la persona entra directo y
+  // explora la app. El login NO se fuerza al abrir — aparece solo cuando
+  // intenta una acción (requireAuth) o toca "Crear cuenta".
+  const [isGuest,       setIsGuest]       = useState(() => !user)
+  // Si volvés de un login de Discord/OAuth que falló, abrimos el login con el
+  // error (no la pantalla de inicio).
+  const [gateScreen,    setGateScreen]    = useState(() => deepLinks.oauthErr ? 'login' : null) // null | 'login' | 'signup'
   const [showGateModal, setShowGateModal] = useState(false)
 
   // Detect recovery from URL hash on first load (legacy implicit flow: #type=recovery)
@@ -1020,10 +1023,22 @@ function AppInner() {
     }
   }, [authEvent])
 
+  // Sincronizar el modo invitado con la sesión: al iniciar sesión salimos de
+  // guest y cerramos el login; al cerrar sesión volvemos a invitado (nunca
+  // forzamos la pantalla de inicio).
+  useEffect(() => {
+    setIsGuest(!user)
+    if (user) { setGateScreen(null); setShowGateModal(false) }
+  }, [user])
+
+  // Guest efectivo = marcado como invitado Y sin sesión. Así un usuario
+  // logueado nunca se trata como invitado aunque isGuest tarde un frame.
+  const isGuestEffective = isGuest && !user
+
   const requireAuth = useCallback((fn) => {
-    if (!isGuest) { fn?.(); return }
+    if (!isGuestEffective) { fn?.(); return }
     setShowGateModal(true)
-  }, [isGuest])
+  }, [isGuestEffective])
 
   if (loading) return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#0A0A0A', gap: 16 }}>
@@ -1085,48 +1100,37 @@ function AppInner() {
     </div>
   )
 
-  if (user || isGuest) {
-    const guestValue = { isGuest, requireAuth }
-    return (
-      <GuestContext.Provider value={guestValue}>
-        <MainApp
-          initialTab={(deepLinkTournament || deepLinkLeagueId || deepLinkTab === 'ranks') ? 'ranks' : undefined}
-          openTournamentId={deepLinkTournament}
-          openLeagueId={deepLinkLeagueId}
-          openUsername={deepLinkUsername}
-          lcInviteFromUrl={deepLinkLcInvite}
-          openPostId={deepLinkPostId}
-        />
-        {showGateModal && (
-          <GuestGateModal
-            onClose={() => setShowGateModal(false)}
-            onLogin={() => { setShowGateModal(false); setIsGuest(false); setGateScreen('login') }}
-            onSignup={() => { setShowGateModal(false); setIsGuest(false); setGateScreen('signup') }}
-          />
-        )}
-        {gateScreen && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9100, display: 'flex', flexDirection: 'column', background: '#111' }}>
-            <AuthFlow onGuest={null} initialScreen={gateScreen} onDone={() => setGateScreen(null)} />
-          </div>
-        )}
-      </GuestContext.Provider>
-    )
-  }
-
+  // Siempre entramos a la app (logueado o invitado). El login solo aparece
+  // como overlay cuando la persona lo pide (acción gateada o "Crear cuenta").
+  const guestValue = { isGuest: isGuestEffective, requireAuth }
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-      <AuthFlow
-        onGuest={() => setIsGuest(true)}
-        oauthError={
-          // Apply friendlyOAuthError to the raw URL error HERE so OpeningScreen
-          // receives an already-translated string and doesn't double-process it.
-          // If no URL error but we came via OAuth (?code=) and ended up with no
-          // session, the PKCE exchange silently failed — show a generic retry msg.
-          (deepLinks.oauthErr ? friendlyOAuthError(deepLinks.oauthErr) : null)
-            ?? (deepLinks.wasOAuthCallback ? 'No se pudo conectar con Discord. Intentá de nuevo o usá tu email.' : null)
-        }
+    <GuestContext.Provider value={guestValue}>
+      <MainApp
+        initialTab={(deepLinkTournament || deepLinkLeagueId || deepLinkTab === 'ranks') ? 'ranks' : undefined}
+        openTournamentId={deepLinkTournament}
+        openLeagueId={deepLinkLeagueId}
+        openUsername={deepLinkUsername}
+        lcInviteFromUrl={deepLinkLcInvite}
+        openPostId={deepLinkPostId}
       />
-    </div>
+      {showGateModal && (
+        <GuestGateModal
+          onClose={() => setShowGateModal(false)}
+          onLogin={() => { setShowGateModal(false); setGateScreen('login') }}
+          onSignup={() => { setShowGateModal(false); setGateScreen('signup') }}
+        />
+      )}
+      {gateScreen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9100, display: 'flex', flexDirection: 'column', background: '#111' }}>
+          <AuthFlow
+            onGuest={() => setGateScreen(null)}
+            initialScreen={gateScreen}
+            onDone={() => setGateScreen(null)}
+            oauthError={deepLinks.oauthErr ? friendlyOAuthError(deepLinks.oauthErr) : null}
+          />
+        </div>
+      )}
+    </GuestContext.Provider>
   )
 }
 
