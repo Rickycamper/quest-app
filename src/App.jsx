@@ -182,11 +182,12 @@ const globalCSS = `
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
-  .phone-wrap { display:flex; justify-content:center; align-items:center; height:100vh; padding:20px; overflow:hidden; }
-  /* .phone bg is transparent so the body's ambient gradient bleeds through
-     to whatever's underneath the cards. The desktop "device frame" still
-     shows via the box-shadow (which paints the bezel + drop). */
-  .phone { width:390px; height:844px; border-radius:44px; overflow:hidden; position:relative; background:transparent; box-shadow:0 30px 80px rgba(0,0,0,0.6), 0 0 0 6px #111111; display:flex; flex-direction:column; }
+  .phone-wrap { display:flex; justify-content:center; align-items:stretch; height:100vh; padding:0; overflow:hidden; }
+  /* En desktop la app se ve como una PÁGINA (columna a pantalla completa),
+     no como una maqueta de celular. Sin marco/bezel: solo bordes sutiles a
+     los lados y una sombra suave para separar la columna del fondo. El bg
+     transparente deja pasar el gradiente ambiente del body. */
+  .phone { width:440px; height:100vh; overflow:hidden; position:relative; background:transparent; box-shadow:0 0 60px rgba(0,0,0,0.45); border-left:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; }
   @media (max-width: 480px) {
     /*
      * URL bar collapse strategy:
