@@ -1,20 +1,36 @@
 // ─────────────────────────────────────────────
-// QUEST — UpdateBanner
+// QUEST — UpdateBanner (con auto-update)
 // ─────────────────────────────────────────────
-// Detecta cuando el usuario tiene un bundle viejo y muestra una
-// barra fija arriba con un botón "Recargar". Particularmente útil
-// para PWAs en iOS — Apple cachea con uñas y dientes.
+// Detecta cuando hay un bundle más nuevo en el CDN que el que está corriendo.
 //
-// Estrategia: cada 60s (y al volver al foreground) fetchea
-// /index.html?t=<now> con cache: no-store, parsea el script src
-// del bundle (asset hashed) y compara con el src que cargó el
-// document actual. Si difieren → hay una versión más nueva en el
-// CDN que la que está corriendo.
+// Estrategia: cada 60s (y al volver a la app) fetchea /index.html con
+// cache: no-store, parsea el script src del bundle (asset hashed) y lo
+// compara con el que cargó el document. Si difieren → hay versión nueva.
+//
+// AUTO-UPDATE: cuando la persona VUELVE a la app (foreground / focus de
+// pestaña) y hay versión nueva, recarga SOLA — así nadie se queda pegado en
+// una versión vieja por el caché/Service Worker. No recarga si estás
+// escribiendo (input/textarea enfocado) ni si acaba de recargar (anti-loop);
+// en esos casos muestra el banner para tocar manualmente.
 //
 import { useEffect, useState, useCallback } from 'react'
 import { RefreshCw } from 'lucide-react'
 
 const POLL_MS = 60_000
+const AUTO_FLAG = 'quest_auto_reload_at'
+
+// Evita loops: si auto-recargó hace <20s y sigue detectando mismatch, no
+// vuelve a recargar solo (muestra el banner).
+function recentlyAutoReloaded() {
+  try { return Date.now() - parseInt(sessionStorage.getItem(AUTO_FLAG) || '0', 10) < 20_000 } catch { return false }
+}
+
+// No interrumpir si la persona está tipeando algo.
+function safeToReload() {
+  const el = document.activeElement
+  const typing = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
+  return !typing
+}
 
 export default function UpdateBanner() {
   const [hasUpdate, setHasUpdate] = useState(false)
@@ -28,35 +44,9 @@ export default function UpdateBanner() {
     } catch { return null }
   })()
 
-  const check = useCallback(async () => {
-    if (!currentBundle || hasUpdate) return
-    try {
-      const r = await fetch('/?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' })
-      if (!r.ok) return
-      const html = await r.text()
-      const m = html.match(/\/assets\/index-[A-Za-z0-9_-]+\.js/)
-      const latest = m?.[0] ?? null
-      if (latest && !currentBundle.includes(latest)) setHasUpdate(true)
-    } catch { /* offline / network blip — silent */ }
-  }, [currentBundle, hasUpdate])
-
-  useEffect(() => {
-    check()
-    const interval = setInterval(check, POLL_MS)
-    const onFocus = () => check()
-    window.addEventListener('focus', onFocus)
-    document.addEventListener('visibilitychange', onFocus)
-    return () => {
-      clearInterval(interval)
-      window.removeEventListener('focus', onFocus)
-      document.removeEventListener('visibilitychange', onFocus)
-    }
-  }, [check])
-
-  const handleReload = async () => {
-    if (busy) return
-    setBusy(true)
-    // Nuke todo: SW, caches, storage relacionado al SW, luego hard reload.
+  // Nuke SW + caches + hard reload (bypass del HTTP cache con query param).
+  const doReload = useCallback(async (isAuto) => {
+    if (isAuto) { try { sessionStorage.setItem(AUTO_FLAG, String(Date.now())) } catch {} }
     try {
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations()
@@ -69,9 +59,49 @@ export default function UpdateBanner() {
         await Promise.all(keys.map(k => caches.delete(k)))
       }
     } catch {}
-    // Reload con cache bypass — query param fuerza al browser a
-    // ignorar incluso su HTTP cache local.
     window.location.replace(location.pathname + '?_v=' + Date.now())
+  }, [])
+
+  // autoReload=true cuando la persona vuelve a la app (foreground/focus).
+  const check = useCallback(async (autoReload = false) => {
+    if (!currentBundle) return
+    // Ya sabíamos que hay update: si vuelve a la app, recargamos solo.
+    if (hasUpdate) {
+      if (autoReload && safeToReload() && !recentlyAutoReloaded()) doReload(true)
+      return
+    }
+    try {
+      const r = await fetch('/?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' })
+      if (!r.ok) return
+      const html = await r.text()
+      const m = html.match(/\/assets\/index-[A-Za-z0-9_-]+\.js/)
+      const latest = m?.[0] ?? null
+      if (latest && !currentBundle.includes(latest)) {
+        // Hay versión nueva. Si la persona volvió a la app y no está tipeando,
+        // recargamos solo; si no, mostramos el banner para tocar.
+        if (autoReload && safeToReload() && !recentlyAutoReloaded()) { doReload(true); return }
+        setHasUpdate(true)
+      }
+    } catch { /* offline / network blip — silent */ }
+  }, [currentBundle, hasUpdate, doReload])
+
+  useEffect(() => {
+    check(false)                                   // al cargar: solo banner (no auto)
+    const interval = setInterval(() => check(false), POLL_MS)  // en foreground: banner
+    const onReturn = () => { if (document.visibilityState === 'visible') check(true) } // volver a la app: auto
+    window.addEventListener('focus', onReturn)
+    document.addEventListener('visibilitychange', onReturn)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', onReturn)
+      document.removeEventListener('visibilitychange', onReturn)
+    }
+  }, [check])
+
+  const handleReload = async () => {
+    if (busy) return
+    setBusy(true)
+    await doReload(false)
   }
 
   if (!hasUpdate) return null
