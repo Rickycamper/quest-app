@@ -1638,6 +1638,13 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
   const [logging,  setLogging]  = useState(false)
   const [err,      setErr]      = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
+  // ── Reconocimiento de voz: "paso" / "paso turno" cambia el timer ──
+  // Web Speech API del navegador (opt-in con el botón 🎤). El tap manual
+  // sigue funcionando siempre; esto es un extra manos-libres.
+  const SR = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null
+  const [voiceOn,    setVoiceOn]    = useState(false)
+  const [voiceHeard, setVoiceHeard] = useState(false)
+  const lastVoiceRef = useRef(0)
   const holdRef  = useRef(null)
   const rafRef   = useRef(null)
   const holdStart = useRef(0)
@@ -1672,6 +1679,45 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
     }, 1000)
     return () => clearInterval(id)
   }, [clockActive, winner])
+
+  // Refs con el estado fresco para el callback de reconocimiento (closure)
+  const activeRef = useRef(active); activeRef.current = active
+  const winnerRef = useRef(winner); winnerRef.current = winner
+
+  // Motor de voz: escucha continua; "paso" / "turno" → cambia el timer.
+  // Auto-restart cuando el navegador corta la escucha (pasa seguido en iOS).
+  // Solo aplica a juegos con reloj por turnos (no Digimon: ahí el turno lo
+  // define el memory gauge).
+  useEffect(() => {
+    if (!voiceOn || !SR || isDigimon) return
+    let stopped = false
+    const rec = new SR()
+    rec.lang = 'es-ES'
+    rec.continuous = true
+    rec.interimResults = true
+    rec.onresult = (e) => {
+      let txt = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) txt += ' ' + (e.results[i][0]?.transcript || '')
+      if (!/pas[oó]|turno/i.test(txt)) return
+      const now = Date.now()
+      if (now - lastVoiceRef.current < 2000) return   // debounce anti-doble
+      if (winnerRef.current) return
+      const cur = activeRef.current
+      if (cur === null) return                        // el primer turno se arranca a mano
+      lastVoiceRef.current = now
+      setActive(cur === 'me' ? 'them' : 'me')
+      navigator.vibrate?.(18)
+      setVoiceHeard(true)
+      setTimeout(() => setVoiceHeard(false), 900)
+    }
+    rec.onend = () => { if (!stopped) { try { rec.start() } catch {} } }
+    rec.onerror = (ev) => {
+      // Sin permiso de mic o sin servicio → apagamos el toggle
+      if (ev?.error === 'not-allowed' || ev?.error === 'service-not-allowed') setVoiceOn(false)
+    }
+    try { rec.start() } catch {}
+    return () => { stopped = true; try { rec.onend = null; rec.stop() } catch {} }
+  }, [voiceOn, SR, isDigimon])
 
   // Vibrate when memory crosses sides (Digimon turn change)
   const prevMemSide = useRef(mem > 0 ? 'them' : 'me')
@@ -1852,6 +1898,31 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
     }}>
       {/* Opponent panel — top, flipped */}
       <ClockPanel who="them" user={opponent} secs={themTime} flipped />
+
+      {/* Voz "paso turno" — toggle flotante a la izquierda de la línea media.
+          Verde pulsante = escuchando; flash cuando reconoce el comando. */}
+      {!winner && !isDigimon && !!SR && (
+        <button
+          onClick={() => setVoiceOn(v => !v)}
+          title='Decí "paso" o "paso turno" para cambiar el timer'
+          style={{
+            position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+            zIndex: 30, display: 'flex', alignItems: 'center', gap: 6,
+            padding: '8px 12px', borderRadius: 999, cursor: 'pointer',
+            background: voiceHeard
+              ? 'rgba(74,222,128,0.25)'
+              : voiceOn ? 'rgba(74,222,128,0.14)' : 'rgba(20,20,28,0.92)',
+            border: `1px solid ${voiceOn ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.16)'}`,
+            color: voiceOn ? '#4ADE80' : '#E5E7EB',
+            fontSize: 12, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+            boxShadow: voiceOn ? '0 0 14px rgba(74,222,128,0.25)' : '0 4px 14px rgba(0,0,0,0.5)',
+            animation: voiceOn && !voiceHeard ? 'pulse 1.6s ease-in-out infinite' : 'none',
+            transition: 'background 0.2s, border 0.2s, color 0.2s',
+          }}
+        >
+          🎤 {voiceHeard ? '¡Paso!' : voiceOn ? 'Escuchando' : 'Voz'}
+        </button>
+      )}
 
       {/* Agregar jugador — flotante sobre la línea del medio (solo si el
           rival aún es invitado/vacío) */}
