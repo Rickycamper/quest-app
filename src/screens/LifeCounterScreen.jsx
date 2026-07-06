@@ -3,7 +3,7 @@
 // Life counter for MTG / Riftbound + W/L logger
 // for Pokemon, One Piece, Digimon, Gundam
 // ─────────────────────────────────────────────
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo, useContext, createContext } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { logMatch, searchUsers, createNotification } from '../lib/supabase'
 import { shareOrCopy } from '../lib/share'
@@ -41,6 +41,13 @@ function MiddleFingerIcon({ size = 64 }) {
     </svg>
   )
 }
+
+// ── Modo de contador global (MTG) ─────────────
+// 'life'  = contador de vida normal
+// 'poison'= todos los paneles muestran/editan VENENO
+// 'cmd'   = todos muestran/editan DAÑO DE COMANDANTE (resta vida)
+// Se comparte por contexto para no pasarlo por prop a los 8 paneles.
+const CounterModeContext = createContext({ mode: 'life', setMode: () => {} })
 
 // ── Constants ─────────────────────────────────
 const COUNTER_GAMES = new Set(['MTG', 'Riftbound'])
@@ -754,6 +761,20 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
   const isRiftbound = game === 'Riftbound'
   const holdDelta   = isRiftbound ? 1 : 10
 
+  // Modo global (vida / veneno / daño de comandante). Los TCG sin contadores
+  // están siempre en 'life'; si el modo es 'cmd' pero no es Commander, cae a
+  // 'life'. Al elegir un contador, TODO el panel pasa a mostrar/editar ese
+  // contador (se toca igual que la vida) hasta volver a 'life'.
+  const { mode, setMode } = useContext(CounterModeContext)
+  const effMode = !isMTG ? 'life'
+    : (mode === 'cmd' && !isCommander) ? 'life'
+    : mode
+  const isCounterMode = effMode !== 'life'
+
+  const bigValue = effMode === 'cmd' ? cmdDmg   : effMode === 'poison' ? poison : hp
+  const bigMax   = effMode === 'cmd' ? 21       : effMode === 'poison' ? 10     : maxHp
+  const stepFor  = effMode === 'cmd' ? onCmdDmg : effMode === 'poison' ? onPoison : onAdjust
+
   // Delta acumulado (ref. video): cada ajuste suma a un contador "+5 / −3"
   // que se muestra junto al número y se desvanece tras una pausa.
   const [accum, setAccum] = useState(0)
@@ -765,19 +786,20 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
     accumTimer.current = setTimeout(() => setAccum(0), 1400)
   }, [])
 
-  const tapMinus  = useCallback(() => { onAdjust(-1);         bump(-1) },         [onAdjust, bump])
-  const holdMinus = useCallback(() => { onAdjust(-holdDelta); bump(-holdDelta) }, [onAdjust, holdDelta, bump])
-  const tapPlus   = useCallback(() => { onAdjust(+1);         bump(+1) },         [onAdjust, bump])
-  const holdPlus  = useCallback(() => { onAdjust(+holdDelta); bump(+holdDelta) }, [onAdjust, holdDelta, bump])
+  // En modo contador el "mantener" también hace ±1 (el tope es chico: 10/21).
+  const stepHold  = isCounterMode ? 1 : holdDelta
+  const tapMinus  = useCallback(() => { stepFor(-1);        bump(-1) },        [stepFor, bump])
+  const holdMinus = useCallback(() => { stepFor(-stepHold); bump(-stepHold) }, [stepFor, stepHold, bump])
+  const tapPlus   = useCallback(() => { stepFor(+1);        bump(+1) },        [stepFor, bump])
+  const holdPlus  = useCallback(() => { stepFor(+stepHold); bump(+stepHold) }, [stepFor, stepHold, bump])
 
   const minusEvents = useTapOrHold(tapMinus, holdMinus, 600)
   const plusEvents  = useTapOrHold(tapPlus,  holdPlus,  600)
 
-  // Popup de contadores: en vez de dos badges sueltos (veneno + comandante),
-  // un solo chip abre un popup donde se ELIGE qué contador manejar. El daño
-  // de comandante solo existe en formato Commander (ningún otro TCG lo ve).
+  // Popup SELECTOR de modo: un botón en la esquina abre una lista donde se
+  // elige Vida / Veneno / Comandante. Los iconos viven en el popup, no en la
+  // cara del panel.
   const [countersOpen, setCountersOpen] = useState(false)
-  const [counterTab,   setCounterTab]   = useState(isCommander ? 'cmd' : 'poison')
 
   const pct = Math.max(0, Math.min(1, hp / maxHp))
 
@@ -788,9 +810,6 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
   const panelBg = dead
     ? `linear-gradient(135deg, ${playerColor}18 0%, rgba(255,255,255,0.02) 100%)`
     : `linear-gradient(135deg, ${playerColor}66 0%, ${playerColor}33 60%, ${playerColor}55 100%)`
-
-  // HP number: always white
-  const hpColor = dead ? 'rgba(255,255,255,0.5)' : '#FFFFFF'
 
   // Dark creep from bottom as HP decreases (shadow grows upward)
   const shadowPct = (1 - pct) * 100
@@ -836,48 +855,70 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
       <div style={{ display: 'flex', gap: compact ? 4 : 6, alignItems: 'center' }}>
         {isMTG && (
           <button
-            onClick={e => { e.stopPropagation(); if (!isCommander) setCounterTab('poison'); setCountersOpen(v => !v) }}
+            onClick={e => { e.stopPropagation(); setCountersOpen(v => !v) }}
             style={{
               display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
-              background: countersOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
-              border: `1px solid rgba(255,255,255,${countersOpen ? 0.4 : 0.2})`,
+              background: isCounterMode
+                ? (effMode === 'cmd' ? 'rgba(252,211,77,0.22)' : 'rgba(134,239,172,0.20)')
+                : (countersOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'),
+              border: `1px solid ${isCounterMode
+                ? (effMode === 'cmd' ? 'rgba(252,211,77,0.55)' : 'rgba(134,239,172,0.5)')
+                : `rgba(255,255,255,${countersOpen ? 0.4 : 0.2})`}`,
               borderRadius: 7, padding: compact ? '3px 7px' : '4px 10px',
               transition: 'background 0.2s',
             }}
           >
-            {isCommander && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 3, opacity: cmdDmg > 0 ? 1 : 0.5 }}>
-                <img src={crownIcon} alt="cmd" style={{ width: compact ? 11 : 12, height: compact ? 11 : 12, pointerEvents: 'none', flexShrink: 0, filter: 'invert(1)' }} />
-                <span style={{ fontSize: compact ? 10 : 11, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}>{cmdDmg}</span>
-              </span>
+            {isCounterMode ? (
+              <>
+                <img src={effMode === 'cmd' ? crownIcon : biohazardIcon} alt="" style={{ width: compact ? 11 : 12, height: compact ? 11 : 12, pointerEvents: 'none', flexShrink: 0, filter: 'invert(1)' }} />
+                <span style={{ fontSize: compact ? 9 : 10, fontWeight: 900, color: '#FFF', fontFamily: 'Inter, sans-serif', letterSpacing: '0.04em', pointerEvents: 'none' }}>
+                  {effMode === 'cmd' ? 'CMD' : 'VENENO'}
+                </span>
+              </>
+            ) : (
+              // Ícono neutro "ajustar contadores" (sin crown/biohazard en reposo)
+              <svg width={compact ? 13 : 14} height={compact ? 13 : 14} viewBox="0 0 16 16" style={{ pointerEvents: 'none', opacity: 0.6 }}>
+                <circle cx="5" cy="4.5" r="2" fill="#fff" /><rect x="8" y="3.7" width="6" height="1.6" rx="0.8" fill="#fff" />
+                <circle cx="11" cy="11.5" r="2" fill="#fff" /><rect x="2" y="10.7" width="6" height="1.6" rx="0.8" fill="#fff" />
+              </svg>
             )}
-            {isCommander && <span style={{ width: 1, height: 11, background: 'rgba(255,255,255,0.25)', flexShrink: 0 }} />}
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3, opacity: poison > 0 ? 1 : 0.5 }}>
-              <img src={biohazardIcon} alt="poison" style={{ width: compact ? 10 : 12, height: compact ? 10 : 12, pointerEvents: 'none', flexShrink: 0, filter: 'invert(1)' }} />
-              <span style={{ fontSize: compact ? 10 : 11, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}>{poison}</span>
-            </span>
           </button>
         )}
       </div>
     </div>
   )
 
-  // ── Popup de contadores (overlay dentro del panel → hereda la rotación,
-  //    así el jugador de arriba lo ve derecho). Se elige veneno o daño de
-  //    comandante; el de comandante solo aparece en formato Commander.
-  const tabStyle = (active) => ({
-    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-    padding: '9px 6px', borderRadius: 9, cursor: 'pointer', border: 'none',
-    background: active ? 'rgba(255,255,255,0.16)' : 'transparent',
-    color: active ? '#FFF' : 'rgba(255,255,255,0.55)',
-    fontSize: 12, fontWeight: 800, fontFamily: 'Inter, sans-serif',
-    transition: 'background 0.15s, color 0.15s',
+  // ── Popup SELECTOR de modo (overlay dentro del panel → hereda la rotación,
+  //    así el jugador de arriba lo ve derecho). Se elige Vida / Veneno /
+  //    Comandante; al tocar, cambia el modo GLOBAL y cierra. Comandante solo
+  //    en formato Commander.
+  const modeRowStyle = (active, accent) => ({
+    display: 'flex', alignItems: 'center', gap: 11, width: '100%',
+    padding: '11px 12px', borderRadius: 13, cursor: 'pointer', textAlign: 'left',
+    background: active ? `${accent}26` : 'rgba(255,255,255,0.05)',
+    border: `1px solid ${active ? `${accent}88` : 'rgba(255,255,255,0.08)'}`,
+    transition: 'background 0.15s, border-color 0.15s',
   })
-  const stepBtnStyle = {
-    width: 54, height: 54, borderRadius: 14, flexShrink: 0,
-    background: 'rgba(255,255,255,0.12)', border: '1.5px solid rgba(255,255,255,0.22)',
-    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+
+  const ModeRow = ({ id, accent, iconEl, label, sub, value }) => {
+    const active = effMode === id
+    return (
+      <button onClick={e => { e.stopPropagation(); setMode(id); setCountersOpen(false) }} style={modeRowStyle(active, accent)}>
+        <span style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${accent}2e` }}>
+          {iconEl}
+        </span>
+        <span style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>{label}</span>
+          {sub && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontFamily: 'Inter, sans-serif', letterSpacing: '0.02em' }}>{sub}</span>}
+        </span>
+        <span style={{ fontSize: 15, fontWeight: 900, color: active ? '#FFF' : 'rgba(255,255,255,0.55)', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{value}</span>
+      </button>
+    )
   }
+
+  const heartIcon = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="#F87171"><path d="M12 21s-7.5-4.9-10-9.2C.6 9 1.6 5.7 4.6 5c1.9-.4 3.6.5 4.6 1.9C10.8 5.5 12.5 4.6 14.4 5c3 .7 4 4 2.6 6.8C19.5 16.1 12 21 12 21z" /></svg>
+  )
 
   const countersPopup = isMTG && countersOpen && (
     <div
@@ -896,54 +937,19 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
           width: '100%', maxWidth: 300,
           background: 'rgba(22,22,28,0.97)',
           border: '1px solid rgba(255,255,255,0.14)',
-          borderRadius: 18, padding: 14,
+          borderRadius: 18, padding: 12,
           boxShadow: '0 14px 44px rgba(0,0,0,0.55)',
-          display: 'flex', flexDirection: 'column', gap: 12,
+          display: 'flex', flexDirection: 'column', gap: 8,
         }}
       >
-        {/* Selector: veneno / daño de comandante (cmd solo en Commander) */}
-        <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 4 }}>
-          {isCommander && (
-            <button onClick={e => { e.stopPropagation(); setCounterTab('cmd') }} style={tabStyle(counterTab === 'cmd')}>
-              <img src={crownIcon} alt="" style={{ width: 13, height: 13, filter: 'invert(1)', opacity: counterTab === 'cmd' ? 1 : 0.6 }} />
-              Comandante
-            </button>
-          )}
-          <button onClick={e => { e.stopPropagation(); setCounterTab('poison') }} style={tabStyle(counterTab === 'poison')}>
-            <img src={biohazardIcon} alt="" style={{ width: 12, height: 12, filter: 'invert(1)', opacity: counterTab === 'poison' ? 1 : 0.6 }} />
-            Veneno
-          </button>
-        </div>
-
-        {/* Stepper del contador elegido */}
-        {(() => {
-          const isCmd  = counterTab === 'cmd' && isCommander
-          const val    = isCmd ? cmdDmg : poison
-          const max    = isCmd ? 21 : 10
-          const onStep = isCmd ? onCmdDmg : onPoison
-          const icon   = isCmd ? crownIcon : biohazardIcon
-          const atMax  = val >= max
-          return (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
-                <button onClick={e => { e.stopPropagation(); onStep(-1) }} style={stepBtnStyle}>
-                  <svg width="22" height="4" viewBox="0 0 22 4"><rect width="22" height="4" rx="2" fill="rgba(255,255,255,0.9)"/></svg>
-                </button>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                  <img src={icon} alt="" style={{ width: 18, height: 18, filter: 'invert(1)', opacity: 0.75 }} />
-                  <span style={{ fontSize: 42, fontWeight: 900, color: atMax ? '#FCA5A5' : '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{val}</span>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: 'Inter, sans-serif', letterSpacing: '0.1em', fontWeight: 700 }}>/ {max}</span>
-                </div>
-                <button onClick={e => { e.stopPropagation(); onStep(+1) }} style={stepBtnStyle}>
-                  <svg width="22" height="22" viewBox="0 0 22 22"><rect x="9" width="4" height="22" rx="2" fill="rgba(255,255,255,0.9)"/><rect y="9" width="22" height="4" rx="2" fill="rgba(255,255,255,0.9)"/></svg>
-                </button>
-              </div>
-              <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.42)', fontFamily: 'Inter, sans-serif', letterSpacing: '0.05em', fontWeight: 700 }}>
-                {isCmd ? 'RESTA VIDA · 21 = DERROTA' : 'VENENO · 10 = DERROTA'}
-              </div>
-            </>
-          )
-        })()}
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', fontFamily: 'Inter, sans-serif', padding: '2px 4px 2px' }}>
+          ¿QUÉ CONTÁS?
+        </span>
+        <ModeRow id="life"   accent="#F87171" iconEl={heartIcon} label="Vida normal" value={hp} />
+        <ModeRow id="poison" accent="#86EFAC" iconEl={<img src={biohazardIcon} alt="" style={{ width: 16, height: 16, filter: 'invert(1)' }} />} label="Veneno" sub="10 = derrota" value={`${poison}/10`} />
+        {isCommander && (
+          <ModeRow id="cmd" accent="#FCD34D" iconEl={<img src={crownIcon} alt="" style={{ width: 15, height: 15, filter: 'invert(1)' }} />} label="Daño de comandante" sub="resta vida · 21 = derrota" value={`${cmdDmg}/21`} />
+        )}
       </div>
     </div>
   )
@@ -981,24 +987,34 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
         pointerEvents: 'none',
       }} />
 
-      {/* HP number — absolutely positioned on the OUTER panel div so it centres
-          relative to the full panel height, not just the flex-1 tap zone */}
+      {/* Número grande — muestra VIDA / VENENO / DAÑO CMD según el modo global.
+          En modo contador se toca igual que la vida (mitad izq −1, der +1). */}
       <div style={{
         position: 'absolute', inset: 0,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         pointerEvents: 'none', gap: 4, zIndex: 2,
       }}>
+        {isCounterMode && (
+          <span style={{
+            fontSize: compact ? 11 : 12, fontWeight: 900, letterSpacing: '0.14em',
+            color: effMode === 'cmd' ? '#FCD34D' : '#86EFAC',
+            fontFamily: 'Inter, sans-serif', textShadow: '0 1px 6px rgba(0,0,0,0.5)',
+          }}>
+            {effMode === 'cmd' ? 'DAÑO CMD' : 'VENENO'}
+          </span>
+        )}
         <span style={{
           position: 'relative',
-          fontSize: compact ? (hp >= 100 ? 88 : 112) : (hp >= 100 ? 72 : 96),
-          fontWeight: 800, color: hpColor,
+          fontSize: compact ? (bigValue >= 100 ? 88 : 112) : (bigValue >= 100 ? 72 : 96),
+          fontWeight: 800,
+          color: dead ? 'rgba(255,255,255,0.5)' : (isCounterMode && bigValue >= bigMax ? '#FCA5A5' : '#FFFFFF'),
           fontVariantNumeric: 'tabular-nums',
           fontFamily: 'Inter, sans-serif',
           lineHeight: 1,
           transition: 'color 0.35s, font-size 0.2s',
           textShadow: dead ? '0 0 30px rgba(0,0,0,0.4)' : '0 2px 14px rgba(0,0,0,0.45)',
         }}>
-          {hp}
+          {bigValue}
           {/* Delta acumulado — flota junto al número y se desvanece */}
           {accum !== 0 && (
             <span style={{
@@ -1012,11 +1028,15 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
             }}>{accum > 0 ? `+${accum}` : accum}</span>
           )}
         </span>
-        {!compact && (
+        {isCounterMode ? (
+          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontFamily: 'Inter, sans-serif', fontWeight: 700, letterSpacing: '0.1em' }}>
+            / {bigMax}{effMode === 'cmd' ? ' · RESTA VIDA' : ''}
+          </span>
+        ) : (!compact && (
           <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontFamily: 'Inter, sans-serif', fontWeight: 600, letterSpacing: '0.1em' }}>
             MANTÉN = ±{holdDelta}
           </span>
-        )}
+        ))}
       </div>
 
       {/* In 1v1 (non-compact): info row at CSS-top so both players see name at the
@@ -1078,6 +1098,10 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
   const [err,      setErr]      = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  // Modo global de contador: 'life' | 'poison' | 'cmd' (compartido por contexto
+  // a todos los paneles). Al elegir veneno/comandante, TODO el tablero pasa a
+  // ese contador y se toca igual que la vida hasta volver a 'life'.
+  const [counterMode, setCounterMode] = useState('life')
   // Slot a asignar cuando eligen usuario: el primer oponente invitado/vacío
   // (si todos son reales, reemplaza el primero).
   const guestSlotIdx = opponents.findIndex(o => !o || o.isGuest)
@@ -1222,6 +1246,7 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
     setLosers([])
     setWinner(null)
     setErr('')
+    setCounterMode('life')
     clearCounterState()
   }
 
@@ -1249,6 +1274,7 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
   }, [isLandscape])
 
   return (
+    <CounterModeContext.Provider value={{ mode: counterMode, setMode: setCounterMode }}>
     <div ref={rootRef} style={isLandscape ? {
       position: 'absolute',
       top: '50%',
@@ -1547,6 +1573,7 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
         />
       )}
     </div>
+    </CounterModeContext.Provider>
   )
 }
 
