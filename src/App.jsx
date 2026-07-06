@@ -175,7 +175,15 @@ const globalCSS = `
      para prevenir el zoom. */
   input, textarea, select { font-size: 16px !important; }
   body {
-    height: 100%; background: #1A1A1A;
+    /* Negro puro + luz ambiente neutra ultra-sutil: se lee negro, pero el
+       backdrop-blur de las cards glass tiene gradientes que refractar. */
+    height: 100%;
+    background:
+      radial-gradient(ellipse 75% 55% at 15% 5%,   rgba(255,255,255,0.05)  0%, transparent 60%),
+      radial-gradient(ellipse 60% 45% at 88% 35%,  rgba(255,255,255,0.035) 0%, transparent 65%),
+      radial-gradient(ellipse 85% 55% at 50% 112%, rgba(255,255,255,0.045) 0%, transparent 60%),
+      #000000;
+    background-attachment: fixed;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
     overflow: hidden; font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
@@ -199,16 +207,15 @@ const globalCSS = `
      * - Chrome Android 108+ also collapses from overflow container scroll.
      */
     html { height: 100%; }
-    /* Keep the body's ambient gradient visible on mobile. The original
-       solid #0A0A0A here was killing the glow under .phone — replicating
-       the same radial set so the gradient survives the media query. */
+    /* Mismo negro + luz neutra que en desktop — el media query pisaba el
+       bg del body, así que replicamos el set acá para que sobreviva. */
     body {
       min-height: 100%;
       background:
-        radial-gradient(ellipse 60% 50% at 15% 10%, rgba(59,130,246,0.10) 0%, transparent 65%),
-        radial-gradient(ellipse 55% 45% at 85% 35%, rgba(167,139,250,0.10) 0%, transparent 65%),
-        radial-gradient(ellipse 70% 40% at 50% 110%, rgba(251,146,60,0.07) 0%, transparent 65%),
-        #08080C;
+        radial-gradient(ellipse 75% 55% at 15% 5%,   rgba(255,255,255,0.05)  0%, transparent 60%),
+        radial-gradient(ellipse 60% 45% at 88% 35%,  rgba(255,255,255,0.035) 0%, transparent 65%),
+        radial-gradient(ellipse 85% 55% at 50% 112%, rgba(255,255,255,0.045) 0%, transparent 60%),
+        #000000;
       background-attachment: fixed;
     }
     .phone-wrap { padding:0; display:flex; align-items:stretch; width:100%; height:100dvh; overflow:hidden; }
@@ -752,7 +759,7 @@ const needsTerms = profile && !profile.terms_accepted_at
         transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 350ms ease',
         willChange: 'transform',
         background: `
-          radial-gradient(ellipse 180px 70px at 15% 70%, rgba(167,139,250,0.035), transparent 75%),
+          radial-gradient(ellipse 180px 70px at 15% 70%, rgba(255,255,255,0.03), transparent 75%),
           rgba(10,10,10,0.95)
         `,
         backdropFilter: 'blur(12px)',

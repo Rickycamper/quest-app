@@ -23,24 +23,17 @@ import { useState, useEffect } from 'react'
 const STORAGE_KEY = 'quest_dc_preview'
 
 const DC_CSS = `
-/* ── 0. Base — Battle Now palette as ambient field so glass cards have
-       saturated color behind them to refract. Orange → pink → violet +
-       cyan accent, overlapping so wherever a card sits there's color. */
+/* ── 0. Base — NEGRO PURO con luz ambiente neutra ultra-sutil. El glass
+       se mantiene: los brillos blancos al 3-5% son invisibles como "color"
+       pero le dan al backdrop-blur gradientes que refractar, y las cards
+       conservan sus fills translúcidos + sheens + bordes. */
 body.dc-preview {
   background:
-    /* Orange — top-left + bottom subtle echo */
-    radial-gradient(ellipse 80% 65% at 8% 5%,    rgba(251,146,60,0.38)  0%, transparent 60%),
-    radial-gradient(ellipse 60% 45% at 78% 95%,  rgba(251,146,60,0.18)  0%, transparent 65%),
-    /* Pink — center-right + lower-left echo */
-    radial-gradient(ellipse 75% 60% at 92% 38%,  rgba(244,114,182,0.34) 0%, transparent 62%),
-    radial-gradient(ellipse 55% 45% at 18% 70%,  rgba(244,114,182,0.18) 0%, transparent 65%),
-    /* Violet — bottom + center echo */
-    radial-gradient(ellipse 90% 65% at 50% 115%, rgba(167,139,250,0.38) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 50% 45%,  rgba(167,139,250,0.18) 0%, transparent 65%),
-    /* Cool cyan kicker — one cool light source so glass picks up a
-       cool tint somewhere instead of pure warm everywhere. */
-    radial-gradient(ellipse 45% 38% at 32% 30%,  rgba(56,189,248,0.16)  0%, transparent 65%),
-    #0A0A12 !important;
+    radial-gradient(ellipse 75% 55% at 15% 5%,   rgba(255,255,255,0.05)  0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 88% 35%,  rgba(255,255,255,0.035) 0%, transparent 65%),
+    radial-gradient(ellipse 85% 55% at 50% 112%, rgba(255,255,255,0.045) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 38% at 30% 65%,  rgba(255,255,255,0.02)  0%, transparent 65%),
+    #000000 !important;
   background-attachment: fixed !important;
   color: #F5F5F7 !important;
 }
@@ -65,14 +58,11 @@ body.dc-preview .app-header { background: transparent !important; }
 @media (max-width: 480px) {
   body.dc-preview {
     background:
-      radial-gradient(ellipse 80% 65% at 8% 5%,    rgba(251,146,60,0.38)  0%, transparent 60%),
-      radial-gradient(ellipse 60% 45% at 78% 95%,  rgba(251,146,60,0.18)  0%, transparent 65%),
-      radial-gradient(ellipse 75% 60% at 92% 38%,  rgba(244,114,182,0.34) 0%, transparent 62%),
-      radial-gradient(ellipse 55% 45% at 18% 70%,  rgba(244,114,182,0.18) 0%, transparent 65%),
-      radial-gradient(ellipse 90% 65% at 50% 115%, rgba(167,139,250,0.38) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at 50% 45%,  rgba(167,139,250,0.18) 0%, transparent 65%),
-      radial-gradient(ellipse 45% 38% at 32% 30%,  rgba(56,189,248,0.16)  0%, transparent 65%),
-      #0A0A12 !important;
+      radial-gradient(ellipse 75% 55% at 15% 5%,   rgba(255,255,255,0.05)  0%, transparent 60%),
+      radial-gradient(ellipse 60% 45% at 88% 35%,  rgba(255,255,255,0.035) 0%, transparent 65%),
+      radial-gradient(ellipse 85% 55% at 50% 112%, rgba(255,255,255,0.045) 0%, transparent 60%),
+      radial-gradient(ellipse 45% 38% at 30% 65%,  rgba(255,255,255,0.02)  0%, transparent 65%),
+      #000000 !important;
   }
 }
 
@@ -99,7 +89,7 @@ body.dc-preview [style*="background: #0A0A0A"][style*="position: fixed"] {
     linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 8%),
     /* Translucent black-ish glass — high enough alpha that what's behind
        reads as 'blurred backdrop', not 'seeing through the wall'. */
-    rgba(12,10,18,0.78) !important;
+    rgba(8,8,10,0.78) !important;
   backdrop-filter: blur(40px) saturate(180%) brightness(105%) !important;
   -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(105%) !important;
   box-shadow:
