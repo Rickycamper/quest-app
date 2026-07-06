@@ -6,13 +6,23 @@
 -- aplicada a medias). Resultado: los Q Coins NO se podían canjear ni
 -- aprobar/rechazar — el botón "Canjear" fallaba con PGRST202.
 --
--- Este archivo re-crea las 3 funciones (redeem_points para el usuario;
--- approve/reject con guard is_staff() para el staff) y sus grants.
+-- Hallazgo al aplicar: las funciones SÍ existían en prod pero con nombres de
+-- parámetro viejos (ej. p_redemption_id) — para PostgREST (que matchea por
+-- nombre de arg) es como si no existieran. CREATE OR REPLACE no puede
+-- renombrar parámetros (error 42P13) ⇒ hay que DROP primero.
+--
+-- Este archivo dropea y re-crea las 3 funciones (redeem_points para el
+-- usuario; approve/reject con guard is_staff() para el staff) y sus grants.
 -- Idempotente. Aplicar en Supabase → SQL Editor.
 -- ─────────────────────────────────────────────
 
+DROP FUNCTION IF EXISTS public.redeem_points(integer);
+DROP FUNCTION IF EXISTS public.approve_redemption(uuid);
+DROP FUNCTION IF EXISTS public.reject_redemption(uuid, text);
+DROP FUNCTION IF EXISTS public.reject_redemption(uuid);
+
 -- Usuario: solicita canje (descuenta puntos ya; admin aprueba el pago)
-CREATE OR REPLACE FUNCTION public.redeem_points(p_points integer)
+CREATE FUNCTION public.redeem_points(p_points integer)
 RETURNS uuid
   LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
@@ -44,7 +54,7 @@ END;
 $$;
 
 -- Staff: aprobar canje (con guard de seguridad)
-CREATE OR REPLACE FUNCTION public.approve_redemption(p_id uuid)
+CREATE FUNCTION public.approve_redemption(p_id uuid)
 RETURNS void
   LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
@@ -59,7 +69,7 @@ END;
 $$;
 
 -- Staff: rechazar canje y reembolsar (con guard de seguridad)
-CREATE OR REPLACE FUNCTION public.reject_redemption(p_id uuid, p_note text DEFAULT NULL)
+CREATE FUNCTION public.reject_redemption(p_id uuid, p_note text DEFAULT NULL)
 RETURNS void
   LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
