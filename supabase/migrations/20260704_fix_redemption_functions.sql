@@ -16,6 +16,33 @@
 -- Idempotente. Aplicar en Supabase → SQL Editor.
 -- ─────────────────────────────────────────────
 
+-- 0) La TABLA tampoco existía en prod (el probe REST de jul 2026 que la marcó
+--    como existente fue un falso negativo; el error 42704 al crear la función
+--    lo confirmó). Crearla primero — el DECLARE de reject_redemption depende
+--    del tipo de la tabla.
+CREATE TABLE IF NOT EXISTS public.q_redemptions (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  points      integer NOT NULL CHECK (points >= 1000),
+  status      text NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'approved', 'rejected')),
+  admin_note  text,
+  reviewed_by uuid REFERENCES profiles(id),
+  reviewed_at timestamptz,
+  created_at  timestamptz DEFAULT now()
+);
+ALTER TABLE public.q_redemptions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "users view own redemptions" ON public.q_redemptions;
+CREATE POLICY "users view own redemptions" ON public.q_redemptions
+  FOR SELECT USING ((SELECT auth.uid()) = user_id);
+DROP POLICY IF EXISTS "users insert own redemptions" ON public.q_redemptions;
+CREATE POLICY "users insert own redemptions" ON public.q_redemptions
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
+DROP POLICY IF EXISTS "admins manage redemptions" ON public.q_redemptions;
+CREATE POLICY "admins manage redemptions" ON public.q_redemptions
+  FOR ALL USING (public.is_staff()) WITH CHECK (public.is_staff());
+
 DROP FUNCTION IF EXISTS public.redeem_points(integer);
 DROP FUNCTION IF EXISTS public.approve_redemption(uuid);
 DROP FUNCTION IF EXISTS public.reject_redemption(uuid, text);
