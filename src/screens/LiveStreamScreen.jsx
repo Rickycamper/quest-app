@@ -22,17 +22,23 @@ export function parseStreamUrl(raw) {
   if (m && !['videos', 'directory', 'settings'].includes(m[1].toLowerCase())) {
     return { platform: 'twitch', channel: m[1] }
   }
+  // TikTok: no se puede embeber el live → link-out. tiktok.com/@usuario(/live)
+  m = url.match(/tiktok\.com\/@([A-Za-z0-9_.]+)/)
+  if (m) return { platform: 'tiktok', channel: m[1] }
   return null
 }
 
-// URL embebible para el iframe.
+// URL embebible para el iframe (null si la plataforma no se puede embeber).
 function embedUrl(live) {
   if (!live) return null
   if (live.platform === 'youtube') {
     return `https://www.youtube.com/embed/${live.channel}?autoplay=1&playsinline=1&rel=0`
   }
-  const parent = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-  return `https://player.twitch.tv/?channel=${encodeURIComponent(live.channel)}&parent=${parent}&autoplay=true`
+  if (live.platform === 'twitch') {
+    const parent = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+    return `https://player.twitch.tv/?channel=${encodeURIComponent(live.channel)}&parent=${parent}&autoplay=true`
+  }
+  return null // TikTok u otras → no embebible
 }
 
 export default function LiveStreamScreen({ onClose, isStaff = false, onLiveChange }) {
@@ -109,17 +115,38 @@ export default function LiveStreamScreen({ onClose, isStaff = false, onLiveChang
           <div style={{ textAlign: 'center', padding: 40, color: '#6B7280', fontSize: 13 }}>Cargando…</div>
         ) : live ? (
           <>
-            {/* Reproductor 16:9 */}
-            <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', borderRadius: 14, overflow: 'hidden', background: '#000', border: '1px solid #1F1F1F' }}>
-              <iframe
-                src={embedUrl(live)}
-                title={live.title || 'Transmisión en vivo'}
-                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                allowFullScreen
-                frameBorder="0"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-              />
-            </div>
+            {/* Reproductor: iframe (YouTube/Twitch) o link-out (TikTok) */}
+            {embedUrl(live) ? (
+              <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', borderRadius: 14, overflow: 'hidden', background: '#000', border: '1px solid #1F1F1F' }}>
+                <iframe
+                  src={embedUrl(live)}
+                  title={live.title || 'Transmisión en vivo'}
+                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                  frameBorder="0"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                />
+              </div>
+            ) : (
+              // TikTok (no embebible) → botón para abrir en la app de TikTok
+              <a
+                href={live.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
+                  width: '100%', paddingTop: '40%', paddingBottom: '40%', position: 'relative',
+                  borderRadius: 14, textDecoration: 'none',
+                  background: 'linear-gradient(135deg, #010101 0%, #1a1a1a 100%)', border: '1px solid #2A2A2A',
+                }}
+              >
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                  <div style={{ fontSize: 44 }}>🎵</div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: '#FFF', letterSpacing: '0.02em' }}>Abrir en TikTok</div>
+                  <div style={{ fontSize: 12, color: '#9CA3AF' }}>@{live.channel} · en vivo</div>
+                </div>
+              </a>
+            )}
             {live.title && (
               <div style={{ fontSize: 15, fontWeight: 800, color: '#FFF', marginTop: 14 }}>{live.title}</div>
             )}
@@ -143,16 +170,16 @@ export default function LiveStreamScreen({ onClose, isStaff = false, onLiveChang
           // Sin transmisión activa + soy staff → formulario para iniciar
           <>
             <div style={{ fontSize: 13, color: '#9CA3AF', lineHeight: 1.6, marginBottom: 18 }}>
-              Transmití por <strong style={{ color: '#FFF' }}>YouTube</strong> o <strong style={{ color: '#FFF' }}>Twitch</strong> (con OBS o el celular) y pegá acá el link en vivo. Todos verán el banner <strong style={{ color: RED_SOFT }}>EN VIVO</strong> y podrán mirar las partidas dentro de la app.
+              Transmití por <strong style={{ color: '#FFF' }}>YouTube</strong>, <strong style={{ color: '#FFF' }}>Twitch</strong> o <strong style={{ color: '#FFF' }}>TikTok</strong> y pegá acá el link en vivo. Todos verán el banner <strong style={{ color: RED_SOFT }}>EN VIVO</strong>. YouTube/Twitch se miran <strong style={{ color: '#FFF' }}>dentro de la app</strong>; TikTok abre en su app.
             </div>
 
             <label style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', letterSpacing: '0.06em' }}>LINK DEL STREAM</label>
             <input value={url} onChange={e => { setUrl(e.target.value); setError('') }}
-              placeholder="https://twitch.tv/tucanal  ·  youtube.com/watch?v=…"
+              placeholder="twitch.tv/tucanal · youtube.com/watch?v=… · tiktok.com/@vos"
               style={{ width: '100%', marginTop: 6, marginBottom: 6, padding: '12px 14px', borderRadius: 12, background: '#111', border: `1px solid ${url && !parsed ? RED : '#2A2A2A'}`, color: '#FFF', fontWeight: 600, outline: 'none' }} />
             {url && (
               <div style={{ fontSize: 11, color: parsed ? '#4ADE80' : RED_SOFT, marginBottom: 12 }}>
-                {parsed ? `✓ ${parsed.platform === 'youtube' ? 'YouTube' : 'Twitch'} detectado` : 'No reconozco ese link (usá YouTube o Twitch)'}
+                {parsed ? `✓ ${{ youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok' }[parsed.platform]} detectado` : 'No reconozco ese link (usá YouTube, Twitch o TikTok)'}
               </div>
             )}
 

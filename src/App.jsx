@@ -580,7 +580,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           onOpenLifeCounter={() => { setShowHub(false); setShowLifeCounter(true) }}
           onOpenLive={() => { setShowHub(false); setShowLive(true) }}
           onOpenLiveStream={() => { setShowHub(false); setShowLiveStream(true) }}
-          canLive={true}
+          canLive={false}
           canStream={isOwner || isStaff}
           onBattleNow={() => { setShowHub(false); setVsUser(null); setShowMatchModal(true) }}
           onOpenTracking={() => { setShowHub(false); setShowTracking(true) }}

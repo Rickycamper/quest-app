@@ -9,7 +9,7 @@
 
 CREATE TABLE IF NOT EXISTS public.live_streams (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  platform    text NOT NULL CHECK (platform IN ('youtube', 'twitch')),
+  platform    text NOT NULL CHECK (platform IN ('youtube', 'twitch', 'tiktok')),
   url         text NOT NULL,                 -- link original pegado por el admin
   channel     text NOT NULL,                 -- video id (YouTube) o canal (Twitch)
   title       text,
