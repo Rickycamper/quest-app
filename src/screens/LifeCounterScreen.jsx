@@ -1001,28 +1001,17 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
           se alinean a las orillas del panel (flex-start / flex-end)
           para que NO se solapen con el número de HP grande del centro.
           Padding lateral genera el aire necesario. */}
+      {/* Panel LIMPIO: solo el número grande en el centro. Sin símbolos +/−
+          en ninguna cantidad de jugadores — las mitades del panel siguen
+          siendo la zona de toque (izq = −1, der = +1), así es más fácil
+          tocar la pantalla en cualquier lado. */}
       <div style={{ flex: 1, display: 'flex', zIndex: 3 }}>
         <div {...minusEvents} style={{
-          flex: 1, display: 'flex', alignItems: 'center',
-          justifyContent: compact ? 'flex-start' : 'center',
-          paddingLeft: compact ? 16 : 0,
-          cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none',
-        }}>
-          <svg width="32" height="4" viewBox="0 0 32 4" style={{ pointerEvents: 'none', display: 'block' }}>
-            <rect x="0" y="0" width="32" height="4" rx="2" fill="rgba(255,255,255,0.35)" />
-          </svg>
-        </div>
+          flex: 1, cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none',
+        }} />
         <div {...plusEvents} style={{
-          flex: 1, display: 'flex', alignItems: 'center',
-          justifyContent: compact ? 'flex-end' : 'center',
-          paddingRight: compact ? 16 : 0,
-          cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none',
-        }}>
-          <svg width="28" height="28" viewBox="0 0 28 28" style={{ pointerEvents: 'none', display: 'block' }}>
-            <rect x="12" y="0" width="4" height="28" rx="2" fill="rgba(255,255,255,0.35)" />
-            <rect x="0" y="12" width="28" height="4" rx="2" fill="rgba(255,255,255,0.35)" />
-          </svg>
-        </div>
+          flex: 1, cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none',
+        }} />
       </div>
 
       {/* Compact or flipped: info row at CSS-bottom (outer edge) */}
@@ -1874,16 +1863,18 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
         style={{
           flex: 1, position: 'relative', overflow: 'hidden',
           background: bg, transition: 'background 0.35s',
+          borderRadius: isDigimon ? 0 : 20,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', touchAction: 'none',
           transform: flipped ? 'rotate(180deg)' : 'none',
           userSelect: 'none', WebkitUserSelect: 'none',
+          boxShadow: isActive ? `inset 0 0 90px ${color}55` : 'none',
         }}
       >
         {/* Active pulse ring */}
         {isActive && !winner && (
-          <div style={{ position: 'absolute', inset: 0, border: `3px solid ${color}`, animation: 'ringPulse 1.4s infinite', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: 0, borderRadius: isDigimon ? 0 : 20, border: `3px solid ${color}`, animation: 'ringPulse 1.4s infinite', pointerEvents: 'none' }} />
         )}
 
         {/* Winner icon */}
@@ -1893,30 +1884,27 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
           </div>
         )}
 
-        {/* Center: avatar + name */}
+        {/* Centro: nombre chico arriba + TIEMPO GRANDE (estética del life counter) */}
         {!isWinner && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, pointerEvents: 'none' }}>
-            <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: `3px solid rgba(255,255,255,${isActive ? 0.65 : 0.22})`, background: 'rgba(0,0,0,0.4)', transition: 'border-color 0.3s' }}>
-              <Avatar url={user?.avatar_url} size={52} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, pointerEvents: 'none', zIndex: 2, padding: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <div style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', border: `2px solid rgba(255,255,255,${isActive ? 0.6 : 0.25})`, background: 'rgba(0,0,0,0.4)', flexShrink: 0, transition: 'border-color 0.3s' }}>
+                <Avatar url={user?.avatar_url} size={26} />
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 800, color: `rgba(255,255,255,${isActive ? 0.95 : 0.5})`, fontFamily: 'Inter, sans-serif', textShadow: '0 1px 2px rgba(0,0,0,0.4)', transition: 'color 0.3s', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user?.username ?? '…'}
+              </span>
             </div>
-            <span style={{ fontSize: 13, fontWeight: 800, color: `rgba(255,255,255,${isActive ? 0.95 : 0.45})`, fontFamily: 'Inter, sans-serif', transition: 'color 0.3s' }}>
-              {user?.username ?? '…'}
-            </span>
-          </div>
-        )}
-
-        {/* Timer — left side */}
-        {!isWinner && (
-          <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-            <div style={{
-              fontSize: 34, fontWeight: 900, fontFamily: 'Inter, sans-serif',
-              letterSpacing: '-1px', lineHeight: 1,
-              color: low ? '#FCA5A5' : `rgba(255,255,255,${isActive ? 1 : 0.38})`,
+            <span style={{
+              fontSize: 76, fontWeight: 900, fontFamily: 'Inter, sans-serif',
+              letterSpacing: '-2px', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+              color: low ? '#FCA5A5' : `rgba(255,255,255,${isActive ? 1 : 0.6})`,
+              textShadow: '0 2px 16px rgba(0,0,0,0.45)',
               animation: urgent && isActive ? 'pulse 0.8s infinite' : 'none',
               transition: 'color 0.3s',
-            }}>{fmt(secs)}</div>
+            }}>{fmt(secs)}</span>
             {isActive && !winner && (
-              <div style={{ fontSize: 8, fontWeight: 700, color, letterSpacing: '0.1em', marginTop: 3, fontFamily: 'Inter, sans-serif' }}>▶ TU TURNO</div>
+              <span style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: '0.14em', fontFamily: 'Inter, sans-serif' }}>▶ TU TURNO</span>
             )}
           </div>
         )}
@@ -1947,6 +1935,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       overflow: 'hidden', position: 'relative',
+      padding: isDigimon ? 0 : 8,
       userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
     }}>
       {/* Opponent panel — top, flipped */}
