@@ -971,71 +971,6 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
   ) : inner
 }
 
-// ── Selector de MODO de contador (se abre desde el menú de la Q) ──
-// Cambia el modo GLOBAL: Vida / Veneno / Daño de comandante. Al elegir uno,
-// todo el tablero pasa a ese contador y se toca igual que la vida. Comandante
-// solo aparece en formato Commander.
-function ModeSelectorPopup({ mode, isCommander, onPick, onClose }) {
-  const rowStyle = (active, accent) => ({
-    display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-    padding: '13px 13px', borderRadius: 14, cursor: 'pointer', textAlign: 'left',
-    background: active ? `${accent}26` : 'rgba(255,255,255,0.05)',
-    border: `1px solid ${active ? `${accent}88` : 'rgba(255,255,255,0.08)'}`,
-    transition: 'background 0.15s, border-color 0.15s',
-  })
-  const Row = ({ id, accent, iconEl, label, sub }) => {
-    const active = mode === id
-    return (
-      <button onClick={() => { onPick(id); onClose() }} style={rowStyle(active, accent)}>
-        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${accent}2e` }}>
-          {iconEl}
-        </span>
-        <span style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 15, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>{label}</span>
-          {sub && <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.45)', fontFamily: 'Inter, sans-serif', letterSpacing: '0.02em' }}>{sub}</span>}
-        </span>
-        {active && <span style={{ fontSize: 15, fontWeight: 900, color: '#FFF', flexShrink: 0 }}>✓</span>}
-      </button>
-    )
-  }
-  const heartIcon = (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="#F87171"><path d="M12 21s-7.5-4.9-10-9.2C.6 9 1.6 5.7 4.6 5c1.9-.4 3.6.5 4.6 1.9C10.8 5.5 12.5 4.6 14.4 5c3 .7 4 4 2.6 6.8C19.5 16.1 12 21 12 21z" /></svg>
-  )
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 30,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.45)',
-        backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
-        padding: 20, animation: 'fadeUp 0.15s ease',
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '100%', maxWidth: 320,
-          background: 'rgba(22,22,28,0.98)',
-          border: '1px solid rgba(255,255,255,0.14)',
-          borderRadius: 20, padding: 14,
-          boxShadow: '0 18px 50px rgba(0,0,0,0.6)',
-          display: 'flex', flexDirection: 'column', gap: 9,
-        }}
-      >
-        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', fontFamily: 'Inter, sans-serif', padding: '2px 4px 4px' }}>
-          ¿QUÉ CONTÁS?
-        </span>
-        <Row id="life"   accent="#F87171" iconEl={heartIcon} label="Vida normal" sub="contador de vida" />
-        <Row id="poison" accent="#86EFAC" iconEl={<img src={biohazardIcon} alt="" style={{ width: 17, height: 17, filter: 'invert(1)' }} />} label="Veneno" sub="10 = derrota" />
-        {isCommander && (
-          <Row id="cmd" accent="#FCD34D" iconEl={<img src={crownIcon} alt="" style={{ width: 16, height: 16, filter: 'invert(1)' }} />} label="Daño de comandante" sub="resta vida · 21 = derrota" />
-        )}
-      </div>
-    </div>
-  )
-}
-
 // ── Counter step (MTG / Riftbound) ─────────────
 function CounterStep({ game, commander, me, opponents, playerCount, matchType, onResult, onBack, onUpdateOpponent }) {
   const startHp = getStartHP(game, commander)
@@ -1063,7 +998,6 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
   // a todos los paneles). Al elegir veneno/comandante, TODO el tablero pasa a
   // ese contador y se toca igual que la vida hasta volver a 'life'.
   const [counterMode, setCounterMode] = useState('life')
-  const [modePopupOpen, setModePopupOpen] = useState(false)
   // Slot a asignar cuando eligen usuario: el primer oponente invitado/vacío
   // (si todos son reales, reemplaza el primero).
   const guestSlotIdx = opponents.findIndex(o => !o || o.isGuest)
@@ -1340,39 +1274,60 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
               onClick={() => setMenuOpen(false)}
               style={{ position: 'fixed', inset: 0, zIndex: 19, background: 'rgba(0,0,0,0.35)' }}
             />
-            {/* Pills radiales. En MTG se agrega "Daño" (elige veneno / daño de
-                comandante); el resto de acciones a los lados. */}
-            {(game === 'MTG' ? [
-              { icon: '↺',  label: 'Reiniciar', bg: '#FCD34D', dx: -134, dy: -16, rot: -8, delay: 0,   act: () => { handleReset(); setMenuOpen(false) } },
-              { icon: '☠️', label: 'Daño',      bg: '#86EFAC', dx: -47,  dy: -70, rot: -3, delay: 40,  act: () => { setModePopupOpen(true); setMenuOpen(false) } },
-              { icon: '⚙️', label: 'Formato',   bg: '#A78BFA', dx: 47,   dy: -70, rot: 3,  delay: 80,  act: () => { onBack(); setMenuOpen(false) } },
-              { icon: '👤', label: 'Jugador',   bg: '#F472B6', dx: 134,  dy: -16, rot: 8,  delay: 120, act: () => { setPickerOpen(true); setMenuOpen(false) } },
-            ] : [
-              { icon: '↺',  label: 'Reiniciar', bg: '#FCD34D', dx: -104, dy: 0,   rot: -7, delay: 0,  act: () => { handleReset(); setMenuOpen(false) } },
-              { icon: '⚙️', label: 'Formato',   bg: '#A78BFA', dx: 0,    dy: -58, rot: 4,  delay: 45, act: () => { onBack(); setMenuOpen(false) } },
-              { icon: '👤', label: 'Jugador',   bg: '#F472B6', dx: 104,  dy: 0,   rot: 7,  delay: 90, act: () => { setPickerOpen(true); setMenuOpen(false) } },
-            ]).map(p => (
-              <div key={p.label} style={{
-                position: 'absolute', left: '50%', top: '50%',
-                transform: `translate(calc(-50% + ${p.dx}px), calc(-50% + ${p.dy}px)) rotate(${p.rot}deg)`,
-                zIndex: 22,
-              }}>
-                <button
-                  onClick={p.act}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '9px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                    background: p.bg, color: '#111111',
-                    fontSize: 12, fontWeight: 900, fontFamily: 'Inter, sans-serif',
-                    letterSpacing: '0.02em', whiteSpace: 'nowrap',
-                    boxShadow: `0 6px 20px rgba(0,0,0,0.45), 0 0 18px ${p.bg}55`,
-                    animation: `lcPillIn 0.32s cubic-bezier(0.34,1.56,0.64,1) ${p.delay}ms both`,
-                  }}
-                >
-                  <span style={{ fontSize: 14, lineHeight: 1 }}>{p.icon}</span>{p.label}
-                </button>
-              </div>
-            ))}
+            {/* Pills radiales. En MTG se agregan toggles directos: "Veneno" y
+                (en Commander) "Comandante". Tocar uno activa ese contador;
+                tocarlo de nuevo (o el otro) vuelve a Vida — sin popup. */}
+            {(() => {
+              const pills = [
+                { icon: '↺', label: 'Reiniciar', bg: '#FCD34D', act: () => { handleReset(); setMenuOpen(false) } },
+              ]
+              if (game === 'MTG') {
+                pills.push({
+                  icon: '☠️', label: 'Veneno', bg: '#86EFAC', active: counterMode === 'poison',
+                  act: () => { setCounterMode(m => m === 'poison' ? 'life' : 'poison'); setMenuOpen(false) },
+                })
+                if (commander) pills.push({
+                  icon: '👑', label: 'Comandante', bg: '#FCD34D', active: counterMode === 'cmd',
+                  act: () => { setCounterMode(m => m === 'cmd' ? 'life' : 'cmd'); setMenuOpen(false) },
+                })
+              }
+              pills.push({ icon: '⚙️', label: 'Formato', bg: '#A78BFA', act: () => { onBack(); setMenuOpen(false) } })
+              pills.push({ icon: '👤', label: 'Jugador', bg: '#F472B6', act: () => { setPickerOpen(true); setMenuOpen(false) } })
+              const n = pills.length
+              return pills.map((p, i) => {
+                const t   = n === 1 ? 0.5 : i / (n - 1)
+                const ang = Math.PI * (1 + t)            // 180°→360° (izq → arriba → der)
+                const dx  = Math.round(134 * Math.cos(ang))
+                const dy  = Math.round(78 * Math.sin(ang))
+                const rot = Math.round((t - 0.5) * 14)
+                return (
+                  <div key={p.label} style={{
+                    position: 'absolute', left: '50%', top: '50%',
+                    transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${rot}deg)`,
+                    zIndex: 22,
+                  }}>
+                    <button
+                      onClick={p.act}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '9px 14px', borderRadius: 999, cursor: 'pointer',
+                        background: p.bg, color: '#111111',
+                        border: p.active ? '2.5px solid #FFFFFF' : '2.5px solid transparent',
+                        fontSize: 12, fontWeight: 900, fontFamily: 'Inter, sans-serif',
+                        letterSpacing: '0.02em', whiteSpace: 'nowrap',
+                        boxShadow: p.active
+                          ? `0 6px 20px rgba(0,0,0,0.5), 0 0 22px ${p.bg}`
+                          : `0 6px 20px rgba(0,0,0,0.45), 0 0 18px ${p.bg}55`,
+                        animation: `lcPillIn 0.32s cubic-bezier(0.34,1.56,0.64,1) ${i * 40}ms both`,
+                      }}
+                    >
+                      <span style={{ fontSize: 14, lineHeight: 1 }}>{p.icon}</span>
+                      {p.active ? `${p.label} ✓` : p.label}
+                    </button>
+                  </div>
+                )
+              })
+            })()}
           </>
         )}
       </div>
@@ -1541,15 +1496,6 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
         />
       )}
 
-      {/* Selector de modo de contador (abre desde el menú de la Q, solo MTG) */}
-      {modePopupOpen && (
-        <ModeSelectorPopup
-          mode={counterMode}
-          isCommander={game === 'MTG' && commander}
-          onPick={setCounterMode}
-          onClose={() => setModePopupOpen(false)}
-        />
-      )}
     </div>
     </CounterModeContext.Provider>
   )
