@@ -754,10 +754,21 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
   const isRiftbound = game === 'Riftbound'
   const holdDelta   = isRiftbound ? 1 : 10
 
-  const tapMinus  = useCallback(() => onAdjust(-1),         [onAdjust])
-  const holdMinus = useCallback(() => onAdjust(-holdDelta), [onAdjust, holdDelta])
-  const tapPlus   = useCallback(() => onAdjust(+1),         [onAdjust])
-  const holdPlus  = useCallback(() => onAdjust(+holdDelta), [onAdjust, holdDelta])
+  // Delta acumulado (ref. video): cada ajuste suma a un contador "+5 / −3"
+  // que se muestra junto al número y se desvanece tras una pausa.
+  const [accum, setAccum] = useState(0)
+  const accumTimer = useRef(null)
+  useEffect(() => () => clearTimeout(accumTimer.current), [])
+  const bump = useCallback((d) => {
+    setAccum(a => a + d)
+    clearTimeout(accumTimer.current)
+    accumTimer.current = setTimeout(() => setAccum(0), 1400)
+  }, [])
+
+  const tapMinus  = useCallback(() => { onAdjust(-1);         bump(-1) },         [onAdjust, bump])
+  const holdMinus = useCallback(() => { onAdjust(-holdDelta); bump(-holdDelta) }, [onAdjust, holdDelta, bump])
+  const tapPlus   = useCallback(() => { onAdjust(+1);         bump(+1) },         [onAdjust, bump])
+  const holdPlus  = useCallback(() => { onAdjust(+holdDelta); bump(+holdDelta) }, [onAdjust, holdDelta, bump])
 
   const minusEvents = useTapOrHold(tapMinus, holdMinus, 600)
   const plusEvents  = useTapOrHold(tapPlus,  holdPlus,  600)
@@ -923,6 +934,9 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
       background: panelBg,
       backdropFilter: 'blur(30px) saturate(180%)',
       WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+      // Card look (ref. video): esquinas redondeadas + gaps oscuros entre
+      // paneles → cada jugador se lee como una tarjeta propia.
+      borderRadius: 20,
       boxShadow: dead ? 'none' : `inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 80px ${playerColor}22`,
       transition: 'background 0.4s, box-shadow 0.4s',
       userSelect: 'none',
@@ -948,6 +962,7 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
         pointerEvents: 'none', gap: 4, zIndex: 2,
       }}>
         <span style={{
+          position: 'relative',
           fontSize: compact ? (hp >= 100 ? 88 : 112) : (hp >= 100 ? 72 : 96),
           fontWeight: 800, color: hpColor,
           fontVariantNumeric: 'tabular-nums',
@@ -955,7 +970,21 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
           lineHeight: 1,
           transition: 'color 0.35s, font-size 0.2s',
           textShadow: dead ? '0 0 30px rgba(0,0,0,0.4)' : '0 2px 14px rgba(0,0,0,0.45)',
-        }}>{hp}</span>
+        }}>
+          {hp}
+          {/* Delta acumulado — flota junto al número y se desvanece */}
+          {accum !== 0 && (
+            <span style={{
+              position: 'absolute', right: -12, top: -4,
+              transform: 'translateX(100%)',
+              fontSize: compact ? 24 : 22, fontWeight: 900,
+              color: 'rgba(255,255,255,0.85)',
+              fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums',
+              textShadow: '0 1px 8px rgba(0,0,0,0.5)',
+              animation: 'fadeUp 0.18s ease',
+            }}>{accum > 0 ? `+${accum}` : accum}</span>
+          )}
+        </span>
         {!compact && (
           <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontFamily: 'Inter, sans-serif', fontWeight: 600, letterSpacing: '0.1em' }}>
             MANTÉN = ±{holdDelta}
@@ -1182,6 +1211,7 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
       zIndex: 50,
       display: 'flex',
       flexDirection: 'column',
+      padding: 8,
       touchAction: 'none',
       userSelect: 'none',
       WebkitUserSelect: 'none',
@@ -1192,6 +1222,7 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
       flexDirection: 'column',
       overflow: 'hidden',
       position: 'relative',
+      padding: 8,
       touchAction: 'none',
       userSelect: 'none',
       WebkitUserSelect: 'none',
@@ -1219,21 +1250,21 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
         {playerCount === 3 && (
           <>
             <PlayerPanel user={allPlayers[1]} hp={hps[1]} maxHp={maxHp} game={game} poison={poisons[1]} onAdjust={d => adjust(1, d)} onPoison={d => addPoison(1, d)} isMTG={game === 'MTG'} isCommander={game === 'MTG' && commander} cmdDmg={cmdDmgs[1]} onCmdDmg={d => addCmdDmg(1, d)} flipped dead={losers.includes(1)} playerColor={PLAYER_COLORS[1]} compact />
-            <div style={{ width: 2, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+            <div style={{ width: 8, background: 'transparent', flexShrink: 0 }} />
             <PlayerPanel user={allPlayers[2]} hp={hps[2]} maxHp={maxHp} game={game} poison={poisons[2]} onAdjust={d => adjust(2, d)} onPoison={d => addPoison(2, d)} isMTG={game === 'MTG'} isCommander={game === 'MTG' && commander} cmdDmg={cmdDmgs[2]} onCmdDmg={d => addCmdDmg(2, d)} flipped dead={losers.includes(2)} playerColor={PLAYER_COLORS[2]} compact />
           </>
         )}
         {playerCount === 4 && (
           <>
             <PlayerPanel user={allPlayers[2]} hp={hps[2]} maxHp={maxHp} game={game} poison={poisons[2]} onAdjust={d => adjust(2, d)} onPoison={d => addPoison(2, d)} isMTG={game === 'MTG'} isCommander={game === 'MTG' && commander} cmdDmg={cmdDmgs[2]} onCmdDmg={d => addCmdDmg(2, d)} flipped dead={losers.includes(2)} playerColor={PLAYER_COLORS[2]} compact />
-            <div style={{ width: 2, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+            <div style={{ width: 8, background: 'transparent', flexShrink: 0 }} />
             <PlayerPanel user={allPlayers[3]} hp={hps[3]} maxHp={maxHp} game={game} poison={poisons[3]} onAdjust={d => adjust(3, d)} onPoison={d => addPoison(3, d)} isMTG={game === 'MTG'} isCommander={game === 'MTG' && commander} cmdDmg={cmdDmgs[3]} onCmdDmg={d => addCmdDmg(3, d)} flipped dead={losers.includes(3)} playerColor={PLAYER_COLORS[3]} compact />
           </>
         )}
       </div>
 
-      {/* Center line — Q badge floats over it */}
-      <div style={{ flexShrink: 0, height: 2, background: 'rgba(255,255,255,0.08)', position: 'relative', overflow: 'visible', zIndex: 20 }}>
+      {/* Center gap — Q badge floats over it (los paneles-card respiran) */}
+      <div style={{ flexShrink: 0, height: 10, background: 'transparent', position: 'relative', overflow: 'visible', zIndex: 20 }}>
 
         {/* Q badge — opens menu */}
         <button
@@ -1255,82 +1286,49 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
           <img src={qLogo} alt="Q" style={{ width: 46, height: 46, objectFit: 'contain' }} />
         </button>
 
-        {/* Menu popup — slides up from center */}
+        {/* Menú RADIAL — pills de colores en abanico alrededor del botón
+            central (estilo apps de counter tipo la referencia del video).
+            Cada pill: wrapper posiciona/rota, botón interno hace el pop. */}
         {menuOpen && (
           <>
-            {/* Backdrop tap-to-close */}
+            <style>{`
+              @keyframes lcPillIn {
+                0%   { transform: scale(0.2); opacity: 0; }
+                62%  { transform: scale(1.14); opacity: 1; }
+                100% { transform: scale(1); opacity: 1; }
+              }
+            `}</style>
+            {/* Backdrop tap-to-close (oscurece levemente para foco) */}
             <div
               onClick={() => setMenuOpen(false)}
-              style={{ position: 'fixed', inset: 0, zIndex: 19 }}
+              style={{ position: 'fixed', inset: 0, zIndex: 19, background: 'rgba(0,0,0,0.35)' }}
             />
-            <div style={{
-              position: 'absolute', left: '50%', bottom: 36,
-              transform: 'translateX(-50%)',
-              background: '#111111',
-              border: '1px solid #2A2A2A',
-              borderRadius: 16,
-              padding: '6px',
-              display: 'flex', flexDirection: 'column', gap: 4,
-              minWidth: 200,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
-              animation: 'slideUp 0.18s ease',
-              zIndex: 22,
-            }}>
-              {/* Reset */}
-              <button onClick={() => { handleReset(); setMenuOpen(false) }} style={{
-                width: '100%', padding: '12px 16px', borderRadius: 10,
-                background: 'none', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 12,
-                fontFamily: 'Inter, sans-serif',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = '#1A1A1A'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}
-              >
-                <span style={{ fontSize: 18 }}>↺</span>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#FFF' }}>Reiniciar</div>
-                  <div style={{ fontSize: 10, color: '#4B5563' }}>Volver a las vidas iniciales</div>
-                </div>
-              </button>
-
-              <div style={{ height: 1, background: '#1E1E1E', margin: '0 4px' }} />
-
-              {/* Agregar / asignar jugador real sin salir del counter */}
-              <button onClick={() => { setPickerOpen(true); setMenuOpen(false) }} style={{
-                width: '100%', padding: '12px 16px', borderRadius: 10,
-                background: 'none', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 12,
-                fontFamily: 'Inter, sans-serif',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = '#1A1A1A'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}
-              >
-                <span style={{ fontSize: 18 }}>👤</span>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#FFF' }}>Agregar jugador</div>
-                  <div style={{ fontSize: 10, color: '#4B5563' }}>Asigná un usuario real al rival</div>
-                </div>
-              </button>
-
-              <div style={{ height: 1, background: '#1E1E1E', margin: '0 4px' }} />
-
-              {/* Change format / game */}
-              <button onClick={() => { onBack(); setMenuOpen(false) }} style={{
-                width: '100%', padding: '12px 16px', borderRadius: 10,
-                background: 'none', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 12,
-                fontFamily: 'Inter, sans-serif',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = '#1A1A1A'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}
-              >
-                <span style={{ fontSize: 18 }}>⚙️</span>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#FFF' }}>Cambiar formato</div>
-                  <div style={{ fontSize: 10, color: '#4B5563' }}>Juego, modo y jugador</div>
-                </div>
-              </button>
-            </div>
+            {[
+              { icon: '↺',  label: 'Reiniciar', bg: '#FCD34D', dx: -104, dy: 0,   rot: -7, delay: 0,   act: () => { handleReset(); setMenuOpen(false) } },
+              { icon: '👤', label: 'Jugador',   bg: '#F472B6', dx: 0,    dy: -58, rot: 4,  delay: 45,  act: () => { setPickerOpen(true); setMenuOpen(false) } },
+              { icon: '⚙️', label: 'Formato',   bg: '#A78BFA', dx: 104,  dy: 0,   rot: 7,  delay: 90,  act: () => { onBack(); setMenuOpen(false) } },
+            ].map(p => (
+              <div key={p.label} style={{
+                position: 'absolute', left: '50%', top: '50%',
+                transform: `translate(calc(-50% + ${p.dx}px), calc(-50% + ${p.dy}px)) rotate(${p.rot}deg)`,
+                zIndex: 22,
+              }}>
+                <button
+                  onClick={p.act}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '9px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                    background: p.bg, color: '#111111',
+                    fontSize: 12, fontWeight: 900, fontFamily: 'Inter, sans-serif',
+                    letterSpacing: '0.02em', whiteSpace: 'nowrap',
+                    boxShadow: `0 6px 20px rgba(0,0,0,0.45), 0 0 18px ${p.bg}55`,
+                    animation: `lcPillIn 0.32s cubic-bezier(0.34,1.56,0.64,1) ${p.delay}ms both`,
+                  }}
+                >
+                  <span style={{ fontSize: 14, lineHeight: 1 }}>{p.icon}</span>{p.label}
+                </button>
+              </div>
+            ))}
           </>
         )}
       </div>
@@ -1386,7 +1384,7 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
               playerColor={PLAYER_COLORS[0 % PLAYER_COLORS.length]}
               compact
             />
-            <div style={{ width: 2, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+            <div style={{ width: 8, background: 'transparent', flexShrink: 0 }} />
             <PlayerPanel
               user={allPlayers[1]}
               hp={hps[1]} maxHp={maxHp} game={game}
