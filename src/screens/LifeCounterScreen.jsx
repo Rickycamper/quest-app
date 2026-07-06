@@ -773,9 +773,11 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
   const minusEvents = useTapOrHold(tapMinus, holdMinus, 600)
   const plusEvents  = useTapOrHold(tapPlus,  holdPlus,  600)
 
-  // Expanded damage/poison panels — tap badge to open, tap again to close
-  const [cmdOpen,    setCmdOpen]    = useState(false)
-  const [poisonOpen, setPoisonOpen] = useState(false)
+  // Popup de contadores: en vez de dos badges sueltos (veneno + comandante),
+  // un solo chip abre un popup donde se ELIGE qué contador manejar. El daño
+  // de comandante solo existe en formato Commander (ningún otro TCG lo ve).
+  const [countersOpen, setCountersOpen] = useState(false)
+  const [counterTab,   setCounterTab]   = useState(isCommander ? 'cmd' : 'poison')
 
   const pct = Math.max(0, Math.min(1, hp / maxHp))
 
@@ -832,93 +834,118 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
         )}
       </div>
       <div style={{ display: 'flex', gap: compact ? 4 : 6, alignItems: 'center' }}>
-        {isCommander && (
-          <button
-            onClick={e => { e.stopPropagation(); setCmdOpen(v => !v); setPoisonOpen(false) }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer',
-              background: cmdOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
-              border: `1px solid rgba(255,255,255,${cmdOpen ? 0.4 : 0.2})`,
-              borderRadius: 7, padding: compact ? '3px 6px' : '4px 10px',
-              transition: 'background 0.2s',
-            }}
-          >
-            <img src={crownIcon} alt="cmd" style={{ width: compact ? 11 : 13, height: compact ? 11 : 13, pointerEvents: 'none', flexShrink: 0, filter: 'invert(1)', opacity: cmdDmg >= 15 ? 1 : 0.6 }} />
-            {!compact && <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', pointerEvents: 'none', color: '#FFFFFF' }}>{cmdDmg}/21</span>}
-            {compact  && <span style={{ fontSize: 10, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}>{cmdDmg}</span>}
-          </button>
-        )}
         {isMTG && (
           <button
-            onClick={e => { e.stopPropagation(); setPoisonOpen(v => !v); setCmdOpen(false) }}
+            onClick={e => { e.stopPropagation(); if (!isCommander) setCounterTab('poison'); setCountersOpen(v => !v) }}
             style={{
-              display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer',
-              background: poisonOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
-              border: `1px solid rgba(255,255,255,${poisonOpen ? 0.4 : 0.2})`,
-              borderRadius: 7, padding: compact ? '3px 6px' : '4px 10px',
+              display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+              background: countersOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
+              border: `1px solid rgba(255,255,255,${countersOpen ? 0.4 : 0.2})`,
+              borderRadius: 7, padding: compact ? '3px 7px' : '4px 10px',
               transition: 'background 0.2s',
             }}
           >
-            <img src={biohazardIcon} alt="poison" style={{ width: compact ? 10 : 12, height: compact ? 10 : 12, pointerEvents: 'none', flexShrink: 0, filter: 'invert(1)', opacity: poison >= 7 ? 1 : 0.6 }} />
-            {!compact && <span style={{ fontSize: 11, fontWeight: 800, color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}>{poison}/10</span>}
-            {compact  && <span style={{ fontSize: 10, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}>{poison}</span>}
+            {isCommander && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, opacity: cmdDmg > 0 ? 1 : 0.5 }}>
+                <img src={crownIcon} alt="cmd" style={{ width: compact ? 11 : 12, height: compact ? 11 : 12, pointerEvents: 'none', flexShrink: 0, filter: 'invert(1)' }} />
+                <span style={{ fontSize: compact ? 10 : 11, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}>{cmdDmg}</span>
+              </span>
+            )}
+            {isCommander && <span style={{ width: 1, height: 11, background: 'rgba(255,255,255,0.25)', flexShrink: 0 }} />}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, opacity: poison > 0 ? 1 : 0.5 }}>
+              <img src={biohazardIcon} alt="poison" style={{ width: compact ? 10 : 12, height: compact ? 10 : 12, pointerEvents: 'none', flexShrink: 0, filter: 'invert(1)' }} />
+              <span style={{ fontSize: compact ? 10 : 11, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}>{poison}</span>
+            </span>
           </button>
         )}
       </div>
     </div>
   )
 
-  const expandedPanels = (
-    <>
-      {/* ── Expanded commander damage ── */}
-      {isCommander && cmdOpen && (
-        <div style={{
-          flexShrink: 0, zIndex: 2,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '8px 20px',
-          background: 'rgba(0,0,0,0.2)',
-          borderTop: '1px solid rgba(0,0,0,0.15)',
-          borderBottom: '1px solid rgba(0,0,0,0.15)',
-          gap: 12,
-        }}>
-          <button onClick={e => { e.stopPropagation(); onCmdDmg(-1) }} style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.25)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="20" height="4" viewBox="0 0 20 4"><rect x="0" y="0" width="20" height="4" rx="2" fill="rgba(255,255,255,0.9)"/></svg>
-          </button>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <img src={crownIcon} alt="cmd" style={{ width: 16, height: 16, filter: 'invert(1)', opacity: 0.7 }} />
-            <span style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{cmdDmg}</span>
-            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', fontFamily: 'Inter, sans-serif', letterSpacing: '0.08em' }}>/ 21 CMD</span>
-          </div>
-          <button onClick={e => { e.stopPropagation(); onCmdDmg(+1) }} style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.25)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="20" height="20" viewBox="0 0 20 20"><rect x="8" y="0" width="4" height="20" rx="2" fill="rgba(255,255,255,0.9)"/><rect x="0" y="8" width="20" height="4" rx="2" fill="rgba(255,255,255,0.9)"/></svg>
+  // ── Popup de contadores (overlay dentro del panel → hereda la rotación,
+  //    así el jugador de arriba lo ve derecho). Se elige veneno o daño de
+  //    comandante; el de comandante solo aparece en formato Commander.
+  const tabStyle = (active) => ({
+    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+    padding: '9px 6px', borderRadius: 9, cursor: 'pointer', border: 'none',
+    background: active ? 'rgba(255,255,255,0.16)' : 'transparent',
+    color: active ? '#FFF' : 'rgba(255,255,255,0.55)',
+    fontSize: 12, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+    transition: 'background 0.15s, color 0.15s',
+  })
+  const stepBtnStyle = {
+    width: 54, height: 54, borderRadius: 14, flexShrink: 0,
+    background: 'rgba(255,255,255,0.12)', border: '1.5px solid rgba(255,255,255,0.22)',
+    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  }
+
+  const countersPopup = isMTG && countersOpen && (
+    <div
+      onClick={e => { e.stopPropagation(); setCountersOpen(false) }}
+      style={{
+        position: 'absolute', inset: 0, zIndex: 6,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.4)',
+        backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+        padding: 14, animation: 'fadeUp 0.15s ease',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 300,
+          background: 'rgba(22,22,28,0.97)',
+          border: '1px solid rgba(255,255,255,0.14)',
+          borderRadius: 18, padding: 14,
+          boxShadow: '0 14px 44px rgba(0,0,0,0.55)',
+          display: 'flex', flexDirection: 'column', gap: 12,
+        }}
+      >
+        {/* Selector: veneno / daño de comandante (cmd solo en Commander) */}
+        <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 4 }}>
+          {isCommander && (
+            <button onClick={e => { e.stopPropagation(); setCounterTab('cmd') }} style={tabStyle(counterTab === 'cmd')}>
+              <img src={crownIcon} alt="" style={{ width: 13, height: 13, filter: 'invert(1)', opacity: counterTab === 'cmd' ? 1 : 0.6 }} />
+              Comandante
+            </button>
+          )}
+          <button onClick={e => { e.stopPropagation(); setCounterTab('poison') }} style={tabStyle(counterTab === 'poison')}>
+            <img src={biohazardIcon} alt="" style={{ width: 12, height: 12, filter: 'invert(1)', opacity: counterTab === 'poison' ? 1 : 0.6 }} />
+            Veneno
           </button>
         </div>
-      )}
-      {/* ── Expanded poison ── */}
-      {isMTG && poisonOpen && (
-        <div style={{
-          flexShrink: 0, zIndex: 2,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '8px 20px',
-          background: 'rgba(0,0,0,0.2)',
-          borderTop: '1px solid rgba(0,0,0,0.15)',
-          borderBottom: '1px solid rgba(0,0,0,0.15)',
-          gap: 12,
-        }}>
-          <button onClick={e => { e.stopPropagation(); onPoison(-1) }} style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.25)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="20" height="4" viewBox="0 0 20 4"><rect x="0" y="0" width="20" height="4" rx="2" fill="rgba(255,255,255,0.9)"/></svg>
-          </button>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <img src={biohazardIcon} alt="poison" style={{ width: 16, height: 16, filter: 'invert(1)', opacity: 0.7 }} />
-            <span style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{poison}</span>
-            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', fontFamily: 'Inter, sans-serif', letterSpacing: '0.08em' }}>/ 10 VENENO</span>
-          </div>
-          <button onClick={e => { e.stopPropagation(); onPoison(+1) }} style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.18)', border: '1.5px solid rgba(0,0,0,0.25)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="20" height="20" viewBox="0 0 20 20"><rect x="8" y="0" width="4" height="20" rx="2" fill="rgba(255,255,255,0.9)"/><rect x="0" y="8" width="20" height="4" rx="2" fill="rgba(255,255,255,0.9)"/></svg>
-          </button>
-        </div>
-      )}
-    </>
+
+        {/* Stepper del contador elegido */}
+        {(() => {
+          const isCmd  = counterTab === 'cmd' && isCommander
+          const val    = isCmd ? cmdDmg : poison
+          const max    = isCmd ? 21 : 10
+          const onStep = isCmd ? onCmdDmg : onPoison
+          const icon   = isCmd ? crownIcon : biohazardIcon
+          const atMax  = val >= max
+          return (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+                <button onClick={e => { e.stopPropagation(); onStep(-1) }} style={stepBtnStyle}>
+                  <svg width="22" height="4" viewBox="0 0 22 4"><rect width="22" height="4" rx="2" fill="rgba(255,255,255,0.9)"/></svg>
+                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                  <img src={icon} alt="" style={{ width: 18, height: 18, filter: 'invert(1)', opacity: 0.75 }} />
+                  <span style={{ fontSize: 42, fontWeight: 900, color: atMax ? '#FCA5A5' : '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{val}</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: 'Inter, sans-serif', letterSpacing: '0.1em', fontWeight: 700 }}>/ {max}</span>
+                </div>
+                <button onClick={e => { e.stopPropagation(); onStep(+1) }} style={stepBtnStyle}>
+                  <svg width="22" height="22" viewBox="0 0 22 22"><rect x="9" width="4" height="22" rx="2" fill="rgba(255,255,255,0.9)"/><rect y="9" width="22" height="4" rx="2" fill="rgba(255,255,255,0.9)"/></svg>
+                </button>
+              </div>
+              <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.42)', fontFamily: 'Inter, sans-serif', letterSpacing: '0.05em', fontWeight: 700 }}>
+                {isCmd ? 'RESTA VIDA · 21 = DERROTA' : 'VENENO · 10 = DERROTA'}
+              </div>
+            </>
+          )
+        })()}
+      </div>
+    </div>
   )
 
   // ── Panel body ─────────────────────────────────
@@ -995,7 +1022,6 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
       {/* In 1v1 (non-compact): info row at CSS-top so both players see name at the
           visual top of their panel. Flipped panel still uses CSS-bottom (= visual top). */}
       {!compact && !flipped && infoRow(false)}
-      {!compact && !flipped && expandedPanels}
 
       {/* Tap zones — split left/right. En compact (3p/4p) los iconos
           se alinean a las orillas del panel (flex-start / flex-end)
@@ -1015,8 +1041,10 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
       </div>
 
       {/* Compact or flipped: info row at CSS-bottom (outer edge) */}
-      {(compact || flipped) && expandedPanels}
       {(compact || flipped) && infoRow(true)}
+
+      {/* Popup de contadores — overlay absoluto sobre el panel */}
+      {countersPopup}
     </div>
   )
 
@@ -1134,12 +1162,27 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
     })
   }
 
+  // Daño de comandante (solo Commander): se acumula 0–21 y CADA punto RESTA
+  // vida normal (delta +1 cmd → −1 vida; quitarlo la devuelve). Se pierde a
+  // los 21 de comandante, o si la vida llega a 0 por ese daño.
   const addCmdDmg = (idx, delta = 1) => {
     if (winner !== null || losers.includes(idx)) return
     setCmdDmgs(prev => {
+      const nv      = Math.max(0, Math.min(21, prev[idx] + delta))
+      const applied = nv - prev[idx]           // cambio real tras el clamp 0–21
+      if (applied !== 0) {
+        setTimeout(() => {
+          setHps(h => {
+            const nh = [...h]
+            nh[idx] = nh[idx] - applied         // +1 de comandante = −1 de vida
+            if (nh[idx] <= 0) triggerDeath(idx)
+            return nh
+          })
+          if (nv >= 21) triggerDeath(idx)
+        }, 0)
+      }
       const next = [...prev]
-      next[idx] = Math.max(0, prev[idx] + delta)
-      if (next[idx] >= 21) setTimeout(() => triggerDeath(idx), 0)
+      next[idx] = nv
       return next
     })
   }
