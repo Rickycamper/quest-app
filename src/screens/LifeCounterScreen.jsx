@@ -1199,13 +1199,30 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
   // 3/4-player: landscape rotation so phone lies flat on table
   const isLandscape = playerCount > 2
 
+  // Fix "sale cortado" (3/4 jugadores): el layout rotado usaba position:fixed
+  // con 100dvh×100dvw — asume teléfono fullscreen. En desktop (columna de
+  // 440px) o cualquier contenedor ≠ viewport, se desbordaba y se cortaba.
+  // Ahora medimos el CONTENEDOR real (el modal) y rotamos dentro de él.
+  const rootRef = useRef(null)
+  const [rotDims, setRotDims] = useState(null) // {w,h} del contenedor padre
+  useEffect(() => {
+    if (!isLandscape) return
+    const measure = () => {
+      const p = rootRef.current?.parentElement
+      if (p) setRotDims({ w: p.clientWidth, h: p.clientHeight })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [isLandscape])
+
   return (
-    <div style={isLandscape ? {
-      position: 'fixed',
+    <div ref={rootRef} style={isLandscape ? {
+      position: 'absolute',
       top: '50%',
       left: '50%',
-      width: '100dvh',
-      height: '100dvw',
+      width: rotDims ? rotDims.h : '100dvh',
+      height: rotDims ? rotDims.w : '100dvw',
       transform: 'translate(-50%, -50%) rotate(-90deg)',
       overflow: 'hidden',
       zIndex: 50,
