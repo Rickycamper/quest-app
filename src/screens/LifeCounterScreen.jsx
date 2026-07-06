@@ -765,7 +765,7 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
   // están siempre en 'life'; si el modo es 'cmd' pero no es Commander, cae a
   // 'life'. Al elegir un contador, TODO el panel pasa a mostrar/editar ese
   // contador (se toca igual que la vida) hasta volver a 'life'.
-  const { mode, setMode } = useContext(CounterModeContext)
+  const { mode } = useContext(CounterModeContext)
   const effMode = !isMTG ? 'life'
     : (mode === 'cmd' && !isCommander) ? 'life'
     : mode
@@ -796,10 +796,8 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
   const minusEvents = useTapOrHold(tapMinus, holdMinus, 600)
   const plusEvents  = useTapOrHold(tapPlus,  holdPlus,  600)
 
-  // Popup SELECTOR de modo: un botón en la esquina abre una lista donde se
-  // elige Vida / Veneno / Comandante. Los iconos viven en el popup, no en la
-  // cara del panel.
-  const [countersOpen, setCountersOpen] = useState(false)
+  // El selector de modo (Vida / Veneno / Comandante) vive en el menú de la Q,
+  // no en el panel. Acá solo se LEE el modo para saber qué mostrar.
 
   const pct = Math.max(0, Math.min(1, hp / maxHp))
 
@@ -850,105 +848,6 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
           <span style={{ fontSize: 14, fontWeight: 800, color: '#FFFFFF', fontFamily: 'Inter, sans-serif', letterSpacing: '0.01em' }}>
             {user?.username ?? '…'}
           </span>
-        )}
-      </div>
-      <div style={{ display: 'flex', gap: compact ? 4 : 6, alignItems: 'center' }}>
-        {isMTG && (
-          <button
-            onClick={e => { e.stopPropagation(); setCountersOpen(v => !v) }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
-              background: isCounterMode
-                ? (effMode === 'cmd' ? 'rgba(252,211,77,0.22)' : 'rgba(134,239,172,0.20)')
-                : (countersOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'),
-              border: `1px solid ${isCounterMode
-                ? (effMode === 'cmd' ? 'rgba(252,211,77,0.55)' : 'rgba(134,239,172,0.5)')
-                : `rgba(255,255,255,${countersOpen ? 0.4 : 0.2})`}`,
-              borderRadius: 7, padding: compact ? '3px 7px' : '4px 10px',
-              transition: 'background 0.2s',
-            }}
-          >
-            {isCounterMode ? (
-              <>
-                <img src={effMode === 'cmd' ? crownIcon : biohazardIcon} alt="" style={{ width: compact ? 11 : 12, height: compact ? 11 : 12, pointerEvents: 'none', flexShrink: 0, filter: 'invert(1)' }} />
-                <span style={{ fontSize: compact ? 9 : 10, fontWeight: 900, color: '#FFF', fontFamily: 'Inter, sans-serif', letterSpacing: '0.04em', pointerEvents: 'none' }}>
-                  {effMode === 'cmd' ? 'CMD' : 'VENENO'}
-                </span>
-              </>
-            ) : (
-              // Ícono neutro "ajustar contadores" (sin crown/biohazard en reposo)
-              <svg width={compact ? 13 : 14} height={compact ? 13 : 14} viewBox="0 0 16 16" style={{ pointerEvents: 'none', opacity: 0.6 }}>
-                <circle cx="5" cy="4.5" r="2" fill="#fff" /><rect x="8" y="3.7" width="6" height="1.6" rx="0.8" fill="#fff" />
-                <circle cx="11" cy="11.5" r="2" fill="#fff" /><rect x="2" y="10.7" width="6" height="1.6" rx="0.8" fill="#fff" />
-              </svg>
-            )}
-          </button>
-        )}
-      </div>
-    </div>
-  )
-
-  // ── Popup SELECTOR de modo (overlay dentro del panel → hereda la rotación,
-  //    así el jugador de arriba lo ve derecho). Se elige Vida / Veneno /
-  //    Comandante; al tocar, cambia el modo GLOBAL y cierra. Comandante solo
-  //    en formato Commander.
-  const modeRowStyle = (active, accent) => ({
-    display: 'flex', alignItems: 'center', gap: 11, width: '100%',
-    padding: '11px 12px', borderRadius: 13, cursor: 'pointer', textAlign: 'left',
-    background: active ? `${accent}26` : 'rgba(255,255,255,0.05)',
-    border: `1px solid ${active ? `${accent}88` : 'rgba(255,255,255,0.08)'}`,
-    transition: 'background 0.15s, border-color 0.15s',
-  })
-
-  const ModeRow = ({ id, accent, iconEl, label, sub, value }) => {
-    const active = effMode === id
-    return (
-      <button onClick={e => { e.stopPropagation(); setMode(id); setCountersOpen(false) }} style={modeRowStyle(active, accent)}>
-        <span style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${accent}2e` }}>
-          {iconEl}
-        </span>
-        <span style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>{label}</span>
-          {sub && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontFamily: 'Inter, sans-serif', letterSpacing: '0.02em' }}>{sub}</span>}
-        </span>
-        <span style={{ fontSize: 15, fontWeight: 900, color: active ? '#FFF' : 'rgba(255,255,255,0.55)', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{value}</span>
-      </button>
-    )
-  }
-
-  const heartIcon = (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="#F87171"><path d="M12 21s-7.5-4.9-10-9.2C.6 9 1.6 5.7 4.6 5c1.9-.4 3.6.5 4.6 1.9C10.8 5.5 12.5 4.6 14.4 5c3 .7 4 4 2.6 6.8C19.5 16.1 12 21 12 21z" /></svg>
-  )
-
-  const countersPopup = isMTG && countersOpen && (
-    <div
-      onClick={e => { e.stopPropagation(); setCountersOpen(false) }}
-      style={{
-        position: 'absolute', inset: 0, zIndex: 6,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)',
-        backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
-        padding: 14, animation: 'fadeUp 0.15s ease',
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '100%', maxWidth: 300,
-          background: 'rgba(22,22,28,0.97)',
-          border: '1px solid rgba(255,255,255,0.14)',
-          borderRadius: 18, padding: 12,
-          boxShadow: '0 14px 44px rgba(0,0,0,0.55)',
-          display: 'flex', flexDirection: 'column', gap: 8,
-        }}
-      >
-        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', fontFamily: 'Inter, sans-serif', padding: '2px 4px 2px' }}>
-          ¿QUÉ CONTÁS?
-        </span>
-        <ModeRow id="life"   accent="#F87171" iconEl={heartIcon} label="Vida normal" value={hp} />
-        <ModeRow id="poison" accent="#86EFAC" iconEl={<img src={biohazardIcon} alt="" style={{ width: 16, height: 16, filter: 'invert(1)' }} />} label="Veneno" sub="10 = derrota" value={`${poison}/10`} />
-        {isCommander && (
-          <ModeRow id="cmd" accent="#FCD34D" iconEl={<img src={crownIcon} alt="" style={{ width: 15, height: 15, filter: 'invert(1)' }} />} label="Daño de comandante" sub="resta vida · 21 = derrota" value={`${cmdDmg}/21`} />
         )}
       </div>
     </div>
@@ -1062,9 +961,6 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
 
       {/* Compact or flipped: info row at CSS-bottom (outer edge) */}
       {(compact || flipped) && infoRow(true)}
-
-      {/* Popup de contadores — overlay absoluto sobre el panel */}
-      {countersPopup}
     </div>
   )
 
@@ -1073,6 +969,71 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
       {inner}
     </div>
   ) : inner
+}
+
+// ── Selector de MODO de contador (se abre desde el menú de la Q) ──
+// Cambia el modo GLOBAL: Vida / Veneno / Daño de comandante. Al elegir uno,
+// todo el tablero pasa a ese contador y se toca igual que la vida. Comandante
+// solo aparece en formato Commander.
+function ModeSelectorPopup({ mode, isCommander, onPick, onClose }) {
+  const rowStyle = (active, accent) => ({
+    display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+    padding: '13px 13px', borderRadius: 14, cursor: 'pointer', textAlign: 'left',
+    background: active ? `${accent}26` : 'rgba(255,255,255,0.05)',
+    border: `1px solid ${active ? `${accent}88` : 'rgba(255,255,255,0.08)'}`,
+    transition: 'background 0.15s, border-color 0.15s',
+  })
+  const Row = ({ id, accent, iconEl, label, sub }) => {
+    const active = mode === id
+    return (
+      <button onClick={() => { onPick(id); onClose() }} style={rowStyle(active, accent)}>
+        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${accent}2e` }}>
+          {iconEl}
+        </span>
+        <span style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>{label}</span>
+          {sub && <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.45)', fontFamily: 'Inter, sans-serif', letterSpacing: '0.02em' }}>{sub}</span>}
+        </span>
+        {active && <span style={{ fontSize: 15, fontWeight: 900, color: '#FFF', flexShrink: 0 }}>✓</span>}
+      </button>
+    )
+  }
+  const heartIcon = (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="#F87171"><path d="M12 21s-7.5-4.9-10-9.2C.6 9 1.6 5.7 4.6 5c1.9-.4 3.6.5 4.6 1.9C10.8 5.5 12.5 4.6 14.4 5c3 .7 4 4 2.6 6.8C19.5 16.1 12 21 12 21z" /></svg>
+  )
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 30,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.45)',
+        backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+        padding: 20, animation: 'fadeUp 0.15s ease',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 320,
+          background: 'rgba(22,22,28,0.98)',
+          border: '1px solid rgba(255,255,255,0.14)',
+          borderRadius: 20, padding: 14,
+          boxShadow: '0 18px 50px rgba(0,0,0,0.6)',
+          display: 'flex', flexDirection: 'column', gap: 9,
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', fontFamily: 'Inter, sans-serif', padding: '2px 4px 4px' }}>
+          ¿QUÉ CONTÁS?
+        </span>
+        <Row id="life"   accent="#F87171" iconEl={heartIcon} label="Vida normal" sub="contador de vida" />
+        <Row id="poison" accent="#86EFAC" iconEl={<img src={biohazardIcon} alt="" style={{ width: 17, height: 17, filter: 'invert(1)' }} />} label="Veneno" sub="10 = derrota" />
+        {isCommander && (
+          <Row id="cmd" accent="#FCD34D" iconEl={<img src={crownIcon} alt="" style={{ width: 16, height: 16, filter: 'invert(1)' }} />} label="Daño de comandante" sub="resta vida · 21 = derrota" />
+        )}
+      </div>
+    </div>
+  )
 }
 
 // ── Counter step (MTG / Riftbound) ─────────────
@@ -1102,6 +1063,7 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
   // a todos los paneles). Al elegir veneno/comandante, TODO el tablero pasa a
   // ese contador y se toca igual que la vida hasta volver a 'life'.
   const [counterMode, setCounterMode] = useState('life')
+  const [modePopupOpen, setModePopupOpen] = useState(false)
   // Slot a asignar cuando eligen usuario: el primer oponente invitado/vacío
   // (si todos son reales, reemplaza el primero).
   const guestSlotIdx = opponents.findIndex(o => !o || o.isGuest)
@@ -1378,12 +1340,18 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
               onClick={() => setMenuOpen(false)}
               style={{ position: 'fixed', inset: 0, zIndex: 19, background: 'rgba(0,0,0,0.35)' }}
             />
-            {/* Pills radiales — Reiniciar / Jugador a los lados, Formato arriba */}
-            {[
+            {/* Pills radiales. En MTG se agrega "Daño" (elige veneno / daño de
+                comandante); el resto de acciones a los lados. */}
+            {(game === 'MTG' ? [
+              { icon: '↺',  label: 'Reiniciar', bg: '#FCD34D', dx: -134, dy: -16, rot: -8, delay: 0,   act: () => { handleReset(); setMenuOpen(false) } },
+              { icon: '☠️', label: 'Daño',      bg: '#86EFAC', dx: -47,  dy: -70, rot: -3, delay: 40,  act: () => { setModePopupOpen(true); setMenuOpen(false) } },
+              { icon: '⚙️', label: 'Formato',   bg: '#A78BFA', dx: 47,   dy: -70, rot: 3,  delay: 80,  act: () => { onBack(); setMenuOpen(false) } },
+              { icon: '👤', label: 'Jugador',   bg: '#F472B6', dx: 134,  dy: -16, rot: 8,  delay: 120, act: () => { setPickerOpen(true); setMenuOpen(false) } },
+            ] : [
               { icon: '↺',  label: 'Reiniciar', bg: '#FCD34D', dx: -104, dy: 0,   rot: -7, delay: 0,  act: () => { handleReset(); setMenuOpen(false) } },
               { icon: '⚙️', label: 'Formato',   bg: '#A78BFA', dx: 0,    dy: -58, rot: 4,  delay: 45, act: () => { onBack(); setMenuOpen(false) } },
               { icon: '👤', label: 'Jugador',   bg: '#F472B6', dx: 104,  dy: 0,   rot: 7,  delay: 90, act: () => { setPickerOpen(true); setMenuOpen(false) } },
-            ].map(p => (
+            ]).map(p => (
               <div key={p.label} style={{
                 position: 'absolute', left: '50%', top: '50%',
                 transform: `translate(calc(-50% + ${p.dx}px), calc(-50% + ${p.dy}px)) rotate(${p.rot}deg)`,
@@ -1570,6 +1538,16 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
           excludeIds={[me?.id, ...opponents.filter(o => o?.id).map(o => o.id)]}
           onClose={() => setPickerOpen(false)}
           onPick={(u) => { onUpdateOpponent?.(assignSlotIdx, u); setPickerOpen(false) }}
+        />
+      )}
+
+      {/* Selector de modo de contador (abre desde el menú de la Q, solo MTG) */}
+      {modePopupOpen && (
+        <ModeSelectorPopup
+          mode={counterMode}
+          isCommander={game === 'MTG' && commander}
+          onPick={setCounterMode}
+          onClose={() => setModePopupOpen(false)}
         />
       )}
     </div>
