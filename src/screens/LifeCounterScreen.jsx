@@ -1644,6 +1644,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
   const SR = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null
   const [voiceOn,    setVoiceOn]    = useState(false)
   const [voiceHeard, setVoiceHeard] = useState(false)
+  const [voiceErr,   setVoiceErr]   = useState('')
   const lastVoiceRef = useRef(0)
   const holdRef  = useRef(null)
   const rafRef   = useRef(null)
@@ -1684,39 +1685,75 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
   const activeRef = useRef(active); activeRef.current = active
   const winnerRef = useRef(winner); winnerRef.current = winner
 
-  // Motor de voz: escucha continua; "paso" / "turno" → cambia el timer.
-  // Auto-restart cuando el navegador corta la escucha (pasa seguido en iOS).
-  // Solo aplica a juegos con reloj por turnos (no Digimon: ahí el turno lo
-  // define el memory gauge).
+  // Motor de voz: escucha continua; "paso" / "turno" → cambia el timer
+  // (o lo ARRANCA si aún no corre ninguno). Solo juegos con reloj por
+  // turnos (no Digimon: ahí el turno lo define el memory gauge).
+  //
+  // Robustez (fix): el auto-restart ahora tiene BACKOFF de 600ms — antes
+  // reiniciaba en loop apretado cuando el servicio cortaba al instante
+  // (típico iOS), congelando la UI y dejando el toggle "pegado". Si el
+  // servicio termina 4 veces seguidas sin captar audio, asumimos que este
+  // navegador no soporta voz → se apaga solo con un mensaje.
   useEffect(() => {
     if (!voiceOn || !SR || isDigimon) return
     let stopped = false
+    let restartTimer = null
+    let errTimer = null
+    let gotAudio = false
+    let rapidEnds = 0
     const rec = new SR()
     rec.lang = 'es-ES'
     rec.continuous = true
     rec.interimResults = true
+    const showErr = (msg) => {
+      setVoiceErr(msg)
+      errTimer = setTimeout(() => setVoiceErr(''), 4000)
+    }
+    rec.onaudiostart = () => { gotAudio = true; rapidEnds = 0 }
     rec.onresult = (e) => {
+      gotAudio = true
       let txt = ''
       for (let i = e.resultIndex; i < e.results.length; i++) txt += ' ' + (e.results[i][0]?.transcript || '')
       if (!/pas[oó]|turno/i.test(txt)) return
       const now = Date.now()
       if (now - lastVoiceRef.current < 2000) return   // debounce anti-doble
       if (winnerRef.current) return
-      const cur = activeRef.current
-      if (cur === null) return                        // el primer turno se arranca a mano
       lastVoiceRef.current = now
-      setActive(cur === 'me' ? 'them' : 'me')
+      const cur = activeRef.current
+      // Sin reloj corriendo → el comando ARRANCA la partida (turno mío);
+      // con reloj corriendo → pasa el turno al otro.
+      setActive(cur === null ? 'me' : (cur === 'me' ? 'them' : 'me'))
       navigator.vibrate?.(18)
       setVoiceHeard(true)
       setTimeout(() => setVoiceHeard(false), 900)
     }
-    rec.onend = () => { if (!stopped) { try { rec.start() } catch {} } }
-    rec.onerror = (ev) => {
-      // Sin permiso de mic o sin servicio → apagamos el toggle
-      if (ev?.error === 'not-allowed' || ev?.error === 'service-not-allowed') setVoiceOn(false)
+    rec.onend = () => {
+      if (stopped) return
+      rapidEnds += 1
+      if (rapidEnds >= 4 && !gotAudio) {
+        // El servicio corta al toque sin captar nada → no disponible acá
+        stopped = true
+        setVoiceOn(false)
+        showErr('La voz no está disponible en este navegador')
+        return
+      }
+      restartTimer = setTimeout(() => { if (!stopped) { try { rec.start() } catch {} } }, 600)
     }
-    try { rec.start() } catch {}
-    return () => { stopped = true; try { rec.onend = null; rec.stop() } catch {} }
+    rec.onerror = (ev) => {
+      const code = ev?.error
+      if (code === 'not-allowed' || code === 'service-not-allowed' || code === 'audio-capture') {
+        stopped = true
+        setVoiceOn(false)
+        showErr(code === 'not-allowed' ? 'Permití el micrófono para usar la voz' : 'La voz no está disponible en este navegador')
+      }
+    }
+    try { rec.start() } catch { setVoiceOn(false) }
+    return () => {
+      stopped = true
+      clearTimeout(restartTimer)
+      clearTimeout(errTimer)
+      try { rec.onend = null; rec.onresult = null; rec.onerror = null; (rec.abort || rec.stop).call(rec) } catch {}
+    }
   }, [voiceOn, SR, isDigimon])
 
   // Vibrate when memory crosses sides (Digimon turn change)
@@ -1903,7 +1940,9 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
           Verde pulsante = escuchando; flash cuando reconoce el comando. */}
       {!winner && !isDigimon && !!SR && (
         <button
-          onClick={() => setVoiceOn(v => !v)}
+          onClick={(e) => { e.stopPropagation(); setVoiceOn(v => !v) }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           title='Decí "paso" o "paso turno" para cambiar el timer'
           style={{
             position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
@@ -1922,6 +1961,20 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
         >
           🎤 {voiceHeard ? '¡Paso!' : voiceOn ? 'Escuchando' : 'Voz'}
         </button>
+      )}
+
+      {/* Aviso cuando la voz no está disponible / falta permiso */}
+      {voiceErr && (
+        <div style={{
+          position: 'absolute', left: 12, top: 'calc(50% + 28px)', zIndex: 30,
+          maxWidth: 'calc(100% - 24px)',
+          padding: '7px 12px', borderRadius: 10,
+          background: 'rgba(127,29,29,0.92)', border: '1px solid rgba(239,68,68,0.5)',
+          color: '#FCA5A5', fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.5)', animation: 'fadeUp 0.25s ease',
+        }}>
+          {voiceErr}
+        </div>
       )}
 
       {/* Agregar jugador — flotante sobre la línea del medio (solo si el
