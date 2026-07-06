@@ -1303,14 +1303,15 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
               onClick={() => setMenuOpen(false)}
               style={{ position: 'fixed', inset: 0, zIndex: 19, background: 'rgba(0,0,0,0.35)' }}
             />
-            {/* Pills radiales — acceso rápido a los lados del botón Q */}
+            {/* Pills radiales — Reiniciar / Jugador a los lados, Formato arriba */}
             {[
-              { icon: '↺',  label: 'Reiniciar', bg: '#FCD34D', dx: -104, rot: -7, delay: 0,  act: () => { handleReset(); setMenuOpen(false) } },
-              { icon: '👤', label: 'Jugador',   bg: '#F472B6', dx: 104,  rot: 7,  delay: 45, act: () => { setPickerOpen(true); setMenuOpen(false) } },
+              { icon: '↺',  label: 'Reiniciar', bg: '#FCD34D', dx: -104, dy: 0,   rot: -7, delay: 0,  act: () => { handleReset(); setMenuOpen(false) } },
+              { icon: '⚙️', label: 'Formato',   bg: '#A78BFA', dx: 0,    dy: -58, rot: 4,  delay: 45, act: () => { onBack(); setMenuOpen(false) } },
+              { icon: '👤', label: 'Jugador',   bg: '#F472B6', dx: 104,  dy: 0,   rot: 7,  delay: 90, act: () => { setPickerOpen(true); setMenuOpen(false) } },
             ].map(p => (
               <div key={p.label} style={{
                 position: 'absolute', left: '50%', top: '50%',
-                transform: `translate(calc(-50% + ${p.dx}px), -50%) rotate(${p.rot}deg)`,
+                transform: `translate(calc(-50% + ${p.dx}px), calc(-50% + ${p.dy}px)) rotate(${p.rot}deg)`,
                 zIndex: 22,
               }}>
                 <button
@@ -1329,46 +1330,6 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
                 </button>
               </div>
             ))}
-
-            {/* Popup de LISTA — arriba del botón, con descripciones */}
-            <div style={{
-              position: 'absolute', left: '50%', bottom: 40,
-              transform: 'translateX(-50%)',
-              background: '#111111',
-              border: '1px solid #2A2A2A',
-              borderRadius: 16,
-              padding: '6px',
-              display: 'flex', flexDirection: 'column', gap: 4,
-              minWidth: 210,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
-              animation: 'slideUp 0.18s ease',
-              zIndex: 22,
-            }}>
-              {[
-                { icon: '↺',  title: 'Reiniciar',       desc: 'Volver a las vidas iniciales',    act: () => { handleReset(); setMenuOpen(false) } },
-                { icon: '👤', title: 'Agregar jugador', desc: 'Asigná un usuario real al rival', act: () => { setPickerOpen(true); setMenuOpen(false) } },
-                { icon: '⚙️', title: 'Cambiar formato', desc: 'Juego, modo y jugadores',         act: () => { onBack(); setMenuOpen(false) } },
-              ].map((it, i, arr) => (
-                <div key={it.title}>
-                  <button onClick={it.act} style={{
-                    width: '100%', padding: '12px 16px', borderRadius: 10,
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    fontFamily: 'Inter, sans-serif',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#1A1A1A'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                  >
-                    <span style={{ fontSize: 18 }}>{it.icon}</span>
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#FFF' }}>{it.title}</div>
-                      <div style={{ fontSize: 10, color: '#4B5563' }}>{it.desc}</div>
-                    </div>
-                  </button>
-                  {i < arr.length - 1 && <div style={{ height: 1, background: '#1E1E1E', margin: '0 4px' }} />}
-                </div>
-              ))}
-            </div>
           </>
         )}
       </div>
