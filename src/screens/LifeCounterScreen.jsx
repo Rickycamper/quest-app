@@ -124,21 +124,120 @@ function useTapOrHold(onTap, onHold, holdMs = 600) {
   }
 }
 
+// ── Player picker sheet ───────────────────────
+// Bottom-sheet para asignar un usuario real (o invitado con nombre) a un
+// slot de oponente DESDE ADENTRO del counter/reloj — sin pasar por el setup.
+function PlayerPickerSheet({ excludeIds = [], onPick, onClose }) {
+  const [query,   setQuery]   = useState('')
+  const [users,   setUsers]   = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let alive = true
+    searchUsers('')
+      .then(d => { if (alive) setUsers(d ?? []) })
+      .catch(() => {})
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+  }, [])
+
+  const q = query.trim().toLowerCase()
+  const results = users
+    .filter(u => !excludeIds.includes(u.id))
+    .filter(u => !q || u.username?.toLowerCase().includes(q))
+    .slice(0, 30)
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'absolute', inset: 0, zIndex: 120,
+      background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      display: 'flex', alignItems: 'flex-end',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: '100%', maxHeight: '70%', background: '#111',
+        borderRadius: '20px 20px 0 0', border: '1px solid #222', borderBottom: 'none',
+        padding: '16px 16px calc(16px + env(safe-area-inset-bottom, 0px))',
+        display: 'flex', flexDirection: 'column', gap: 10,
+        animation: 'slideUp 0.22s ease', fontFamily: 'Inter, sans-serif',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 15, fontWeight: 800, color: '#FFF' }}>Agregar jugador</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 18, cursor: 'pointer', padding: 4 }}>✕</button>
+        </div>
+        <input
+          autoFocus
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Buscar @usuario…"
+          style={{
+            width: '100%', padding: '11px 14px', borderRadius: 10,
+            background: '#0A0A0A', border: '1px solid #2A2A2A',
+            color: '#FFF', fontWeight: 600, outline: 'none', boxSizing: 'border-box',
+          }}
+        />
+        <div style={{ overflowY: 'auto', flex: 1, minHeight: 120, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {/* Invitado con nombre — para rivales sin cuenta */}
+          {query.trim() && (
+            <button
+              onClick={() => onPick({ id: null, username: query.trim(), avatar_url: null, isGuest: true })}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                borderRadius: 10, background: 'rgba(255,255,255,0.04)',
+                border: '1px dashed rgba(255,255,255,0.18)', cursor: 'pointer',
+                color: '#9CA3AF', fontSize: 13, fontWeight: 700, fontFamily: 'Inter, sans-serif', textAlign: 'left',
+              }}
+            >
+              👤 Jugar vs “{query.trim()}” <span style={{ fontWeight: 500, color: '#4B5563' }}>(invitado, sin cuenta)</span>
+            </button>
+          )}
+          {loading && <div style={{ padding: 18, textAlign: 'center', color: '#4B5563', fontSize: 12 }}>Cargando…</div>}
+          {!loading && results.map(u => (
+            <button
+              key={u.id}
+              onClick={() => onPick(u)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px',
+                borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif', textAlign: 'left',
+              }}
+            >
+              <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                <Avatar url={u.avatar_url} size={32} />
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#FFF' }}>{u.username}</span>
+            </button>
+          ))}
+          {!loading && !results.length && !query.trim() && (
+            <div style={{ padding: 18, textAlign: 'center', color: '#4B5563', fontSize: 12 }}>Sin usuarios</div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Setup step ────────────────────────────────
-function SetupStep({ profile, invite, onStart }) {
+function SetupStep({ profile, invite, resumeConfig, onStart }) {
   // Si llegamos por una invitación, preseleccionamos game/commander/etc
   // y el host queda preadded como oponente. El usuario sólo tiene que
   // tap 'Iniciar contador'.
-  const [game,        setGame]       = useState(invite?.g ?? 'MTG')
-  const [commander,   setCommander]  = useState(!!invite?.c)
-  const [matchType,   setMatchType]  = useState(invite?.m ?? 'casual')
-  const [playerCount, setPlayerCount] = useState(invite?.p ?? 2)
+  const [game,        setGame]       = useState(invite?.g ?? resumeConfig?.game ?? 'MTG')
+  const [commander,   setCommander]  = useState(invite ? !!invite.c : !!resumeConfig?.commander)
+  const [matchType,   setMatchType]  = useState(invite?.m ?? resumeConfig?.matchType ?? 'casual')
+  const [playerCount, setPlayerCount] = useState(invite?.p ?? resumeConfig?.playerCount ?? 2)
   // Flujo en 2 fases: primero elegís el JUEGO a pantalla completa (logos
-  // grandes), después el formato/jugadores. Con invite salteamos al config.
-  const [phase,       setPhase]      = useState(invite ? 'config' : 'game')
+  // grandes) y arranca AL TOQUE. El config solo aparece con invite o cuando
+  // volvés desde el counter ("Cambiar formato" → resumeConfig).
+  const [phase,       setPhase]      = useState((invite || resumeConfig) ? 'config' : 'game')
   const [opponents,   setOpponents]  = useState(() => {
     if (invite?.h && invite?.hi) {
       return [{ id: invite.hi, username: invite.h, avatar_url: null }, null, null]
+    }
+    if (resumeConfig?.opponents?.length) {
+      const slots = [null, null, null]
+      resumeConfig.opponents.forEach((o, i) => { if (o && !o.isGuest && i < 3) slots[i] = o })
+      return slots
     }
     return [null, null, null]
   })
@@ -174,13 +273,10 @@ function SetupStep({ profile, invite, onStart }) {
   }
 
   const handleStart = () => {
+    // Slots vacíos → invitados. Ya no bloqueamos: el usuario real se puede
+    // asignar desde adentro del counter (PlayerPickerSheet).
     const activeOpponents = opponents.slice(0, neededSlots)
-    // Counter games: opponent optional — start even if none selected
-    // Non-counter games: require a real opponent to log W/L
-    if (!allowGuest && activeOpponents.some(o => !o)) {
-      setError('Elige un oponente para continuar')
-      return
-    }
+      .map(o => o ?? { id: null, username: 'Invitado', avatar_url: null, isGuest: true })
     onStart({
       game,
       commander,
@@ -221,7 +317,7 @@ function SetupStep({ profile, invite, onStart }) {
             ¿Qué van a jugar?
           </div>
           <div style={{ fontSize: 12, color: '#6B7280', marginTop: 3, fontFamily: 'Inter, sans-serif' }}>
-            Elegí tu TCG para arrancar
+            Tocá tu TCG y arrancá al toque
           </div>
         </div>
         <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridAutoRows: '1fr', gap: 10, minHeight: 0 }}>
@@ -230,7 +326,13 @@ function SetupStep({ profile, invite, onStart }) {
             return (
               <button
                 key={g}
-                onClick={() => { setGame(g); setCommander(false); setPlayerCount(2); setOpponents([null, null, null]); setActiveSlot(0); setPhase('config') }}
+                onClick={() => {
+                  // Quick-start: arranca el counter/reloj del juego AL TOQUE
+                  // vs un invitado. El usuario real se agrega desde adentro
+                  // (menú Q / botón 👤) y formato desde "Cambiar formato".
+                  const GUEST = { id: null, username: 'Invitado', avatar_url: null, isGuest: true }
+                  onStart({ game: g, commander: false, matchType: 'casual', playerCount: 2, opponents: [GUEST], opponent: GUEST })
+                }}
                 style={{
                   borderRadius: 20, cursor: 'pointer', minHeight: 0, padding: 10,
                   background: `radial-gradient(ellipse 95% 75% at 50% 32%, ${gs.bg}, rgba(255,255,255,0.02) 85%)`,
@@ -908,7 +1010,7 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
 }
 
 // ── Counter step (MTG / Riftbound) ─────────────
-function CounterStep({ game, commander, me, opponents, playerCount, matchType, onResult, onBack }) {
+function CounterStep({ game, commander, me, opponents, playerCount, matchType, onResult, onBack, onUpdateOpponent }) {
   const startHp = getStartHP(game, commander)
   const maxHp   = getMaxHP(game, commander)
   const isRiftbound = game === 'Riftbound'
@@ -929,6 +1031,11 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
   const [logging,  setLogging]  = useState(false)
   const [err,      setErr]      = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  // Slot a asignar cuando eligen usuario: el primer oponente invitado/vacío
+  // (si todos son reales, reemplaza el primero).
+  const guestSlotIdx = opponents.findIndex(o => !o || o.isGuest)
+  const assignSlotIdx = guestSlotIdx === -1 ? 0 : guestSlotIdx
 
   // Keep screen awake while counter is active
   useEffect(() => {
@@ -1188,6 +1295,25 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
 
               <div style={{ height: 1, background: '#1E1E1E', margin: '0 4px' }} />
 
+              {/* Agregar / asignar jugador real sin salir del counter */}
+              <button onClick={() => { setPickerOpen(true); setMenuOpen(false) }} style={{
+                width: '100%', padding: '12px 16px', borderRadius: 10,
+                background: 'none', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 12,
+                fontFamily: 'Inter, sans-serif',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#1A1A1A'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >
+                <span style={{ fontSize: 18 }}>👤</span>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#FFF' }}>Agregar jugador</div>
+                  <div style={{ fontSize: 10, color: '#4B5563' }}>Asigná un usuario real al rival</div>
+                </div>
+              </button>
+
+              <div style={{ height: 1, background: '#1E1E1E', margin: '0 4px' }} />
+
               {/* Change format / game */}
               <button onClick={() => { onBack(); setMenuOpen(false) }} style={{
                 width: '100%', padding: '12px 16px', borderRadius: 10,
@@ -1363,6 +1489,15 @@ function CounterStep({ game, commander, me, opponents, playerCount, matchType, o
           </div>
         </div>
       )}
+
+      {/* Asignar usuario real a un slot — sin salir del counter */}
+      {pickerOpen && (
+        <PlayerPickerSheet
+          excludeIds={[me?.id, ...opponents.filter(o => o?.id).map(o => o.id)]}
+          onClose={() => setPickerOpen(false)}
+          onPick={(u) => { onUpdateOpponent?.(assignSlotIdx, u); setPickerOpen(false) }}
+        />
+      )}
     </div>
   )
 }
@@ -1490,7 +1625,7 @@ function fmt(secs) {
 
 // Chess-clock: tap your panel = end your turn (stops YOUR time, starts THEIRS).
 // Hold 5 s on your panel = instant win.
-function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
+function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOpponent }) {
   const isDigimon  = game === 'Digimon'
   const startSecs  = CLOCK_SECS[game] ?? 15 * 60
   const [meTime,   setMeTime]   = useState(startSecs)
@@ -1502,6 +1637,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
   const [holdWho,  setHoldWho]  = useState(null)
   const [logging,  setLogging]  = useState(false)
   const [err,      setErr]      = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
   const holdRef  = useRef(null)
   const rafRef   = useRef(null)
   const holdStart = useRef(0)
@@ -1716,6 +1852,32 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack }) {
     }}>
       {/* Opponent panel — top, flipped */}
       <ClockPanel who="them" user={opponent} secs={themTime} flipped />
+
+      {/* Agregar jugador — flotante sobre la línea del medio (solo si el
+          rival aún es invitado/vacío) */}
+      {!winner && (!opponent || opponent.isGuest) && (
+        <button
+          onClick={() => setPickerOpen(true)}
+          style={{
+            position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+            zIndex: 30, display: 'flex', alignItems: 'center', gap: 6,
+            padding: '8px 12px', borderRadius: 999, cursor: 'pointer',
+            background: 'rgba(20,20,28,0.92)', border: '1px solid rgba(255,255,255,0.16)',
+            color: '#E5E7EB', fontSize: 12, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
+          }}
+        >
+          👤 + Jugador
+        </button>
+      )}
+
+      {pickerOpen && (
+        <PlayerPickerSheet
+          excludeIds={[me?.id]}
+          onClose={() => setPickerOpen(false)}
+          onPick={(u) => { onUpdateOpponent?.(0, u); setPickerOpen(false) }}
+        />
+      )}
 
       {/* Center divider */}
       {isDigimon ? (
@@ -1952,6 +2114,18 @@ export default function LifeCounterScreen({ onClose, onViewProfile, invite }) {
     setStep(COUNTER_GAMES.has(cfg.game) ? 'counter' : 'wl')
   }
 
+  // Asignar un usuario a un slot de oponente DESDE ADENTRO del counter/reloj
+  // (PlayerPickerSheet). Actualiza config sin remontar el step (misma key),
+  // así las vidas/tiempos en curso no se pierden.
+  const handleUpdateOpponent = (slotIdx, user) => {
+    setConfig(prev => {
+      if (!prev) return prev
+      const opponents = [...(prev.opponents ?? [prev.opponent])]
+      opponents[slotIdx] = user
+      return { ...prev, opponents, opponent: opponents[0] ?? null }
+    })
+  }
+
   const handleResult = (res) => {
     setResult(res)
     setStep('done')
@@ -2019,7 +2193,7 @@ export default function LifeCounterScreen({ onClose, onViewProfile, invite }) {
       )}
 
       {step === 'setup' && (
-        <SetupStep profile={profile} invite={invite} onStart={handleStart} />
+        <SetupStep profile={profile} invite={invite} resumeConfig={config} onStart={handleStart} />
       )}
 
       {step === 'counter' && config && (
@@ -2033,6 +2207,7 @@ export default function LifeCounterScreen({ onClose, onViewProfile, invite }) {
           matchType={config.matchType}
           onResult={handleResult}
           onBack={() => setStep('setup')}
+          onUpdateOpponent={handleUpdateOpponent}
         />
       )}
 
@@ -2045,6 +2220,7 @@ export default function LifeCounterScreen({ onClose, onViewProfile, invite }) {
           matchType={config.matchType}
           onResult={handleResult}
           onBack={() => setStep('setup')}
+          onUpdateOpponent={handleUpdateOpponent}
         />
       )}
 
