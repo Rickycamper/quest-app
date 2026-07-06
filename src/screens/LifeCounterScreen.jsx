@@ -133,6 +133,9 @@ function SetupStep({ profile, invite, onStart }) {
   const [commander,   setCommander]  = useState(!!invite?.c)
   const [matchType,   setMatchType]  = useState(invite?.m ?? 'casual')
   const [playerCount, setPlayerCount] = useState(invite?.p ?? 2)
+  // Flujo en 2 fases: primero elegís el JUEGO a pantalla completa (logos
+  // grandes), después el formato/jugadores. Con invite salteamos al config.
+  const [phase,       setPhase]      = useState(invite ? 'config' : 'game')
   const [opponents,   setOpponents]  = useState(() => {
     if (invite?.h && invite?.hi) {
       return [{ id: invite.hi, username: invite.h, avatar_url: null }, null, null]
@@ -205,6 +208,56 @@ function SetupStep({ profile, invite, onStart }) {
     }
   }
 
+  // ── Fase 1: elegir juego a PANTALLA COMPLETA (logos grandes) ──
+  if (phase === 'game') {
+    return (
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        padding: '14px 14px calc(14px + env(safe-area-inset-bottom, 0px))',
+        gap: 12, overflow: 'hidden',
+      }}>
+        <div style={{ textAlign: 'center', margin: '4px 0 2px' }}>
+          <div style={{ fontSize: 21, fontWeight: 900, color: '#FFF', letterSpacing: '-0.02em', fontFamily: 'Inter, sans-serif' }}>
+            ¿Qué van a jugar?
+          </div>
+          <div style={{ fontSize: 12, color: '#6B7280', marginTop: 3, fontFamily: 'Inter, sans-serif' }}>
+            Elegí tu TCG para arrancar
+          </div>
+        </div>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridAutoRows: '1fr', gap: 10, minHeight: 0 }}>
+          {GAMES.map((g, i) => {
+            const gs = GAME_STYLES[g]
+            return (
+              <button
+                key={g}
+                onClick={() => { setGame(g); setCommander(false); setPlayerCount(2); setOpponents([null, null, null]); setActiveSlot(0); setPhase('config') }}
+                style={{
+                  borderRadius: 20, cursor: 'pointer', minHeight: 0, padding: 10,
+                  background: `radial-gradient(ellipse 95% 75% at 50% 32%, ${gs.bg}, rgba(255,255,255,0.02) 85%)`,
+                  border: `1.5px solid ${gs.border}`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
+                  boxShadow: `0 0 22px ${gs.border}33, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  fontFamily: 'Inter, sans-serif',
+                  animation: `fadeUp 0.35s ease ${i * 60}ms both`,
+                  transition: 'transform 180ms cubic-bezier(0.34,1.56,0.64,1)',
+                }}
+                onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.94)' }}
+                onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+                onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.94)' }}
+                onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+              >
+                <GameIcon game={g} size={68} style={{ filter: `drop-shadow(0 0 20px ${gs.color}77)` }} />
+                <span style={{ fontSize: 15, fontWeight: 800, color: gs.color, letterSpacing: '-0.01em' }}>{g}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Fase 2: formato / jugadores / oponentes ──
   return (
     <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', padding: '20px 16px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
@@ -240,37 +293,35 @@ function SetupStep({ profile, invite, onStart }) {
         </div>
       )}
 
-      {/* Game picker */}
+      {/* Juego elegido — tocá para volver a la pantalla de juegos */}
       <div>
-        <SectionLabel>Juego</SectionLabel>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-          {GAMES.map(g => {
-            const gs = GAME_STYLES[g]
-            const active = game === g
-            return (
-              <button key={g} onClick={() => { setGame(g); setCommander(false); setPlayerCount(2); setOpponents([null, null, null]); setActiveSlot(0) }} style={{
-                padding: '10px 8px', borderRadius: 8, cursor: 'pointer',
-                background: active ? gs.bg : 'rgba(255,255,255,0.03)',
-                backdropFilter: 'blur(18px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(18px) saturate(180%)',
-                border: `1px solid ${active ? gs.border : 'rgba(255,255,255,0.08)'}`,
-                color: active ? gs.color : '#9CA3AF',
-                fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                transition: 'all 0.2s',
-                boxShadow: active
-                  ? `0 0 14px ${gs.border}55, inset 0 1px 0 rgba(255,255,255,0.05)`
-                  : 'inset 0 1px 0 rgba(255,255,255,0.03)',
-              }}>
-                <GameIcon game={g} size={14} />{g}
-              </button>
-            )
-          })}
-        </div>
+        <button
+          onClick={() => setPhase('game')}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 14,
+            padding: '13px 16px', borderRadius: 16, cursor: 'pointer',
+            background: `radial-gradient(ellipse 90% 100% at 15% 50%, ${GAME_STYLES[game].bg}, rgba(255,255,255,0.02) 90%)`,
+            border: `1.5px solid ${GAME_STYLES[game].border}`,
+            boxShadow: `0 0 16px ${GAME_STYLES[game].border}33, inset 0 1px 0 rgba(255,255,255,0.05)`,
+            fontFamily: 'Inter, sans-serif',
+          }}
+        >
+          <GameIcon game={game} size={40} style={{ filter: `drop-shadow(0 0 12px ${GAME_STYLES[game].color}66)` }} />
+          <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: GAME_STYLES[game].color, letterSpacing: '-0.01em' }}>{game}</div>
+            <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Tocá para cambiar de juego</div>
+          </div>
+          <span style={{ color: '#6B7280', fontSize: 18, lineHeight: 1 }}>›</span>
+        </button>
 
         {/* MTG mode toggle */}
         {game === 'MTG' && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <div style={{ marginTop: 14 }}>
+            <SectionLabel>Formato</SectionLabel>
+          </div>
+        )}
+        {game === 'MTG' && (
+          <div style={{ display: 'flex', gap: 8, marginTop: 0 }}>
             {[{ v: false, label: 'Standard (20)' }, { v: true, label: 'Commander (40)' }].map(({ v, label }) => (
               <button key={String(v)} onClick={() => { setCommander(v); setPlayerCount(2); setOpponents([null, null, null]); setActiveSlot(0) }} style={{
                 flex: 1, padding: '8px 0', borderRadius: 8, cursor: 'pointer',
