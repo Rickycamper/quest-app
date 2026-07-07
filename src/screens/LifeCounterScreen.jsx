@@ -59,6 +59,15 @@ const PLAYER_COLORS = [
   '#234DC2',  // P4 Violet Blue
 ]
 
+// Fondo "glass vivo": el color base bien saturado sobre el negro del app.
+// Compartido por el life counter (MTG) y el time counter para que se sientan
+// idénticos. `boost` sube la intensidad (panel activo del reloj).
+function vividBg(color, boost = false) {
+  return boost
+    ? `linear-gradient(140deg, ${color}f0 0%, ${color}b0 55%, ${color}d6 100%)`
+    : `linear-gradient(140deg, ${color}c4 0%, ${color}82 55%, ${color}a6 100%)`
+}
+
 function getStartHP(game, commander) {
   if (game === 'MTG') return commander ? 40 : 20
   if (game === 'Riftbound') return 0   // counts UP from 0 to 8
@@ -807,7 +816,7 @@ function PlayerPanel({ user, hp, maxHp, game, poison, onAdjust, onPoison, isMTG,
   // jugador muere, el panel se desatura.
   const panelBg = dead
     ? `linear-gradient(135deg, ${playerColor}18 0%, rgba(255,255,255,0.02) 100%)`
-    : `linear-gradient(135deg, ${playerColor}66 0%, ${playerColor}33 60%, ${playerColor}55 100%)`
+    : vividBg(playerColor)
 
   // Dark creep from bottom as HP decreases (shadow grows upward)
   const shadowPct = (1 - pct) * 100
@@ -1842,9 +1851,9 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
     const urgent    = secs <= 10 && secs > 0
 
     const bg = isWinner ? color
-      : isLoser  ? `${color}22`
-      : isActive ? `${color}bb`
-      : `${color}40`
+      : isLoser  ? `linear-gradient(140deg, ${color}22 0%, rgba(255,255,255,0.02) 100%)`
+      : isActive ? vividBg(color, true)
+      : vividBg(color)
 
     const R = 38, CIRC = 2 * Math.PI * R
     const dash = isHolding ? CIRC * holdPct : 0
@@ -1857,13 +1866,19 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
         style={{
           flex: 1, position: 'relative', overflow: 'hidden',
           background: bg, transition: 'background 0.35s',
+          // Mismo cristal que el life counter (MTG).
+          backdropFilter: 'blur(30px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(30px) saturate(180%)',
           borderRadius: isDigimon ? 0 : 20,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', touchAction: 'none',
           transform: flipped ? 'rotate(180deg)' : 'none',
           userSelect: 'none', WebkitUserSelect: 'none',
-          boxShadow: isActive ? `inset 0 0 90px ${color}55` : 'none',
+          boxShadow: isLoser ? 'none'
+            : isActive
+              ? `inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 90px ${color}66`
+              : `inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 80px ${color}22`,
         }}
       >
         {/* Active pulse ring */}
@@ -2042,7 +2057,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
           }}>0</button>
         </div>
       ) : (
-        <div style={{ flexShrink: 0, height: 2, background: 'rgba(0,0,0,0.7)', position: 'relative', overflow: 'visible', zIndex: 10 }}>
+        <div style={{ flexShrink: 0, height: 10, background: 'transparent', position: 'relative', overflow: 'visible', zIndex: 10 }}>
           <button
             onClick={onBack}
             style={{
