@@ -2143,10 +2143,22 @@ export async function sendCommunityMessage({ game, kind = 'text', body = null, m
   return data
 }
 
-/** Borra un mensaje (solo dueño logueado o staff, según RLS) */
+/** Borra un mensaje propio (logueado o invitado) o cualquiera si sos staff.
+ *  Usa una función SECURITY DEFINER que valida la propiedad, porque el
+ *  guest_id del invitado vive en localStorage y RLS no lo puede chequear. */
 export async function deleteCommunityMessage(id) {
-  const { error } = await supabase.from('community_messages').delete().eq('id', id)
-  if (error) throw error
+  const { guestId } = getChatGuestIdentity()
+  const { error } = await supabase.rpc('delete_community_message', { p_id: id, p_guest_id: guestId })
+  if (error) {
+    // Fallback si la función aún no está en prod: delete directo (RLS permite
+    // dueño logueado o staff). El borrado de invitado necesita la función.
+    if (error.code === 'PGRST202' || /function|does not exist|schema cache/i.test(error.message || '')) {
+      const { error: e2 } = await supabase.from('community_messages').delete().eq('id', id)
+      if (e2) throw e2
+      return
+    }
+    throw error
+  }
 }
 
 /** Suscripción realtime a los mensajes NUEVOS de una sala */
