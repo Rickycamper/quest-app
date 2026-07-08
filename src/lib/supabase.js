@@ -2086,7 +2086,7 @@ export function setChatGuestName(name) {
 export async function getCommunityMessages(game, limit = 200, before = null) {
   let q = supabase
     .from('community_messages')
-    .select('id, game, user_id, guest_id, author_name, author_avatar, kind, body, media_url, duration_ms, created_at')
+    .select('id, game, user_id, guest_id, author_name, author_avatar, author_city, kind, body, media_url, duration_ms, created_at')
     .eq('game', game)
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -2127,6 +2127,7 @@ export async function sendCommunityMessage({ game, kind = 'text', body = null, m
     guest_id: uid ? null : guestId,
     author_name: author?.name || 'Invitado',
     author_avatar: author?.avatar || null,
+    author_city: author?.city || null,
     kind,
     body,
     media_url: mediaUrl,
@@ -2136,7 +2137,7 @@ export async function sendCommunityMessage({ game, kind = 'text', body = null, m
   const { data, error } = await supabase
     .from('community_messages')
     .insert(row)
-    .select('id, game, user_id, guest_id, author_name, author_avatar, kind, body, media_url, duration_ms, created_at')
+    .select('id, game, user_id, guest_id, author_name, author_avatar, author_city, kind, body, media_url, duration_ms, created_at')
     .single()
   if (error) throw error
   return data

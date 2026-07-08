@@ -5,10 +5,23 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { GAMES, GAME_STYLES } from '../lib/constants'
+import { GAMES, GAME_STYLES, BRANCH_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
+import { CameraIcon, MicIcon, SendIcon, TrashIcon, MapPinIcon } from '../components/Icons'
+
+const CITY_LABEL = { Panama: 'Panamá', David: 'David', Chitre: 'Chitré' }
+function CityChip({ city }) {
+  if (!city) return null
+  const bs = BRANCH_STYLES[city] || {}
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '1px 6px', borderRadius: 8, background: bs.bg || 'rgba(255,255,255,0.06)', border: `1px solid ${bs.border || 'rgba(255,255,255,0.12)'}` }}>
+      <MapPinIcon size={9} color={bs.dot || '#6B7280'} />
+      <span style={{ fontSize: 9.5, fontWeight: 700, color: bs.color || '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>{CITY_LABEL[city] || city}</span>
+    </span>
+  )
+}
 import {
   getCommunityMessages, sendCommunityMessage, uploadChatMedia,
   subscribeToCommunityRoom, deleteCommunityMessage,
@@ -108,8 +121,8 @@ function Room({ game, onBack, onClose }) {
   const fileRef   = useRef(null)
 
   const authorInfo = () => profile
-    ? { name: profile.username, avatar: profile.avatar_url }
-    : { name: guestName || 'Invitado', avatar: null }
+    ? { name: profile.username, avatar: profile.avatar_url, city: profile.branch || null }
+    : { name: guestName || 'Invitado', avatar: null, city: null }
 
   // Carga inicial + realtime
   useEffect(() => {
@@ -212,14 +225,27 @@ function Room({ game, onBack, onClose }) {
       rec.start()
       setRecording(true); setRecMs(0)
       recTimer.current = setInterval(() => setRecMs(Date.now() - startTsRef.current), 100)
+      // Al soltar el dedo (aunque el botón del mic ya se haya desmontado porque
+      // la barra cambió al modo grabación) se envía. Se escucha en window.
+      const onUp = () => stopRec(false)
+      upHandlerRef.current = onUp
+      window.addEventListener('pointerup', onUp)
+      window.addEventListener('pointercancel', onUp)
     } catch (e) {
       setErr('Permití el micrófono para grabar')
     }
   }
+  const upHandlerRef = useRef(null)
   const stopRec = (cancel = false) => {
-    if (!recording || !recRef.current) return
+    if (upHandlerRef.current) {
+      window.removeEventListener('pointerup', upHandlerRef.current)
+      window.removeEventListener('pointercancel', upHandlerRef.current)
+      upHandlerRef.current = null
+    }
+    if (!recRef.current) return
     cancelRef.current = cancel
     try { recRef.current.stop() } catch {}
+    recRef.current = null
   }
   useEffect(() => () => { // cleanup al desmontar
     clearInterval(recTimer.current)
@@ -232,6 +258,7 @@ function Room({ game, onBack, onClose }) {
     if (!n) return
     setChatGuestName(n); setGuestNameState(n); setAskName(false); setNameDraft('')
   }
+  const openChangeName = () => { setNameDraft(guestName || ''); setAskName(true) }
 
   return (
     <div style={s.root}>
@@ -272,7 +299,12 @@ function Room({ game, onBack, onClose }) {
                   </div>
                 )}
                 <div style={{ maxWidth: '74%', display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
-                  {!mine && <span style={{ fontSize: 11, color: gs.color || '#9CA3AF', fontWeight: 700, margin: '0 0 2px 6px', fontFamily: 'Inter, sans-serif' }}>{m.author_name}</span>}
+                  {!mine && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '0 0 2px 6px' }}>
+                      <span style={{ fontSize: 11, color: gs.color || '#9CA3AF', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>{m.author_name}</span>
+                      <CityChip city={m.author_city} />
+                    </span>
+                  )}
                   <div style={{ ...s.bubble, ...(mine ? s.bubbleMe : s.bubbleThem), ...(m.kind !== 'text' ? { padding: m.kind === 'image' ? 4 : '8px 10px' } : {}) }}>
                     {m.kind === 'text' && m.body}
                     {m.kind === 'image' && (
@@ -302,21 +334,44 @@ function Room({ game, onBack, onClose }) {
 
       {err && <div style={{ padding: '6px 16px', background: 'rgba(239,68,68,0.1)', borderTop: '1px solid rgba(239,68,68,0.2)', fontSize: 12, color: '#F87171', fontFamily: 'Inter, sans-serif' }}>{err}</div>}
 
+      {/* Invitado: nombre editable (los logueados usan su usuario del perfil) */}
+      {!profile && guestName && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0 0', background: '#0F0F0F' }}>
+          <button onClick={openChangeName} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>
+            Escribís como <span style={{ color: '#9CA3AF', fontWeight: 700 }}>{guestName}</span> · cambiar
+          </button>
+        </div>
+      )}
+
       {/* Barra de escritura */}
       {recording ? (
         <div style={{ ...s.inputBar, alignItems: 'center', gap: 12 }}>
-          <button onClick={() => stopRec(true)} style={{ ...s.iconBtn, color: '#F87171' }} aria-label="Cancelar">🗑️</button>
+          <button onClick={() => stopRec(true)} style={{ ...s.iconBtn, color: '#F87171' }} aria-label="Cancelar"><TrashIcon size={20} color="#F87171" /></button>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#EF4444', animation: 'pulse 1s infinite', display: 'inline-block' }} />
             <span style={{ color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', fontSize: 15, fontWeight: 700 }}>{fmtDur(recMs)}</span>
             <span style={{ color: '#6B7280', fontSize: 12, fontFamily: 'Inter, sans-serif' }}>· soltá para enviar</span>
           </div>
-          <button onClick={() => stopRec(false)} style={{ ...s.sendBtn, background: gs.color || '#FFF' }} aria-label="Enviar">↑</button>
+          <button onClick={() => stopRec(false)} style={{ ...s.sendBtn, background: gs.color || '#FFF' }} aria-label="Enviar"><SendIcon size={19} color="#111" /></button>
         </div>
       ) : (
         <div style={s.inputBar}>
           <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} style={{ display: 'none' }} />
-          <button onClick={() => fileRef.current?.click()} disabled={sending} style={s.iconBtn} aria-label="Foto">📷</button>
+          {/* Foto + voz juntas a un costado, con los iconos de la app */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+            <button onClick={() => fileRef.current?.click()} disabled={sending} style={s.iconBtn} aria-label="Foto">
+              <CameraIcon size={22} color="#9CA3AF" />
+            </button>
+            <button
+              onPointerDown={(e) => { e.preventDefault(); startRec() }}
+              disabled={sending}
+              style={{ ...s.iconBtn, touchAction: 'none' }}
+              aria-label="Mantené para grabar nota de voz"
+              title="Mantené para grabar"
+            >
+              <MicIcon size={21} color="#9CA3AF" />
+            </button>
+          </div>
           <input
             value={text}
             onChange={e => setText(e.target.value)}
@@ -326,18 +381,10 @@ function Room({ game, onBack, onClose }) {
             enterKeyHint="send"
             style={s.input}
           />
-          {text.trim() ? (
-            <button onClick={handleSendText} disabled={sending} style={{ ...s.sendBtn, opacity: sending ? 0.5 : 1 }} aria-label="Enviar">↑</button>
-          ) : (
-            <button
-              onPointerDown={(e) => { e.preventDefault(); startRec() }}
-              onPointerUp={() => stopRec(false)}
-              onPointerLeave={() => recording && stopRec(false)}
-              disabled={sending}
-              style={{ ...s.sendBtn, background: '#1A1A1F', color: '#FFF', touchAction: 'none' }}
-              aria-label="Mantené para grabar nota de voz"
-              title="Mantené para grabar"
-            >🎤</button>
+          {text.trim() && (
+            <button onClick={handleSendText} disabled={sending} style={{ ...s.sendBtn, background: gs.color || '#FFF', opacity: sending ? 0.5 : 1 }} aria-label="Enviar">
+              <SendIcon size={19} color="#111" />
+            </button>
           )}
         </div>
       )}

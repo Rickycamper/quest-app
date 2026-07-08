@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.community_messages (
   guest_id      text,                                  -- id de invitado (localStorage)
   author_name   text NOT NULL,                         -- nombre a mostrar
   author_avatar text,                                  -- avatar_url cacheado (invitado = null)
+  author_city   text,                                  -- sucursal/ciudad (profile.branch)
   kind          text NOT NULL DEFAULT 'text'
                   CHECK (kind IN ('text', 'image', 'voice')),
   body          text CHECK (char_length(coalesce(body, '')) <= 2000),
