@@ -1712,7 +1712,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
     const rec = new SR()
     rec.lang = 'es-ES'
     rec.continuous = true
-    rec.interimResults = true
+    rec.interimResults = false   // iOS: los interinos son ruidosos → solo finales
     const showErr = (msg) => {
       setVoiceErr(msg)
       errTimer = setTimeout(() => setVoiceErr(''), 4000)
@@ -1720,13 +1720,17 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
     rec.onaudiostart = () => { gotAudio = true; rapidEnds = 0 }
     rec.onresult = (e) => {
       gotAudio = true
-      let txt = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) txt += ' ' + (e.results[i][0]?.transcript || '')
+      // iOS FIX: evaluar SOLO la última frase final, no el transcript acumulado.
+      // Antes concatenábamos TODOS los resultados de la sesión; en iOS Safari
+      // el transcript se acumula, así que un "paso turno" viejo quedaba pegado
+      // y CUALQUIER sonido posterior lo volvía a "detectar" → el timer cambiaba
+      // solo. Ahora miramos únicamente la última frase reconocida.
+      const last = e.results[e.results.length - 1]
+      if (!last || !last.isFinal) return
       // Comando FIJO: hay que decir "paso turno" (las dos palabras JUNTAS).
-      // Antes bastaba "paso" O "turno" sueltos → saltaba con cualquier charla
-      // ("es tu turno", "pasó algo", "repaso"). Normalizamos (minúsculas,
-      // sacamos puntuación, colapsamos espacios) y exigimos la frase completa.
-      const norm = txt.toLowerCase().normalize('NFC')
+      // Normalizamos (minúsculas, sin puntuación, espacios colapsados) y
+      // exigimos la frase completa dentro de ESA sola frase.
+      const norm = (last[0]?.transcript || '').toLowerCase().normalize('NFC')
         .replace(/[^a-záéíóúñü ]+/gi, ' ')
         .replace(/\s+/g, ' ')
         .trim()
