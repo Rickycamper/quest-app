@@ -1646,7 +1646,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
   const [logging,  setLogging]  = useState(false)
   const [err,      setErr]      = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
-  // ── Reconocimiento de voz: "paso" / "paso turno" cambia el timer ──
+  // ── Reconocimiento de voz: la frase FIJA "paso turno" cambia el timer ──
   // Web Speech API del navegador (opt-in con el botón 🎤). El tap manual
   // sigue funcionando siempre; esto es un extra manos-libres.
   const SR = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null
@@ -1693,7 +1693,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
   const activeRef = useRef(active); activeRef.current = active
   const winnerRef = useRef(winner); winnerRef.current = winner
 
-  // Motor de voz: escucha continua; "paso" / "turno" → cambia el timer
+  // Motor de voz: escucha continua; la frase "paso turno" → cambia el timer
   // (o lo ARRANCA si aún no corre ninguno). Solo juegos con reloj por
   // turnos (no Digimon: ahí el turno lo define el memory gauge).
   //
@@ -1722,7 +1722,15 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
       gotAudio = true
       let txt = ''
       for (let i = e.resultIndex; i < e.results.length; i++) txt += ' ' + (e.results[i][0]?.transcript || '')
-      if (!/pas[oó]|turno/i.test(txt)) return
+      // Comando FIJO: hay que decir "paso turno" (las dos palabras JUNTAS).
+      // Antes bastaba "paso" O "turno" sueltos → saltaba con cualquier charla
+      // ("es tu turno", "pasó algo", "repaso"). Normalizamos (minúsculas,
+      // sacamos puntuación, colapsamos espacios) y exigimos la frase completa.
+      const norm = txt.toLowerCase().normalize('NFC')
+        .replace(/[^a-záéíóúñü ]+/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+      if (!/pas[oó] turno/.test(norm)) return
       const now = Date.now()
       if (now - lastVoiceRef.current < 2000) return   // debounce anti-doble
       if (winnerRef.current) return
@@ -1957,7 +1965,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
           onClick={(e) => { e.stopPropagation(); setVoiceOn(v => !v) }}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          title='Decí "paso" o "paso turno" para cambiar el timer'
+          title='Decí "paso turno" (frase completa) para cambiar el timer'
           style={{
             position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
             zIndex: 30, display: 'flex', alignItems: 'center', gap: 6,
