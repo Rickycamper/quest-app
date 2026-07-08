@@ -1709,34 +1709,37 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
     let errTimer = null
     let gotAudio = false
     let rapidEnds = 0
+    let matchCount = 0   // veces que ya vimos "paso turno" en esta sesión
     const rec = new SR()
     rec.lang = 'es-ES'
     rec.continuous = true
-    rec.interimResults = false   // iOS: los interinos son ruidosos → solo finales
+    rec.interimResults = true
     const showErr = (msg) => {
       setVoiceErr(msg)
       errTimer = setTimeout(() => setVoiceErr(''), 4000)
     }
+    rec.onstart = () => { matchCount = 0 }   // transcript nuevo → contador a cero
     rec.onaudiostart = () => { gotAudio = true; rapidEnds = 0 }
     rec.onresult = (e) => {
       gotAudio = true
-      // iOS FIX: evaluar SOLO la última frase final, no el transcript acumulado.
-      // Antes concatenábamos TODOS los resultados de la sesión; en iOS Safari
-      // el transcript se acumula, así que un "paso turno" viejo quedaba pegado
-      // y CUALQUIER sonido posterior lo volvía a "detectar" → el timer cambiaba
-      // solo. Ahora miramos únicamente la última frase reconocida.
-      const last = e.results[e.results.length - 1]
-      if (!last || !last.isFinal) return
+      // Robusto en iOS: en vez de fiarnos de resultIndex/isFinal (que iOS
+      // Safari no maneja bien), CONTAMOS cuántas veces aparece la frase
+      // "paso turno" en todo el transcript y solo actuamos cuando aparece una
+      // ocurrencia NUEVA (el conteo sube). Así un "paso turno" viejo pegado en
+      // el buffer no se vuelve a disparar con cualquier ruido, y una frase
+      // nueva siempre funciona.
+      let txt = ''
+      for (let i = 0; i < e.results.length; i++) txt += ' ' + (e.results[i][0]?.transcript || '')
       // Comando FIJO: hay que decir "paso turno" (las dos palabras JUNTAS).
-      // Normalizamos (minúsculas, sin puntuación, espacios colapsados) y
-      // exigimos la frase completa dentro de ESA sola frase.
-      const norm = (last[0]?.transcript || '').toLowerCase().normalize('NFC')
+      const norm = txt.toLowerCase().normalize('NFC')
         .replace(/[^a-záéíóúñü ]+/gi, ' ')
         .replace(/\s+/g, ' ')
         .trim()
-      if (!/pas[oó] turno/.test(norm)) return
+      const found = (norm.match(/pas[oó] turno/g) || []).length
+      if (found <= matchCount) return   // no hay una frase NUEVA
+      matchCount = found
       const now = Date.now()
-      if (now - lastVoiceRef.current < 2000) return   // debounce anti-doble
+      if (now - lastVoiceRef.current < 1500) return   // debounce anti-doble
       if (winnerRef.current) return
       lastVoiceRef.current = now
       const cur = activeRef.current
@@ -1757,7 +1760,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
         showErr('La voz no está disponible en este navegador')
         return
       }
-      restartTimer = setTimeout(() => { if (!stopped) { try { rec.start() } catch {} } }, 600)
+      restartTimer = setTimeout(() => { if (!stopped) { matchCount = 0; try { rec.start() } catch {} } }, 600)
     }
     rec.onerror = (ev) => {
       const code = ev?.error
