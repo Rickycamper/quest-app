@@ -34,6 +34,7 @@ const LifeCounterScreen     = lazy(() => import('./screens/LifeCounterScreen'))
 const LiveDrawScreen        = lazy(() => import('./screens/LiveDrawScreen'))
 const LiveStreamScreen      = lazy(() => import('./screens/LiveStreamScreen'))
 const ChatScreen            = lazy(() => import('./screens/ChatScreen'))
+const CommunityChatScreen   = lazy(() => import('./screens/CommunityChatScreen'))
 const LogMatchModal         = lazy(() => import('./screens/LogMatchModal'))
 const SearchScreen          = lazy(() => import('./screens/SearchScreen'))
 const ShopScreen            = lazy(() => import('./screens/ShopScreen'))
@@ -148,7 +149,7 @@ class ErrorBoundary extends Component {
 
 import { acceptTerms, subscribeToPush, supabase, getActiveLiveStream } from './lib/supabase'
 import { BottomNav, NotifBell } from './components/Nav'
-import { ShieldIcon, SearchIcon, DiamondIcon } from './components/Icons'
+import { ShieldIcon, SearchIcon, DiamondIcon, ChatIcon } from './components/Icons'
 // NotificationPanel + OnboardingModal + FeatureTour lazy-loaded — none shows on first render
 const NotificationPanel = lazy(() => import('./components/NotificationPanel'))
 const PostDetailOverlay = lazy(() => import('./components/PostDetailOverlay'))
@@ -349,6 +350,7 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   }, [openUsername])
   const [showEditProfile, setShowEditProfile]= useState(false)
   const [chatUser,        setChatUser]       = useState(null)   // { id, username }
+  const [showCommunity,   setShowCommunity]  = useState(false)  // chat de comunidad por TCG
   const [vsUser,          setVsUser]         = useState(null)   // { id, username } | null = no preselect
   const [showMatchModal,    setShowMatchModal]    = useState(false)
   const [showPackageCreate, setShowPackageCreate] = useState(false)
@@ -720,6 +722,20 @@ const needsTerms = profile && !profile.terms_accepted_at
         </div>
       )}
 
+      {/* Community chat overlay — salas por TCG (todos, invitados incluidos) */}
+      {showCommunity && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 110,
+          background: '#0A0A0A', display: 'flex', flexDirection: 'column',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          animation: 'slideUp 0.22s ease',
+        }}>
+          <Suspense fallback={<ScreenFallback />}>
+            <CommunityChatScreen onClose={() => setShowCommunity(false)} />
+          </Suspense>
+        </div>
+      )}
+
       {/* Log Match modal — bottom sheet, works with or without a preselected opponent */}
       {showMatchModal && (
         <LogMatchModal
@@ -787,6 +803,14 @@ const needsTerms = profile && !profile.terms_accepted_at
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             {activeTab === 'shop' && (
               <span style={{ fontSize: 20, fontWeight: 900, color: '#FFF', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.02em' }}>Shop</span>
+            )}
+            {activeTab !== 'shop' && (
+              <button onClick={() => setShowCommunity(true)} aria-label="Chat de la comunidad" style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: '#9CA3AF',
+                width: 36, height: 36, padding: 8, lineHeight: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}><ChatIcon size={21} /></button>
             )}
             {isStaff && activeTab !== 'shop' && (
               <button onClick={() => setShowAdmin(true)} aria-label="Panel de admin" style={{

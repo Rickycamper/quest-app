@@ -2058,6 +2058,110 @@ export function subscribeToMessages(conversationId, callback) {
     .subscribe()
 }
 
+// ── COMMUNITY CHAT (salas por TCG, estilo WhatsApp) ──────────
+// Cualquiera lee; escriben usuarios logueados (como sí mismos) e invitados
+// (user_id NULL + nombre temporal). Texto, foto y nota de voz.
+
+/** Identidad de invitado estable (localStorage) para el chat de comunidad */
+export function getChatGuestIdentity() {
+  try {
+    let id = localStorage.getItem('quest_chat_gid')
+    if (!id) {
+      id = (crypto?.randomUUID?.() || String(Date.now()) + Math.round(Math.random() * 1e9))
+      localStorage.setItem('quest_chat_gid', id)
+    }
+    const name = localStorage.getItem('quest_chat_gname') || ''
+    return { guestId: id, name }
+  } catch {
+    return { guestId: 'guest', name: '' }
+  }
+}
+
+/** Guarda el nombre de invitado elegido */
+export function setChatGuestName(name) {
+  try { localStorage.setItem('quest_chat_gname', name) } catch {}
+}
+
+/** Últimos N mensajes de una sala, del más viejo al más nuevo */
+export async function getCommunityMessages(game, limit = 200, before = null) {
+  let q = supabase
+    .from('community_messages')
+    .select('id, game, user_id, guest_id, author_name, author_avatar, kind, body, media_url, duration_ms, created_at')
+    .eq('game', game)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (before) q = q.lt('created_at', before)
+  const { data, error } = await q
+  if (error) throw error
+  return (data ?? []).reverse()
+}
+
+/** Sube una foto o nota de voz al bucket 'chat' y devuelve la URL pública */
+export async function uploadChatMedia(fileOrBlob, game, kind) {
+  const ext = kind === 'voice'
+    ? ((fileOrBlob.type || '').includes('mp4') ? 'mp4' : 'webm')
+    : ((fileOrBlob.type || '').split('/')[1] || 'jpg').replace('jpeg', 'jpg')
+  const { guestId } = getChatGuestIdentity()
+  const { data: { session } } = await supabase.auth.getSession()
+  const who = session?.user?.id || guestId
+  const rand = crypto?.randomUUID?.() || String(Math.round(Math.random() * 1e9))
+  const path = `${game}/${who}/${Date.now()}-${rand}.${ext}`
+  const { error } = await supabase.storage.from('chat').upload(path, fileOrBlob, {
+    contentType: fileOrBlob.type || (kind === 'voice' ? 'audio/webm' : 'image/jpeg'),
+    upsert: false,
+  })
+  if (error) throw error
+  const { data } = supabase.storage.from('chat').getPublicUrl(path)
+  return data.publicUrl
+}
+
+/** Envía un mensaje a la sala. `author` = { name, avatar } para mostrar. */
+export async function sendCommunityMessage({ game, kind = 'text', body = null, mediaUrl = null, durationMs = null, author }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const uid = session?.user?.id || null
+  const { guestId } = getChatGuestIdentity()
+
+  const row = {
+    game,
+    user_id: uid,
+    guest_id: uid ? null : guestId,
+    author_name: author?.name || 'Invitado',
+    author_avatar: author?.avatar || null,
+    kind,
+    body,
+    media_url: mediaUrl,
+    duration_ms: durationMs,
+  }
+
+  const { data, error } = await supabase
+    .from('community_messages')
+    .insert(row)
+    .select('id, game, user_id, guest_id, author_name, author_avatar, kind, body, media_url, duration_ms, created_at')
+    .single()
+  if (error) throw error
+  return data
+}
+
+/** Borra un mensaje (solo dueño logueado o staff, según RLS) */
+export async function deleteCommunityMessage(id) {
+  const { error } = await supabase.from('community_messages').delete().eq('id', id)
+  if (error) throw error
+}
+
+/** Suscripción realtime a los mensajes NUEVOS de una sala */
+export function subscribeToCommunityRoom(game, onInsert, onDelete) {
+  return supabase
+    .channel(`community:${game}`)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'community_messages',
+      filter: `game=eq.${game}`,
+    }, (payload) => onInsert?.(payload.new))
+    .on('postgres_changes', {
+      event: 'DELETE', schema: 'public', table: 'community_messages',
+    }, (payload) => onDelete?.(payload.old))
+    .subscribe()
+}
+
 // ── MATCHES ───────────────────────────────────
 
 /**
