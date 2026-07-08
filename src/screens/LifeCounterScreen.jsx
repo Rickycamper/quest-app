@@ -1736,7 +1736,7 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
         .replace(/\s+/g, ' ')
         .trim()
       const found = (norm.match(/pas[oó] turno/g) || []).length
-      if (found <= matchCount) return   // no hay una frase NUEVA
+      if (found <= matchCount) return   // no hay una frase NUEVA en ESTA sesión
       matchCount = found
       const now = Date.now()
       if (now - lastVoiceRef.current < 1500) return   // debounce anti-doble
@@ -1749,6 +1749,12 @@ function WLStep({ game, me, opponent, matchType, onResult, onBack, onUpdateOppon
       navigator.vibrate?.(18)
       setVoiceHeard(true)
       setTimeout(() => setVoiceHeard(false), 900)
+      // CLAVE: reiniciamos el reconocedor tras cada acierto. iOS a veces NO
+      // acumula el transcript (reemplaza cada frase por la nueva), así que el
+      // conteo se quedaba pegado en 1 y el 2º "paso turno" ya no disparaba.
+      // Al parar acá, salta onend → restart con buffer y contador en limpio,
+      // y el próximo "paso turno" vuelve a funcionar.
+      try { rec.stop() } catch {}
     }
     rec.onend = () => {
       if (stopped) return
