@@ -24,7 +24,7 @@ import { proxyIfNeeded } from '../lib/cardImages'
 import {
   MapPin, Gavel, Package, Gem, User, Clock, Phone, Navigation,
   Pencil, Zap, Folder, BarChart3, Heart, ShoppingBag, Layers,
-  ChevronLeft, X,
+  ChevronLeft, X, Crown,
 } from 'lucide-react'
 
 const HUB_ICON_MAP = {
@@ -45,6 +45,7 @@ const HUB_ICON_MAP = {
   'heart':    Heart,
   'shop':     ShoppingBag,
   'deck':     Layers,
+  'crown':    Crown,
 }
 
 function Icon({ id, size = 24, color = 'currentColor' }) {
@@ -1753,6 +1754,16 @@ function RecordView({ onBattleNow }) {
 
 const TILES = [
   {
+    id:      'ranking',
+    icon:    'crown',
+    label:   'Ranking',
+    desc:    'Torneos, ligas y ranking',
+    color:   '#FCD34D',
+    bg:      'rgba(252,211,77,0.08)',
+    border:  'rgba(252,211,77,0.2)',
+    enabled: true,
+  },
+  {
     id:      'sucursales',
     icon:    'map-pin',
     label:   'Sucursales',
@@ -1825,7 +1836,7 @@ const TILES = [
 ]
 
 // ── Main component ────────────────────────────
-export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onOpenLive, onOpenLiveStream, onBattleNow, profile, canLive = false, canStream = false, initialView = null }) {
+export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onOpenRanking, onOpenLive, onOpenLiveStream, onBattleNow, profile, canLive = false, canStream = false, initialView = null }) {
   const [view, setView] = useState(initialView) // null | 'sucursales' | 'membresia' | 'qpoints'
 
   // Tile LIVE — sorteo en vivo (sorteos de grupos). Visible para todos.
@@ -1853,6 +1864,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
     if (tile.id === 'folder')      { onOpenFolder?.(); onClose(); return }
     if (tile.id === 'tracking')    { onOpenTracking?.(); onClose(); return }
     if (tile.id === 'shop')        { onOpenShop?.(); onClose(); return }
+    if (tile.id === 'ranking')     { onOpenRanking?.(); onClose(); return }
     setView(tile.id)
   }
 

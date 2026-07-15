@@ -592,11 +592,14 @@ export async function updateProfile(userId, updates) {
 }
 
 // ── FEED ────────────────────────────────────
-export async function getFeed({ game = null, limit = 20, offset = 0 } = {}) {
+// type: 'feed'   → solo posts normales (post_type IS NULL)
+//       'market' → solo Trade y Ventas (post_type NOT NULL: Compro/Tengo/Tradeo/Vendo)
+const MARKET_PREFIX_RE = /^\s*\[(Compro|Tengo|Tradeo|Vendo)\]/i
+export async function getFeed({ game = null, limit = 20, offset = 0, type = 'feed' } = {}) {
   let postsQuery = supabase
     .from('posts')
     .select(`
-      id, caption, tag, image_url, images, created_at,
+      id, caption, tag, post_type, image_url, images, created_at,
       profiles:user_id ( id, username, avatar_url, role, verified, is_owner ),
       post_likes ( count ),
       post_comments ( count )
@@ -605,9 +608,36 @@ export async function getFeed({ game = null, limit = 20, offset = 0 } = {}) {
     .range(offset, offset + limit - 1)
 
   if (game) postsQuery = postsQuery.eq('tag', game)
+  if (type === 'market') postsQuery = postsQuery.not('post_type', 'is', null)
+  else                    postsQuery = postsQuery.is('post_type', null)
 
   const { data, error } = await postsQuery
-  if (error) throw error
+  if (error) {
+    // Fallback si la columna post_type aún no existe en prod (migración sin
+    // correr): filtramos por el prefijo del caption para que el Feed/Trade no
+    // se rompan durante la transición.
+    if (/post_type/i.test(error.message || '')) {
+      let q = supabase
+        .from('posts')
+        .select(`
+          id, caption, tag, image_url, images, created_at,
+          profiles:user_id ( id, username, avatar_url, role, verified, is_owner ),
+          post_likes ( count ),
+          post_comments ( count )
+        `)
+        .order('created_at', { ascending: false })
+      if (game) q = q.eq('tag', game)
+      // Sin columna no se puede paginar por tipo server-side: traemos un rango
+      // amplio y recortamos en cliente.
+      const r = await q.range(0, Math.max(offset + limit, 60) - 1)
+      if (r.error) throw r.error
+      const filtered = (r.data ?? []).filter(p =>
+        type === 'market' ? MARKET_PREFIX_RE.test(p.caption || '') : !MARKET_PREFIX_RE.test(p.caption || '')
+      )
+      return filtered.slice(offset, offset + limit).map(p => ({ ...p, user_has_liked: false }))
+    }
+    throw error
+  }
   return (data ?? []).map(p => ({ ...p, user_has_liked: false }))
 }
 
@@ -619,7 +649,7 @@ export async function getPostById(postId) {
   const { data, error } = await supabase
     .from('posts')
     .select(`
-      id, caption, tag, image_url, images, created_at,
+      id, caption, tag, post_type, image_url, images, created_at,
       profiles:user_id ( id, username, avatar_url, role, verified, is_owner ),
       post_likes ( count ),
       post_comments ( count )
@@ -677,7 +707,7 @@ export async function uploadPostImage(file) {
   return data.publicUrl
 }
 
-export async function createPost({ caption, game, imageUrls = [] }) {
+export async function createPost({ caption, game, imageUrls = [], postType = null }) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) throw new Error('No hay sesión activa')
 
@@ -704,7 +734,7 @@ export async function createPost({ caption, game, imageUrls = [] }) {
   if (recent?.length > 0) throw new Error('Ya publicaste este contenido hace menos de 3 minutos')
 
   const image_url = imageUrls[0] ?? null
-  const insertData = { user_id: session.user.id, caption, tag: game, image_url }
+  const insertData = { user_id: session.user.id, caption, tag: game, image_url, post_type: postType }
   if (imageUrls.length > 0) insertData.images = imageUrls
 
   const { data, error } = await supabase

@@ -331,7 +331,9 @@ export default function CreatePostModal({ onClose }) {
         imageUrls = await Promise.all(croppedFiles.map(f => uploadPostImage(f)))
       }
 
-      await createPost({ caption: finalCaption, game: game ?? null, imageUrls })
+      // El tipo va como columna real (post_type) además del prefijo del caption,
+      // para separar el Feed (post_type null) de Trade y Ventas.
+      await createPost({ caption: finalCaption, game: game ?? null, imageUrls, postType: POST_TO_STATUS[postType] ?? null })
 
       if (alsoSave && cardName.trim()) {
         try {

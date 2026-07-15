@@ -886,7 +886,7 @@ function maybeAutoRefreshArticles() {
     .catch(() => {})
 }
 
-export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, onPost, refreshKey = 0 }) {
+export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, onPost, refreshKey = 0, mode = 'feed' }) {
   const [posts,       setPosts]      = useState([])
   const [articles,    setArticles]   = useState([])
   const [game,        setGame]       = useState(null)
@@ -938,11 +938,11 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
   // hay novedades. Si filtra a un TCG, se reemplaza con el log completo
   // de ese juego (handleGameSwitch).
   useEffect(() => {
-    if (game) return
+    if (game || mode === 'market') return
     getLatestArticlePerGame()
       .then(rows => { if (!gameRef.current) setArticles(rows) })
       .catch(() => {})
-  }, [game])
+  }, [game, mode])
 
   const loadFeed = useCallback((opts = {}) => {
     const { withFollowing = false } = opts
@@ -968,7 +968,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
     setOffset(0)
     setHasMore(false)  // block loadMore until this fetch completes
 
-    const feedP      = getFeed({ game: gameRef.current, limit: PAGE_SIZE, offset: 0 })
+    const feedP      = getFeed({ game: gameRef.current, limit: PAGE_SIZE, offset: 0, type: mode })
     const followingP = withFollowing ? getFollowing().catch(() => new Set()) : null
 
     feedP
@@ -1006,7 +1006,9 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
     // juego. Cuando es 'ALL', mostrar SOLO la noticia más reciente de
     // cada TCG (6 ítems) para que el usuario sepa que hay novedades sin
     // tener que entrar a cada juego.
-    if (g) {
+    if (mode === 'market') {
+      setArticles([])   // Trade y Ventas no muestra noticias
+    } else if (g) {
       getArticles(g).then(setArticles).catch(() => setArticles([]))
     } else {
       getLatestArticlePerGame().then(setArticles).catch(() => setArticles([]))
@@ -1017,7 +1019,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
     if (loadingMore || !hasMore) return
     setLoadingMore(true)
     const nextOffset = offset + PAGE_SIZE
-    getFeed({ game: gameRef.current, limit: PAGE_SIZE, offset: nextOffset })
+    getFeed({ game: gameRef.current, limit: PAGE_SIZE, offset: nextOffset, type: mode })
       .then(data => {
         setPosts(prev => [...prev, ...data])
         setHasMore(data.length === PAGE_SIZE)
@@ -1097,7 +1099,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
   // Realtime: new posts appear automatically
   useEffect(() => {
     const channel = supabase
-      .channel('feed-posts')
+      .channel(`feed-posts-${mode}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -1106,8 +1108,10 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
         const newPost = payload.new
         // Only add if matches current game filter
         if (gameRef.current && newPost.tag !== gameRef.current) return
+        // Y solo si corresponde a esta vista (feed = sin tipo / market = con tipo)
+        if (mode === 'market' ? !newPost.post_type : !!newPost.post_type) return
         // Fetch full post with profile
-        getFeed({ game: gameRef.current, limit: 1, offset: 0 })
+        getFeed({ game: gameRef.current, limit: 1, offset: 0, type: mode })
           .then(latest => {
             if (latest[0]?.id === newPost.id) {
               setPosts(prev => {
@@ -1253,8 +1257,8 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
         )
       })()}
 
-      {/* ── Articles strip (shown when a game is selected and articles exist) ── */}
-      {articles.length > 0 && (
+      {/* ── Articles strip (solo en el Feed, no en Trade y Ventas) ── */}
+      {mode !== 'market' && articles.length > 0 && (
         <div style={{ padding: '14px 0 4px' }}>
           <div style={{
             paddingLeft: 14, marginBottom: 10,
@@ -1387,9 +1391,11 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
       {!loading && !error && posts.length === 0 && (
         <EmptyState
           icon={<HomeIcon active />}
-          title="Aún nadie publicó nada"
-          subtitle="Sé el primero en compartir un mazo, una colección o tu última partida."
-          ctaLabel={onPost ? 'Crear mi primer post' : undefined}
+          title={mode === 'market' ? 'Todavía no hay trade ni ventas' : 'Aún nadie publicó nada'}
+          subtitle={mode === 'market'
+            ? 'Publicá lo que vendés, buscás o querés tradear. Elegí Compro / Vendo / Tradeo / Tengo al crear tu post.'
+            : 'Sé el primero en compartir un mazo, una colección o tu última partida.'}
+          ctaLabel={onPost ? (mode === 'market' ? 'Publicar en Trade y Ventas' : 'Crear mi primer post') : undefined}
           onCta={onPost}
         />
       )}

@@ -524,6 +524,9 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
       ranks:  <RankingsScreen profile={profile} isStaff={isStaff} isAdminOrOwner={isOwner || isAdmin} onReportClaim={() => setShowClaim(true)} onCreateTournament={() => setShowTournament(true)} onCreateLeague={() => setShowLeague(true)} onViewProfile={handleViewProfile} openTournamentId={openTournamentId} openLeagueId={openLeagueId} />,
       folder: <FolderScreen   profile={profile} />,
       search: <SearchScreen   onViewProfile={handleViewProfile} />,
+      // Trade y Ventas — mismo FeedScreen filtrado a los posts con post_type
+      // (Compro/Tengo/Tradeo/Vendo). El feed normal queda solo con posts.
+      market: <FeedScreen     mode="market" profile={profile} isStaff={isStaff} isOwner={isOwner} onViewProfile={(id) => requireAuth(() => handleViewProfile(id))} onPost={() => requireAuth(() => setShowPost(true))} refreshKey={feedRefreshKey} />,
     }
     // Shop visible para TODOS los usuarios (catálogo de solo-lectura).
     // ShopScreen usa canEdit = isOwner || isStaff para mostrar la gestión
@@ -596,6 +599,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           onOpenFolder={() => { setShowHub(false); setActiveTab('folder'); setVisitedTabs(prev => { const n = new Set(prev); n.add('folder'); return n }) }}
           onOpenProfile={() => { setShowHub(false); handleOwnProfile() }}
           onOpenShop={() => { setShowHub(false); setActiveTab('shop'); setVisitedTabs(prev => { const n = new Set(prev); n.add('shop'); return n }) }}
+          onOpenRanking={() => { setShowHub(false); setActiveTab('ranks'); setVisitedTabs(prev => { const n = new Set(prev); n.add('ranks'); return n }) }}
           profile={profile}
           initialView={hubInitialView}
         />
