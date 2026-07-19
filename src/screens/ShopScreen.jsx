@@ -143,8 +143,21 @@ function ProductImage({ src, game, ratio = '1/1', detail = false }) {
   )
 }
 
+// Máximo de unidades por persona en un pre order
+const PREORDER_MAX = 4
+
+const qtyBtnStyle = (enabled) => ({
+  width: 28, height: 28, borderRadius: 8, border: 'none',
+  background: enabled ? '#2A2A2A' : '#161616',
+  color: enabled ? '#FFF' : '#4B5563',
+  fontSize: 16, fontWeight: 800, lineHeight: 1,
+  cursor: enabled ? 'pointer' : 'default',
+  fontFamily: 'Inter, sans-serif',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+})
+
 function stockLabel(p) {
-  if (p.coming_soon) return { text: 'Próximamente', color: '#FBBF24', dot: '#FBBF24' }
+  if (p.coming_soon) return { text: 'Pre order', color: '#FBBF24', dot: '#FBBF24' }
   if (totalStock(p) > 0) return { text: 'En stock',      color: '#4ADE80', dot: '#4ADE80' }
   return                        { text: 'Sin stock',     color: '#6B7280', dot: '#374151' }
 }
@@ -389,6 +402,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   const [price,      setPrice]      = useState(String(product.price ?? 0))
   const [askPrice,   setAskPrice]   = useState(!product.price || Number(product.price) === 0)
   const [comingSoon, setComingSoon] = useState(!!product.coming_soon)
+  const [preQty,     setPreQty]     = useState(1)   // pre order: 1..PREORDER_MAX
   const [imageUrl,   setImageUrl]   = useState(product.image_url ?? '')
   const [imgError,   setImgError]   = useState(false)
   const [saving,     setSaving]     = useState(false)
@@ -674,8 +688,8 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
           {isOwner && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#111', border: '1px solid #2A2A2A', borderRadius: 10, marginBottom: 14 }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>Próximamente</div>
-                <div style={{ fontSize: 10, color: '#6B7280' }}>Oculta disponibilidad hasta que llegue</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>Pre order</div>
+                <div style={{ fontSize: 10, color: '#6B7280' }}>Abre pre order: máx. 4, 50% de depósito</div>
               </div>
               <button onClick={() => setComingSoon(v => !v)} style={{
                 width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
@@ -689,7 +703,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
           {/* ── Branch rows ── */}
           <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 10 }}>
-                {isOwner ? 'INVENTARIO POR SUCURSAL' : comingSoon ? 'UNIDADES EN CAMINO' : 'DISPONIBILIDAD'}
+                {isOwner ? 'INVENTARIO POR SUCURSAL' : comingSoon ? 'UNIDADES EN PRE ORDER' : 'DISPONIBILIDAD'}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[['qty_david','David',david,setDavid],['qty_panama','Panamá',panama,setPanama],['qty_chitre','Chitré',chitre,setChitre]].map(([key, label, val, set]) => {
@@ -783,34 +797,67 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
           {/* ── Customer CTAs ── */}
           {!isOwner && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {/* Reserve now — only when coming soon */}
-              {comingSoon && (
-                <button onClick={(e) => {
-                  e.stopPropagation()
-                  const text = `Hola! Quiero reservar: *${product.name}*. ¿Cuándo llega y cómo aparto uno?${userTag}`
-                  window.open(`https://wa.me/${waNumberForProduct(product)}?text=${encodeURIComponent(text)}`, '_blank')
-                }} style={{
+              {comingSoon ? (
+                /* ── PRE ORDER: cantidad (máx. 4) + condiciones ── */
+                <div style={{
+                  display: 'flex', flexDirection: 'column', gap: 12,
+                  padding: 14, borderRadius: 14,
+                  background: 'rgba(251,191,36,0.06)',
+                  border: '1px solid rgba(251,191,36,0.25)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: '#FBBF24', fontFamily: 'Inter, sans-serif' }}>
+                      PRE ORDER
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Cantidad</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#111', borderRadius: 10, padding: 3, border: '1px solid #2A2A2A' }}>
+                        <button onClick={(e) => { e.stopPropagation(); setPreQty(q => Math.max(1, q - 1)) }}
+                          style={qtyBtnStyle(preQty > 1)}>−</button>
+                        <span style={{ minWidth: 22, textAlign: 'center', fontSize: 15, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums' }}>{preQty}</span>
+                        <button onClick={(e) => { e.stopPropagation(); setPreQty(q => Math.min(PREORDER_MAX, q + 1)) }}
+                          style={qtyBtnStyle(preQty < PREORDER_MAX)}>+</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {[
+                      `Máximo ${PREORDER_MAX} unidades por persona.`,
+                      'Se abona el 50% al reservar.',
+                      'Sujeto a recorte — se prioriza por orden de llegada.',
+                      'Si no llega el producto, se devuelve el 100% de tu dinero. Si llega recortado, recibís la cantidad que podamos otorgarte y te devolvemos la diferencia.',
+                    ].map((t, i) => (
+                      <li key={i} style={{ fontSize: 11.5, lineHeight: 1.5, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>{t}</li>
+                    ))}
+                  </ul>
+
+                  <button onClick={(e) => {
+                    e.stopPropagation()
+                    const text = `Hola! Quiero hacer un *PRE ORDER*: *${product.name}* — cantidad: ${preQty}. `
+                      + `Entiendo que se abona el 50%, que está sujeto a recorte y que se prioriza por orden de llegada.${userTag}`
+                    window.open(`https://wa.me/${waNumberForProduct(product)}?text=${encodeURIComponent(text)}`, '_blank')
+                  }} style={{
+                    width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
+                    background: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
+                    color: '#111', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                    fontFamily: 'Inter, sans-serif',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}>
+                    <WAIcon size={15} /> {`Pre-ordenar${preQty > 1 ? ` ${preQty} unidades` : ''} por WhatsApp`}
+                  </button>
+                </div>
+              ) : (
+                <button onClick={handleAsk} style={{
                   width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
-                  background: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
-                  color: '#111', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                  background: '#25D366', color: '#FFF',
+                  fontSize: 14, fontWeight: 800, cursor: 'pointer',
                   fontFamily: 'Inter, sans-serif',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}>
-                  <WAIcon size={15} /> Reservar ahora
+                  <WAIcon size={15} /> Preguntar por WhatsApp
                 </button>
               )}
-              {/* Ask / buy — always shown, disabled only if coming soon */}
-              <button onClick={handleAsk} disabled={comingSoon} style={{
-                width: '100%', padding: '14px 0', borderRadius: 12,
-                border: comingSoon ? '1px solid #1F1F1F' : 'none',
-                background: !comingSoon ? '#25D366' : '#111',
-                color: !comingSoon ? '#FFF' : '#374151',
-                fontSize: 14, fontWeight: 800, cursor: !comingSoon ? 'pointer' : 'default',
-                fontFamily: 'Inter, sans-serif',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}>
-                <WAIcon size={15} /> {comingSoon ? 'Disponible próximamente' : 'Preguntar por WhatsApp'}
-              </button>
             </div>
           )}
         </div>
@@ -1278,8 +1325,8 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
         {/* Coming soon toggle */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#111', border: '1px solid #2A2A2A', borderRadius: 10 }}>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>Próximamente</div>
-            <div style={{ fontSize: 10, color: '#6B7280' }}>Muestra el badge "Coming Soon"</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>Pre order</div>
+            <div style={{ fontSize: 10, color: '#6B7280' }}>Abre pre order: máx. 4, 50% de depósito</div>
           </div>
           <button onClick={() => setComingSoon(v => !v)} style={{
             width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
