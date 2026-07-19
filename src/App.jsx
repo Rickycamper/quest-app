@@ -209,6 +209,15 @@ const globalCSS = `
   @media (min-width: 1280px) {
     .shop-grid { grid-template-columns: repeat(4, 1fr) !important; }
   }
+  /* Hero de la tienda: banner de portada solo en desktop */
+  .shop-hero { display:none; }
+  @media (min-width: 1024px) {
+    .shop-hero { display:flex; }
+  }
+  /* Hover de e-commerce en las cards del catálogo (solo mouse) */
+  @media (min-width: 1024px) and (hover: hover) {
+    .shop-grid > div:hover { transform: translateY(-4px) !important; box-shadow: 0 16px 36px rgba(0,0,0,0.55) !important; }
+  }
   @media (max-width: 480px) {
     /*
      * URL bar collapse strategy:
@@ -352,7 +361,30 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   const { user, profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
   const { isGuest, requireAuth } = useGuest()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
-  const [activeTab,      setActiveTab]     = useState(initialTab ?? 'feed')
+  // Desktop (website) aterriza en la TIENDA — la experiencia es driven a
+  // ventas. Móvil sigue aterrizando en el feed. Deep links mandan siempre.
+  const [activeTab,      setActiveTab]     = useState(() =>
+    initialTab ?? (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches ? 'shop' : 'feed'))
+  // El viewport puede medir 0 en el primer render (webviews) y el matchMedia
+  // de arriba decir "móvil" aunque sea desktop. Rechequeamos directo contra
+  // matchMedia un par de veces al arrancar: si es desktop, el usuario no
+  // navegó todavía y seguimos en el feed → corregimos el aterrizaje a Tienda.
+  const userNavRef = useRef(false)
+  useEffect(() => {
+    if (initialTab) return
+    let done = false
+    const apply = () => {
+      if (done || userNavRef.current) return
+      if (!window.matchMedia('(min-width: 1024px)').matches) return
+      done = true
+      setActiveTab(prev => (prev === 'feed' ? 'shop' : prev))
+      setVisitedTabs(v => { if (v.has('shop')) return v; const n = new Set(v); n.add('shop'); return n })
+    }
+    apply()
+    const t1 = setTimeout(apply, 300)
+    const t2 = setTimeout(apply, 1200)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [initialTab])
   const [showNotifs,      setShowNotifs]     = useState(false)
   const [showSearch,      setShowSearch]     = useState(false)
   const [showPost,        setShowPost]       = useState(false)
@@ -546,12 +578,15 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   const [visitedTabs, setVisitedTabs] = useState(() => {
     const s = new Set(['feed'])
     if (initialTab && initialTab !== 'feed') s.add(initialTab) // pre-mount deep-linked tab
+    // Desktop aterriza en la Tienda → pre-montarla también
+    if (!initialTab && typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches) s.add('shop')
     return s
   })
 
   // Navegación de tabs compartida entre el bottom nav (móvil) y el header
   // tipo website (desktop). Feed sobre feed = scroll-top + refresh.
   const goTab = useCallback((tab) => {
+    userNavRef.current = true
     if (tab === 'feed' && activeTab === 'feed') {
       scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
       setFeedRefreshKey(k => k + 1)
@@ -830,9 +865,9 @@ const needsTerms = profile && !profile.terms_accepted_at
               style={{ width: 72, height: 'auto', cursor: 'pointer', marginRight: 18 }}
             />
             {[
-              { id: 'feed',   label: 'Feed' },
               { id: 'shop',   label: 'Tienda' },
               { id: 'market', label: 'Trade y Ventas' },
+              { id: 'feed',   label: 'Feed' },
               { id: 'ranks',  label: 'Ranking' },
             ].map(l => {
               const active = activeTab === l.id

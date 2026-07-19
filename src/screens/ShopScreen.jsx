@@ -4,7 +4,7 @@
 // Sub-filters: by TCG (Sealed/Singles) or type (Accesorios)
 // Search bar across all sections
 // ─────────────────────────────────────────────
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react'
 import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, searchUsers, notifyOwnerOfShopChange } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES } from '../lib/constants'
@@ -1521,6 +1521,61 @@ export function prefetchShopProducts() {
 }
 
 // ── Skeleton card shown while first load is in progress ──────────────────────
+// ── Hero de portada (solo desktop, .shop-hero) ────────────────────────
+// Storefront driven a ventas: destaca lo último subido — prioriza el pre
+// order más nuevo; si no hay, el producto más reciente. Click → detalle.
+function ShopHero({ products, canEdit, onSave, onDelete }) {
+  const [showDetail, setShowDetail] = useState(false)
+  const hero = useMemo(() => {
+    const pool = [...products].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    return pool.find(p => p.coming_soon) || pool[0] || null
+  }, [products])
+  if (!hero) return null
+  const isPre = !!hero.coming_soon
+  const accent = isPre ? '#FBBF24' : '#4ADE80'
+  return (
+    <>
+      <div className="shop-hero" onClick={() => setShowDetail(true)} style={{
+        margin: '0 0 18px', borderRadius: 20, overflow: 'hidden', cursor: 'pointer',
+        border: `1px solid ${isPre ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.1)'}`,
+        background: `linear-gradient(115deg, ${isPre ? 'rgba(251,191,36,0.10)' : 'rgba(255,255,255,0.05)'} 0%, rgba(10,10,12,0.6) 60%)`,
+        alignItems: 'stretch',
+      }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10, padding: '26px 30px' }}>
+          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.14em', color: accent, fontFamily: 'Inter, sans-serif' }}>
+            {isPre ? '● PRE ORDER ABIERTO' : '● RECIÉN LLEGADO'}
+          </span>
+          <span style={{ fontSize: 27, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+            {hero.name}
+          </span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
+            {fmtPriceOrAsk(hero.price)}
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginLeft: 10 }}>Precio sujeto a revisión del mercado</span>
+          </span>
+          {isPre && (
+            <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>
+              Máximo {PREORDER_MAX} por persona · 50% al reservar · sujeto a recorte, por orden de llegada
+            </span>
+          )}
+          <button style={{
+            marginTop: 6, alignSelf: 'flex-start', padding: '11px 22px', borderRadius: 12, border: 'none', cursor: 'pointer',
+            background: isPre ? 'linear-gradient(135deg, #FBBF24, #F59E0B)' : '#FFFFFF',
+            color: '#111', fontSize: 14, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+          }}>
+            {isPre ? 'Pre-ordenar ahora' : 'Ver producto'}
+          </button>
+        </div>
+        <div style={{ width: 300, flexShrink: 0, background: '#FFF' }}>
+          <ProductImage src={hero.image_url} game={hero.game} ratio="1/1" />
+        </div>
+      </div>
+      {showDetail && (
+        <ProductDetailSheet product={hero} onClose={() => setShowDetail(false)} isOwner={canEdit} onSave={onSave} onDelete={onDelete} />
+      )}
+    </>
+  )
+}
+
 function SkeletonCard() {
   const sh = {
     background: `linear-gradient(90deg, ${COLOR.surface} 0%, ${COLOR.surfaceRaised} 50%, ${COLOR.surface} 100%)`,
@@ -1560,7 +1615,9 @@ export default function ShopScreen({ isOwner, isStaff }) {
   const [gameFilter, setGameFilter] = useState(null)
   const [subFilter,  setSubFilter]  = useState(null)
   const [search,     setSearch]     = useState('')
-  const [sortBy,     setSortBy]     = useState('relevance')
+  // Siempre "Más reciente" por defecto: lo último que se subió es lo primero
+  // que se ve (driven a ventas). Relevancia queda como opción manual.
+  const [sortBy,     setSortBy]     = useState('newest')
   const searchRef = useRef(null)
 
   useEffect(() => {
@@ -1575,13 +1632,11 @@ export default function ShopScreen({ isOwner, isStaff }) {
       .finally(() => setLoading(false))
   }, [])
 
-  // Reset sub-filters when switching category.
-  // Singles default to "Más reciente" — they turn over constantly (new cards
-  // get uploaded daily), so newest-first is what users actually want to see.
-  // Sealed / Accesorios keep the hand-curated sort_order (Relevancia).
+  // Reset sub-filters when switching category. Todas las categorías arrancan
+  // en "Más reciente" — lo último subido siempre visible primero.
   const handleCategory = (c) => {
     setCategory(c); setGameFilter(null); setSubFilter(null); setSearch('')
-    setSortBy(c === 'single' ? 'newest' : 'relevance')
+    setSortBy('newest')
   }
 
   const filtered = products.filter(p => {
@@ -1823,6 +1878,10 @@ export default function ShopScreen({ isOwner, isStaff }) {
 
       {/* ── Grid ── */}
       <div style={{ padding: '0 16px' }}>
+        {/* Hero storefront — solo desktop (.shop-hero), sin búsqueda activa */}
+        {!loading && !search && category === 'sealed' && filtered.length > 0 && (
+          <ShopHero products={filtered} canEdit={canEdit} onSave={handleSave} onDelete={handleDelete} />
+        )}
         {loading && (
           <div className="shop-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {Array.from({ length: 6 }, (_, i) => <SkeletonCard key={i} />)}
