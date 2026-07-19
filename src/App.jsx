@@ -197,9 +197,17 @@ const globalCSS = `
      de 440px. En pantallas grandes el shop pasa a catálogo de 3 columnas
      (.shop-grid, abajo). En el teléfono (≤480px) nada de esto aplica. */
   .phone { width:min(660px, 100vw); height:100vh; overflow:hidden; position:relative; background:transparent; box-shadow:0 0 60px rgba(0,0,0,0.45); border-left:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; }
-  /* Desktop ancho: el catálogo del shop respira como e-commerce (3 col). */
-  @media (min-width: 900px) {
+  /* ── Modo WEBSITE (≥1024px) ──
+     Contenedor ancho tipo página (máx 1240px), header superior con links
+     (renderizado en React vía useIsDesktop) y sin bottom nav. El contenido
+     de cada tab se centra a su propio ancho (DESKTOP_TAB_WIDTH). */
+  @media (min-width: 1024px) {
+    .phone { width:100%; max-width:1240px; }
+    .screen-scroll { padding-top:76px; padding-bottom:48px; }
     .shop-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  }
+  @media (min-width: 1280px) {
+    .shop-grid { grid-template-columns: repeat(4, 1fr) !important; }
   }
   @media (max-width: 480px) {
     /*
@@ -321,7 +329,26 @@ function AuthFlow({ onGuest, initialScreen, onDone, oauthError }) {
   return null
 }
 
+// ── Modo WEBSITE en desktop ───────────────────────────────────────────
+// ≥1024px la app cambia de layout: header superior con links de navegación
+// (sin bottom nav) y anchos de contenido por sección — el shop como catálogo
+// ancho, el feed como columna centrada. <1024px es la app móvil de siempre.
+function useIsDesktop() {
+  const [is, setIs] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const fn = (e) => setIs(e.matches)
+    mq.addEventListener('change', fn)
+    return () => mq.removeEventListener('change', fn)
+  }, [])
+  return is
+}
+
+// Ancho máximo del contenido de cada tab en modo website
+const DESKTOP_TAB_WIDTH = { feed: 680, market: 680, search: 680, ranks: 920, folder: 920, shop: 1240 }
+
 function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcInviteFromUrl, openPostId } = {}) {
+  const isDesktop = useIsDesktop()
   const { user, profile, isStaff, isOwner, isAdmin, refreshProfile } = useAuth()
   const { isGuest, requireAuth } = useGuest()
   const { notifications, unreadCount, markRead, markAll, markResponded } = useNotifications()
@@ -521,6 +548,19 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
     if (initialTab && initialTab !== 'feed') s.add(initialTab) // pre-mount deep-linked tab
     return s
   })
+
+  // Navegación de tabs compartida entre el bottom nav (móvil) y el header
+  // tipo website (desktop). Feed sobre feed = scroll-top + refresh.
+  const goTab = useCallback((tab) => {
+    if (tab === 'feed' && activeTab === 'feed') {
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+      setFeedRefreshKey(k => k + 1)
+      return
+    }
+    setVisitedTabs(prev => { if (prev.has(tab)) return prev; const next = new Set(prev); next.add(tab); return next })
+    setActiveTab(tab); setViewingUserId(null); setShowEditProfile(false)
+    requestAnimationFrame(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0 })
+  }, [activeTab])
 
   const screenMap = useMemo(() => {
     const m = {
@@ -773,7 +813,116 @@ const needsTerms = profile && !profile.terms_accepted_at
         />
       )}
 
-      {/* App header */}
+      {/* Header WEBSITE (desktop ≥1024px): barra superior con navegación por
+          links — reemplaza al header móvil y al bottom nav. */}
+      {isDesktop && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
+          background: 'rgba(9,9,11,0.92)',
+          backdropFilter: 'blur(18px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+        }}>
+          <div style={{ height: 60, display: 'flex', alignItems: 'center', gap: 4, padding: '0 24px', maxWidth: 1240, margin: '0 auto' }}>
+            <img
+              src={questLogo} alt="Abrir Quest Hub" role="button"
+              onClick={() => setShowHub(true)}
+              style={{ width: 72, height: 'auto', cursor: 'pointer', marginRight: 18 }}
+            />
+            {[
+              { id: 'feed',   label: 'Feed' },
+              { id: 'shop',   label: 'Tienda' },
+              { id: 'market', label: 'Trade y Ventas' },
+              { id: 'ranks',  label: 'Ranking' },
+            ].map(l => {
+              const active = activeTab === l.id
+              return (
+                <button key={l.id} onClick={() => goTab(l.id)} style={{
+                  padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  background: active ? 'rgba(255,255,255,0.10)' : 'transparent',
+                  color: active ? '#FFFFFF' : '#9CA3AF',
+                  fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                  transition: 'color 0.15s, background 0.15s',
+                }}>{l.label}</button>
+              )
+            })}
+            <button onClick={() => setShowLifeCounter(true)} style={{
+              padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+              background: 'transparent', color: '#9CA3AF',
+              fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+            }}>Life Counter</button>
+            <div style={{ flex: 1 }} />
+            <button onClick={() => setShowCommunity(true)} aria-label="Chat de la comunidad" style={{
+              background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF',
+              width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}><ChatIcon size={21} /></button>
+            {isStaff && (
+              <button onClick={() => setShowAdmin(true)} aria-label="Panel de admin" style={{
+                background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF',
+                width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}><ShieldIcon size={20} /></button>
+            )}
+            {!isGuest && (
+              <button
+                onClick={() => { setHubInitialView('qpoints'); setShowHub(true) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '7px 12px 7px 10px', borderRadius: 9, marginLeft: 4,
+                  background: 'linear-gradient(135deg, #1C1500 0%, #111111 100%)',
+                  border: '1px solid rgba(251,191,36,0.28)',
+                  cursor: 'pointer',
+                }}
+              >
+                <DiamondIcon size={15} color={profile?.role === 'premium' ? '#A78BFA' : '#FBBF24'} />
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#FBBF24', fontFamily: 'Inter, sans-serif' }}>
+                  {(profile?.q_points ?? 0).toLocaleString()}
+                </span>
+              </button>
+            )}
+            <button onClick={() => requireAuth(() => setShowPost(true))} style={{
+              padding: '8px 16px', borderRadius: 10, border: 'none', cursor: 'pointer', marginLeft: 6,
+              background: '#FFFFFF', color: '#111111',
+              fontSize: 13.5, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+            }}>+ Crear</button>
+            {isGuest ? (
+              <button onClick={() => requireAuth(null)} style={{
+                padding: '8px 14px', borderRadius: 10, marginLeft: 6,
+                background: '#111111', border: '1px solid #2A2A2A',
+                color: '#E5E7EB', fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
+              }}>Crear cuenta</button>
+            ) : (
+              <button
+                onClick={() => { if (profile?.id) setViewingUserId(profile.id) }}
+                aria-label="Abrir mi perfil"
+                style={{
+                  position: 'relative', width: 38, height: 38, borderRadius: '50%',
+                  background: '#1F1F1F', border: '1.5px solid #2A2A2A',
+                  cursor: 'pointer', padding: 0, marginLeft: 8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <div style={{ width: 33, height: 33, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Avatar url={profile?.avatar_url} size={33} role={profile?.role} isOwner={profile?.is_owner} />
+                </div>
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -3, right: -3,
+                    minWidth: 16, height: 16, borderRadius: 8,
+                    background: '#EF4444', border: '1.5px solid #0A0A0A',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, fontWeight: 700, color: '#FFFFFF', padding: '0 4px',
+                    fontFamily: 'Inter, sans-serif',
+                  }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* App header — móvil */}
+      {!isDesktop && (
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0,
         height: 'calc(56px + env(safe-area-inset-top, 0px))',
@@ -926,6 +1075,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           </div>
         </div>
       </div>
+      )}
 
       {/* Lazy-mount: screens render on first visit, then stay mounted (no re-fetch on tab switch). */}
       {/* Per-screen ErrorBoundary: if one tab crashes (stale bundle, bad data, etc.)   */}
@@ -938,33 +1088,31 @@ const needsTerms = profile && !profile.terms_accepted_at
             <div key={tab} style={{ display: tab === activeTab ? 'block' : 'none', minHeight: '100%' }}>
               <ErrorBoundary label={tab} compact resetKey={activeTab}>
                 <Suspense fallback={<ScreenFallback />}>
-                  {screenMap[tab]}
+                  {/* Modo website: cada sección con su ancho — feed columna
+                      centrada, shop catálogo ancho. En móvil, full width. */}
+                  {isDesktop
+                    ? <div style={{ maxWidth: DESKTOP_TAB_WIDTH[tab] ?? 920, margin: '0 auto', minHeight: '100%' }}>{screenMap[tab]}</div>
+                    : screenMap[tab]}
                 </Suspense>
               </ErrorBoundary>
             </div>
           ) : null
         ))}
       </div>
-      <BottomNav
-        active={activeTab}
-        hidden={navHidden}
-        isAdminOrOwner={isOwner || isAdmin}
-        canShop={true}
-        onPost={() => requireAuth(() => setShowPost(true))}
-        onNotifs={() => setShowNotifs(true)}
-        unreadCount={unreadCount}
-        onTab={(tab) => {
-          if (tab === 'feed' && activeTab === 'feed') {
-            scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-            setFeedRefreshKey(k => k + 1)
-            return
-          }
-          setVisitedTabs(prev => { if (prev.has(tab)) return prev; const next = new Set(prev); next.add(tab); return next })
-          setActiveTab(tab); setViewingUserId(null); setShowEditProfile(false)
-          requestAnimationFrame(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0 })
-        }}
-        onLifeCounter={() => setShowLifeCounter(true)}
-      />
+      {/* Bottom nav — solo móvil; en desktop la navegación vive en el header */}
+      {!isDesktop && (
+        <BottomNav
+          active={activeTab}
+          hidden={navHidden}
+          isAdminOrOwner={isOwner || isAdmin}
+          canShop={true}
+          onPost={() => requireAuth(() => setShowPost(true))}
+          onNotifs={() => setShowNotifs(true)}
+          unreadCount={unreadCount}
+          onTab={goTab}
+          onLifeCounter={() => setShowLifeCounter(true)}
+        />
+      )}
       {/* PWA install prompt — auto-shows on Android Chrome and iOS Safari (with a tip). */}
       <InstallPrompt />
       {/* Premium preview toggle — visible to owner AND admins so the
