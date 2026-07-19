@@ -1824,7 +1824,7 @@ export default function ShopScreen({ isOwner, isStaff }) {
       {/* ── Grid ── */}
       <div style={{ padding: '0 16px' }}>
         {loading && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div className="shop-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {Array.from({ length: 6 }, (_, i) => <SkeletonCard key={i} />)}
           </div>
         )}
@@ -1840,7 +1840,7 @@ export default function ShopScreen({ isOwner, isStaff }) {
         )}
 
         {!loading && filtered.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div className="shop-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {filtered.map(p => (
               <ProductCard key={p.id} product={p} isOwner={canEdit} onSave={handleSave} onDelete={handleDelete} />
             ))}

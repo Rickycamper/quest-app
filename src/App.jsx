@@ -192,11 +192,15 @@ const globalCSS = `
     text-rendering: optimizeLegibility;
   }
   .phone-wrap { display:flex; justify-content:center; align-items:stretch; height:100vh; padding:0; overflow:hidden; }
-  /* En desktop la app se ve como una PÁGINA (columna a pantalla completa),
-     no como una maqueta de celular. Sin marco/bezel: solo bordes sutiles a
-     los lados y una sombra suave para separar la columna del fondo. El bg
-     transparente deja pasar el gradiente ambiente del body. */
-  .phone { width:440px; height:100vh; overflow:hidden; position:relative; background:transparent; box-shadow:0 0 60px rgba(0,0,0,0.45); border-left:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; }
+  /* En desktop la app se ve como un WEBSITE: columna central ancha (estilo
+     X/Threads, ~660px) sobre el fondo ambiente — no una maqueta de celular
+     de 440px. En pantallas grandes el shop pasa a catálogo de 3 columnas
+     (.shop-grid, abajo). En el teléfono (≤480px) nada de esto aplica. */
+  .phone { width:min(660px, 100vw); height:100vh; overflow:hidden; position:relative; background:transparent; box-shadow:0 0 60px rgba(0,0,0,0.45); border-left:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; }
+  /* Desktop ancho: el catálogo del shop respira como e-commerce (3 col). */
+  @media (min-width: 900px) {
+    .shop-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  }
   @media (max-width: 480px) {
     /*
      * URL bar collapse strategy:
