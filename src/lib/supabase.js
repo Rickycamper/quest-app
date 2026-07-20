@@ -3189,6 +3189,30 @@ export async function deleteShopProduct(id) {
   if (error) throw error
 }
 
+// ── Shop Pre-orders (número de orden + ticket) ─────────────
+// Código alfanumérico: iniciales del TCG + secuencial (MTG-0001, OP-0042...).
+// El contador vive en la DB (create_preorder, atómico) para que la numeración
+// sea real aunque dos clientes pidan a la vez.
+
+const TCG_PREFIX = { 'MTG': 'MTG', 'One Piece': 'OP', 'Pokemon': 'PKM', 'Gundam': 'GUN', 'Riftbound': 'RB', 'Digimon': 'DGM' }
+
+export async function createPreorder({ productId, qty, game, customerName = null }) {
+  const prefix = TCG_PREFIX[game]
+    || (String(game || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase() || 'TCG')
+  const { guestId } = getChatGuestIdentity()
+  const { data, error } = await supabase.rpc('create_preorder', {
+    p_product_id: productId,
+    p_qty: qty,
+    p_prefix: prefix,
+    p_customer: customerName,
+    p_guest_id: guestId,
+  })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row?.code) throw new Error('No se pudo generar el número de orden')
+  return row   // { id, code }
+}
+
 // ── Shop Reservations ─────────────────────────
 
 const BRANCH_QTY_COL = { david: 'qty_david', panama: 'qty_panama', chitre: 'qty_chitre' }

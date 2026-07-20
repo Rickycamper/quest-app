@@ -5,7 +5,7 @@
 // Search bar across all sections
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react'
-import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, searchUsers, notifyOwnerOfShopChange } from '../lib/supabase'
+import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, searchUsers, notifyOwnerOfShopChange, createPreorder } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
@@ -402,7 +402,9 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   const [price,      setPrice]      = useState(String(product.price ?? 0))
   const [askPrice,   setAskPrice]   = useState(!product.price || Number(product.price) === 0)
   const [comingSoon, setComingSoon] = useState(!!product.coming_soon)
-  const [preQty,     setPreQty]     = useState(1)   // pre order: 1..PREORDER_MAX
+  const [preQty,     setPreQty]     = useState(1)      // pre order: 1..PREORDER_MAX
+  const [preLoading, setPreLoading] = useState(false)  // creando nº de orden
+  const [preTicket,  setPreTicket]  = useState(null)   // { code, qty } → modal ticket
   const [imageUrl,   setImageUrl]   = useState(product.image_url ?? '')
   const [imgError,   setImgError]   = useState(false)
   const [saving,     setSaving]     = useState(false)
@@ -832,19 +834,29 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                     ))}
                   </ul>
 
-                  <button onClick={(e) => {
+                  <button disabled={preLoading} onClick={async (e) => {
                     e.stopPropagation()
-                    const text = `Hola! Quiero hacer un *PRE ORDER*: *${product.name}* — cantidad: ${preQty}. `
-                      + `Entiendo que se abona el 50%, que está sujeto a recorte y que se prioriza por orden de llegada.${userTag}`
-                    window.open(`https://wa.me/${waNumberForProduct(product)}?text=${encodeURIComponent(text)}`, '_blank')
+                    if (preLoading) return
+                    setPreLoading(true)
+                    try {
+                      // Genera el Nº de orden (TCG-#### secuencial, atómico en DB)
+                      const r = await createPreorder({ productId: product.id, qty: preQty, game: product.game, customerName: profile?.username || null })
+                      setPreTicket({ code: r.code, qty: preQty })
+                    } catch (err) {
+                      // Migración sin correr u otro error → flujo viejo (WhatsApp sin número)
+                      const text = `Hola! Quiero hacer un *PRE ORDER*: *${product.name}* — cantidad: ${preQty}. `
+                        + `Entiendo que se abona el 50%, que está sujeto a recorte y que se prioriza por orden de llegada.${userTag}`
+                      window.open(`https://wa.me/${waNumberForProduct(product)}?text=${encodeURIComponent(text)}`, '_blank')
+                    } finally { setPreLoading(false) }
                   }} style={{
                     width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
                     background: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
-                    color: '#111', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                    color: '#111', fontSize: 14, fontWeight: 800, cursor: preLoading ? 'default' : 'pointer',
+                    opacity: preLoading ? 0.6 : 1,
                     fontFamily: 'Inter, sans-serif',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}>
-                    <WAIcon size={15} /> {`Pre-ordenar${preQty > 1 ? ` ${preQty} unidades` : ''} por WhatsApp`}
+                    <WAIcon size={15} /> {preLoading ? 'Generando orden…' : `Pre-ordenar${preQty > 1 ? ` ${preQty} unidades` : ''}`}
                   </button>
                 </div>
               ) : (
@@ -861,6 +873,166 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
             </div>
           )}
         </div>
+      </div>
+
+      {/* Ticket del pre order — número de orden + descarga + WhatsApp */}
+      {preTicket && (
+        <PreorderTicketModal
+          product={product}
+          code={preTicket.code}
+          qty={preTicket.qty}
+          userTag={userTag}
+          onClose={() => setPreTicket(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Ticket de PRE ORDER (modal) ───────────────
+// Muestra el número de orden (TCG-####), lo manda por WhatsApp y genera una
+// imagen PNG descargable (canvas propio, sin librerías) para que el cliente
+// guarde su orden en el celular.
+function PreorderTicketModal({ product, code, qty, userTag, onClose }) {
+  const [downloading, setDownloading] = useState(false)
+
+  const waText = `Hola! Quiero hacer un *PRE ORDER*: *${product.name}* — cantidad: ${qty}. `
+    + `Mi número de orden es *${code}*. `
+    + `Entiendo que se abona el 50%, que está sujeto a recorte y que se prioriza por orden de llegada.${userTag}`
+
+  const fecha = new Date().toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  const downloadTicket = async () => {
+    if (downloading) return
+    setDownloading(true)
+    try {
+      const W = 900, H = 1150
+      const c = document.createElement('canvas')
+      c.width = W; c.height = H
+      const x = c.getContext('2d')
+
+      // Fondo negro + acento dorado
+      x.fillStyle = '#0A0A0A'; x.fillRect(0, 0, W, H)
+      x.fillStyle = '#FBBF24'; x.fillRect(0, 0, W, 10)
+
+      const center = (txt, y, font, color, spacing = 0) => {
+        x.font = font; x.fillStyle = color; x.textAlign = 'center'
+        if (spacing) {
+          const chars = [...txt]
+          const widths = chars.map(ch => x.measureText(ch).width)
+          const total = widths.reduce((a, b) => a + b, 0) + spacing * (chars.length - 1)
+          let cx = W / 2 - total / 2
+          chars.forEach((ch, i) => { x.textAlign = 'left'; x.fillText(ch, cx, y); cx += widths[i] + spacing })
+          x.textAlign = 'center'
+        } else {
+          x.fillText(txt, W / 2, y)
+        }
+      }
+      // Multilínea centrada
+      const wrap = (txt, y, font, color, maxW, lh) => {
+        x.font = font; x.fillStyle = color; x.textAlign = 'center'
+        const words = txt.split(' '); let line = '', yy = y
+        for (const w of words) {
+          const t = line ? line + ' ' + w : w
+          if (x.measureText(t).width > maxW && line) { x.fillText(line, W / 2, yy); line = w; yy += lh }
+          else line = t
+        }
+        if (line) x.fillText(line, W / 2, yy)
+        return yy
+      }
+
+      center('QUEST', 110, '900 64px Inter, sans-serif', '#FFFFFF', 6)
+      center('HOBBY STORE', 148, '700 20px Inter, sans-serif', '#6B7280', 8)
+      center('PRE ORDER', 235, '800 30px Inter, sans-serif', '#FBBF24', 10)
+
+      // Número de orden — el protagonista
+      x.strokeStyle = 'rgba(251,191,36,0.5)'; x.lineWidth = 3
+      const boxW = 560, boxH = 130
+      x.strokeRect(W / 2 - boxW / 2, 275, boxW, boxH)
+      center(code, 362, '900 84px "SF Mono", Menlo, monospace', '#FFFFFF')
+
+      let yy = wrap(product.name, 500, '800 40px Inter, sans-serif', '#FFFFFF', 720, 50)
+      center(`Cantidad: ${qty}`, yy + 60, '700 30px Inter, sans-serif', '#9CA3AF')
+      center(fmtPriceOrAsk(product.price) + (product.price > 0 ? ' c/u' : ''), yy + 108, '800 34px Inter, sans-serif', '#FFFFFF')
+      center(`Fecha: ${fecha}`, yy + 154, '600 24px Inter, sans-serif', '#6B7280')
+
+      // Condiciones
+      x.strokeStyle = '#2A2A2A'; x.lineWidth = 2
+      x.beginPath(); x.moveTo(90, yy + 200); x.lineTo(W - 90, yy + 200); x.stroke()
+      const conds = [
+        `Máximo ${PREORDER_MAX} unidades por persona · 50% al reservar`,
+        'Sujeto a recorte — prioridad por orden de llegada',
+        'Si no llega: devolución del 100%. Si llega recortado:',
+        'recibís lo que podamos otorgar y se devuelve la diferencia.',
+      ]
+      conds.forEach((t, i) => center(t, yy + 248 + i * 36, '600 22px Inter, sans-serif', '#9CA3AF'))
+
+      center('Presentá este número al confirmar tu reserva', H - 60, '700 24px Inter, sans-serif', '#FBBF24')
+
+      const blob = await new Promise(r => c.toBlob(r, 'image/png'))
+      const file = new File([blob], `preorder-${code}.png`, { type: 'image/png' })
+      // Móvil: share sheet (permite "Guardar imagen"); desktop: descarga directa
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Pre order ${code}` }).catch(() => {})
+      } else {
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = `preorder-${code}.png`
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000)
+      }
+    } finally { setDownloading(false) }
+  }
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 90,
+      background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+      animation: 'fadeUp 0.2s ease',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: '100%', maxWidth: 360,
+        background: '#101014', border: '1px solid rgba(251,191,36,0.35)',
+        borderRadius: 20, padding: '22px 20px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+        boxShadow: '0 18px 50px rgba(0,0,0,0.6)',
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.16em', color: '#FBBF24', fontFamily: 'Inter, sans-serif' }}>✓ PRE ORDER REGISTRADO</span>
+        <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Tu número de orden</span>
+        <span style={{
+          fontSize: 38, fontWeight: 900, color: '#FFF', fontFamily: 'SF Mono, Menlo, monospace',
+          letterSpacing: '0.04em', padding: '8px 22px', borderRadius: 12,
+          border: '2px solid rgba(251,191,36,0.5)', background: 'rgba(251,191,36,0.07)',
+        }}>{code}</span>
+        <div style={{ textAlign: 'center', fontSize: 13, color: '#E5E7EB', fontFamily: 'Inter, sans-serif', lineHeight: 1.5 }}>
+          {product.name}<br />
+          <span style={{ color: '#9CA3AF', fontSize: 12 }}>Cantidad: {qty} · {fmtPriceOrAsk(product.price)}{product.price > 0 ? ' c/u' : ''}</span>
+        </div>
+        <span style={{ fontSize: 11, color: '#6B7280', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
+          Guardá tu orden y presentá este número al confirmar la reserva.
+        </span>
+        <button onClick={() => window.open(`https://wa.me/${waNumberForProduct(product)}?text=${encodeURIComponent(waText)}`, '_blank')} style={{
+          width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
+          background: '#25D366', color: '#FFF', fontSize: 14, fontWeight: 800,
+          cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}>
+          <WAIcon size={15} /> Enviar pedido por WhatsApp
+        </button>
+        <button onClick={downloadTicket} disabled={downloading} style={{
+          width: '100%', padding: '13px 0', borderRadius: 12,
+          border: '1px solid rgba(251,191,36,0.5)', background: 'rgba(251,191,36,0.1)',
+          color: '#FBBF24', fontSize: 14, fontWeight: 800,
+          cursor: downloading ? 'default' : 'pointer', opacity: downloading ? 0.6 : 1,
+          fontFamily: 'Inter, sans-serif',
+        }}>
+          {downloading ? 'Generando…' : '⬇ Descargar mi orden (imagen)'}
+        </button>
+        <button onClick={onClose} style={{
+          background: 'none', border: 'none', color: '#6B7280', fontSize: 13,
+          fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: 4,
+        }}>Listo</button>
       </div>
     </div>
   )
