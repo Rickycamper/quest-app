@@ -179,14 +179,37 @@ export async function signInWithEmail(email, password) {
 }
 
 export async function signUpWithEmail(email, password, username) {
+  // BUG FIX: el username se deriva del email (juan@gmail → "juan") y si ya
+  // existía uno igual, el trigger de profiles chocaba con el unique constraint
+  // y el registro fallaba con un 500 críptico ("duplicate key ...") — la gente
+  // no podía crear cuenta. Ahora buscamos un username LIBRE antes de registrar
+  // (si está tomado, probamos con sufijos numéricos), y si igual choca por una
+  // carrera, devolvemos un mensaje claro para reintentar.
+  const base = (username || email.split('@')[0] || 'player')
+    .toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 20) || 'player'
+  let candidate = base
+  try {
+    for (let i = 0; i < 5; i++) {
+      const { data: taken } = await supabase
+        .from('profiles').select('id').ilike('username', candidate).limit(1)
+      if (!taken?.length) break
+      candidate = `${base.slice(0, 15)}${Math.floor(1000 + Math.random() * 9000)}`
+    }
+  } catch {} // si el chequeo falla (red), seguimos con el candidato actual
+
   const { data, error } = await supabase.auth.signUp({
     email, password,
     options: {
-      data: { username },
+      data: { username: candidate },
       emailRedirectTo: window.location.origin,
     }
   })
-  if (error) throw error
+  if (error) {
+    if (/duplicate key|profiles_username_key|database error|saving new user/i.test(error.message || '')) {
+      throw new Error('Ese nombre de usuario ya está en uso. Intentá de nuevo (te asignamos uno libre automáticamente).')
+    }
+    throw error
+  }
   // Save terms acceptance immediately if session exists (email confirm disabled)
   if (data?.session?.user?.id) {
     await supabase.from('profiles').update({ terms_accepted_at: new Date().toISOString() }).eq('id', data.session.user.id)
