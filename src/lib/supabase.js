@@ -1579,6 +1579,7 @@ export async function getMyPackages() {
       package_events ( * )
     `)
     .or(`sender_id.eq.${session.user.id},recipient_id.eq.${session.user.id}`)
+    .neq('status', 'delivered')   // retirados fuera del app (info innecesaria)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data
@@ -1595,6 +1596,7 @@ export async function getAllPackages() {
       package_items ( * ),
       package_events ( * )
     `)
+    .neq('status', 'delivered')   // retirados fuera del app (info innecesaria)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data
