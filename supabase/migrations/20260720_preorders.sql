@@ -48,6 +48,35 @@ CREATE TABLE IF NOT EXISTS public.preorder_counters (
 );
 REVOKE ALL ON public.preorder_counters FROM anon, authenticated;
 
+-- Numerador compartido: lo usan create_preorder() (cliente) y las RESERVAS
+-- que crea el staff (createReservation) — una sola secuencia por TCG.
+CREATE OR REPLACE FUNCTION public.next_preorder_code(p_prefix text)
+RETURNS text
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_prefix text;
+  v_n      integer;
+BEGIN
+  v_prefix := upper(regexp_replace(coalesce(p_prefix, ''), '[^A-Za-z0-9]', '', 'g'));
+  IF v_prefix = '' THEN v_prefix := 'TCG'; END IF;
+  v_prefix := left(v_prefix, 4);
+
+  INSERT INTO public.preorder_counters AS c (prefix, n) VALUES (v_prefix, 1)
+  ON CONFLICT (prefix) DO UPDATE SET n = c.n + 1
+  RETURNING c.n INTO v_n;
+
+  RETURN v_prefix || '-' || lpad(v_n::text, 4, '0');
+END $$;
+
+GRANT EXECUTE ON FUNCTION public.next_preorder_code(text) TO authenticated;
+
+-- Las reservas que crea el staff también llevan número de orden, visible
+-- para el cliente en "Mis Pedidos".
+ALTER TABLE public.shop_reservations ADD COLUMN IF NOT EXISTS code text;
+CREATE UNIQUE INDEX IF NOT EXISTS shop_reservations_code_idx
+  ON public.shop_reservations (code) WHERE code IS NOT NULL;
+
 -- Crea el pre order y devuelve { id, code }. Atómico: el UPSERT del contador
 -- serializa la numeración aunque dos clientes pidan a la vez.
 CREATE OR REPLACE FUNCTION public.create_preorder(
@@ -62,9 +91,7 @@ RETURNS TABLE (id uuid, code text)
 AS $$
 DECLARE
   v_prod   public.shop_products;
-  v_n      integer;
   v_code   text;
-  v_prefix text;
 BEGIN
   IF p_qty IS NULL OR p_qty < 1 OR p_qty > 4 THEN
     RAISE EXCEPTION 'Cantidad inválida (máximo 4 por persona)';
@@ -76,16 +103,7 @@ BEGIN
     RAISE EXCEPTION 'Este producto no está en pre order';
   END IF;
 
-  -- Prefijo saneado: solo letras/números, máx 4, mayúsculas. Fallback TCG.
-  v_prefix := upper(regexp_replace(coalesce(p_prefix, ''), '[^A-Za-z0-9]', '', 'g'));
-  IF v_prefix = '' THEN v_prefix := 'TCG'; END IF;
-  v_prefix := left(v_prefix, 4);
-
-  INSERT INTO public.preorder_counters AS c (prefix, n) VALUES (v_prefix, 1)
-  ON CONFLICT (prefix) DO UPDATE SET n = c.n + 1
-  RETURNING c.n INTO v_n;
-
-  v_code := v_prefix || '-' || lpad(v_n::text, 4, '0');
+  v_code := public.next_preorder_code(p_prefix);
 
   RETURN QUERY
   INSERT INTO public.shop_preorders (code, product_id, product_name, game, qty, price, user_id, guest_id, customer_name)

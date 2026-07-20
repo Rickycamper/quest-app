@@ -1764,6 +1764,16 @@ const TILES = [
     enabled: true,
   },
   {
+    id:      'pedidos',
+    icon:    'package',
+    label:   'Mis Pedidos',
+    desc:    'Pre orders y reservas',
+    color:   '#FBBF24',
+    bg:      'rgba(251,191,36,0.08)',
+    border:  'rgba(251,191,36,0.2)',
+    enabled: true,
+  },
+  {
     id:      'sucursales',
     icon:    'map-pin',
     label:   'Sucursales',
@@ -1836,7 +1846,7 @@ const TILES = [
 ]
 
 // ── Main component ────────────────────────────
-export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onOpenRanking, onOpenLive, onOpenLiveStream, onBattleNow, profile, canLive = false, canStream = false, initialView = null }) {
+export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onOpenRanking, onOpenMyOrders, onOpenLive, onOpenLiveStream, onBattleNow, profile, canLive = false, canStream = false, initialView = null }) {
   const [view, setView] = useState(initialView) // null | 'sucursales' | 'membresia' | 'qpoints'
 
   // Tile LIVE — sorteo en vivo (sorteos de grupos). Visible para todos.
@@ -1865,6 +1875,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
     if (tile.id === 'tracking')    { onOpenTracking?.(); onClose(); return }
     if (tile.id === 'shop')        { onOpenShop?.(); onClose(); return }
     if (tile.id === 'ranking')     { onOpenRanking?.(); onClose(); return }
+    if (tile.id === 'pedidos')     { onOpenMyOrders?.(); onClose(); return }
     setView(tile.id)
   }
 

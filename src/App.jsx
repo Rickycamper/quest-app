@@ -35,6 +35,7 @@ const LiveDrawScreen        = lazy(() => import('./screens/LiveDrawScreen'))
 const LiveStreamScreen      = lazy(() => import('./screens/LiveStreamScreen'))
 const ChatScreen            = lazy(() => import('./screens/ChatScreen'))
 const CommunityChatScreen   = lazy(() => import('./screens/CommunityChatScreen'))
+const MyOrdersScreen        = lazy(() => import('./screens/MyOrdersScreen'))
 const LogMatchModal         = lazy(() => import('./screens/LogMatchModal'))
 const SearchScreen          = lazy(() => import('./screens/SearchScreen'))
 const ShopScreen            = lazy(() => import('./screens/ShopScreen'))
@@ -414,6 +415,7 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   const [showEditProfile, setShowEditProfile]= useState(false)
   const [chatUser,        setChatUser]       = useState(null)   // { id, username }
   const [showCommunity,   setShowCommunity]  = useState(false)  // chat de comunidad por TCG
+  const [showMyOrders,    setShowMyOrders]   = useState(false)  // pedidos del cliente (pre orders + reservas)
   const [vsUser,          setVsUser]         = useState(null)   // { id, username } | null = no preselect
   const [showMatchModal,    setShowMatchModal]    = useState(false)
   const [showPackageCreate, setShowPackageCreate] = useState(false)
@@ -679,6 +681,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           onOpenProfile={() => { setShowHub(false); handleOwnProfile() }}
           onOpenShop={() => { setShowHub(false); setActiveTab('shop'); setVisitedTabs(prev => { const n = new Set(prev); n.add('shop'); return n }) }}
           onOpenRanking={() => { setShowHub(false); setActiveTab('ranks'); setVisitedTabs(prev => { const n = new Set(prev); n.add('ranks'); return n }) }}
+          onOpenMyOrders={() => { setShowHub(false); requireAuth(() => setShowMyOrders(true)) }}
           profile={profile}
           initialView={hubInitialView}
         />
@@ -802,6 +805,20 @@ const needsTerms = profile && !profile.terms_accepted_at
           animation: 'slideUp 0.22s ease',
         }}>
           <ChatScreen otherUser={chatUser} onBack={() => setChatUser(null)} />
+        </div>
+      )}
+
+      {/* Mis Pedidos — pre orders + reservas del cliente con su número */}
+      {showMyOrders && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 110,
+          background: '#0A0A0A', display: 'flex', flexDirection: 'column',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          animation: 'slideUp 0.22s ease',
+        }}>
+          <Suspense fallback={<ScreenFallback />}>
+            <MyOrdersScreen onClose={() => setShowMyOrders(false)} />
+          </Suspense>
         </div>
       )}
 

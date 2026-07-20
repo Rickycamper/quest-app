@@ -3213,6 +3213,44 @@ export async function createPreorder({ productId, qty, game, customerName = null
   return row   // { id, code }
 }
 
+/** "Mis Pedidos" del cliente: reservas confirmadas por el staff + solicitudes
+ *  de pre order propias. Devuelve una lista unificada, más nueva primero. */
+export async function getMyOrders() {
+  const { data: { session } } = await supabase.auth.getSession()
+  const uid = session?.user?.id
+  if (!uid) return []
+
+  const [resv, pre] = await Promise.all([
+    supabase.from('shop_reservations')
+      .select('*, product:product_id(name, game, price, image_url)')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .then(r => r.data ?? []),
+    supabase.from('shop_preorders')
+      .select('*')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .then(r => r.data ?? [], () => []),   // tabla puede no existir aún
+  ])
+
+  const items = [
+    ...resv.map(r => ({
+      kind: 'reservation', id: r.id, code: r.code ?? null,
+      name: r.product?.name ?? 'Producto', game: r.product?.game ?? null,
+      price: r.product?.price ?? null, image: r.product?.image_url ?? null,
+      qty: r.qty, paidPct: r.paid_pct ?? null, branch: r.branch ?? null,
+      createdAt: r.created_at,
+    })),
+    ...pre.map(p => ({
+      kind: 'preorder', id: p.id, code: p.code,
+      name: p.product_name, game: p.game, price: p.price, image: null,
+      qty: p.qty, paidPct: null, branch: null,
+      createdAt: p.created_at,
+    })),
+  ]
+  return items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+}
+
 // ── Shop Reservations ─────────────────────────
 
 const BRANCH_QTY_COL = { david: 'qty_david', panama: 'qty_panama', chitre: 'qty_chitre' }
@@ -3221,19 +3259,30 @@ const BRANCH_LABEL   = { david: 'David',     panama: 'Panamá',     chitre: 'Chi
 export async function getProductReservations(productId) {
   const { data, error } = await supabase
     .from('shop_reservations')
-    .select('id, qty, paid_pct, branch, notes, created_at, user_id, product_id, profiles:user_id(id, username, avatar_url)')
+    .select('*, profiles:user_id(id, username, avatar_url)')   // * tolera que 'code' aún no exista
     .eq('product_id', productId)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data ?? []
 }
 
-export async function createReservation({ productId, userId, qty, paidPct, branch, notes, productName }) {
+export async function createReservation({ productId, userId, qty, paidPct, branch, notes, productName, game = null }) {
   const { data: { session } } = await supabase.auth.getSession()
+
+  // Número de orden (misma secuencia TCG-#### que los pre orders del cliente).
+  // Si la migración aún no corrió, la reserva sale sin código (no rompe).
+  let code = null
+  try {
+    const prefix = TCG_PREFIX[game]
+      || (String(game || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase() || 'TCG')
+    const { data: codeData, error: codeErr } = await supabase.rpc('next_preorder_code', { p_prefix: prefix })
+    if (!codeErr) code = codeData
+  } catch {}
+
   const { data, error } = await supabase
     .from('shop_reservations')
-    .insert({ product_id: productId, user_id: userId, qty, paid_pct: paidPct, branch, notes: notes || null, created_by: session?.user?.id })
-    .select('id, qty, paid_pct, branch, notes, created_at, user_id, product_id, profiles:user_id(id, username, avatar_url)')
+    .insert({ product_id: productId, user_id: userId, qty, paid_pct: paidPct, branch, notes: notes || null, created_by: session?.user?.id, ...(code ? { code } : {}) })
+    .select('*, profiles:user_id(id, username, avatar_url)')   // * tolera que 'code' aún no exista
     .single()
   if (error) throw error
 
@@ -3250,8 +3299,10 @@ export async function createReservation({ productId, userId, qty, paidPct, branc
   // Notify customer
   const paidLabel = paidPct === 100 ? '100% pagado ✅' : '50% de depósito recibido'
   createNotification(
-    userId, 'shop_reservation', '📦 Pre-order confirmado',
-    `Tu reserva de ${qty > 1 ? `${qty}x ` : ''}*${productName}* en ${BRANCH_LABEL[branch] ?? branch} está registrada — ${paidLabel}. Te avisamos cuando esté listo.`,
+    userId, 'shop_reservation', code ? `📦 Pre-order ${code} confirmado` : '📦 Pre-order confirmado',
+    `Tu reserva de ${qty > 1 ? `${qty}x ` : ''}*${productName}* en ${BRANCH_LABEL[branch] ?? branch} está registrada — ${paidLabel}.`
+      + (code ? ` Tu número de orden es ${code} — lo podés ver en Mis Pedidos.` : '')
+      + ' Te avisamos cuando esté listo.',
     { productId }
   )
   return { reservation: data, qtyUpdate }

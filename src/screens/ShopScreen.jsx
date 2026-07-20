@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react'
 import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, searchUsers, notifyOwnerOfShopChange, createPreorder } from '../lib/supabase'
+import { downloadTicket } from '../lib/ticket'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
@@ -218,7 +219,7 @@ function ReservationsSection({ product, onQtyChange }) {
       const { reservation, qtyUpdate } = await createReservation({
         productId: product.id, userId: selected.id,
         qty: parseInt(qty) || 1, paidPct, branch, notes,
-        productName: product.name,
+        productName: product.name, game: product.game,
       })
       setReservations(prev => [reservation, ...prev])
       onQtyChange?.(qtyUpdate)
@@ -368,6 +369,9 @@ function ReservationsSection({ product, onQtyChange }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>{u?.username ?? '—'}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2, flexWrap: 'wrap' }}>
+                    {r.code && (
+                      <span style={{ fontSize: 9.5, fontWeight: 800, padding: '1px 6px', borderRadius: 5, background: 'rgba(251,191,36,0.1)', color: '#FBBF24', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'SF Mono, Menlo, monospace' }}>{r.code}</span>
+                    )}
                     {br && (
                       <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 5, background: br.bg, color: br.color, border: `1px solid ${br.border}` }}>{br.label}</span>
                     )}
@@ -902,85 +906,11 @@ function PreorderTicketModal({ product, code, qty, userTag, onClose }) {
 
   const fecha = new Date().toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })
 
-  const downloadTicket = async () => {
+  const handleDownload = async () => {
     if (downloading) return
     setDownloading(true)
     try {
-      const W = 900, H = 1150
-      const c = document.createElement('canvas')
-      c.width = W; c.height = H
-      const x = c.getContext('2d')
-
-      // Fondo negro + acento dorado
-      x.fillStyle = '#0A0A0A'; x.fillRect(0, 0, W, H)
-      x.fillStyle = '#FBBF24'; x.fillRect(0, 0, W, 10)
-
-      const center = (txt, y, font, color, spacing = 0) => {
-        x.font = font; x.fillStyle = color; x.textAlign = 'center'
-        if (spacing) {
-          const chars = [...txt]
-          const widths = chars.map(ch => x.measureText(ch).width)
-          const total = widths.reduce((a, b) => a + b, 0) + spacing * (chars.length - 1)
-          let cx = W / 2 - total / 2
-          chars.forEach((ch, i) => { x.textAlign = 'left'; x.fillText(ch, cx, y); cx += widths[i] + spacing })
-          x.textAlign = 'center'
-        } else {
-          x.fillText(txt, W / 2, y)
-        }
-      }
-      // Multilínea centrada
-      const wrap = (txt, y, font, color, maxW, lh) => {
-        x.font = font; x.fillStyle = color; x.textAlign = 'center'
-        const words = txt.split(' '); let line = '', yy = y
-        for (const w of words) {
-          const t = line ? line + ' ' + w : w
-          if (x.measureText(t).width > maxW && line) { x.fillText(line, W / 2, yy); line = w; yy += lh }
-          else line = t
-        }
-        if (line) x.fillText(line, W / 2, yy)
-        return yy
-      }
-
-      center('QUEST', 110, '900 64px Inter, sans-serif', '#FFFFFF', 6)
-      center('HOBBY STORE', 148, '700 20px Inter, sans-serif', '#6B7280', 8)
-      center('PRE ORDER', 235, '800 30px Inter, sans-serif', '#FBBF24', 10)
-
-      // Número de orden — el protagonista
-      x.strokeStyle = 'rgba(251,191,36,0.5)'; x.lineWidth = 3
-      const boxW = 560, boxH = 130
-      x.strokeRect(W / 2 - boxW / 2, 275, boxW, boxH)
-      center(code, 362, '900 84px "SF Mono", Menlo, monospace', '#FFFFFF')
-
-      let yy = wrap(product.name, 500, '800 40px Inter, sans-serif', '#FFFFFF', 720, 50)
-      center(`Cantidad: ${qty}`, yy + 60, '700 30px Inter, sans-serif', '#9CA3AF')
-      center(fmtPriceOrAsk(product.price) + (product.price > 0 ? ' c/u' : ''), yy + 108, '800 34px Inter, sans-serif', '#FFFFFF')
-      center(`Fecha: ${fecha}`, yy + 154, '600 24px Inter, sans-serif', '#6B7280')
-
-      // Condiciones
-      x.strokeStyle = '#2A2A2A'; x.lineWidth = 2
-      x.beginPath(); x.moveTo(90, yy + 200); x.lineTo(W - 90, yy + 200); x.stroke()
-      const conds = [
-        `Máximo ${PREORDER_MAX} unidades por persona · 50% al reservar`,
-        'Sujeto a recorte — prioridad por orden de llegada',
-        'Si no llega: devolución del 100%. Si llega recortado:',
-        'recibís lo que podamos otorgar y se devuelve la diferencia.',
-      ]
-      conds.forEach((t, i) => center(t, yy + 248 + i * 36, '600 22px Inter, sans-serif', '#9CA3AF'))
-
-      center('Presentá este número al confirmar tu reserva', H - 60, '700 24px Inter, sans-serif', '#FBBF24')
-
-      const blob = await new Promise(r => c.toBlob(r, 'image/png'))
-      const file = new File([blob], `preorder-${code}.png`, { type: 'image/png' })
-      // Móvil: share sheet (permite "Guardar imagen"); desktop: descarga directa
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: `Pre order ${code}` }).catch(() => {})
-      } else {
-        const a = document.createElement('a')
-        a.href = URL.createObjectURL(blob)
-        a.download = `preorder-${code}.png`
-        a.click()
-        setTimeout(() => URL.revokeObjectURL(a.href), 4000)
-      }
+      await downloadTicket({ code, name: product.name, qty, price: product.price, dateStr: fecha })
     } finally { setDownloading(false) }
   }
 
@@ -1020,7 +950,7 @@ function PreorderTicketModal({ product, code, qty, userTag, onClose }) {
         }}>
           <WAIcon size={15} /> Enviar pedido por WhatsApp
         </button>
-        <button onClick={downloadTicket} disabled={downloading} style={{
+        <button onClick={handleDownload} disabled={downloading} style={{
           width: '100%', padding: '13px 0', borderRadius: 12,
           border: '1px solid rgba(251,191,36,0.5)', background: 'rgba(251,191,36,0.1)',
           color: '#FBBF24', fontSize: 14, fontWeight: 800,
