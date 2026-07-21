@@ -10,7 +10,7 @@ import { downloadTicket } from '../lib/ticket'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
-import { ShopIcon, SearchIcon } from '../components/Icons'
+import { ShopIcon, SearchIcon, RefreshIcon } from '../components/Icons'
 import EmptyState from '../components/EmptyState'
 import { useToast } from '../components/Toast'
 import { COLOR, RADIUS, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
@@ -409,6 +409,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   const [preQty,     setPreQty]     = useState(1)      // pre order: 1..PREORDER_MAX
   const [preLoading, setPreLoading] = useState(false)  // creando nº de orden
   const [preTicket,  setPreTicket]  = useState(null)   // { code, qty } → modal ticket
+  const [priceFetch, setPriceFetch] = useState('idle') // 'idle' | 'loading' | '✓ SCG' | '✓ Scryfall' | '✓ TCGPlayer'
   const [imageUrl,   setImageUrl]   = useState(product.image_url ?? '')
   const [imgError,   setImgError]   = useState(false)
   const [saving,     setSaving]     = useState(false)
@@ -594,8 +595,9 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                   <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em' }}>PRECIO (USD)</div>
                   {/* Refresh from SCG (MTG) or TCGPlayer (Pokemon) */}
                   {(product.sku?.startsWith('SCRYFALL-') || product.sku?.startsWith('PKMN-')) && (
-                    <button onClick={async (e) => {
-                      e.currentTarget.textContent = '⏳'
+                    <button onClick={async () => {
+                      if (priceFetch === 'loading') return
+                      setPriceFetch('loading')
                       try {
                         let newPrice = null
                         let source = ''
@@ -626,17 +628,26 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                         if (newPrice && newPrice > 0) {
                           setPrice(String(parseFloat(newPrice).toFixed(2)))
                           setAskPrice(false)
-                          e.currentTarget.textContent = '✓ ' + source
+                          setPriceFetch('✓ ' + source)
                         } else {
-                          e.currentTarget.textContent = '🔄 SCG'
+                          setPriceFetch('idle')
                           toast?.('No se encontró precio', { type: 'error' })
                         }
                       } catch {
-                        e.currentTarget.textContent = '🔄 SCG'
+                        setPriceFetch('idle')
                         toast?.('Error al actualizar precio', { type: 'error' })
                       }
-                    }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 9, fontWeight: 700, color: '#4ADE80', padding: 0 }}>
-                      🔄 {product.sku?.startsWith('SCRYFALL-') ? 'SCG' : 'TCGPlayer'}
+                    }} style={{
+                      background: 'none', border: 'none', cursor: 'pointer', fontSize: 9, fontWeight: 700,
+                      color: '#E5E7EB', padding: 0, display: 'flex', alignItems: 'center', gap: 3,
+                      fontFamily: 'Inter, sans-serif',
+                    }}>
+                      {priceFetch.startsWith('✓') ? priceFetch : (
+                        <>
+                          <RefreshIcon size={10} spinning={priceFetch === 'loading'} />
+                          {product.sku?.startsWith('SCRYFALL-') ? 'SCG' : 'TCGPlayer'}
+                        </>
+                      )}
                     </button>
                   )}
                 </div>
@@ -1858,11 +1869,12 @@ export default function ShopScreen({ isOwner, isStaff }) {
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button onClick={handleRefreshPrices} disabled={refreshing} style={{
                 padding: '7px 12px', borderRadius: 10, background: 'transparent',
-                border: '1px solid #2A2A2A', color: refreshing ? '#4B5563' : '#4ADE80',
+                border: '1px solid #2A2A2A', color: refreshing ? '#6B7280' : '#E5E7EB',
                 fontSize: 12, fontWeight: 700, cursor: refreshing ? 'default' : 'pointer',
-                fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 5,
+                fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                {refreshing ? '⏳ Actualizando…' : '🔄 Actualizar precios'}
+                <RefreshIcon size={13} spinning={refreshing} />
+                {refreshing ? 'Actualizando…' : 'Actualizar precios'}
               </button>
               <button onClick={() => setShowAdd(true)} style={{
                 padding: '7px 14px', borderRadius: 10, background: '#A78BFA',

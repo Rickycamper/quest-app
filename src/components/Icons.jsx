@@ -149,6 +149,14 @@ export const CameraIcon = ({ size = 24, color = 'currentColor' }) => (
   </svg>
 )
 
+export const RefreshIcon = ({ size = 14, color = 'currentColor', spinning = false }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+    style={spinning ? { animation: 'spin 0.9s linear infinite' } : undefined}>
+    <polyline points="23 4 23 10 17 10"/>
+    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+  </svg>
+)
+
 export const MicIcon = ({ size = 20, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="9" y="2" width="6" height="12" rx="3"/>
