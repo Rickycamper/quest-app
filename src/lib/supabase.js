@@ -650,9 +650,13 @@ export async function getFeed({ game = null, limit = 20, offset = 0, type = 'fee
         `)
         .order('created_at', { ascending: false })
       if (game) q = q.eq('tag', game)
-      // Sin columna no se puede paginar por tipo server-side: traemos un rango
-      // amplio y recortamos en cliente.
-      const r = await q.range(0, Math.max(offset + limit, 60) - 1)
+      // Sin columna no se puede paginar por tipo server-side: traemos una
+      // ventana GRANDE de filas crudas y recortamos en cliente. La ventana
+      // escala con el offset multiplicado (las filas crudas incluyen posts
+      // del OTRO tipo, así que offset+limit crudas no alcanzan — cortaba la
+      // paginación antes de tiempo, sobre todo en Trade y Ventas).
+      const windowSize = Math.min(1000, Math.max((offset + limit) * 4, 300))
+      const r = await q.range(0, windowSize - 1)
       if (r.error) throw r.error
       const filtered = (r.data ?? []).filter(p =>
         type === 'market' ? MARKET_PREFIX_RE.test(p.caption || '') : !MARKET_PREFIX_RE.test(p.caption || '')
@@ -757,14 +761,24 @@ export async function createPost({ caption, game, imageUrls = [], postType = nul
   if (recent?.length > 0) throw new Error('Ya publicaste este contenido hace menos de 3 minutos')
 
   const image_url = imageUrls[0] ?? null
-  const insertData = { user_id: session.user.id, caption, tag: game, image_url, post_type: postType }
+  const insertData = { user_id: session.user.id, caption, tag: game, image_url }
+  // Solo mandamos post_type si hay valor — mandar la clave con la columna
+  // ausente en prod rompía TODOS los posts (PGRST204).
+  if (postType) insertData.post_type = postType
   if (imageUrls.length > 0) insertData.images = imageUrls
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('posts')
     .insert(insertData)
     .select()
     .single()
+  // Fallback: si la columna post_type aún no existe (migración sin correr),
+  // reintentamos sin ella — el prefijo [Compro]/[Vendo] del caption mantiene
+  // la clasificación mientras tanto.
+  if (error && /post_type/i.test(error.message || '')) {
+    delete insertData.post_type
+    ;({ data, error } = await supabase.from('posts').insert(insertData).select().single())
+  }
   if (error) throw new Error(error.message || error.details || 'Error al crear el post')
   awardPoints(session.user.id, 10, 'post_created') // +10 pts, max 5 posts/day
   return data
@@ -2208,8 +2222,12 @@ export async function deleteCommunityMessage(id) {
     // Fallback si la función aún no está en prod: delete directo (RLS permite
     // dueño logueado o staff). El borrado de invitado necesita la función.
     if (error.code === 'PGRST202' || /function|does not exist|schema cache/i.test(error.message || '')) {
-      const { error: e2 } = await supabase.from('community_messages').delete().eq('id', id)
+      // .select() para saber cuántas filas borró: RLS puede "permitir" el
+      // DELETE sin afectar filas (0 rows) y antes eso pasaba por éxito — el
+      // mensaje desaparecía de pantalla y reaparecía al recargar.
+      const { data: rows, error: e2 } = await supabase.from('community_messages').delete().eq('id', id).select('id')
       if (e2) throw e2
+      if (!rows?.length) throw new Error('No se pudo borrar el mensaje')
       return
     }
     throw error
@@ -3262,6 +3280,7 @@ export async function getMyOrders() {
       name: r.product?.name ?? 'Producto', game: r.product?.game ?? null,
       price: r.product?.price ?? null, image: r.product?.image_url ?? null,
       qty: r.qty, paidPct: r.paid_pct ?? null, branch: r.branch ?? null,
+      readyAt: r.ready_at ?? null, pickupNote: r.pickup_note ?? null,
       createdAt: r.created_at,
     })),
     ...pre.map(p => ({
@@ -3291,6 +3310,9 @@ export async function getProductReservations(productId) {
 
 export async function createReservation({ productId, userId, qty, paidPct, branch, notes, productName, game = null }) {
   const { data: { session } } = await supabase.auth.getSession()
+  // Guard: una qty negativa tipeada por error INFLABA el inventario
+  // (cur - (-2) suma stock) y creaba una reserva inválida.
+  qty = Math.max(1, Math.floor(Number(qty) || 1))
 
   // Número de orden (misma secuencia TCG-#### que los pre orders del cliente).
   // Si la migración aún no corrió, la reserva sale sin código (no rompe).
@@ -3329,6 +3351,31 @@ export async function createReservation({ productId, userId, qty, paidPct, branc
     { productId }
   )
   return { reservation: data, qtyUpdate }
+}
+
+/** Staff: marca una reserva como LISTA PARA RETIRAR, con observación opcional
+ *  (ej. "inmediato", "mañana a partir de las 3pm"). El cliente lo ve en
+ *  Mis Pedidos y recibe notificación. Requiere columnas ready_at/pickup_note
+ *  (migración pendiente) — si faltan, tira error claro. */
+export async function markReservationReady({ reservationId, note = null, userId, productName, code = null }) {
+  const { error } = await supabase
+    .from('shop_reservations')
+    .update({ ready_at: new Date().toISOString(), pickup_note: note || null })
+    .eq('id', reservationId)
+  if (error) {
+    if (/ready_at|pickup_note/i.test(error.message || '')) {
+      throw new Error('Falta correr la migración de pre orders en la base (columnas ready_at/pickup_note).')
+    }
+    throw error
+  }
+  if (userId) {
+    createNotification(
+      userId, 'shop_reservation',
+      `🛍️ ${code ? `Pedido ${code}` : 'Tu pedido'} listo para retirar`,
+      `*${productName ?? 'Tu pedido'}* ya está listo para retirar.${note ? ` Horario: ${note}.` : ''} ¡Te esperamos!`,
+      { reservationId }
+    )
+  }
 }
 
 export async function deleteReservation(reservation) {

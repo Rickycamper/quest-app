@@ -1,3 +1,69 @@
+-- ═════════════════════════════════════════════════════════════════
+-- QUEST — TODO LO PENDIENTE EN UN SOLO SCRIPT (jul 2026)
+-- ═════════════════════════════════════════════════════════════════
+-- Correr UNA vez en Supabase → SQL Editor. Es idempotente (se puede
+-- correr de nuevo sin romper nada). Incluye, en orden:
+--   1) posts.post_type  → separa Feed de Trade y Ventas (¡URGENTE!)
+--   2) delete_community_message → invitados borran sus mensajes del chat
+--   3) Pre orders: números TCG-####, Mis Pedidos, listo para retirar
+--   4) Limpieza de datos de prueba (QA) que quedaron del debugging
+-- ═════════════════════════════════════════════════════════════════
+
+-- ─────────────────────────────────────────────
+-- QUEST — Separar el feed de "Trade y Ventas"
+-- ─────────────────────────────────────────────
+-- El feed mostraba TODO mezclado (posts normales + Compro/Tengo/Tradeo/Vendo).
+-- El tipo solo vivía como prefijo [Compro] en el caption. Agregamos una
+-- columna real `post_type` y hacemos backfill de los posts viejos desde ese
+-- prefijo. NULL = post normal (va al Feed); los demás van a "Trade y Ventas".
+-- Aplicar en Supabase → SQL Editor. Idempotente.
+-- ─────────────────────────────────────────────
+
+ALTER TABLE public.posts
+  ADD COLUMN IF NOT EXISTS post_type text
+  CHECK (post_type IN ('want', 'have', 'trade', 'sell'));
+
+-- Backfill desde el prefijo del caption de los posts existentes
+UPDATE public.posts SET post_type = 'want'  WHERE post_type IS NULL AND caption ILIKE '[Compro]%';
+UPDATE public.posts SET post_type = 'have'  WHERE post_type IS NULL AND caption ILIKE '[Tengo]%';
+UPDATE public.posts SET post_type = 'trade' WHERE post_type IS NULL AND caption ILIKE '[Tradeo]%';
+UPDATE public.posts SET post_type = 'sell'  WHERE post_type IS NULL AND caption ILIKE '[Vendo]%';
+
+-- Índice para las dos vistas (feed = post_type IS NULL / market = NOT NULL)
+CREATE INDEX IF NOT EXISTS posts_type_created_idx
+  ON public.posts (post_type, created_at DESC);
+
+-- ─────────────────────────────────────────────
+-- QUEST — Chat de comunidad: borrar mensajes propios (incluye invitados)
+-- ─────────────────────────────────────────────
+-- El autor logueado ya puede borrar por RLS, pero el invitado se identifica
+-- por un guest_id que vive en su localStorage (RLS no lo puede validar). Esta
+-- función SECURITY DEFINER valida la propiedad (logueado O invitado) o staff,
+-- y borra. Aplicar en Supabase → SQL Editor. Idempotente.
+-- ─────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.delete_community_message(p_id uuid, p_guest_id text DEFAULT NULL)
+RETURNS void
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_row public.community_messages;
+BEGIN
+  SELECT * INTO v_row FROM public.community_messages WHERE id = p_id;
+  IF NOT FOUND THEN RETURN; END IF;
+
+  IF public.is_staff()
+     OR (v_row.user_id IS NOT NULL AND v_row.user_id = auth.uid())
+     OR (v_row.user_id IS NULL AND p_guest_id IS NOT NULL AND v_row.guest_id = p_guest_id)
+  THEN
+    DELETE FROM public.community_messages WHERE id = p_id;
+  ELSE
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+END $$;
+
+GRANT EXECUTE ON FUNCTION public.delete_community_message(uuid, text) TO anon, authenticated;
+
 -- ─────────────────────────────────────────────
 -- QUEST — Números de PRE ORDER (control + ticket descargable)
 -- ─────────────────────────────────────────────
@@ -117,3 +183,15 @@ BEGIN
 END $$;
 
 GRANT EXECUTE ON FUNCTION public.create_preorder(uuid, integer, text, text, text) TO anon, authenticated;
+
+-- ─────────────────────────────────────────────
+-- 4) LIMPIEZA de datos de prueba del debugging (QA)
+-- ─────────────────────────────────────────────
+-- Mensajes de prueba en el chat de comunidad
+DELETE FROM public.community_messages WHERE author_name IN ('__probe__', 'TesterQA');
+-- Archivo de prueba del bucket de chat
+DELETE FROM storage.objects WHERE bucket_id = 'chat' AND name LIKE 'MTG/test/%';
+-- Post de prueba del diagnóstico de posts
+DELETE FROM public.posts WHERE caption = '[QA] prueba diagnostico';
+-- Cuentas QA del diagnóstico de signup (cascadea a profiles)
+DELETE FROM auth.users WHERE email LIKE 'qa.claude.p%.20260720@gmail.com' OR email = 'qa.claude.prueba.20260720@gmail.com';

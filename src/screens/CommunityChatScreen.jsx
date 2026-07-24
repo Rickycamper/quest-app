@@ -197,8 +197,18 @@ function Room({ game, onBack, onClose }) {
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
       setErr('Tu navegador no permite grabar audio'); return
     }
+    // El listener de "soltar" se registra ANTES del await del permiso del
+    // micrófono: en el primer uso, el usuario suelta el dedo mientras el
+    // prompt está abierto y sin esto la grabación quedaba "suelta" corriendo
+    // hasta el próximo tap en cualquier lado (que encima la enviaba).
+    let releasedEarly = false
+    const onUp = () => { releasedEarly = true; stopRec(false) }
+    upHandlerRef.current = onUp
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      if (releasedEarly) { stream.getTracks().forEach(t => t.stop()); return }
       streamRef.current = stream
       const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
         .find(t => MediaRecorder.isTypeSupported(t)) || ''
@@ -225,13 +235,8 @@ function Room({ game, onBack, onClose }) {
       rec.start()
       setRecording(true); setRecMs(0)
       recTimer.current = setInterval(() => setRecMs(Date.now() - startTsRef.current), 100)
-      // Al soltar el dedo (aunque el botón del mic ya se haya desmontado porque
-      // la barra cambió al modo grabación) se envía. Se escucha en window.
-      const onUp = () => stopRec(false)
-      upHandlerRef.current = onUp
-      window.addEventListener('pointerup', onUp)
-      window.addEventListener('pointercancel', onUp)
     } catch (e) {
+      stopRec(true)   // limpia listeners de window
       setErr('Permití el micrófono para grabar')
     }
   }
@@ -249,6 +254,14 @@ function Room({ game, onBack, onClose }) {
   }
   useEffect(() => () => { // cleanup al desmontar
     clearInterval(recTimer.current)
+    // CANCELAR (no enviar): salir de la sala a mitad de grabación mandaba la
+    // nota de voz igual porque onstop corría sin cancelRef.
+    cancelRef.current = true
+    if (upHandlerRef.current) {
+      window.removeEventListener('pointerup', upHandlerRef.current)
+      window.removeEventListener('pointercancel', upHandlerRef.current)
+      upHandlerRef.current = null
+    }
     try { recRef.current?.stop() } catch {}
     streamRef.current?.getTracks().forEach(t => t.stop())
   }, [])

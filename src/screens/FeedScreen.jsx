@@ -849,7 +849,10 @@ const menuIconBtn = {
 
 const PULL_THRESHOLD = 65
 const PAGE_SIZE      = 8
-const cacheKey       = (g) => `q_feed_${g ?? 'all'}`
+// La key incluye el MODO: feed y Trade y Ventas son dos instancias del mismo
+// componente — con una key compartida se pisaban la cache entre sí (flash de
+// posts equivocados al abrir Trade, y el feed arrancaba con posts de market).
+const cacheKey       = (g, mode = 'feed') => `q_feed_${mode}_${g ?? 'all'}`
 
 // ── TCG news (RSS) auto-refresh ──────────────────────────────────────────────
 // Used to require the owner to hit "Actualizar artículos" in the admin panel
@@ -898,6 +901,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
   const [hasMore,     setHasMore]    = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [pullY,       setPullY]      = useState(0)
+  const rootVisRef   = useRef(null)   // gate de visibilidad (pull-to-refresh)
   const [refreshing,  setRefreshing] = useState(false)
   const touchStartY  = useRef(0)
   const pulling      = useRef(false)
@@ -946,7 +950,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
 
   const loadFeed = useCallback((opts = {}) => {
     const { withFollowing = false } = opts
-    const key = cacheKey(gameRef.current)
+    const key = cacheKey(gameRef.current, mode)
 
     // Show sessionStorage cache instantly, then refresh in background
     try {
@@ -1054,12 +1058,19 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
     return () => obs.disconnect()
   }, [loadMore])
 
-  // Pull-to-refresh — attach to the parent .screen-scroll container
+  // Pull-to-refresh — attach to the parent .screen-scroll container.
+  // OJO: el scroller es COMPARTIDO por todos los tabs y este componente vive
+  // montado (oculto) al cambiar de tab — y además hay DOS instancias (feed y
+  // market). Gateamos por visibilidad real (offsetParent) para que jalar en
+  // Shop/Rankings o en la otra instancia no dispare este refresh.
   useEffect(() => {
     const scroller = document.querySelector('.screen-scroll')
     if (!scroller) return
 
+    const isVisible = () => rootVisRef.current && rootVisRef.current.offsetParent !== null
+
     const onTouchStart = (e) => {
+      if (!isVisible()) return
       if (scroller.scrollTop === 0) {
         touchStartY.current = e.touches[0].clientY
         pulling.current = true
@@ -1108,8 +1119,14 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
         const newPost = payload.new
         // Only add if matches current game filter
         if (gameRef.current && newPost.tag !== gameRef.current) return
-        // Y solo si corresponde a esta vista (feed = sin tipo / market = con tipo)
-        if (mode === 'market' ? !newPost.post_type : !!newPost.post_type) return
+        // Y solo si corresponde a esta vista (feed = sin tipo / market = con
+        // tipo). Sin la columna post_type en prod, el payload no la trae —
+        // caemos al prefijo del caption; si no, en market NINGÚN insert
+        // pasaba el filtro y el realtime quedaba muerto.
+        const isMarketPost = ('post_type' in newPost)
+          ? !!newPost.post_type
+          : /^\s*\[(Compro|Tengo|Tradeo|Vendo)\]/i.test(newPost.caption || '')
+        if (mode === 'market' ? !isMarketPost : isMarketPost) return
         // Fetch full post with profile
         getFeed({ game: gameRef.current, limit: 1, offset: 0, type: mode })
           .then(latest => {
@@ -1146,7 +1163,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
   const showIndicator = pullY > 8 || refreshing
 
   return (
-    <div style={{ minHeight: '100%', background: '#0A0A0A' }}>
+    <div ref={rootVisRef} style={{ minHeight: '100%', background: '#0A0A0A' }}>
       {/* Pull-to-refresh indicator */}
       {showIndicator && (
         <div style={{

@@ -10,6 +10,9 @@ import { BRANCH_STYLES } from '../lib/constants'
 import Spinner from '../components/Spinner'
 
 const BRANCH_LABEL = { david: 'David', panama: 'Panamá', chitre: 'Chitré' }
+// Claves de BRANCH_STYLES (sin tilde) — usar BRANCH_LABEL acá dejaba el chip
+// de sucursal invisible para Panamá y Chitré.
+const BRANCH_STYLE_KEY = { david: 'David', panama: 'Panama', chitre: 'Chitre' }
 
 export default function MyOrdersScreen({ onClose }) {
   const [orders, setOrders] = useState([])
@@ -56,12 +59,13 @@ export default function MyOrdersScreen({ onClose }) {
         )}
 
         {orders.map(o => {
-          const bs = o.branch ? (BRANCH_STYLES[BRANCH_LABEL[o.branch]] ?? null) : null
+          const bs = o.branch ? (BRANCH_STYLES[BRANCH_STYLE_KEY[o.branch]] ?? null) : null
+          const isReady = !!o.readyAt
           return (
             <div key={`${o.kind}-${o.id}`} style={{
               borderRadius: 16, padding: 14,
-              background: 'rgba(251,191,36,0.05)',
-              border: '1px solid rgba(251,191,36,0.22)',
+              background: isReady ? 'rgba(74,222,128,0.06)' : 'rgba(251,191,36,0.05)',
+              border: `1px solid ${isReady ? 'rgba(74,222,128,0.35)' : 'rgba(251,191,36,0.22)'}`,
               display: 'flex', flexDirection: 'column', gap: 10,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -70,19 +74,33 @@ export default function MyOrdersScreen({ onClose }) {
                   fontSize: 17, fontWeight: 900, color: '#FFF',
                   fontFamily: 'SF Mono, Menlo, monospace', letterSpacing: '0.03em',
                   padding: '5px 12px', borderRadius: 9, flexShrink: 0,
-                  border: '1.5px solid rgba(251,191,36,0.5)', background: 'rgba(251,191,36,0.08)',
+                  border: `1.5px solid ${isReady ? 'rgba(74,222,128,0.55)' : 'rgba(251,191,36,0.5)'}`,
+                  background: isReady ? 'rgba(74,222,128,0.09)' : 'rgba(251,191,36,0.08)',
                 }}>{o.code ?? 'S/N'}</span>
                 <span style={{ flex: 1 }} />
                 <span style={{
                   fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
-                  color: o.kind === 'reservation' ? '#4ADE80' : '#FBBF24',
+                  color: isReady ? '#4ADE80' : (o.kind === 'reservation' ? '#4ADE80' : '#FBBF24'),
                   fontFamily: 'Inter, sans-serif', textAlign: 'right',
                 }}>
-                  {o.kind === 'reservation'
-                    ? (o.paidPct === 100 ? 'CONFIRMADO · 100% PAGADO' : `CONFIRMADO · ${o.paidPct ?? 50}% ABONADO`)
-                    : 'SOLICITUD ENVIADA'}
+                  {isReady
+                    ? '✓ LISTO PARA RETIRAR'
+                    : o.kind === 'reservation'
+                      ? (o.paidPct === 100 ? 'CONFIRMADO · 100% PAGADO' : `CONFIRMADO · ${o.paidPct ?? 50}% ABONADO`)
+                      : 'SOLICITUD ENVIADA'}
                 </span>
               </div>
+
+              {/* Observación de retiro (ej. "mañana a partir de las 3pm") */}
+              {isReady && o.pickupNote && (
+                <div style={{
+                  padding: '8px 12px', borderRadius: 10,
+                  background: 'rgba(74,222,128,0.09)', border: '1px solid rgba(74,222,128,0.25)',
+                  fontSize: 12.5, color: '#BBF7D0', fontFamily: 'Inter, sans-serif', lineHeight: 1.45,
+                }}>
+                  🕒 {o.pickupNote}
+                </div>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <span style={{ fontSize: 14, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', lineHeight: 1.35 }}>{o.name}</span>

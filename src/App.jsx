@@ -645,7 +645,14 @@ const needsTerms = profile && !profile.terms_accepted_at
         <NotificationPanel profile={profile} notifications={notifications}
           onClose={() => setShowNotifs(false)} onMarkRead={markRead} onMarkAll={markAll}
           onMarkResponded={markResponded}
-          onNavigate={(tab) => { setActiveTab(tab); setShowNotifs(false) }}
+          onNavigate={(tab) => {
+            // 'tracking' es un overlay, no un tab (antes quedaba pantalla en
+            // blanco); el resto va por goTab, que registra visitedTabs (un
+            // setActiveTab directo a un tab nunca visitado no montaba nada).
+            if (tab === 'tracking') setShowTracking(true)
+            else goTab(tab)
+            setShowNotifs(false)
+          }}
           onOpenChat={(u) => { setChatUser(u); setShowNotifs(false) }}
           onViewProfile={(id) => { setViewingUserId(id); setShowNotifs(false) }} />
       )}

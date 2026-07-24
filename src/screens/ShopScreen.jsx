@@ -5,7 +5,7 @@
 // Search bar across all sections
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react'
-import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, searchUsers, notifyOwnerOfShopChange, createPreorder } from '../lib/supabase'
+import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, markReservationReady, searchUsers, notifyOwnerOfShopChange, createPreorder } from '../lib/supabase'
 import { downloadTicket } from '../lib/ticket'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES } from '../lib/constants'
@@ -236,6 +236,28 @@ function ReservationsSection({ product, onQtyChange }) {
     } catch (e) { toast?.('Error al eliminar', { type: 'error' }) }
   }
 
+  // "Listo para retirar" — abre un mini-form de observación (ej. "inmediato",
+  // "mañana a partir de las 3pm") y notifica al cliente.
+  const [readyFormId, setReadyFormId] = useState(null)
+  const [readyNote,   setReadyNote]   = useState('')
+  const [readySaving, setReadySaving] = useState(false)
+  const handleMarkReady = async (r) => {
+    if (readySaving) return
+    setReadySaving(true)
+    try {
+      await markReservationReady({
+        reservationId: r.id, note: readyNote.trim() || null,
+        userId: r.user_id, productName: product.name, code: r.code ?? null,
+      })
+      setReservations(prev => prev.map(x => x.id === r.id
+        ? { ...x, ready_at: new Date().toISOString(), pickup_note: readyNote.trim() || null }
+        : x))
+      setReadyFormId(null); setReadyNote('')
+      toast?.('Cliente notificado: listo para retirar ✓', { type: 'success' })
+    } catch (e) { toast?.(e.message || 'Error al marcar', { type: 'error' }) }
+    setReadySaving(false)
+  }
+
   const totalReserved = reservations.reduce((s, r) => s + (r.qty || 0), 0)
 
   return (
@@ -361,7 +383,8 @@ function ReservationsSection({ product, onQtyChange }) {
             const u = r.profiles
             const br = BRANCHES_RES.find(b => b.key === r.branch)
             return (
-              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 11px', background: '#111', border: '1px solid #1A1A1A', borderRadius: 10 }}>
+              <div key={r.id} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 11px', background: '#111', border: '1px solid #1A1A1A', borderRadius: readyFormId === r.id ? '10px 10px 0 0' : 10 }}>
                 {u?.avatar_url
                   ? <img src={u.avatar_url} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                   : <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2A2A2A', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>👤</div>
@@ -375,6 +398,11 @@ function ReservationsSection({ product, onQtyChange }) {
                     {br && (
                       <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 5, background: br.bg, color: br.color, border: `1px solid ${br.border}` }}>{br.label}</span>
                     )}
+                    {r.ready_at && (
+                      <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 5, background: 'rgba(74,222,128,0.12)', color: '#4ADE80', border: '1px solid rgba(74,222,128,0.3)' }}>
+                        ✓ LISTO{r.pickup_note ? ` · ${r.pickup_note}` : ''}
+                      </span>
+                    )}
                     {r.notes && <span style={{ fontSize: 10, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>{r.notes}</span>}
                   </div>
                 </div>
@@ -384,8 +412,33 @@ function ReservationsSection({ product, onQtyChange }) {
                     background: r.paid_pct === 100 ? 'rgba(74,222,128,0.12)' : 'rgba(251,191,36,0.12)',
                     color: r.paid_pct === 100 ? '#4ADE80' : '#FBBF24',
                     border: `1px solid ${r.paid_pct === 100 ? 'rgba(74,222,128,0.25)' : 'rgba(251,191,36,0.25)'}` }}>{r.paid_pct}%</span>
+                  {!r.ready_at && (
+                    <button onClick={() => { setReadyFormId(readyFormId === r.id ? null : r.id); setReadyNote('') }}
+                      title="Listo para retirar"
+                      style={{ background: readyFormId === r.id ? 'rgba(74,222,128,0.15)' : 'none', border: '1px solid rgba(74,222,128,0.35)', borderRadius: 6, color: '#4ADE80', cursor: 'pointer', fontSize: 9.5, fontWeight: 800, padding: '3px 7px', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                      Listo p/retirar
+                    </button>
+                  )}
                   <button onClick={() => handleDelete(r)} style={{ background: 'none', border: 'none', color: '#374151', cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>🗑</button>
                 </div>
+              </div>
+              {/* Mini-form: observación de retiro + confirmar */}
+              {readyFormId === r.id && (
+                <div style={{ display: 'flex', gap: 6, padding: '8px 11px', background: '#0D120D', border: '1px solid rgba(74,222,128,0.25)', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
+                  <input
+                    value={readyNote}
+                    onChange={e => setReadyNote(e.target.value)}
+                    placeholder="Observación (ej: mañana a partir de las 3pm)"
+                    maxLength={120}
+                    style={{ flex: 1, background: '#111', border: '1px solid #2A2A2A', borderRadius: 8, padding: '7px 10px', color: '#FFF', fontSize: 12, outline: 'none', fontFamily: 'Inter, sans-serif' }}
+                  />
+                  <button onClick={() => handleMarkReady(r)} disabled={readySaving} style={{
+                    padding: '7px 12px', borderRadius: 8, border: 'none', cursor: readySaving ? 'default' : 'pointer',
+                    background: '#4ADE80', color: '#111', fontSize: 12, fontWeight: 800,
+                    fontFamily: 'Inter, sans-serif', opacity: readySaving ? 0.6 : 1, whiteSpace: 'nowrap',
+                  }}>{readySaving ? '…' : 'Notificar ✓'}</button>
+                </div>
+              )}
               </div>
             )
           })}
@@ -622,7 +675,8 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                           const id = product.sku.replace('PKMN-', '')
                           const r = await fetch(`https://api.pokemontcg.io/v2/cards/${id}?select=tcgplayer`)
                           const d = await r.json()
-                          const p = d.data?.tcgplayer?.prices?.normal?.market ?? d.data?.tcgplayer?.prices?.holofoil?.market
+                          const pr = d.data?.tcgplayer?.prices
+                          const p = pr?.normal?.market ?? pr?.holofoil?.market ?? pr?.['1stEditionHolofoil']?.market
                           if (p) { newPrice = normalizeTcgPrice(parseFloat(p)); source = 'TCGPlayer' }
                         }
                         if (newPrice && newPrice > 0) {
@@ -926,7 +980,7 @@ function PreorderTicketModal({ product, code, qty, userTag, onClose }) {
   }
 
   return (
-    <div onClick={onClose} style={{
+    <div onClick={(e) => { e.stopPropagation(); onClose() }} style={{
       position: 'fixed', inset: 0, zIndex: 90,
       background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
@@ -1237,7 +1291,10 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
   const handleAdd = async () => {
     if (!name.trim()) { setErr('Completa el nombre'); return }
     const rawPrice = parseFloat(price) || 0
-    const finalPrice = (!askPrice && rawPrice > 0) ? normalizeTcgPrice(rawPrice) : rawPrice
+    // Si el precio vino de la fuente (SCG as-is / Pokemon ya normalizado en
+    // selectCard) NO se vuelve a normalizar — re-normalizar pisaba el precio
+    // retail de SCG (ej. $0.30 → $0.75). Solo se normalizan los tipeados a mano.
+    const finalPrice = (!askPrice && rawPrice > 0 && !priceFromTcg) ? normalizeTcgPrice(rawPrice) : rawPrice
     setSaving(true); setErr('')
     try {
       const prod = await upsertShopProduct({
@@ -1836,9 +1893,14 @@ export default function ShopScreen({ isOwner, isStaff }) {
           newPrice = prices?.normal?.market ?? prices?.holofoil?.market ?? prices?.['1stEditionHolofoil']?.market ?? null
           if (newPrice) newPrice = parseFloat(newPrice)
         }
-        if (newPrice && newPrice > 0 && newPrice !== Number(p.price)) {
-          // MTG: use SCG price directly; Pokemon: normalize TCGPlayer market price
-          const finalPrice = p.sku.startsWith('SCRYFALL-') ? newPrice : normalizeTcgPrice(newPrice)
+        // MTG: use SCG price directly; Pokemon: normalize TCGPlayer market price.
+        // La comparación va contra el precio FINAL (normalizado) — comparar el
+        // crudo contra el guardado contaba todo como "actualizado" y escribía
+        // el mismo valor en cada corrida.
+        const finalPrice = (newPrice && newPrice > 0)
+          ? (p.sku.startsWith('SCRYFALL-') ? newPrice : normalizeTcgPrice(newPrice))
+          : null
+        if (finalPrice && finalPrice !== Number(p.price)) {
           await updateShopProduct(p.id, { price: finalPrice })
           setProducts(prev => prev.map(x => x.id === p.id ? { ...x, price: finalPrice } : x))
           updated++

@@ -83,13 +83,22 @@ export async function drawTicketPNG({ code, name, qty, price, paidPct = null, br
 export async function downloadTicket(fields) {
   const blob = await drawTicketPNG(fields)
   const file = new File([blob], `preorder-${fields.code}.png`, { type: 'image/png' })
-  if (navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], title: `Pre order ${fields.code}` }).catch(() => {})
-  } else {
+  const saveAsFile = () => {
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `preorder-${fields.code}.png`
     a.click()
     setTimeout(() => URL.revokeObjectURL(a.href), 4000)
+  }
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: `Pre order ${fields.code}` })
+    } catch (e) {
+      // Cancelado por el usuario → no insistimos. Falló por otra razón
+      // (pérdida de activación, share roto en desktop) → descarga directa.
+      if (e?.name !== 'AbortError') saveAsFile()
+    }
+  } else {
+    saveAsFile()
   }
 }
