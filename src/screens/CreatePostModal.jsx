@@ -192,7 +192,6 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
   const [cardName,     setCardName]     = useState('')
 
   const fileRef  = useRef()
-  const videoRef = useRef()
   const cropRef  = useRef()
   const lastDrag = useRef(null)
   // Anti-doble-publicación: bloquea reentradas aunque el safety timer
@@ -202,32 +201,30 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
 
   const POST_TO_STATUS = { tengo: 'have', quiero: 'want', tradeo: 'trade', vendo: 'sell' }
 
-  const handleImageSelect = (e) => {
-    const files = Array.from(e.target.files || [])
-    if (!files.length) return
+  // ── Subida unificada (estilo IG): UN solo selector que acepta fotos y
+  //    videos. Antes había que elegir "Foto" o "Video" antes de abrir la
+  //    galería; ahora se elige el archivo y el modal detecta qué es.
+  const addImages = (files) => {
     // Block HEIC/HEIF — canvas can't convert them on most browsers
     const heic = files.find(f => /heic|heif/i.test(f.type) || /\.heic$|\.heif$/i.test(f.name))
     if (heic) {
       setError('Formato no compatible. Abre la foto en tu galería y compártela como JPG.')
-      e.target.value = ''
       return
     }
+    setError('')
     const remaining = 10 - images.length
     const toAdd = files.slice(0, remaining)
+    if (!toAdd.length) return
     const newImgs = toAdd.map(file => ({ file, preview: URL.createObjectURL(file), cropPos: { x: 50, y: 50 }, nW: 1, nH: 1, targetRatio: TARGET_RATIO, fitMode: false }))
     const startIdx = images.length
     setImages(prev => [...prev, ...newImgs])
     setActiveImg(startIdx)
     setShowHint(true)
-    e.target.value = ''
   }
 
-  const handleVideoSelect = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const setVideoFile = (file) => {
     if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
       setError(`El video supera los ${MAX_VIDEO_MB} MB. Subí un video más corto.`)
-      e.target.value = ''
       return
     }
     setError('')
@@ -244,7 +241,16 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
     tmp.onerror = () => {
       setVideo({ file, preview: objectUrl, duration: null })
     }
+  }
+
+  const handleMediaSelect = (e) => {
+    const files = Array.from(e.target.files || [])
     e.target.value = ''
+    if (!files.length) return
+    // Si viene un video, gana (foto y video son mutuamente exclusivos).
+    const vid = files.find(isVideoFile)
+    if (vid) setVideoFile(vid)
+    else addImages(files)
   }
 
   const removeVideo = () => {
@@ -549,29 +555,12 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
 
         {/* Image / Video upload */}
         <div style={{ padding: '10px 16px 4px' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>
-              {video ? 'VIDEO' : 'FOTOS'}
-              {images.length > 0 && <span style={{ color: '#374151', fontWeight: 400 }}> ({images.length}/10)</span>}
-            </span>
-            {/* Toggle between foto/video mode when nothing selected */}
-            {!video && images.length === 0 && (
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={() => fileRef.current?.click()} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: '1px solid #2A2A2A', background: 'transparent', color: '#9CA3AF', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>📷 Foto</button>
-                <button
-                  onClick={() => videoRef.current?.click()}
-                  title="Máx 100 MB · Se comprime automáticamente al publicar"
-                  style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: '1px solid #2A2A2A', background: 'transparent', color: '#9CA3AF', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>🎬 Video</button>
-              </div>
-            )}
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>
+            {video ? 'VIDEO' : 'FOTOS Y VIDEO'}
+            {images.length > 0 && <span style={{ color: '#374151', fontWeight: 400 }}> ({images.length}/10)</span>}
           </div>
-          <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleImageSelect} style={{ display: 'none' }} />
-          <input ref={videoRef} type="file" accept="video/*" onChange={handleVideoSelect} style={{ display: 'none' }} />
-          {!video && images.length === 0 && (
-            <div style={{ fontSize: 10, color: '#374151', marginTop: 4, fontFamily: 'Inter, sans-serif' }}>
-              🎬 Videos hasta <strong style={{ color: '#4B5563' }}>100 MB</strong> · se comprimen automáticamente al publicar
-            </div>
-          )}
+          {/* UN solo input: acepta fotos y videos, como IG */}
+          <input ref={fileRef} type="file" accept="image/*,video/*" multiple onChange={handleMediaSelect} style={{ display: 'none' }} />
 
           {video ? (
             /* ── Video preview ── */
@@ -693,30 +682,20 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div
-                onClick={() => fileRef.current?.click()}
-                style={{
-                  flex: 1, borderRadius: 10, border: '2px dashed #2A2A2A',
-                  aspectRatio: '1/1', display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center', gap: 6,
-                  cursor: 'pointer', background: '#111111',
-                }}
-              >
-                <div style={{ color: '#4B5563' }}><CameraIcon size={22} /></div>
-                <div style={{ fontSize: 12, color: '#4B5563', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>Fotos</div>
-              </div>
-              <div
-                onClick={() => videoRef.current?.click()}
-                style={{
-                  flex: 1, borderRadius: 10, border: '2px dashed #2A2A2A',
-                  aspectRatio: '1/1', display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center', gap: 6,
-                  cursor: 'pointer', background: '#111111',
-                }}
-              >
-                <div style={{ fontSize: 22 }}>🎬</div>
-                <div style={{ fontSize: 12, color: '#4B5563', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>Video</div>
+            /* UNA sola zona de subida — se elige el archivo y listo */
+            <div
+              onClick={() => fileRef.current?.click()}
+              style={{
+                borderRadius: 12, border: '2px dashed #2A2A2A',
+                padding: '30px 16px', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 8,
+                cursor: 'pointer', background: '#111111',
+              }}
+            >
+              <div style={{ color: '#6B7280' }}><CameraIcon size={26} /></div>
+              <div style={{ fontSize: 14, color: '#E5E7EB', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>Subir</div>
+              <div style={{ fontSize: 11, color: '#4B5563', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
+                Fotos o video · hasta 10 fotos · video máx {MAX_VIDEO_MB} MB
               </div>
             </div>
           )}
