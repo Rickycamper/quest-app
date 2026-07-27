@@ -158,6 +158,7 @@ const qtyBtnStyle = (enabled) => ({
 })
 
 function stockLabel(p) {
+  if (p.coming_soon && p.preorder_closed) return { text: 'Pre order cerrado', color: '#F87171', dot: '#F87171' }
   if (p.coming_soon) return { text: 'Pre order', color: '#FBBF24', dot: '#FBBF24' }
   if (totalStock(p) > 0) return { text: 'En stock',      color: '#4ADE80', dot: '#4ADE80' }
   return                        { text: 'Sin stock',     color: '#6B7280', dot: '#374151' }
@@ -459,6 +460,9 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   const [price,      setPrice]      = useState(String(product.price ?? 0))
   const [askPrice,   setAskPrice]   = useState(!product.price || Number(product.price) === 0)
   const [comingSoon, setComingSoon] = useState(!!product.coming_soon)
+  // Pre order CERRADO: el público deja de ver las cantidades y no puede
+  // pre-ordenar; el equipo sigue viendo su inventario normalmente.
+  const [preClosed,  setPreClosed]  = useState(!!product.preorder_closed)
   const [preQty,     setPreQty]     = useState(1)      // pre order: 1..PREORDER_MAX
   const [preLoading, setPreLoading] = useState(false)  // creando nº de orden
   const [preTicket,  setPreTicket]  = useState(null)   // { code, qty } → modal ticket
@@ -500,7 +504,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   // Live computed values for owner mode
   const liveQty = (parseInt(david) || 0) + (parseInt(panama) || 0) + (parseInt(chitre) || 0)
   const liveProduct = isOwner
-    ? { ...product, qty_david: parseInt(david)||0, qty_panama: parseInt(panama)||0, qty_chitre: parseInt(chitre)||0, price: askPrice ? 0 : (parseFloat(price)||0), coming_soon: comingSoon, image_url: imageUrl || product.image_url }
+    ? { ...product, qty_david: parseInt(david)||0, qty_panama: parseInt(panama)||0, qty_chitre: parseInt(chitre)||0, price: askPrice ? 0 : (parseFloat(price)||0), coming_soon: comingSoon, preorder_closed: preClosed, image_url: imageUrl || product.image_url }
     : product
   const sl = stockLabel(liveProduct)
 
@@ -511,6 +515,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
     chitre      !== String(product.qty_chitre ?? 0) ||
     (askPrice ? 0 : parseFloat(price)||0) !== Number(product.price ?? 0) ||
     comingSoon  !== !!product.coming_soon ||
+    preClosed   !== !!product.preorder_closed ||
     imageUrl.trim() !== (product.image_url ?? '')
   )
 
@@ -524,6 +529,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
         qty_chitre: parseInt(chitre) || 0,
         price: askPrice ? 0 : (parseFloat(price) || 0),
         coming_soon: comingSoon,
+        preorder_closed: preClosed,
         image_url: imageUrl.trim() || null,
       })
       setSaved(true)
@@ -771,7 +777,42 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
             </div>
           )}
 
+          {/* ── Pre order CERRADO (owner only, solo si el pre order está activo) ── */}
+          {isOwner && comingSoon && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#111', border: `1px solid ${preClosed ? 'rgba(248,113,113,0.35)' : '#2A2A2A'}`, borderRadius: 10, marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>Pre order cerrado</div>
+                <div style={{ fontSize: 10, color: '#6B7280' }}>Oculta las cantidades al público y frena nuevos pedidos</div>
+              </div>
+              <button onClick={() => setPreClosed(v => !v)} style={{
+                width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: preClosed ? '#F87171' : '#2A2A2A', position: 'relative', transition: 'background 0.2s',
+              }}>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#FFF', position: 'absolute', top: 3, transition: 'left 0.2s', left: preClosed ? 21 : 3 }} />
+              </button>
+            </div>
+          )}
+
+          {/* ── Pre order cerrado: aviso al público (sin cantidades) ── */}
+          {!isOwner && comingSoon && preClosed && (
+            <div style={{
+              marginBottom: 14, padding: '12px 14px', borderRadius: 12,
+              background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.28)',
+              display: 'flex', flexDirection: 'column', gap: 3,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: '#F87171', fontFamily: 'Inter, sans-serif' }}>
+                PRE ORDER CERRADO
+              </span>
+              <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif', lineHeight: 1.5 }}>
+                Ya no estamos tomando pedidos de este producto. Escribinos por WhatsApp para consultar disponibilidad.
+              </span>
+            </div>
+          )}
+
           {/* ── Branch rows ── */}
+          {/* Con el pre order cerrado, el público NO ve las cantidades: esa
+              info queda solo para la tienda. El equipo sigue viendo todo. */}
+          {(isOwner || !(comingSoon && preClosed)) && (
           <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 10 }}>
                 {isOwner ? 'INVENTARIO POR SUCURSAL' : comingSoon ? 'UNIDADES EN PRE ORDER' : 'DISPONIBILIDAD'}
@@ -820,6 +861,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                 })}
               </div>
             </div>
+          )}
 
           {/* ── Owner: live status + total ── */}
           {isOwner && (
@@ -868,7 +910,9 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
           {/* ── Customer CTAs ── */}
           {!isOwner && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {comingSoon ? (
+              {/* Con el pre order CERRADO cae al botón de WhatsApp: no se
+                  puede pedir, pero sí consultar. */}
+              {comingSoon && !preClosed ? (
                 /* ── PRE ORDER: cantidad (máx. 4) + condiciones ── */
                 <div style={{
                   display: 'flex', flexDirection: 'column', gap: 12,
@@ -1698,7 +1742,8 @@ function ShopHero({ products, canEdit, onSave, onDelete }) {
   const [showDetail, setShowDetail] = useState(false)
   const hero = useMemo(() => {
     const pool = [...products].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-    return pool.find(p => p.coming_soon) || pool[0] || null
+    // Un pre order cerrado no se promociona en la portada
+    return pool.find(p => p.coming_soon && !p.preorder_closed) || pool[0] || null
   }, [products])
   if (!hero) return null
   const isPre = !!hero.coming_soon
@@ -1837,8 +1882,13 @@ export default function ShopScreen({ isOwner, isStaff }) {
       updated = await tryUpdate(fields)
     } catch (e) {
       const msg = e?.message ?? ''
-      if (msg.includes('coming_soon') || msg.includes('column')) {
-        const { coming_soon, ...rest } = fields
+      // Reintento sin las columnas opcionales si la base todavía no las tiene
+      // (migraciones pendientes) — así guardar el resto no se rompe.
+      if (msg.includes('preorder_closed')) {
+        const { preorder_closed, ...rest } = fields
+        updated = await tryUpdate(rest)
+      } else if (msg.includes('coming_soon') || msg.includes('column')) {
+        const { coming_soon, preorder_closed, ...rest } = fields
         updated = await tryUpdate(rest)
       } else {
         throw e
