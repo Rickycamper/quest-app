@@ -445,7 +445,7 @@ export function EmailSignupScreen({ onBack, onDone }) {
             autoCorrect="off"
             spellCheck={false}
             {...fieldProps}
-            style={inputLight}
+            className="auth-field" style={inputLight}
           />
         </div>
 
@@ -454,7 +454,7 @@ export function EmailSignupScreen({ onBack, onDone }) {
             onChange={e => setPassword(e.target.value)}
             autoComplete="new-password"
             {...fieldProps}
-            style={{ ...inputLight, paddingRight: 44 }}
+            className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
           />
           <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
         </div>
@@ -464,7 +464,7 @@ export function EmailSignupScreen({ onBack, onDone }) {
             onChange={e => setConfirm(e.target.value)}
             autoComplete="new-password"
             {...fieldProps}
-            style={{ ...inputLight, paddingRight: 44 }}
+            className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
           />
           <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
         </div>
@@ -674,7 +674,7 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              style={{ ...inputLight, paddingRight: 44 }}
+              className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
             />
             {emailValid && (
               <div style={{
@@ -697,7 +697,7 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
             <input type={showPw ? 'text' : 'password'} placeholder="••••••••" value={password} {...loginFieldProps}
               onChange={e => setPassword(e.target.value)} disabled={loading}
               autoComplete="current-password"
-              style={{ ...inputLight, paddingRight: 44 }}
+              className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
             />
             <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
           </div>
@@ -1048,7 +1048,7 @@ export function ForgotPasswordScreen({ onBack, onDone }) {
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          style={inputLight}
+          className="auth-field" style={inputLight}
         />
       </div>
       <button onClick={handleSend} disabled={loading || !email}
@@ -1156,7 +1156,7 @@ export function ResetPasswordScreen({ onDone, recoverySession }) {
           <input type={showPw ? 'text' : 'password'} placeholder="Mínimo 8 caracteres" value={newPw}
             onChange={e => setNewPw(e.target.value)}
             autoComplete="new-password"
-            style={{ ...inputLight, paddingRight: 44 }}
+            className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
           />
           <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
         </div>
@@ -1167,7 +1167,7 @@ export function ResetPasswordScreen({ onDone, recoverySession }) {
           <input type={showPw ? 'text' : 'password'} placeholder="Repetir contraseña" value={confirmPw}
             onChange={e => setConfirmPw(e.target.value)}
             autoComplete="new-password"
-            style={{ ...inputLight, paddingRight: 44 }}
+            className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
           />
           <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
         </div>
@@ -1209,6 +1209,15 @@ const inputLight = {
   background: '#FFFFFF', border: '1.5px solid #E5E7EB',
   borderRadius: 12, color: '#111111', fontSize: 15,
   fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box',
+  // Bug: "se puede escribir pero no se ve lo que uno escribe". Estos campos
+  // son claros dentro de una app oscura; si el TELÉFONO está en modo oscuro,
+  // el navegador pinta el texto de los formularios de BLANCO — y quedaba
+  // blanco sobre blanco. `colorScheme: light` le dice al navegador que este
+  // campo es claro, y WebkitTextFillColor fuerza el color en iOS (que ignora
+  // `color` con autofill / dark mode).
+  colorScheme: 'light',
+  WebkitTextFillColor: '#111111',
+  caretColor: '#111111',
 }
 
 const btnBlack = {
