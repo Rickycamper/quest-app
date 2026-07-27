@@ -164,6 +164,15 @@ function stockLabel(p) {
   return                        { text: 'Sin stock',     color: '#6B7280', dot: '#374151' }
 }
 
+// Oferta: hay descuento si sale_price es válido y MENOR al precio normal.
+// El precio efectivo (lo que realmente paga el cliente) sale de acá.
+function saleInfo(p) {
+  const base = Number(p?.price) || 0
+  const sale = Number(p?.sale_price) || 0
+  const on = base > 0 && sale > 0 && sale < base
+  return { on, base, sale, effective: on ? sale : base }
+}
+
 function fmtPriceOrAsk(n) {
   if (!n || Number(n) === 0) return 'Preguntar precio'
   return fmtPrice(n)
@@ -463,6 +472,8 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   // Pre order CERRADO: el público deja de ver las cantidades y no puede
   // pre-ordenar; el equipo sigue viendo su inventario normalmente.
   const [preClosed,  setPreClosed]  = useState(!!product.preorder_closed)
+  // Precio de OFERTA (público). Vacío = sin descuento.
+  const [salePrice,  setSalePrice]  = useState(product.sale_price ? String(product.sale_price) : '')
   const [preQty,     setPreQty]     = useState(1)      // pre order: 1..PREORDER_MAX
   const [preLoading, setPreLoading] = useState(false)  // creando nº de orden
   const [preTicket,  setPreTicket]  = useState(null)   // { code, qty } → modal ticket
@@ -504,7 +515,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   // Live computed values for owner mode
   const liveQty = (parseInt(david) || 0) + (parseInt(panama) || 0) + (parseInt(chitre) || 0)
   const liveProduct = isOwner
-    ? { ...product, qty_david: parseInt(david)||0, qty_panama: parseInt(panama)||0, qty_chitre: parseInt(chitre)||0, price: askPrice ? 0 : (parseFloat(price)||0), coming_soon: comingSoon, preorder_closed: preClosed, image_url: imageUrl || product.image_url }
+    ? { ...product, qty_david: parseInt(david)||0, qty_panama: parseInt(panama)||0, qty_chitre: parseInt(chitre)||0, price: askPrice ? 0 : (parseFloat(price)||0), coming_soon: comingSoon, preorder_closed: preClosed, sale_price: parseFloat(salePrice) || null, image_url: imageUrl || product.image_url }
     : product
   const sl = stockLabel(liveProduct)
 
@@ -516,6 +527,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
     (askPrice ? 0 : parseFloat(price)||0) !== Number(product.price ?? 0) ||
     comingSoon  !== !!product.coming_soon ||
     preClosed   !== !!product.preorder_closed ||
+    (parseFloat(salePrice) || 0) !== Number(product.sale_price ?? 0) ||
     imageUrl.trim() !== (product.image_url ?? '')
   )
 
@@ -530,6 +542,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
         price: askPrice ? 0 : (parseFloat(price) || 0),
         coming_soon: comingSoon,
         preorder_closed: preClosed,
+        sale_price: parseFloat(salePrice) || null,
         image_url: imageUrl.trim() || null,
       })
       setSaved(true)
@@ -732,9 +745,27 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
-                    {fmtPriceOrAsk(product.price)}
-                  </div>
+                  {(() => {
+                    const si = saleInfo(liveProduct)
+                    if (!si.on) return (
+                      <div style={{ fontSize: 28, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
+                        {fmtPriceOrAsk(product.price)}
+                      </div>
+                    )
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 28, fontWeight: 900, color: '#4ADE80', fontVariantNumeric: 'tabular-nums' }}>
+                          {fmtPrice(si.sale)}
+                        </span>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#6B7280', textDecoration: 'line-through', fontVariantNumeric: 'tabular-nums' }}>
+                          {fmtPrice(si.base)}
+                        </span>
+                        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', color: '#111', background: '#4ADE80', padding: '2px 7px', borderRadius: 6 }}>
+                          −{Math.round((1 - si.sale / si.base) * 100)}%
+                        </span>
+                      </div>
+                    )
+                  })()}
                   {product.price > 0 && (
                     <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, marginTop: 2 }}>
                       Precio sujeto a revisión del mercado
@@ -774,6 +805,50 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
               }}>
                 <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#FFF', position: 'absolute', top: 3, transition: 'left 0.2s', left: comingSoon ? 21 : 3 }} />
               </button>
+            </div>
+          )}
+
+          {/* ── DESCUENTO (owner only): precio de oferta público ── */}
+          {isOwner && !askPrice && (
+            <div style={{ padding: '10px 14px', background: '#111', border: `1px solid ${salePrice ? 'rgba(74,222,128,0.35)' : '#2A2A2A'}`, borderRadius: 10, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>Descuento</div>
+                  <div style={{ fontSize: 10, color: '#6B7280' }}>
+                    {salePrice ? 'El público ve el precio tachado y el de oferta' : 'Precio de oferta visible para todos'}
+                  </div>
+                </div>
+                {salePrice ? (
+                  <button onClick={() => setSalePrice('')} style={{
+                    padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+                    background: 'transparent', border: '1px solid #2A2A2A',
+                    color: '#9CA3AF', fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                  }}>Quitar</button>
+                ) : (
+                  <button onClick={() => setSalePrice(String(((parseFloat(price) || 0) * 0.9).toFixed(2)))} style={{
+                    padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+                    background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.35)',
+                    color: '#4ADE80', fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                  }}>Poner oferta</button>
+                )}
+              </div>
+              {salePrice !== '' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                  <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Precio de oferta</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 8, padding: '6px 10px' }}>
+                    <span style={{ color: '#4ADE80', fontWeight: 800, fontSize: 15 }}>$</span>
+                    <input type="number" min="0" step="0.01" inputMode="decimal"
+                      value={salePrice} onChange={e => setSalePrice(e.target.value)}
+                      style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#4ADE80', fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif', width: '100%' }} />
+                  </div>
+                </div>
+              )}
+              {/* Aviso si la oferta no es menor al precio normal (no se aplicaría) */}
+              {salePrice !== '' && (parseFloat(salePrice) || 0) >= (parseFloat(price) || 0) && (
+                <div style={{ fontSize: 10.5, color: '#FBBF24', marginTop: 8, fontFamily: 'Inter, sans-serif' }}>
+                  La oferta tiene que ser menor a {fmtPrice(parseFloat(price) || 0)} para mostrarse.
+                </div>
+              )}
             </div>
           )}
 
@@ -1104,14 +1179,30 @@ function ProductCard({ product, isOwner, onSave, onDelete }) {
           }}>
             {product.name}
           </div>
-          <div style={{
-            fontSize: 16, fontWeight: WEIGHT.bold, color: COLOR.text,
-            fontVariantNumeric: 'tabular-nums',
-            letterSpacing: '-0.02em',
-            lineHeight: 1.1,
-          }}>
-            {fmtPriceOrAsk(product.price)}
-          </div>
+          {(() => {
+            const si = saleInfo(product)
+            if (!si.on) return (
+              <div style={{
+                fontSize: 16, fontWeight: WEIGHT.bold, color: COLOR.text,
+                fontVariantNumeric: 'tabular-nums',
+                letterSpacing: '-0.02em', lineHeight: 1.1,
+              }}>
+                {fmtPriceOrAsk(product.price)}
+              </div>
+            )
+            return (
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: 16, fontWeight: WEIGHT.bold, color: '#4ADE80',
+                  fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1.1,
+                }}>{fmtPrice(si.sale)}</span>
+                <span style={{
+                  fontSize: 12, fontWeight: 600, color: COLOR.textTertiary,
+                  textDecoration: 'line-through', fontVariantNumeric: 'tabular-nums',
+                }}>{fmtPrice(si.base)}</span>
+              </div>
+            )
+          })()}
           {product.price > 0 && (
             <div style={{
               fontSize: 9, color: COLOR.textQuaternary,
@@ -1884,11 +1975,14 @@ export default function ShopScreen({ isOwner, isStaff }) {
       const msg = e?.message ?? ''
       // Reintento sin las columnas opcionales si la base todavía no las tiene
       // (migraciones pendientes) — así guardar el resto no se rompe.
-      if (msg.includes('preorder_closed')) {
+      if (msg.includes('sale_price')) {
+        const { sale_price, ...rest } = fields
+        updated = await tryUpdate(rest)
+      } else if (msg.includes('preorder_closed')) {
         const { preorder_closed, ...rest } = fields
         updated = await tryUpdate(rest)
       } else if (msg.includes('coming_soon') || msg.includes('column')) {
-        const { coming_soon, preorder_closed, ...rest } = fields
+        const { coming_soon, preorder_closed, sale_price, ...rest } = fields
         updated = await tryUpdate(rest)
       } else {
         throw e
