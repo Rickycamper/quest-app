@@ -1219,8 +1219,15 @@ function PayOnlineBlock({ product, onPaid }) {
 
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Total</span>
-        <span style={{ fontSize: 20, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
-          {fmtPrice(Number(product.price) * qty)}
+        <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          {saleInfo(product).on && (
+            <span style={{ fontSize: 13, color: '#6B7280', textDecoration: 'line-through', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
+              {fmtPrice(saleInfo(product).base * qty)}
+            </span>
+          )}
+          <span style={{ fontSize: 20, fontWeight: 800, color: saleInfo(product).on ? '#4ADE80' : '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
+            {fmtPrice(saleInfo(product).effective * qty)}
+          </span>
         </span>
       </div>
 

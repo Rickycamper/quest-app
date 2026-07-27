@@ -30,8 +30,8 @@ Además limpia los datos de prueba que quedaron del diagnóstico.
      `PAYPAL_ENV=sandbox`, `VITE_PAYPAL_CLIENT_ID`.
   2. Correr `supabase/migrations/20260726_paypal_orders.sql`.
   3. Probar en sandbox → recién ahí `PAYPAL_ENV=live`.
-  - ⚠️ **Pendiente antes de publicar**: que cobre el **precio de oferta**
-    cuando el producto tiene descuento (hoy cobra el precio normal).
+  - ✅ Ya cobra el **precio de oferta** cuando el producto tiene descuento
+    (validado en el servidor: el navegador nunca define el precio).
   - Sin credenciales el bloque de pago no aparece: es seguro publicar.
 - **`rebuild-oneui`** → rediseño visual estilo One UI que **se descartó**
   (quedó frío/genérico). Se guarda por si sirve alguna pieza suelta.

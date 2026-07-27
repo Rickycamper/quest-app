@@ -134,7 +134,8 @@ BEGIN
     code, product_id, product_name, qty, unit_price, total, branch,
     user_id, buyer_name, buyer_email, paypal_order_id
   ) VALUES (
-    v_code, v_prod.id, v_prod.name, p_qty, v_prod.price, p_total, p_branch,
+    -- unit_price = lo que realmente se pagó por unidad (respeta la oferta)
+    v_code, v_prod.id, v_prod.name, p_qty, round(p_total / p_qty, 2), p_total, p_branch,
     p_user_id, p_buyer_name, p_buyer_email, p_paypal_order_id
   )
   RETURNING public.shop_orders.code, public.shop_orders.id;

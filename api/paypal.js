@@ -28,6 +28,14 @@ const PP_BASE = (process.env.PAYPAL_ENV || 'sandbox') === 'live'
   : 'https://api-m.sandbox.paypal.com'
 
 const BRANCHES = { david: 'David', panama: 'Panamá', chitre: 'Chitré' }
+
+// Precio efectivo: si hay OFERTA válida (sale_price > 0 y MENOR al normal)
+// se cobra la oferta. Nunca se confía en lo que manda el navegador.
+function effectivePrice(p) {
+  const base = Number(p?.price) || 0
+  const sale = Number(p?.sale_price) || 0
+  return (base > 0 && sale > 0 && sale < base) ? sale : base
+}
 const QTY_COL  = { david: 'qty_david', panama: 'qty_panama', chitre: 'qty_chitre' }
 
 async function ppToken() {
@@ -90,12 +98,12 @@ export default async function handler(req, res) {
       if (qty < 1 || qty > 20)       return res.status(400).json({ error: 'Cantidad inválida' })
       if (!QTY_COL[branch])          return res.status(400).json({ error: 'Sucursal inválida' })
 
-      const rows = await sb(`shop_products?id=eq.${encodeURIComponent(body.productId)}&select=id,name,price,coming_soon,${QTY_COL[branch]}`)
+      const rows = await sb(`shop_products?id=eq.${encodeURIComponent(body.productId)}&select=id,name,price,sale_price,coming_soon,${QTY_COL[branch]}`)
       const p = rows?.[0]
       if (!p)                 return res.status(404).json({ error: 'Producto no encontrado' })
       if (p.coming_soon)      return res.status(400).json({ error: 'Los pre orders no se pagan online' })
 
-      const price = Number(p.price)
+      const price = effectivePrice(p)
       if (!price || price <= 0) return res.status(400).json({ error: 'Este producto no tiene precio publicado' })
       const stock = Number(p[QTY_COL[branch]] ?? 0)
       if (stock < qty)          return res.status(409).json({ error: `Solo quedan ${stock} en ${BRANCHES[branch]}` })
@@ -171,9 +179,9 @@ export default async function handler(req, res) {
 
       // El precio vuelve a salir de la base: si cambió o alguien manipuló el
       // monto, no despachamos.
-      const rows = await sb(`shop_products?id=eq.${encodeURIComponent(productId)}&select=id,price,coming_soon`)
+      const rows = await sb(`shop_products?id=eq.${encodeURIComponent(productId)}&select=id,price,sale_price,coming_soon`)
       const p = rows?.[0]
-      const expected = Number((Number(p?.price || 0) * qty).toFixed(2))
+      const expected = Number((effectivePrice(p) * qty).toFixed(2))
       const amountOk = p && !p.coming_soon && paidCurr === CURRENCY && Math.abs(paidAmount - expected) < 0.01
 
       const refund = async (reason) => {
