@@ -248,7 +248,7 @@ const globalCSS = `
   .app-header { flex-shrink:0; }
   /* screen-scroll bg also transparent so the ambient gradient reaches
      all the way up to the cards (glass picks it up through blur). */
-  .screen-scroll { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px)); padding-top:calc(56px + env(safe-area-inset-top, 0px)); min-height:0; background:transparent; }
+  .screen-scroll { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; padding-bottom:calc(76px + env(safe-area-inset-bottom, 0px)); padding-top:calc(56px + env(safe-area-inset-top, 0px)); min-height:0; background:transparent; }
   .screen-scroll::-webkit-scrollbar { display:none; }
   .filter-scroll { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; touch-action:pan-x; -webkit-overflow-scrolling:touch; }
   .filter-scroll::-webkit-scrollbar { display:none; }
