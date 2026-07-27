@@ -369,6 +369,7 @@ export function EmailSignupScreen({ onBack, onDone }) {
   const [success,       setSuccess]       = useState(false)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [showTerms,     setShowTerms]     = useState(false)
+  const { focused, fieldProps } = useFormFocus()
 
   const handleSignup = async () => {
     if (!termsAccepted)       { setError('Debés aceptar los Términos y Condiciones'); return }
@@ -409,11 +410,14 @@ export function EmailSignupScreen({ onBack, onDone }) {
 
   return (
     <div style={{ flex: 1, background: '#EEF0F8', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Hero */}
+      {/* Hero — se pliega al escribir para dejar lugar al teclado */}
       <div style={{
-        width: '100%',
+        width: '100%', flexShrink: 0, overflow: 'hidden',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '36px 20px 8px',
+        padding: focused ? '0 20px' : '36px 20px 8px',
+        maxHeight: focused ? 0 : 400,
+        opacity: focused ? 0 : 1,
+        transition: 'max-height 240ms ease, opacity 180ms ease, padding 240ms ease',
       }}>
         <img src={monsters} alt=""
           style={{ width: 'min(277px, 100%)', height: 'auto', aspectRatio: '277/218', objectFit: 'contain' }}
@@ -423,7 +427,7 @@ export function EmailSignupScreen({ onBack, onDone }) {
         />
       </div>
 
-      <div style={{ padding: '16px 24px 40px', flex: 1, overflowY: 'auto', scrollbarWidth: 'none' }}>
+      <div style={{ padding: '16px 24px 40px', flex: 1, overflowY: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', scrollPaddingBottom: 120 }}>
         <div style={{ fontSize: 26, fontWeight: 800, color: '#111111', textAlign: 'center', marginBottom: 20, letterSpacing: '-0.02em' }}>
           Create Account
         </div>
@@ -440,7 +444,8 @@ export function EmailSignupScreen({ onBack, onDone }) {
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            style={inputLight}
+            {...fieldProps}
+            className="auth-field" style={inputLight}
           />
         </div>
 
@@ -448,7 +453,8 @@ export function EmailSignupScreen({ onBack, onDone }) {
           <input type={showPw ? 'text' : 'password'} placeholder="Password" value={password}
             onChange={e => setPassword(e.target.value)}
             autoComplete="new-password"
-            style={{ ...inputLight, paddingRight: 44 }}
+            {...fieldProps}
+            className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
           />
           <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
         </div>
@@ -457,7 +463,8 @@ export function EmailSignupScreen({ onBack, onDone }) {
           <input type={showPw ? 'text' : 'password'} placeholder="Confirm password" value={confirm}
             onChange={e => setConfirm(e.target.value)}
             autoComplete="new-password"
-            style={{ ...inputLight, paddingRight: 44 }}
+            {...fieldProps}
+            className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
           />
           <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
         </div>
@@ -519,6 +526,7 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
   const [magicSent,      setMagicSent]      = useState(false)
   const [magicCode,      setMagicCode]      = useState('')
   const [magicError,     setMagicError]     = useState('')
+  const { fieldProps: loginFieldProps } = useFormFocus()
 
   const handleSendOtpCode = async () => {
     if (!email.trim()) { setMagicError('Ingresá tu email primero.'); return }
@@ -659,14 +667,14 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', marginBottom: 6 }}>Email address</div>
           <div style={{ position: 'relative' }}>
-            <input type="email" placeholder="helloworld@gmail.com" value={email}
+            <input type="email" placeholder="helloworld@gmail.com" value={email} {...loginFieldProps}
               onChange={e => setEmail(e.target.value)} disabled={loading}
               autoComplete="email"
               inputMode="email"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              style={{ ...inputLight, paddingRight: 44 }}
+              className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
             />
             {emailValid && (
               <div style={{
@@ -686,10 +694,10 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', marginBottom: 6 }}>Password</div>
           <div style={{ position: 'relative' }}>
-            <input type={showPw ? 'text' : 'password'} placeholder="••••••••" value={password}
+            <input type={showPw ? 'text' : 'password'} placeholder="••••••••" value={password} {...loginFieldProps}
               onChange={e => setPassword(e.target.value)} disabled={loading}
               autoComplete="current-password"
-              style={{ ...inputLight, paddingRight: 44 }}
+              className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
             />
             <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
           </div>
@@ -1040,7 +1048,7 @@ export function ForgotPasswordScreen({ onBack, onDone }) {
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          style={inputLight}
+          className="auth-field" style={inputLight}
         />
       </div>
       <button onClick={handleSend} disabled={loading || !email}
@@ -1148,7 +1156,7 @@ export function ResetPasswordScreen({ onDone, recoverySession }) {
           <input type={showPw ? 'text' : 'password'} placeholder="Mínimo 8 caracteres" value={newPw}
             onChange={e => setNewPw(e.target.value)}
             autoComplete="new-password"
-            style={{ ...inputLight, paddingRight: 44 }}
+            className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
           />
           <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
         </div>
@@ -1159,7 +1167,7 @@ export function ResetPasswordScreen({ onDone, recoverySession }) {
           <input type={showPw ? 'text' : 'password'} placeholder="Repetir contraseña" value={confirmPw}
             onChange={e => setConfirmPw(e.target.value)}
             autoComplete="new-password"
-            style={{ ...inputLight, paddingRight: 44 }}
+            className="auth-field" style={{ ...inputLight, paddingRight: 44 }}
           />
           <button onClick={() => setShowPw(s => !s)} style={eyeBtn}><EyeIcon off={!showPw} /></button>
         </div>
@@ -1173,11 +1181,43 @@ export function ResetPasswordScreen({ onDone, recoverySession }) {
 }
 
 // ── Shared styles ─────────────────────────────
+// ── Formularios de auth en el teléfono ────────────────────────────────
+// Bug reportado: "solo deja poner el mail, la contraseña no". Causa: la
+// pantalla de auth es un overlay position:fixed, y cuando se abre el teclado
+// del celular el overlay NO se achica — los campos de abajo quedaban tapados
+// por el teclado y sin forma de llegar a ellos. Con esto, al enfocar un campo
+// lo llevamos a la vista y el hero se pliega para liberar toda esa altura.
+export function useFormFocus() {
+  const [focused, setFocused] = useState(false)
+  const fieldProps = {
+    onFocus: (e) => {
+      setFocused(true)
+      const el = e.target
+      // Esperamos a que el teclado termine de abrir antes de centrar
+      setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }) } catch {} }, 280)
+    },
+    onBlur: () => setTimeout(() => {
+      const a = document.activeElement
+      if (!a || !['INPUT', 'TEXTAREA'].includes(a.tagName)) setFocused(false)
+    }, 150),
+  }
+  return { focused, fieldProps }
+}
+
 const inputLight = {
   width: '100%', padding: '14px 16px',
   background: '#FFFFFF', border: '1.5px solid #E5E7EB',
   borderRadius: 12, color: '#111111', fontSize: 15,
   fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box',
+  // Bug: "se puede escribir pero no se ve lo que uno escribe". Estos campos
+  // son claros dentro de una app oscura; si el TELÉFONO está en modo oscuro,
+  // el navegador pinta el texto de los formularios de BLANCO — y quedaba
+  // blanco sobre blanco. `colorScheme: light` le dice al navegador que este
+  // campo es claro, y WebkitTextFillColor fuerza el color en iOS (que ignora
+  // `color` con autofill / dark mode).
+  colorScheme: 'light',
+  WebkitTextFillColor: '#111111',
+  caretColor: '#111111',
 }
 
 const btnBlack = {

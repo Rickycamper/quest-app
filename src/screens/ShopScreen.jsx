@@ -158,9 +158,19 @@ const qtyBtnStyle = (enabled) => ({
 })
 
 function stockLabel(p) {
+  if (p.coming_soon && p.preorder_closed) return { text: 'Pre order cerrado', color: '#F87171', dot: '#F87171' }
   if (p.coming_soon) return { text: 'Pre order', color: '#FBBF24', dot: '#FBBF24' }
   if (totalStock(p) > 0) return { text: 'En stock',      color: '#4ADE80', dot: '#4ADE80' }
   return                        { text: 'Sin stock',     color: '#6B7280', dot: '#374151' }
+}
+
+// Oferta: hay descuento si sale_price es válido y MENOR al precio normal.
+// El precio efectivo (lo que realmente paga el cliente) sale de acá.
+function saleInfo(p) {
+  const base = Number(p?.price) || 0
+  const sale = Number(p?.sale_price) || 0
+  const on = base > 0 && sale > 0 && sale < base
+  return { on, base, sale, effective: on ? sale : base }
 }
 
 function fmtPriceOrAsk(n) {
@@ -459,6 +469,11 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   const [price,      setPrice]      = useState(String(product.price ?? 0))
   const [askPrice,   setAskPrice]   = useState(!product.price || Number(product.price) === 0)
   const [comingSoon, setComingSoon] = useState(!!product.coming_soon)
+  // Pre order CERRADO: el público deja de ver las cantidades y no puede
+  // pre-ordenar; el equipo sigue viendo su inventario normalmente.
+  const [preClosed,  setPreClosed]  = useState(!!product.preorder_closed)
+  // Precio de OFERTA (público). Vacío = sin descuento.
+  const [salePrice,  setSalePrice]  = useState(product.sale_price ? String(product.sale_price) : '')
   const [preQty,     setPreQty]     = useState(1)      // pre order: 1..PREORDER_MAX
   const [preLoading, setPreLoading] = useState(false)  // creando nº de orden
   const [preTicket,  setPreTicket]  = useState(null)   // { code, qty } → modal ticket
@@ -501,7 +516,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   // Live computed values for owner mode
   const liveQty = (parseInt(david) || 0) + (parseInt(panama) || 0) + (parseInt(chitre) || 0)
   const liveProduct = isOwner
-    ? { ...product, qty_david: parseInt(david)||0, qty_panama: parseInt(panama)||0, qty_chitre: parseInt(chitre)||0, price: askPrice ? 0 : (parseFloat(price)||0), coming_soon: comingSoon, image_url: imageUrl || product.image_url }
+    ? { ...product, qty_david: parseInt(david)||0, qty_panama: parseInt(panama)||0, qty_chitre: parseInt(chitre)||0, price: askPrice ? 0 : (parseFloat(price)||0), coming_soon: comingSoon, preorder_closed: preClosed, sale_price: parseFloat(salePrice) || null, image_url: imageUrl || product.image_url }
     : product
   const sl = stockLabel(liveProduct)
 
@@ -512,6 +527,8 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
     chitre      !== String(product.qty_chitre ?? 0) ||
     (askPrice ? 0 : parseFloat(price)||0) !== Number(product.price ?? 0) ||
     comingSoon  !== !!product.coming_soon ||
+    preClosed   !== !!product.preorder_closed ||
+    (parseFloat(salePrice) || 0) !== Number(product.sale_price ?? 0) ||
     imageUrl.trim() !== (product.image_url ?? '')
   )
 
@@ -525,6 +542,8 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
         qty_chitre: parseInt(chitre) || 0,
         price: askPrice ? 0 : (parseFloat(price) || 0),
         coming_soon: comingSoon,
+        preorder_closed: preClosed,
+        sale_price: parseFloat(salePrice) || null,
         image_url: imageUrl.trim() || null,
       })
       setSaved(true)
@@ -727,9 +746,27 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
-                    {fmtPriceOrAsk(product.price)}
-                  </div>
+                  {(() => {
+                    const si = saleInfo(liveProduct)
+                    if (!si.on) return (
+                      <div style={{ fontSize: 28, fontWeight: 900, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>
+                        {fmtPriceOrAsk(product.price)}
+                      </div>
+                    )
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 28, fontWeight: 900, color: '#4ADE80', fontVariantNumeric: 'tabular-nums' }}>
+                          {fmtPrice(si.sale)}
+                        </span>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#6B7280', textDecoration: 'line-through', fontVariantNumeric: 'tabular-nums' }}>
+                          {fmtPrice(si.base)}
+                        </span>
+                        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', color: '#111', background: '#4ADE80', padding: '2px 7px', borderRadius: 6 }}>
+                          −{Math.round((1 - si.sale / si.base) * 100)}%
+                        </span>
+                      </div>
+                    )
+                  })()}
                   {product.price > 0 && (
                     <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, marginTop: 2 }}>
                       Precio sujeto a revisión del mercado
@@ -772,7 +809,86 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
             </div>
           )}
 
+          {/* ── DESCUENTO (owner only): precio de oferta público ── */}
+          {isOwner && !askPrice && (
+            <div style={{ padding: '10px 14px', background: '#111', border: `1px solid ${salePrice ? 'rgba(74,222,128,0.35)' : '#2A2A2A'}`, borderRadius: 10, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>Descuento</div>
+                  <div style={{ fontSize: 10, color: '#6B7280' }}>
+                    {salePrice ? 'El público ve el precio tachado y el de oferta' : 'Precio de oferta visible para todos'}
+                  </div>
+                </div>
+                {salePrice ? (
+                  <button onClick={() => setSalePrice('')} style={{
+                    padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+                    background: 'transparent', border: '1px solid #2A2A2A',
+                    color: '#9CA3AF', fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                  }}>Quitar</button>
+                ) : (
+                  <button onClick={() => setSalePrice(String(((parseFloat(price) || 0) * 0.9).toFixed(2)))} style={{
+                    padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+                    background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.35)',
+                    color: '#4ADE80', fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                  }}>Poner oferta</button>
+                )}
+              </div>
+              {salePrice !== '' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                  <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Precio de oferta</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 8, padding: '6px 10px' }}>
+                    <span style={{ color: '#4ADE80', fontWeight: 800, fontSize: 15 }}>$</span>
+                    <input type="number" min="0" step="0.01" inputMode="decimal"
+                      value={salePrice} onChange={e => setSalePrice(e.target.value)}
+                      style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#4ADE80', fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif', width: '100%' }} />
+                  </div>
+                </div>
+              )}
+              {/* Aviso si la oferta no es menor al precio normal (no se aplicaría) */}
+              {salePrice !== '' && (parseFloat(salePrice) || 0) >= (parseFloat(price) || 0) && (
+                <div style={{ fontSize: 10.5, color: '#FBBF24', marginTop: 8, fontFamily: 'Inter, sans-serif' }}>
+                  La oferta tiene que ser menor a {fmtPrice(parseFloat(price) || 0)} para mostrarse.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Pre order CERRADO (owner only, solo si el pre order está activo) ── */}
+          {isOwner && comingSoon && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#111', border: `1px solid ${preClosed ? 'rgba(248,113,113,0.35)' : '#2A2A2A'}`, borderRadius: 10, marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>Pre order cerrado</div>
+                <div style={{ fontSize: 10, color: '#6B7280' }}>Oculta las cantidades al público y frena nuevos pedidos</div>
+              </div>
+              <button onClick={() => setPreClosed(v => !v)} style={{
+                width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: preClosed ? '#F87171' : '#2A2A2A', position: 'relative', transition: 'background 0.2s',
+              }}>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#FFF', position: 'absolute', top: 3, transition: 'left 0.2s', left: preClosed ? 21 : 3 }} />
+              </button>
+            </div>
+          )}
+
+          {/* ── Pre order cerrado: aviso al público (sin cantidades) ── */}
+          {!isOwner && comingSoon && preClosed && (
+            <div style={{
+              marginBottom: 14, padding: '12px 14px', borderRadius: 12,
+              background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.28)',
+              display: 'flex', flexDirection: 'column', gap: 3,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: '#F87171', fontFamily: 'Inter, sans-serif' }}>
+                PRE ORDER CERRADO
+              </span>
+              <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif', lineHeight: 1.5 }}>
+                Ya no estamos tomando pedidos de este producto. Escribinos por WhatsApp para consultar disponibilidad.
+              </span>
+            </div>
+          )}
+
           {/* ── Branch rows ── */}
+          {/* Con el pre order cerrado, el público NO ve las cantidades: esa
+              info queda solo para la tienda. El equipo sigue viendo todo. */}
+          {(isOwner || !(comingSoon && preClosed)) && (
           <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 10 }}>
                 {isOwner ? 'INVENTARIO POR SUCURSAL' : comingSoon ? 'UNIDADES EN PRE ORDER' : 'DISPONIBILIDAD'}
@@ -821,6 +937,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                 })}
               </div>
             </div>
+          )}
 
           {/* ── Owner: live status + total ── */}
           {isOwner && (
@@ -869,7 +986,9 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
           {/* ── Customer CTAs ── */}
           {!isOwner && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {comingSoon ? (
+              {/* Con el pre order CERRADO cae al botón de WhatsApp: no se
+                  puede pedir, pero sí consultar. */}
+              {comingSoon && !preClosed ? (
                 /* ── PRE ORDER: cantidad (máx. 4) + condiciones ── */
                 <div style={{
                   display: 'flex', flexDirection: 'column', gap: 12,
@@ -1273,14 +1392,30 @@ function ProductCard({ product, isOwner, onSave, onDelete }) {
           }}>
             {product.name}
           </div>
-          <div style={{
-            fontSize: 16, fontWeight: WEIGHT.bold, color: COLOR.text,
-            fontVariantNumeric: 'tabular-nums',
-            letterSpacing: '-0.02em',
-            lineHeight: 1.1,
-          }}>
-            {fmtPriceOrAsk(product.price)}
-          </div>
+          {(() => {
+            const si = saleInfo(product)
+            if (!si.on) return (
+              <div style={{
+                fontSize: 16, fontWeight: WEIGHT.bold, color: COLOR.text,
+                fontVariantNumeric: 'tabular-nums',
+                letterSpacing: '-0.02em', lineHeight: 1.1,
+              }}>
+                {fmtPriceOrAsk(product.price)}
+              </div>
+            )
+            return (
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: 16, fontWeight: WEIGHT.bold, color: '#4ADE80',
+                  fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1.1,
+                }}>{fmtPrice(si.sale)}</span>
+                <span style={{
+                  fontSize: 12, fontWeight: 600, color: COLOR.textTertiary,
+                  textDecoration: 'line-through', fontVariantNumeric: 'tabular-nums',
+                }}>{fmtPrice(si.base)}</span>
+              </div>
+            )
+          })()}
           {product.price > 0 && (
             <div style={{
               fontSize: 9, color: COLOR.textQuaternary,
@@ -1911,7 +2046,8 @@ function ShopHero({ products, canEdit, onSave, onDelete }) {
   const [showDetail, setShowDetail] = useState(false)
   const hero = useMemo(() => {
     const pool = [...products].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-    return pool.find(p => p.coming_soon) || pool[0] || null
+    // Un pre order cerrado no se promociona en la portada
+    return pool.find(p => p.coming_soon && !p.preorder_closed) || pool[0] || null
   }, [products])
   if (!hero) return null
   const isPre = !!hero.coming_soon
@@ -2050,8 +2186,16 @@ export default function ShopScreen({ isOwner, isStaff }) {
       updated = await tryUpdate(fields)
     } catch (e) {
       const msg = e?.message ?? ''
-      if (msg.includes('coming_soon') || msg.includes('column')) {
-        const { coming_soon, ...rest } = fields
+      // Reintento sin las columnas opcionales si la base todavía no las tiene
+      // (migraciones pendientes) — así guardar el resto no se rompe.
+      if (msg.includes('sale_price')) {
+        const { sale_price, ...rest } = fields
+        updated = await tryUpdate(rest)
+      } else if (msg.includes('preorder_closed')) {
+        const { preorder_closed, ...rest } = fields
+        updated = await tryUpdate(rest)
+      } else if (msg.includes('coming_soon') || msg.includes('column')) {
+        const { coming_soon, preorder_closed, sale_price, ...rest } = fields
         updated = await tryUpdate(rest)
       } else {
         throw e

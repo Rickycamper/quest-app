@@ -1,14 +1,23 @@
--- ═════════════════════════════════════════════════════════════════
--- QUEST — TODO LO PENDIENTE EN UN SOLO SCRIPT (jul 2026)
--- ═════════════════════════════════════════════════════════════════
--- Correr UNA vez en Supabase → SQL Editor. Es idempotente (se puede
--- correr de nuevo sin romper nada). Incluye, en orden:
---   1) posts.post_type  → separa Feed de Trade y Ventas (¡URGENTE!)
---   2) delete_community_message → invitados borran sus mensajes del chat
+-- ═══════════════════════════════════════════════════════════════════
+-- QUEST — ⭐ CORRER ESTE ARCHIVO (todo lo pendiente, jul 2026)
+-- ═══════════════════════════════════════════════════════════════════
+-- Pegá TODO esto en Supabase → SQL Editor y ejecutá UNA vez.
+-- Es idempotente: si algo ya estaba aplicado, no rompe nada.
+--
+-- Incluye, en orden:
+--   1) Feed vs Trade y Ventas   (posts.post_type + backfill)
+--   2) Chat: borrar como invitado
 --   3) Pre orders: números TCG-####, Mis Pedidos, listo para retirar
---   4) Limpieza de datos de prueba (QA) que quedaron del debugging
--- ═════════════════════════════════════════════════════════════════
+--   4) Pre order cerrado        (oculta cantidades al público)
+--   5) Precio de oferta         (descuento público)
+--   6) Limpieza de datos de prueba (QA)
+--
+-- NO incluye el checkout de PayPal: eso vive en la rama `paypal-checkout`
+-- y tiene su propio archivo (20260726_paypal_orders.sql). Corré ese SOLO
+-- cuando decidas activar los pagos online.
+-- ═══════════════════════════════════════════════════════════════════
 
+-- ─── 1) FEED vs TRADE Y VENTAS ───────────────────────────────
 -- ─────────────────────────────────────────────
 -- QUEST — Separar el feed de "Trade y Ventas"
 -- ─────────────────────────────────────────────
@@ -33,6 +42,7 @@ UPDATE public.posts SET post_type = 'sell'  WHERE post_type IS NULL AND caption 
 CREATE INDEX IF NOT EXISTS posts_type_created_idx
   ON public.posts (post_type, created_at DESC);
 
+-- ─── 2) CHAT: BORRAR COMO INVITADO ───────────────────────────
 -- ─────────────────────────────────────────────
 -- QUEST — Chat de comunidad: borrar mensajes propios (incluye invitados)
 -- ─────────────────────────────────────────────
@@ -64,6 +74,7 @@ END $$;
 
 GRANT EXECUTE ON FUNCTION public.delete_community_message(uuid, text) TO anon, authenticated;
 
+-- ─── 3) PRE ORDERS: NÚMEROS + LISTO PARA RETIRAR ─────────────
 -- ─────────────────────────────────────────────
 -- QUEST — Números de PRE ORDER (control + ticket descargable)
 -- ─────────────────────────────────────────────
@@ -184,14 +195,35 @@ END $$;
 
 GRANT EXECUTE ON FUNCTION public.create_preorder(uuid, integer, text, text, text) TO anon, authenticated;
 
+-- ─── 4) PRE ORDER CERRADO ────────────────────────────────────
 -- ─────────────────────────────────────────────
--- 4) LIMPIEZA de datos de prueba del debugging (QA)
+-- QUEST — "Pre order cerrado"
 -- ─────────────────────────────────────────────
--- Mensajes de prueba en el chat de comunidad
+-- Permite cortar un pre order: el público deja de ver las cantidades y no
+-- puede pedir más; la tienda sigue viendo su inventario normalmente.
+-- Aplicar en Supabase → SQL Editor. Idempotente.
+-- ─────────────────────────────────────────────
+
+ALTER TABLE public.shop_products
+  ADD COLUMN IF NOT EXISTS preorder_closed boolean NOT NULL DEFAULT false;
+
+-- ─── 5) PRECIO DE OFERTA ─────────────────────────────────────
+-- ─────────────────────────────────────────────
+-- QUEST — Precio de OFERTA (descuento público)
+-- ─────────────────────────────────────────────
+-- El equipo carga un precio de oferta y el público ve el precio normal
+-- tachado + el de oferta. NULL o 0 = sin descuento. Solo se aplica si es
+-- MENOR al precio normal (la UI y el checkout lo validan).
+-- Aplicar en Supabase → SQL Editor. Idempotente.
+-- ─────────────────────────────────────────────
+
+ALTER TABLE public.shop_products
+  ADD COLUMN IF NOT EXISTS sale_price numeric;
+
+-- ─── 6) LIMPIEZA de datos de prueba (QA) ─────────────────────────
 DELETE FROM public.community_messages WHERE author_name IN ('__probe__', 'TesterQA');
--- Archivo de prueba del bucket de chat
 DELETE FROM storage.objects WHERE bucket_id = 'chat' AND name LIKE 'MTG/test/%';
--- Post de prueba del diagnóstico de posts
 DELETE FROM public.posts WHERE caption = '[QA] prueba diagnostico';
--- Cuentas QA del diagnóstico de signup (cascadea a profiles)
-DELETE FROM auth.users WHERE email LIKE 'qa.claude.p%.20260720@gmail.com' OR email = 'qa.claude.prueba.20260720@gmail.com';
+DELETE FROM auth.users
+ WHERE email LIKE 'qa.claude.p%.20260720@gmail.com'
+    OR email = 'qa.claude.prueba.20260720@gmail.com';

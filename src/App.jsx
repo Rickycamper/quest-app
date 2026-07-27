@@ -176,6 +176,17 @@ const globalCSS = `
      descuadrada después de un post. Forzamos 16px en todos los inputs
      para prevenir el zoom. */
   input, textarea, select { font-size: 16px !important; }
+  /* Campos claros de las pantallas de auth (registro / login / recuperar).
+     Al autocompletar, el navegador pinta el fondo y el texto por su cuenta y
+     el resultado quedaba ilegible (blanco sobre blanco en modo oscuro).
+     Acá forzamos el par correcto: fondo blanco + texto oscuro. */
+  .auth-field:-webkit-autofill,
+  .auth-field:-webkit-autofill:hover,
+  .auth-field:-webkit-autofill:focus {
+    -webkit-text-fill-color: #111111 !important;
+    -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+    caret-color: #111111 !important;
+  }
   body {
     /* Negro puro + luz ambiente neutra ultra-sutil: se lee negro, pero el
        backdrop-blur de las cards glass tiene gradientes que refractar. */
