@@ -180,38 +180,38 @@ function MatchActions({ notif, onResponded }) {
 
   if (done) return (
     <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
-      color: done === 'accepted' ? '#4ADE80' : '#F87171' }}>
+      color: done === 'accepted' ? '#3DDC84' : '#F65959' }}>
       {done === 'accepted' ? '✅ Resultado confirmado' : '❌ Resultado rechazado'}
     </div>
   )
 
   return (
     <div style={{ marginTop: 10 }}>
-      {err && <div style={{ fontSize: 11, color: '#F87171', marginBottom: 6, fontFamily: 'Inter, sans-serif' }}>{err}</div>}
+      {err && <div style={{ fontSize: 11, color: '#F65959', marginBottom: 6, fontFamily: 'Inter, sans-serif' }}>{err}</div>}
       <div style={{ display: 'flex', gap: 6 }}>
         <button
           disabled={busy}
           onClick={(e) => { e.stopPropagation(); handle(true) }}
           style={{
-            flex: 1, padding: '7px 0', borderRadius: 8, cursor: busy ? 'default' : 'pointer',
-            background: 'rgba(74,222,128,0.12)', border: '1.5px solid rgba(74,222,128,0.35)',
-            color: '#4ADE80', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+            flex: 1, padding: '7px 0', borderRadius: 999, cursor: busy ? 'default' : 'pointer',
+            background: 'rgba(61,220,132,0.12)', border: '1px solid rgba(61,220,132,0.35)',
+            color: '#3DDC84', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
             opacity: busy ? 0.5 : 1, transition: 'opacity 0.15s',
           }}
         >
-          {busy ? '…' : '✅ Confirmar'}
+          {busy ? '…' : 'Confirmar'}
         </button>
         <button
           disabled={busy}
           onClick={(e) => { e.stopPropagation(); handle(false) }}
           style={{
-            flex: 1, padding: '7px 0', borderRadius: 8, cursor: busy ? 'default' : 'pointer',
-            background: 'rgba(248,113,113,0.1)', border: '1.5px solid rgba(248,113,113,0.3)',
-            color: '#F87171', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+            flex: 1, padding: '7px 0', borderRadius: 999, cursor: busy ? 'default' : 'pointer',
+            background: 'rgba(246,89,89,0.10)', border: '1px solid rgba(246,89,89,0.30)',
+            color: '#F65959', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
             opacity: busy ? 0.5 : 1, transition: 'opacity 0.15s',
           }}
         >
-          ❌ Rechazar
+          Rechazar
         </button>
       </div>
     </div>
@@ -243,26 +243,26 @@ function TournamentInviteActions({ notif, onResponded }) {
   }
 
   if (done) return (
-    <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: '#34D399', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: '#3DDC84', fontFamily: 'Inter, sans-serif' }}>
       ✅ ¡Te inscribiste!
     </div>
   )
 
   return (
     <div style={{ marginTop: 10 }}>
-      {err && <div style={{ fontSize: 11, color: '#F87171', marginBottom: 6, fontFamily: 'Inter, sans-serif' }}>{err}</div>}
+      {err && <div style={{ fontSize: 11, color: '#F65959', marginBottom: 6, fontFamily: 'Inter, sans-serif' }}>{err}</div>}
       <button
         disabled={busy}
         onClick={handle}
         style={{
-          width: '100%', padding: '8px 0', borderRadius: 8,
+          width: '100%', padding: '8px 0', borderRadius: 999,
           cursor: busy ? 'default' : 'pointer',
-          background: 'rgba(52,211,153,0.12)', border: '1.5px solid rgba(52,211,153,0.35)',
-          color: '#34D399', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+          background: 'rgba(61,220,132,0.12)', border: '1px solid rgba(61,220,132,0.35)',
+          color: '#3DDC84', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
           opacity: busy ? 0.5 : 1, transition: 'opacity 0.15s',
         }}
       >
-        {busy ? '…' : '🏆 Unirse al torneo'}
+        {busy ? '…' : 'Unirse al torneo'}
       </button>
     </div>
   )
@@ -329,9 +329,9 @@ function NotifCard({ notif, onRead, onNavigate, onOpenChat, onMatchResponded, on
 
   return (
     <div onClick={handleClick} style={{
-      background: notif.read ? '#0D0D0D' : '#111111',
-      border: `1px solid ${notif.read ? '#1A1A1A' : cfg.border}`,
-      borderRadius: 12, padding: '12px 14px', marginBottom: 8,
+      background: '#161619',
+      border: '1px solid rgba(255,255,255,0.055)',
+      borderRadius: 20, padding: '12px 14px', marginBottom: 8,
       cursor: (isPendingMatch || isPendingInvite) ? 'default' : (['auction_won','auction_ended'].includes(notif.type) || !notif.read) ? 'pointer' : 'default',
       opacity: notif.read && !isPendingMatch && !isPendingInvite ? 0.6 : 1,
       position: 'relative', overflow: 'hidden',
@@ -340,13 +340,13 @@ function NotifCard({ notif, onRead, onNavigate, onOpenChat, onMatchResponded, on
       {!notif.read && (
         <div style={{
           position: 'absolute', left: 0, top: 0, bottom: 0,
-          width: 3, background: cfg.color, borderRadius: '12px 0 0 12px',
+          width: 3, background: '#4C9EFF', borderRadius: '20px 0 0 20px',
         }} />
       )}
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
         <div style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: cfg.bg, display: 'flex',
+          width: 36, height: 36, borderRadius: 12,
+          background: '#232329', display: 'flex',
           alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           position: 'relative',
         }}>
@@ -358,7 +358,7 @@ function NotifCard({ notif, onRead, onNavigate, onOpenChat, onMatchResponded, on
               background: cfg.color, color: '#0A0A0A',
               fontSize: 9, fontWeight: 800,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: '0 4px', border: '2px solid #111111',
+              padding: '0 4px', border: '2px solid #161619',
               fontFamily: 'Inter, sans-serif',
             }}>
               {notif.groupCount > 9 ? '9+' : notif.groupCount}
@@ -367,8 +367,8 @@ function NotifCard({ notif, onRead, onNavigate, onOpenChat, onMatchResponded, on
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', marginBottom: 3 }}>{title}</div>
-          <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.4 }}>{notif.body}</div>
-          <div style={{ fontSize: 11, color: '#374151', marginTop: 5 }}>{timeAgo}</div>
+          <div style={{ fontSize: 12, color: '#9AA0A8', lineHeight: 1.4 }}>{notif.body}</div>
+          <div style={{ fontSize: 11, color: '#6E747D', marginTop: 5 }}>{timeAgo}</div>
           {/* Accept / Reject buttons for pending match requests */}
           {isPendingMatch && (
             <MatchActions notif={notif} onResponded={(id, status) => { onRead(id); onMatchResponded?.(id, status) }} />
@@ -381,23 +381,22 @@ function NotifCard({ notif, onRead, onNavigate, onOpenChat, onMatchResponded, on
         {!notif.read && !isPendingMatch && !isPendingInvite && (
           <div style={{
             width: 8, height: 8, borderRadius: '50%',
-            background: cfg.color, flexShrink: 0, marginTop: 4,
-            boxShadow: `0 0 6px ${cfg.color}`,
+            background: '#4C9EFF', flexShrink: 0, marginTop: 4,
           }} />
         )}
         {isPendingMatch && (
           <div style={{
             fontSize: 9, fontWeight: 800, color: '#FB923C',
             background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.3)',
-            borderRadius: 6, padding: '3px 7px', flexShrink: 0,
+            borderRadius: 999, padding: '3px 8px', flexShrink: 0,
             fontFamily: 'Inter, sans-serif', letterSpacing: '0.04em',
           }}>PENDIENTE</div>
         )}
         {isPendingInvite && (
           <div style={{
-            fontSize: 9, fontWeight: 800, color: '#34D399',
-            background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.3)',
-            borderRadius: 6, padding: '3px 7px', flexShrink: 0,
+            fontSize: 9, fontWeight: 800, color: '#3DDC84',
+            background: 'rgba(61,220,132,0.12)', border: '1px solid rgba(61,220,132,0.3)',
+            borderRadius: 999, padding: '3px 8px', flexShrink: 0,
             fontFamily: 'Inter, sans-serif', letterSpacing: '0.04em',
           }}>INVITACIÓN</div>
         )}
@@ -432,32 +431,32 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
 
   return (
     <div style={{
-      position: 'absolute', inset: 0, background: '#0A0A0A',
+      position: 'absolute', inset: 0, background: '#050506',
       zIndex: 300, display: 'flex', flexDirection: 'column',
       animation: 'slideDown 0.25s ease both',
     }}>
       <div style={{
         padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 16px',
-        background: '#111111', borderBottom: '1px solid #1F1F1F', flexShrink: 0,
+        background: '#050506', borderBottom: '1px solid rgba(255,255,255,0.055)', flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF' }}>Notificaciones</div>
-            {unread > 0 && <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{unread} sin leer</div>}
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF' }}>Notificaciones</div>
+            {unread > 0 && <div style={{ fontSize: 12.5, color: '#9AA0A8', marginTop: 2 }}>{unread} sin leer</div>}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {unread > 0 && (
               <button onClick={onMarkAll} style={{
-                padding: '7px 12px', borderRadius: 10,
-                background: 'rgba(255,255,255,0.06)', border: '1px solid #2A2A2A',
-                color: '#9CA3AF', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                padding: '7px 14px', borderRadius: 999,
+                background: '#232329', border: '1px solid rgba(255,255,255,0.07)',
+                color: '#E7E9EC', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 fontFamily: 'Inter, sans-serif',
               }}>✓ Leer todo</button>
             )}
             <button onClick={onClose} style={{
               width: 36, height: 36, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.06)', border: 'none',
-              color: '#9CA3AF', cursor: 'pointer', fontSize: 18,
+              background: '#232329', border: 'none',
+              color: '#E7E9EC', cursor: 'pointer', fontSize: 18,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>✕</button>
           </div>
@@ -465,8 +464,8 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
 
         {isStaff && (
           <div style={{
-            marginTop: 12, padding: '8px 12px', borderRadius: 10,
-            background: rc.bg, border: `1px solid ${rc.border}`,
+            marginTop: 12, padding: '8px 12px', borderRadius: 14,
+            background: '#161619', border: '1px solid rgba(255,255,255,0.055)',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <span style={{ fontSize: 16 }}>{profile?.role === 'admin' ? '👑' : '🛡️'}</span>
@@ -474,7 +473,7 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
               <div style={{ fontSize: 11, fontWeight: 700, color: rc.color, letterSpacing: '0.06em' }}>
                 {profile?.role === 'admin' ? 'ADMINISTRADOR — TODAS LAS SUCURSALES' : `STAFF · ${profile?.branch}`}
               </div>
-              <div style={{ fontSize: 11, color: '#4B5563' }}>Notificaciones operativas activas</div>
+              <div style={{ fontSize: 11, color: '#9AA0A8' }}>Notificaciones operativas activas</div>
             </div>
           </div>
         )}
@@ -483,7 +482,7 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
       <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', padding: '12px 16px' }}>
         {unreadList.length > 0 && (
           <>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.12em', padding: '4px 0 10px' }}>SIN LEER</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', padding: '4px 0 10px' }}>SIN LEER</div>
             {unreadList.map(n => (
               <NotifCard key={n.id} notif={n} onRead={onMarkRead}
                 onNavigate={(tab) => { onNavigate?.(tab); onClose() }}
@@ -497,7 +496,7 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
         )}
         {readList.length > 0 && (
           <>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.12em', padding: '16px 0 10px' }}>ANTERIORES</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', padding: '16px 0 10px' }}>ANTERIORES</div>
             {readList.map(n => (
               <NotifCard key={n.id} notif={n} onRead={onMarkRead}
                 onNavigate={(tab) => { onNavigate?.(tab); onClose() }}
@@ -517,20 +516,20 @@ export default function NotificationPanel({ profile, notifications, onClose, onM
           }}>
             <div style={{
               width: 72, height: 72, borderRadius: 20,
-              background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 70%)',
-              border: '1px solid #1F1F1F',
+              background: '#161619',
+              border: '1px solid rgba(255,255,255,0.055)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: 14, color: '#4B5563',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.3)',
+              marginBottom: 14, color: '#6E747D',
+              boxShadow: 'none',
             }}>
               <svg width="28" height="28" viewBox="0 0 16 16" fill="currentColor" strokeWidth="0">
                 <path d="M7.999325 0.16c-0.542 0-0.98 0.438-0.98 0.98v0.588c-2.236 0.453-3.92 2.432-3.92 4.802v0.576c0 1.439-0.53 2.83-1.485 3.908l-0.227 0.254c-0.257 0.288-0.318 0.701-0.162 1.053s0.505 0.579 0.891 0.579h11.76c0.386 0 0.735-0.227 0.894-0.579s0.095-0.765-0.162-1.053l-0.227-0.254c-0.956-1.078-1.485-2.465-1.485-3.908V6.53c0-2.37-1.684-4.349-3.92-4.802V1.14c0-0.542-0.438-0.98-0.98-0.98Zm1.387 15.107c0.368-0.368 0.573-0.867 0.573-1.387h-3.92c0 0.521 0.205 1.02 0.573 1.387s0.867 0.573 1.387 0.573 1.02-0.205 1.387-0.573Z"/>
               </svg>
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#E5E5E5', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.01em' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#E7E9EC', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.01em' }}>
               Todo al día
             </div>
-            <div style={{ fontSize: 12.5, color: '#6B7280', fontFamily: 'Inter, sans-serif', maxWidth: 240, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12.5, color: '#9AA0A8', fontFamily: 'Inter, sans-serif', maxWidth: 240, lineHeight: 1.5 }}>
               No tenés notificaciones nuevas. Cuando algo pase te avisamos acá.
             </div>
           </div>

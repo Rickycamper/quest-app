@@ -28,30 +28,37 @@ export const WEIGHT = {
 
 // ── Color tokens (4 text levels + surfaces) ──────────────────────────────────
 // Replaces the 7+ near-identical grays scattered across the codebase.
+// Rebuild One UI (jul 2026): superficies planas y calmas, un solo acento
+// interactivo, color únicamente donde significa algo (estado/identidad).
 export const COLOR = {
   // Text
-  text:           '#FFFFFF',  // primary text
-  textSecondary:  '#9CA3AF',  // secondary text (was used 113× as-is — keep)
-  textTertiary:   '#6B7280',  // disabled, metadata
+  text:           '#F4F5F7',  // primary text (blanco suave, One UI)
+  textSecondary:  '#9AA0A8',  // secondary text
+  textTertiary:   '#6E747D',  // disabled, metadata
   textQuaternary: '#4B5563',  // hint text only
 
-  // Surfaces
-  background:     '#0A0A0A',  // app background
-  surface:        '#111111',  // cards, modals
-  surfaceRaised:  '#1A1A1A',  // pressed states, raised cards
-  surfaceHover:   '#1F1F1F',  // hover states
+  // Surfaces (One UI dark: fondo casi negro plano + cards apenas elevadas)
+  background:     '#050506',  // app background — PLANO, sin gradientes
+  surface:        '#161619',  // cards, listas agrupadas
+  surfaceRaised:  '#1C1C21',  // modals, sheets, cards elevadas
+  surfaceHover:   '#222228',  // hover / pressed states
+  surfaceInput:   '#101013',  // inputs
 
-  // Borders
-  border:         '#1F1F1F',  // default border (use for dividers)
-  borderStrong:   '#2A2A2A',  // emphasized border (around inputs, buttons)
+  // Borders (hairlines translúcidas — se funden con cualquier surface)
+  border:         'rgba(255,255,255,0.055)',
+  borderStrong:   'rgba(255,255,255,0.10)',
 
-  // Brand accents (kept — these are intentional)
+  // EL acento interactivo (links, tabs activos, toggles ON, foco)
+  accent:         '#4C9EFF',
+  accentDim:      'rgba(76,158,255,0.12)',
+
+  // Estados / marca (usar SOLO en iconos, chips, dots — nunca de fondo de card)
   purple:         '#A78BFA',
-  green:          '#4ADE80',
-  red:            '#F87171',
-  amber:          '#F59E0B',
-  gold:           '#FBBF24',
-  blue:           '#60A5FA',
+  green:          '#3DDC84',
+  red:            '#F65959',
+  amber:          '#F5C34B',
+  gold:           '#F5C34B',  // reservado: Q coins, pre order, listo p/ retirar
+  blue:           '#4C9EFF',
   orange:         '#FB923C',
 }
 
@@ -66,14 +73,15 @@ export const SPACING = {
   xxxl: 32,
 }
 
-// ── Border radius (5-stop scale) ─────────────────────────────────────────────
+// ── Border radius (escala One UI — más redondo, más suave) ──────────────────
 export const RADIUS = {
-  xs:   4,
-  sm:   8,
-  md:   12,
-  lg:   16,
-  xl:   20,
-  full: 9999,  // pill / circle
+  xs:   6,
+  sm:   10,
+  md:   14,   // inputs, rows internas
+  lg:   20,   // cards estándar, tiles
+  xl:   26,   // clusters / cards grandes
+  sheet: 28,  // top de bottom-sheets y modales
+  full: 9999, // pill / circle
 }
 
 // ── Motion (spring physics, 3 durations) ─────────────────────────────────────

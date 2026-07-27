@@ -20,7 +20,7 @@ import { useFollowSuccess } from '../components/FollowSuccess'
 
 const sk = (w, h, r = 6) => ({
   width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
-  background: 'linear-gradient(90deg,#111 0%,#1F1F1F 50%,#111 100%)',
+  background: 'linear-gradient(90deg,#1A1A1F 0%,#25252B 50%,#1A1A1F 100%)',
   backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite ease-in-out',
 })
 
@@ -142,7 +142,7 @@ function ImageCarousel({ images }) {
     <div
       ref={trackRef}
       style={{
-        borderRadius: 10, overflow: 'hidden', marginBottom: 14,
+        borderRadius: 14, overflow: 'hidden', marginBottom: 14,
         background: '#0A0A0A', position: 'relative',
         maxHeight: 450,
         userSelect: 'none', touchAction: 'pan-y',
@@ -249,7 +249,7 @@ function VideoPlayer({ src }) {
       {/* ── Feed thumbnail — muted, auto-play, no controls ── */}
       <div
         onClick={openExpanded}
-        style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 14, background: '#000', cursor: 'pointer' }}
+        style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', marginBottom: 14, background: '#000', cursor: 'pointer' }}
       >
         <video
           ref={vidRef}
@@ -487,7 +487,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
       border: `1px solid ${COLOR.border}`,
       borderRadius: RADIUS.lg,
       padding: '16px 18px',
-      boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+      boxShadow: '0 1px 2px rgba(0,0,0,0.35)',
       animation: animDelay > 0 ? 'fadeUp 0.3s ease both' : 'none',
       animationDelay: `${animDelay}ms`,
       // CSS containment — tells the browser this card is independent so it
@@ -545,7 +545,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
                 width: 34, height: 34, borderRadius: '50%',
                 border: `1px solid ${isFollowed ? COLOR.borderStrong : '#FFFFFF'}`,
                 background: isFollowed ? 'transparent' : '#FFFFFF',
-                color: isFollowed ? COLOR.textSecondary : '#0A0A0A',
+                color: isFollowed ? COLOR.textSecondary : '#0B0B0D',
                 cursor: 'pointer',
                 transition: MOTION.springTransition,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -568,8 +568,8 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
               {showMenu && (
                 <div style={{
                   position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 120,
-                  background: '#1C1C1C', border: '1px solid #2A2A2A',
-                  borderRadius: 12, padding: '6px 4px',
+                  background: '#1C1C21', border: '1px solid rgba(255,255,255,0.10)',
+                  borderRadius: 14, padding: '6px 4px',
                   display: 'flex', gap: 2,
                   animation: 'fadeUp 0.15s ease',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
@@ -587,7 +587,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
                     </button>
                   )}
                   {canDelete && (
-                    <button onClick={handleDelete} disabled={deleting} style={{ ...menuIconBtn, color: '#F87171' }}>
+                    <button onClick={handleDelete} disabled={deleting} style={{ ...menuIconBtn, color: '#F65959' }}>
                       {deleting
                         ? <span style={{ fontSize: 13 }}>···</span>
                         : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -612,12 +612,12 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
         if (imgs.length === 0) return null
         if (imgs.length === 1 && IS_VIDEO_URL.test(imgs[0])) return <VideoPlayer src={imgs[0]} />
         if (imgs.length === 1) return (
-          <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 12, background: '#0A0A0A', maxHeight: 450 }}>
+          <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', marginBottom: 12, background: '#0A0A0A', maxHeight: 450 }}>
             <img src={imgs[0]} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', maxHeight: 450, objectFit: 'cover', display: 'block' }} />
             {/* Subtle bottom fade — image blends with card */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
-              background: 'linear-gradient(to bottom, transparent 0%, rgba(17,17,17,0.4) 100%)',
+              background: 'linear-gradient(to bottom, transparent 0%, rgba(22,22,25,0.4) 100%)',
               pointerEvents: 'none',
             }} />
           </div>
@@ -634,17 +634,17 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleEditSave() } }}
             autoFocus
             style={{
-              width: '100%', background: '#111', border: '1.5px solid #333',
-              borderRadius: 10, color: '#FFF', fontSize: 14,
+              width: '100%', background: '#101013', border: '1px solid rgba(255,255,255,0.10)',
+              borderRadius: 14, color: '#FFF', fontSize: 14,
               fontFamily: 'Inter, sans-serif', resize: 'none', outline: 'none',
               lineHeight: 1.6, minHeight: 80, padding: '10px 12px', boxSizing: 'border-box',
             }}
           />
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button onClick={handleEditCancel} style={{
-              flex: 1, padding: '8px', borderRadius: 8,
-              background: '#1A1A1A', border: '1px solid #2A2A2A',
-              color: '#9CA3AF', fontSize: 13, fontWeight: 600,
+              flex: 1, padding: '8px', borderRadius: 999,
+              background: '#232329', border: '1px solid rgba(255,255,255,0.07)',
+              color: '#E7E9EC', fontSize: 13, fontWeight: 600,
               cursor: 'pointer', fontFamily: 'Inter, sans-serif',
             }}>Cancelar</button>
           </div>
@@ -726,7 +726,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
         return (
           <div style={{ marginBottom: showComments ? 14 : 0 }}>
             <p style={{
-              fontSize: 14.5, color: '#E5E7EB',
+              fontSize: 14.5, color: '#E7E9EC',
               lineHeight: 1.55, margin: 0,
               fontWeight: WEIGHT.regular,
               letterSpacing: '-0.005em',
@@ -784,7 +784,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
                   fontSize: 12.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
                   marginRight: 6, letterSpacing: '-0.005em',
                 }}>{c.profiles?.username ?? 'user'}</span>
-                <span style={{ fontSize: 12.5, color: '#D1D5DB', lineHeight: 1.45 }}>{linkify(c.content)}</span>
+                <span style={{ fontSize: 12.5, color: '#E7E9EC', lineHeight: 1.45 }}>{linkify(c.content)}</span>
               </div>
             </div>
           ))}
@@ -799,7 +799,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
               enterKeyHint="send"
               maxLength={2000}
               style={{
-                flex: 1, background: COLOR.background,
+                flex: 1, background: COLOR.surfaceInput,
                 border: `1px solid ${COLOR.borderStrong}`,
                 borderRadius: RADIUS.md, padding: '9px 13px',
                 color: COLOR.text,
@@ -811,8 +811,8 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
             />
             <button onClick={handleSendComment} disabled={!commentText.trim() || sendingCmt} className="pressable" style={{
               background: commentText.trim() ? '#FFFFFF' : COLOR.surfaceRaised,
-              color: commentText.trim() ? '#0A0A0A' : '#555',
-              border: 'none', borderRadius: RADIUS.md, padding: '0 15px',
+              color: commentText.trim() ? '#0B0B0D' : COLOR.textTertiary,
+              border: 'none', borderRadius: RADIUS.full, padding: '0 15px',
               fontSize: 14, fontWeight: WEIGHT.bold,
               cursor: commentText.trim() ? 'pointer' : 'default',
               fontFamily: FONT_STACK, transition: MOTION.springTransition, flexShrink: 0,
@@ -844,7 +844,7 @@ const PostCard = memo(PostCardImpl, (prev, next) => (
 
 const menuIconBtn = {
   background: 'none', border: 'none', cursor: 'pointer',
-  color: '#9CA3AF', padding: '7px 10px', borderRadius: 8,
+  color: '#9AA0A8', padding: '7px 10px', borderRadius: 8,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   transition: 'background 0.15s, color 0.15s',
 }
@@ -859,7 +859,7 @@ function linkify(text) {
       return (
         <a key={i} href={href} target="_blank" rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          style={{ color: '#FBBF24', textDecoration: 'underline', wordBreak: 'break-all' }}>
+          style={{ color: '#4C9EFF', textDecoration: 'underline', wordBreak: 'break-all' }}>
           {part}
         </a>
       )
@@ -1184,7 +1184,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
   const showIndicator = pullY > 8 || refreshing
 
   return (
-    <div ref={rootVisRef} style={{ minHeight: '100%', background: '#0A0A0A' }}>
+    <div ref={rootVisRef} style={{ minHeight: '100%', background: 'transparent' }}>
       {/* Pull-to-refresh indicator */}
       {showIndicator && (
         <div style={{
@@ -1213,22 +1213,17 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
           shows through and refracts. Sliding bubble indicator marca el
           TCG activo con su color, deslizándose entre opciones. */}
       {(() => {
-        const activeStyle = game ? GAME_STYLES[game] : null
-        const indBg     = activeStyle ? activeStyle.bg     : 'rgba(255,255,255,0.12)'
-        const indBorder = activeStyle ? activeStyle.border : 'rgba(255,255,255,0.40)'
-        const indGlow   = activeStyle ? activeStyle.border : 'rgba(255,255,255,0.25)'
+        const indBg     = '#FFFFFF'
+        const indBorder = 'transparent'
         return (
           <div style={{ padding: '10px 14px 4px' }}>
             <div
               ref={tcgRowRef}
               style={{
                 position: 'relative',
-                background: 'rgba(255,255,255,0.04)',
-                backdropFilter: 'saturate(180%) blur(20px)',
-                WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: RADIUS.md,
-                boxShadow: `${ELEVATION.sm}, inset 0 1px 0 rgba(255,255,255,0.04)`,
+                background: '#161619',
+                border: '1px solid rgba(255,255,255,0.055)',
+                borderRadius: RADIUS.full,
                 display: 'flex', alignItems: 'center', padding: '7px 9px', gap: 6,
               }}
             >
@@ -1241,14 +1236,13 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
                   transform: `translate(${tcgIndicator.left - 9}px, -50%)`,
                   width: tcgIndicator.width,
                   height: 36,
-                  borderRadius: RADIUS.sm,
+                  borderRadius: RADIUS.full,
                   background: indBg,
                   border: `1px solid ${indBorder}`,
-                  boxShadow: `0 0 14px ${indGlow}66, inset 0 1px 0 rgba(255,255,255,0.06)`,
                   opacity: tcgIndicator.visible ? 1 : 0,
                   pointerEvents: 'none',
                   transition: tcgIndicator.visible
-                    ? 'transform 380ms cubic-bezier(0.34,1.45,0.64,1), width 380ms cubic-bezier(0.34,1.45,0.64,1), background 280ms ease, border-color 280ms ease, box-shadow 280ms ease, opacity 200ms ease'
+                    ? 'transform 380ms cubic-bezier(0.34,1.45,0.64,1), width 380ms cubic-bezier(0.34,1.45,0.64,1), background 280ms ease, border-color 280ms ease, opacity 200ms ease'
                     : 'opacity 150ms ease',
                   zIndex: 0,
                 }}
@@ -1258,9 +1252,9 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
                 onClick={() => handleGameSwitch(null)} className="pressable"
                 style={{
                   position: 'relative', zIndex: 1,
-                  flex: 1, height: 36, borderRadius: RADIUS.sm,
+                  flex: 1, height: 36, borderRadius: RADIUS.full,
                   border: '1px solid transparent', background: 'transparent',
-                  color: !game ? COLOR.text : COLOR.textTertiary,
+                  color: !game ? '#0B0B0D' : COLOR.textSecondary,
                   fontSize: 10.5, fontWeight: WEIGHT.bold,
                   cursor: 'pointer', fontFamily: FONT_STACK,
                   letterSpacing: '0.06em',
@@ -1279,7 +1273,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
                     title={g} className="pressable"
                     style={{
                       position: 'relative', zIndex: 1,
-                      flex: 1, height: 36, borderRadius: RADIUS.sm,
+                      flex: 1, height: 36, borderRadius: RADIUS.full,
                       border: '1px solid transparent', background: 'transparent',
                       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       transition: 'transform 280ms cubic-bezier(0.34,1.45,0.64,1)',
@@ -1300,8 +1294,8 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
         <div style={{ padding: '14px 0 4px' }}>
           <div style={{
             paddingLeft: 14, marginBottom: 10,
-            fontSize: 10.5, fontWeight: WEIGHT.bold,
-            color: COLOR.textTertiary, letterSpacing: '0.1em',
+            fontSize: 12, fontWeight: WEIGHT.bold,
+            color: '#8A8F98', letterSpacing: '0.08em',
             textTransform: 'uppercase',
           }}>
             Noticias
@@ -1325,7 +1319,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
                     flexShrink: 0, width: 210, borderRadius: RADIUS.lg, overflow: 'hidden',
                     background: COLOR.surface,
                     border: `1px solid ${COLOR.border}`,
-                    boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.35)',
                     display: 'flex', flexDirection: 'column',
                     textDecoration: 'none',
                     transition: MOTION.springTransition,
@@ -1338,7 +1332,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
                   ) : (
                     <div style={{
                       width: '100%', height: 100, flexShrink: 0,
-                      background: gs.bg ?? 'rgba(255,255,255,0.03)',
+                      background: '#1C1C21',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       <GameIcon game={a.game} size={32} />
@@ -1346,7 +1340,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
                   )}
                   <div style={{ padding: '12px 12px 14px', display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
                     <p style={{
-                      fontSize: 12.5, fontWeight: WEIGHT.semibold, color: '#E5E7EB',
+                      fontSize: 12.5, fontWeight: WEIGHT.semibold, color: '#E7E9EC',
                       lineHeight: 1.4, margin: 0, letterSpacing: '-0.005em',
                       display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                     }}>{a.title}</p>
@@ -1373,7 +1367,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
               background: COLOR.surface,
               border: `1px solid ${COLOR.border}`,
               borderRadius: RADIUS.lg,
-              boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+              boxShadow: '0 1px 2px rgba(0,0,0,0.35)',
             }}>
               {/* Avatar + name row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -1402,16 +1396,16 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
         <div style={{ margin: '16px 20px', textAlign: 'center' }}>
           <div style={{
             padding: '13px 16px', borderRadius: RADIUS.md,
-            background: 'rgba(248,113,113,0.08)',
-            border: '1px solid rgba(248,113,113,0.22)',
+            background: 'rgba(246,89,89,0.08)',
+            border: '1px solid rgba(246,89,89,0.22)',
             color: COLOR.red, fontSize: 13.5,
             fontWeight: WEIGHT.medium,
             marginBottom: 12, letterSpacing: '-0.005em',
           }}>{error}</div>
           <button onClick={loadFeed} className="pressable" style={{
-            padding: '10px 22px', borderRadius: RADIUS.md,
-            background: COLOR.surfaceRaised,
-            border: `1px solid ${COLOR.borderStrong}`,
+            padding: '10px 22px', borderRadius: RADIUS.full,
+            background: '#232329',
+            border: '1px solid rgba(255,255,255,0.07)',
             color: COLOR.text, fontSize: 13.5, fontWeight: WEIGHT.semibold,
             cursor: 'pointer', fontFamily: FONT_STACK,
             transition: MOTION.springTransition,
@@ -1473,7 +1467,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
       {/* Load more indicator */}
       {loadingMore && <Spinner size="md" centered />}
       {!hasMore && posts.length > 0 && (
-        <div style={{ padding: '20px 0 80px', textAlign: 'center', fontSize: 12, color: '#374151' }}>
+        <div style={{ padding: '20px 0 80px', textAlign: 'center', fontSize: 12, color: '#4B5563' }}>
           · · ·
         </div>
       )}

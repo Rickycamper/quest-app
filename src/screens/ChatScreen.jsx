@@ -129,9 +129,9 @@ export default function ChatScreen({ otherUser, onBack }) {
               onClick={handleLoadMore}
               disabled={loadingMore}
               style={{
-                background: 'rgba(255,255,255,0.05)', border: '1px solid #2A2A2A',
-                borderRadius: 20, padding: '6px 18px',
-                color: '#9CA3AF', fontSize: 12, fontWeight: 600,
+                background: '#232329', border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 999, padding: '6px 18px',
+                color: '#E7E9EC', fontSize: 12, fontWeight: 600,
                 cursor: loadingMore ? 'default' : 'pointer',
                 fontFamily: 'Inter, sans-serif',
               }}
@@ -168,7 +168,7 @@ export default function ChatScreen({ otherUser, onBack }) {
             <div key={m.id}>
               {showDate && (
                 <div style={{ textAlign: 'center', margin: '8px 0 4px' }}>
-                  <span style={{ fontSize: 11, color: '#4B5563', fontFamily: 'Inter, sans-serif', background: '#111', padding: '2px 10px', borderRadius: 10 }}>
+                  <span style={{ fontSize: 11, color: '#6E747D', fontFamily: 'Inter, sans-serif', background: '#161619', padding: '2px 10px', borderRadius: 10 }}>
                     {dateLabel}
                   </span>
                 </div>
@@ -186,8 +186,8 @@ export default function ChatScreen({ otherUser, onBack }) {
 
       {/* ── Send error ── */}
       {sendError && (
-        <div style={{ padding: '6px 16px', background: 'rgba(239,68,68,0.1)', borderTop: '1px solid rgba(239,68,68,0.2)' }}>
-          <span style={{ fontSize: 12, color: '#F87171', fontFamily: 'Inter, sans-serif' }}>{sendError}</span>
+        <div style={{ padding: '6px 16px', background: 'rgba(246,89,89,0.08)', borderTop: '1px solid rgba(246,89,89,0.2)' }}>
+          <span style={{ fontSize: 12, color: '#F65959', fontFamily: 'Inter, sans-serif' }}>{sendError}</span>
         </div>
       )}
 
@@ -217,12 +217,12 @@ export default function ChatScreen({ otherUser, onBack }) {
 const s = {
   root: {
     display: 'flex', flexDirection: 'column',
-    height: '100%', background: '#0A0A0A',
+    height: '100%', background: '#050506',
   },
   header: {
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '14px 16px 12px',
-    borderBottom: '1px solid #1A1A1A',
+    borderBottom: '1px solid rgba(255,255,255,0.055)',
     flexShrink: 0,
   },
   backBtn: {
@@ -241,7 +241,7 @@ const s = {
     scrollbarWidth: 'none',
   },
   emptyHint: {
-    color: '#555', fontSize: 13,
+    color: '#6E747D', fontSize: 13,
     textAlign: 'center', marginTop: 32,
     fontFamily: 'Inter, sans-serif',
   },
@@ -257,20 +257,20 @@ const s = {
   },
   bubbleThem: {
     borderRadius: '16px 16px 16px 4px',
-    background: '#1A1A1F', color: '#E5E5E5',
+    background: '#1C1C21', color: '#E7E9EC',
   },
   inputBar: {
     display: 'flex', gap: 8,
     padding: '10px 16px 14px',
-    borderTop: '1px solid #1A1A1F',
-    background: '#0F0F0F',
+    borderTop: '1px solid rgba(255,255,255,0.055)',
+    background: '#0B0B0D',
     flexShrink: 0,
   },
   input: {
     flex: 1,
-    background: '#1A1A1F',
-    border: '1px solid #2A2A2A',
-    borderRadius: 20,
+    background: '#101013',
+    border: '1px solid rgba(255,255,255,0.10)',
+    borderRadius: 14,
     padding: '9px 14px',
     color: '#FFFFFF',
     fontSize: 14,
@@ -279,9 +279,9 @@ const s = {
   },
   sendBtn: {
     background: '#FFFFFF', border: 'none',
-    borderRadius: 20, padding: '9px 18px',
+    borderRadius: 999, padding: '9px 18px',
     fontWeight: 700, fontSize: 15,
-    color: '#111111', cursor: 'pointer',
+    color: '#0B0B0D', cursor: 'pointer',
     transition: 'opacity 0.15s',
   },
 }

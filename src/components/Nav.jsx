@@ -48,19 +48,12 @@ function OwnerBottomNav({ active, hidden, tabs }) {
     <div style={{
       position: 'absolute', bottom: 0, left: 0, right: 0,
       height: 'calc(52px + env(safe-area-inset-bottom, 0px))',
-      // Bg + filter ramp up when scrolled so icons keep contrast even
-      // over bright content (post images, etc.) behind the glass.
-      background: scrolled ? 'rgba(8,8,11,0.94)' : 'rgba(10,10,10,0.82)',
-      backdropFilter: scrolled
-        ? 'saturate(200%) blur(32px) brightness(95%)'
-        : 'saturate(180%) blur(24px)',
-      WebkitBackdropFilter: scrolled
-        ? 'saturate(200%) blur(32px) brightness(95%)'
-        : 'saturate(180%) blur(24px)',
-      borderTop: `1px solid ${scrolled ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)'}`,
-      boxShadow: scrolled
-        ? '0 -10px 28px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
-        : '0 -8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
+      // One UI: barra plana — blur moderado, hairline arriba, sin glow.
+      background: scrolled ? 'rgba(5,5,6,0.96)' : 'rgba(5,5,6,0.88)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      borderTop: `1px solid ${scrolled ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.055)'}`,
+      boxShadow: 'none',
       display: 'flex', alignItems: 'center',
       paddingBottom: 'env(safe-area-inset-bottom, 0px)', zIndex: 100,
       transform: hidden ? 'translateY(100%)' : 'translateY(0)',

@@ -83,10 +83,10 @@ function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
     <div
       onClick={() => !isPast && onOpen(auction)}
       style={{
-        background: '#111', borderRadius: 14,
-        border: `1px solid ${isActive ? 'rgba(239,68,68,0.4)' : '#1F1F1F'}`,
+        background: '#161619', borderRadius: 20,
+        border: '1px solid rgba(255,255,255,0.055)',
         overflow: 'hidden', cursor: isPast ? 'default' : 'pointer',
-        boxShadow: isActive ? '0 0 14px rgba(239,68,68,0.12)' : 'none',
+        boxShadow: 'none',
         animation: 'fadeUp 0.3s ease both',
         display: 'flex', flexDirection: 'column',
       }}
@@ -106,8 +106,8 @@ function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
         {isActive && (
           <div style={{
             position: 'absolute', top: 6, left: 6,
-            background: 'rgba(239,68,68,0.9)', borderRadius: 6,
-            padding: '3px 7px', fontSize: 9, color: '#FFF', fontWeight: 800,
+            background: 'rgba(246,89,89,0.92)', borderRadius: 999,
+            padding: '3px 8px', fontSize: 9, color: '#FFF', fontWeight: 800,
             display: 'flex', alignItems: 'center', gap: 4,
           }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#FFF', display: 'inline-block', animation: 'pulse 1s infinite' }} />
@@ -119,11 +119,11 @@ function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
         {!isPast && (
           <div style={{
             position: 'absolute', bottom: 6, left: 6,
-            background: isUnlocked ? 'rgba(74,222,128,0.2)' : 'rgba(0,0,0,0.72)',
-            border: isUnlocked ? '1px solid rgba(74,222,128,0.4)' : 'none',
-            borderRadius: 8, padding: '3px 8px',
+            background: isUnlocked ? 'rgba(61,220,132,0.2)' : 'rgba(0,0,0,0.72)',
+            border: isUnlocked ? '1px solid rgba(61,220,132,0.4)' : 'none',
+            borderRadius: 999, padding: '3px 9px',
             fontSize: 11, fontWeight: 800,
-            color: isUnlocked ? '#4ADE80' : '#9CA3AF',
+            color: isUnlocked ? '#3DDC84' : '#9AA0A8',
           }}>
             {isUnlocked ? fmtAmt(topBid.amount) : <><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" style={{marginRight:3,verticalAlign:'middle'}}><path d="M5.55 4.569999999999999v1.4699999999999998h4.8999999999999995v-1.4699999999999998c0 -1.3536249999999999 -1.0963749999999999 -2.4499999999999997 -2.4499999999999997 -2.4499999999999997s-2.4499999999999997 1.0963749999999999 -2.4499999999999997 2.4499999999999997Zm-1.96 1.4699999999999998v-1.4699999999999998C3.59 2.1353142857142857 5.565314285714286 0.16 8 0.16s4.41 1.9753142857142856 4.41 4.41v1.4699999999999998h0.49c1.0810642857142856 0 1.96 0.8789392857142856 1.96 1.96v5.879999999999999c0 1.0810607142857143 -0.8789357142857142 1.96 -1.96 1.96H3.0999999999999996c-1.0810607142857143 0 -1.96 -0.8789392857142856 -1.96 -1.96V8c0 -1.0810607142857143 0.8789392857142856 -1.96 1.96 -1.96h0.49Z" strokeWidth="0"/></svg>{fmtAmt(auction.min_bid)}</>}
           </div>
@@ -136,8 +136,8 @@ function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
             style={{
               position: 'absolute', top: 6, right: 6,
               width: 28, height: 28, borderRadius: '50%', border: 'none',
-              background: isWatching ? 'rgba(167,139,250,0.3)' : 'rgba(0,0,0,0.6)',
-              color: isWatching ? '#A78BFA' : '#9CA3AF',
+              background: isWatching ? 'rgba(76,158,255,0.22)' : 'rgba(0,0,0,0.6)',
+              color: isWatching ? '#4C9EFF' : '#9AA0A8',
               fontSize: 13, cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
             }}
@@ -158,10 +158,10 @@ function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
             {topBid && status === 'ended' ? (
               <>
                 <div style={{ fontSize: 18 }}>🏆</div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#4ADE80' }}>{fmtAmt(topBid.amount)}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#3DDC84' }}>{fmtAmt(topBid.amount)}</div>
               </>
             ) : (
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#6B7280' }}>No vendida</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#9AA0A8' }}>No vendida</div>
             )}
           </div>
         )}
@@ -185,7 +185,7 @@ function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
               <GameIcon game={auction.game} size={9} />{auction.game}
             </span>
           )}
-          <span style={{ fontSize: 10, color: isActive ? '#F87171' : '#6B7280', fontWeight: 600, flexShrink: 0 }}>
+          <span style={{ fontSize: 10, color: isActive ? '#F65959' : '#9AA0A8', fontWeight: 600, flexShrink: 0 }}>
             {isActive
               ? <><span style={{ marginRight: 3 }}>●</span><Countdown targetMs={endMs} /></>
               : isPast ? (status === 'cancelled' ? 'Cancelada' : 'Finalizada')
@@ -202,9 +202,9 @@ function AuctionCard({ auction, onOpen, onWatchToggle, onDelete, isStaff }) {
               onDelete(auction.id)
             }}
             style={{
-              marginTop: 2, width: '100%', padding: '5px 0', borderRadius: 7, border: 'none',
-              background: confirmDel ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.04)',
-              color: confirmDel ? '#F87171' : '#4B5563',
+              marginTop: 2, width: '100%', padding: '5px 0', borderRadius: 999, border: 'none',
+              background: confirmDel ? 'rgba(246,89,89,0.15)' : '#232329',
+              color: confirmDel ? '#F65959' : '#9AA0A8',
               fontSize: 11, fontWeight: 700, cursor: 'pointer',
               fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
             }}

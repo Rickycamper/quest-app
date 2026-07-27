@@ -177,15 +177,10 @@ const globalCSS = `
      para prevenir el zoom. */
   input, textarea, select { font-size: 16px !important; }
   body {
-    /* Negro puro + luz ambiente neutra ultra-sutil: se lee negro, pero el
-       backdrop-blur de las cards glass tiene gradientes que refractar. */
+    /* One UI: fondo casi negro PLANO — la jerarquía la dan las superficies
+       de las cards (#161619+), no gradientes ni glows. */
     height: 100%;
-    background:
-      radial-gradient(ellipse 75% 55% at 15% 5%,   rgba(255,255,255,0.05)  0%, transparent 60%),
-      radial-gradient(ellipse 60% 45% at 88% 35%,  rgba(255,255,255,0.035) 0%, transparent 65%),
-      radial-gradient(ellipse 85% 55% at 50% 112%, rgba(255,255,255,0.045) 0%, transparent 60%),
-      #000000;
-    background-attachment: fixed;
+    background: #050506;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
     overflow: hidden; font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
@@ -197,7 +192,7 @@ const globalCSS = `
      X/Threads, ~660px) sobre el fondo ambiente — no una maqueta de celular
      de 440px. En pantallas grandes el shop pasa a catálogo de 3 columnas
      (.shop-grid, abajo). En el teléfono (≤480px) nada de esto aplica. */
-  .phone { width:min(660px, 100vw); height:100vh; overflow:hidden; position:relative; background:transparent; box-shadow:0 0 60px rgba(0,0,0,0.45); border-left:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; }
+  .phone { width:min(660px, 100vw); height:100vh; overflow:hidden; position:relative; background:transparent; box-shadow:none; border-left:1px solid rgba(255,255,255,0.055); border-right:1px solid rgba(255,255,255,0.055); display:flex; flex-direction:column; }
   /* ── Modo WEBSITE (≥1024px) ──
      Contenedor ancho tipo página (máx 1240px), header superior con links
      (renderizado en React vía useIsDesktop) y sin bottom nav. El contenido
@@ -217,7 +212,7 @@ const globalCSS = `
   }
   /* Hover de e-commerce en las cards del catálogo (solo mouse) */
   @media (min-width: 1024px) and (hover: hover) {
-    .shop-grid > div:hover { transform: translateY(-4px) !important; box-shadow: 0 16px 36px rgba(0,0,0,0.55) !important; }
+    .shop-grid > div:hover { transform: translateY(-4px) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.45) !important; }
   }
   @media (max-width: 480px) {
     /*
@@ -230,16 +225,10 @@ const globalCSS = `
      * - Chrome Android 108+ also collapses from overflow container scroll.
      */
     html { height: 100%; }
-    /* Mismo negro + luz neutra que en desktop — el media query pisaba el
-       bg del body, así que replicamos el set acá para que sobreviva. */
+    /* Mismo fondo plano One UI que en desktop (el media query pisa el body). */
     body {
       min-height: 100%;
-      background:
-        radial-gradient(ellipse 75% 55% at 15% 5%,   rgba(255,255,255,0.05)  0%, transparent 60%),
-        radial-gradient(ellipse 60% 45% at 88% 35%,  rgba(255,255,255,0.035) 0%, transparent 65%),
-        radial-gradient(ellipse 85% 55% at 50% 112%, rgba(255,255,255,0.045) 0%, transparent 60%),
-        #000000;
-      background-attachment: fixed;
+      background: #050506;
     }
     .phone-wrap { padding:0; display:flex; align-items:stretch; width:100%; height:100dvh; overflow:hidden; }
     .phone { width:100%; height:100%; border-radius:0; box-shadow:none; background:transparent; }
@@ -879,7 +868,7 @@ const needsTerms = profile && !profile.terms_accepted_at
       {isDesktop && (
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
-          background: 'rgba(9,9,11,0.92)',
+          background: 'rgba(5,5,6,0.92)',
           backdropFilter: 'blur(18px) saturate(160%)',
           WebkitBackdropFilter: 'blur(18px) saturate(160%)',
           borderBottom: '1px solid rgba(255,255,255,0.07)',
@@ -992,12 +981,9 @@ const needsTerms = profile && !profile.terms_accepted_at
         opacity: headerHidden ? 0 : 1,
         transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 350ms ease',
         willChange: 'transform',
-        background: `
-          radial-gradient(ellipse 180px 70px at 15% 70%, rgba(255,255,255,0.03), transparent 75%),
-          rgba(10,10,10,0.95)
-        `,
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255,255,255,0.04)',
+        background: 'rgba(5,5,6,0.92)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(255,255,255,0.055)',
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
         paddingBottom: 0,
       }}>

@@ -27,16 +27,16 @@ function MathCaptcha({ value, onChange, ok }) {
     <div style={{
       margin: '0 16px 14px',
       padding: '12px 14px',
-      background: '#0D0D0D',
-      border: `1px solid ${ok ? 'rgba(74,222,128,0.3)' : '#1F1F1F'}`,
-      borderRadius: 12,
+      background: '#161619',
+      border: `1px solid ${ok ? 'rgba(61,220,132,0.35)' : 'rgba(255,255,255,0.055)'}`,
+      borderRadius: 14,
       display: 'flex', alignItems: 'center', gap: 12,
       transition: 'border-color 0.2s',
     }}>
-      <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 700, letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+      <div style={{ fontSize: 10, color: '#8A8F98', fontWeight: 700, letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
         VERIFICACIÓN
       </div>
-      <div style={{ fontSize: 14, fontWeight: 800, color: '#9CA3AF', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+      <div style={{ fontSize: 14, fontWeight: 800, color: '#9AA0A8', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
         {ch.q} =
       </div>
       <input
@@ -48,9 +48,9 @@ function MathCaptcha({ value, onChange, ok }) {
           onChange(e.target.value, ch.answer)
         }}
         style={{
-          width: 56, padding: '6px 8px', borderRadius: 8,
-          background: '#1A1A1A', border: `1px solid ${ok ? 'rgba(74,222,128,0.4)' : '#2A2A2A'}`,
-          color: ok ? '#4ADE80' : '#FFF', fontSize: 15, fontWeight: 800,
+          width: 56, padding: '6px 8px', borderRadius: 10,
+          background: '#101013', border: `1px solid ${ok ? 'rgba(61,220,132,0.4)' : 'rgba(255,255,255,0.10)'}`,
+          color: ok ? '#3DDC84' : '#FFF', fontSize: 15, fontWeight: 800,
           outline: 'none', fontFamily: 'Inter, sans-serif', textAlign: 'center',
           transition: 'border-color 0.2s, color 0.2s',
         }}
@@ -389,7 +389,7 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
 
   return (
     <div style={{
-      position: 'absolute', inset: 0, background: '#0A0A0A',
+      position: 'absolute', inset: 0, background: '#050506',
       zIndex: 200, display: 'flex', flexDirection: 'column',
       paddingTop: 'env(safe-area-inset-top, 0px)',
       animation: 'slideUp 0.3s ease both',
@@ -398,17 +398,17 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
       <div style={{
         padding: '16px 20px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        borderBottom: '1px solid #1F1F1F', flexShrink: 0,
+        borderBottom: '1px solid rgba(255,255,255,0.055)', flexShrink: 0,
       }}>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9AA0A8', fontSize: 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
           Cancelar
         </button>
         <span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter, sans-serif' }}>Nuevo Post</span>
         <button onClick={handleShare} disabled={!caption.trim() || !captchaOk || loading} style={{
-          background: caption.trim() && captchaOk ? '#FFFFFF' : '#1F1F1F',
-          border: 'none', color: caption.trim() && captchaOk ? '#111111' : '#4B5563',
+          background: caption.trim() && captchaOk ? '#FFFFFF' : '#232329',
+          border: 'none', color: caption.trim() && captchaOk ? '#0B0B0D' : '#6E747D',
           fontSize: 13, fontWeight: 700, cursor: caption.trim() && captchaOk ? 'pointer' : 'default',
-          padding: '6px 14px', borderRadius: 8, fontFamily: 'Inter, sans-serif',
+          padding: '7px 16px', borderRadius: 999, fontFamily: 'Inter, sans-serif',
           minWidth: 76, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
           transition: 'all 0.15s',
         }}>
@@ -422,20 +422,20 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
       </div>
 
       {error && !limitReached && (
-        <div style={{ margin: '12px 16px 0', padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13, flexShrink: 0 }}>{error}</div>
+        <div style={{ margin: '12px 16px 0', padding: '10px 14px', borderRadius: 14, background: '#161619', border: '1px solid rgba(255,255,255,0.055)', color: '#F65959', fontSize: 13, flexShrink: 0 }}>{error}</div>
       )}
 
       {limitReached && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', textAlign: 'center', gap: 14 }}>
           <div style={{ fontSize: 56 }}>🏆</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#A78BFA' }}>Alcanzaste el límite</div>
-          <div style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6 }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#E7E9EC' }}>Alcanzaste el límite</div>
+          <div style={{ fontSize: 14, color: '#9AA0A8', lineHeight: 1.6 }}>
             Los usuarios free tienen hasta <span style={{ color: '#FFF', fontWeight: 700 }}>50 posts</span>.{'\n'}
             Para publicar sin límite, activá tu membresía en la tienda.
           </div>
-          <div style={{ marginTop: 8, padding: '16px 20px', borderRadius: 14, background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', width: '100%' }}>
-            <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 4 }}>¿Ya sos miembro?</div>
-            <div style={{ fontSize: 13, color: '#A78BFA', fontWeight: 600 }}>Avisale a un admin para que activen tu cuenta ✨</div>
+          <div style={{ marginTop: 8, padding: '16px 20px', borderRadius: 20, background: '#161619', border: '1px solid rgba(255,255,255,0.055)', width: '100%' }}>
+            <div style={{ fontSize: 13, color: '#9AA0A8', marginBottom: 4 }}>¿Ya sos miembro?</div>
+            <div style={{ fontSize: 13, color: '#E7E9EC', fontWeight: 600 }}>Avisale a un admin para que activen tu cuenta ✨</div>
           </div>
         </div>
       )}
@@ -445,7 +445,7 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
         {/* Tipo — SOLO en la zona de Trade y Ventas (obligatorio) */}
         {marketMode && (
           <div style={{ padding: '14px 16px 6px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>¿VENTA O TRADE?</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', marginBottom: 8 }}>¿VENTA O TRADE?</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {POST_TYPES.map(p => {
                 const active = postType === p.id
@@ -453,10 +453,10 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
                   <button key={p.id}
                     onClick={() => setPostType(prev => prev === p.id ? null : p.id)}
                     style={{
-                      padding: '7px 14px', borderRadius: 8, flexShrink: 0,
-                      border: `1.5px solid ${active ? p.border : '#2A2A2A'}`,
-                      background: active ? p.bg : 'transparent',
-                      color: active ? p.color : '#4B5563',
+                      padding: '8px 16px', borderRadius: 999, flexShrink: 0,
+                      border: 'none',
+                      background: active ? '#FFFFFF' : '#1C1C21',
+                      color: active ? '#0B0B0D' : '#9AA0A8',
                       fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
                       transition: 'all 0.15s',
                     }}>{p.label}</button>
@@ -468,7 +468,7 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
 
         {/* TCG selector (+ Noticia en el post normal del feed) */}
         <div style={{ padding: marketMode ? '10px 16px 6px' : '14px 16px 6px' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', marginBottom: 8 }}>
             {marketMode ? 'JUEGO' : 'JUEGO O NOTICIA'}
           </div>
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
@@ -476,13 +476,13 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
               const isActive = game === NEWS_TAG
               return (
                 <button onClick={() => setGame(prev => prev === NEWS_TAG ? null : NEWS_TAG)} style={{
-                  padding: '6px 14px', borderRadius: 8, flexShrink: 0,
-                  border: `1.5px solid ${isActive ? NEWS_STYLE.border : '#2A2A2A'}`,
-                  background: isActive ? NEWS_STYLE.bg : 'transparent',
-                  color: isActive ? NEWS_STYLE.color : '#4B5563',
+                  padding: '7px 16px', borderRadius: 999, flexShrink: 0,
+                  border: 'none',
+                  background: isActive ? '#FFFFFF' : '#1C1C21',
+                  color: isActive ? '#0B0B0D' : '#9AA0A8',
                   fontSize: 12, fontWeight: 700, cursor: 'pointer',
                   fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
-                }}>📰 Noticia</button>
+                }}>Noticia</button>
               )
             })()}
             {GAMES.map(g => {
@@ -490,10 +490,10 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
               const isActive = game === g
               return (
                 <button key={g} onClick={() => setGame(prev => prev === g ? null : g)} style={{
-                  padding: '6px 14px', borderRadius: 8, flexShrink: 0,
-                  border: `1.5px solid ${isActive ? gs.border : '#2A2A2A'}`,
-                  background: isActive ? gs.bg : 'transparent',
-                  color: isActive ? gs.color : '#4B5563',
+                  padding: '7px 16px', borderRadius: 999, flexShrink: 0,
+                  border: 'none',
+                  background: isActive ? '#FFFFFF' : '#1C1C21',
+                  color: isActive ? '#0B0B0D' : '#9AA0A8',
                   fontSize: 12, fontWeight: 700, cursor: 'pointer',
                   fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
                 }}><GameIcon game={g} size={13} /> {g}</button>
@@ -501,7 +501,7 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
             })}
           </div>
           {game === NEWS_TAG && (
-            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 7, fontFamily: 'Inter, sans-serif' }}>
+            <div style={{ fontSize: 11, color: '#9AA0A8', marginTop: 7, fontFamily: 'Inter, sans-serif' }}>
               Pegá el link de la noticia en el texto — queda clickeable para todos.
             </div>
           )}
@@ -510,61 +510,61 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
         {/* Visibility */}
         <div style={{ padding: '10px 16px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 2 }}>VISIBILIDAD</div>
-            <div style={{ fontSize: 12, color: isPrivate ? '#9CA3AF' : '#FFFFFF', fontWeight: 600 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', marginBottom: 2 }}>VISIBILIDAD</div>
+            <div style={{ fontSize: 12, color: isPrivate ? '#9AA0A8' : '#E7E9EC', fontWeight: 600 }}>
               {isPrivate ? '🔒 Privado — solo vos lo ves' : '🌐 Público — aparece en el feed'}
             </div>
           </div>
           <div onClick={() => setIsPrivate(p => !p)} style={{
-            width: 48, height: 26, borderRadius: 13,
-            background: isPrivate ? '#374151' : '#FFFFFF',
+            width: 48, height: 26, borderRadius: 999,
+            background: isPrivate ? '#232329' : '#4C9EFF',
             position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0,
-            border: `1.5px solid ${isPrivate ? '#4B5563' : '#E5E7EB'}`,
+            border: `1.5px solid ${isPrivate ? 'rgba(255,255,255,0.10)' : 'transparent'}`,
           }}>
-            <div style={{ position: 'absolute', top: 2, left: isPrivate ? 2 : 22, width: 18, height: 18, borderRadius: '50%', background: isPrivate ? '#9CA3AF' : '#111111', transition: 'left 0.2s' }} />
+            <div style={{ position: 'absolute', top: 2, left: isPrivate ? 2 : 22, width: 18, height: 18, borderRadius: '50%', background: isPrivate ? '#8A8F98' : '#FFFFFF', transition: 'left 0.2s' }} />
           </div>
         </div>
 
         {/* Save to folder */}
         <div style={{ padding: '10px 16px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 2 }}>GUARDAR EN COLECCIÓN</div>
-            <div style={{ fontSize: 12, color: alsoSave ? '#FFFFFF' : '#4B5563', fontWeight: 600 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', marginBottom: 2 }}>GUARDAR EN COLECCIÓN</div>
+            <div style={{ fontSize: 12, color: alsoSave ? '#E7E9EC' : '#6E747D', fontWeight: 600 }}>
               {alsoSave ? '📦 Se guardará en tu folder' : 'Solo publicar en el feed'}
             </div>
           </div>
           <div onClick={() => setAlsoSave(p => !p)} style={{
-            width: 48, height: 26, borderRadius: 13,
-            background: alsoSave ? '#FFFFFF' : '#374151',
+            width: 48, height: 26, borderRadius: 999,
+            background: alsoSave ? '#4C9EFF' : '#232329',
             position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0,
-            border: `1.5px solid ${alsoSave ? '#E5E7EB' : '#4B5563'}`,
+            border: `1.5px solid ${alsoSave ? 'transparent' : 'rgba(255,255,255,0.10)'}`,
           }}>
-            <div style={{ position: 'absolute', top: 2, left: alsoSave ? 22 : 2, width: 18, height: 18, borderRadius: '50%', background: alsoSave ? '#111111' : '#9CA3AF', transition: 'left 0.2s' }} />
+            <div style={{ position: 'absolute', top: 2, left: alsoSave ? 22 : 2, width: 18, height: 18, borderRadius: '50%', background: alsoSave ? '#FFFFFF' : '#8A8F98', transition: 'left 0.2s' }} />
           </div>
         </div>
         {alsoSave && (
           <div style={{ padding: '4px 16px 6px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 6 }}>NOMBRE DE LA CARTA</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', marginBottom: 6 }}>NOMBRE DE LA CARTA</div>
             <input
               placeholder="Ej: Black Lotus, Charizard..."
               value={cardName} onChange={e => setCardName(e.target.value)}
-              style={{ width: '100%', padding: '11px 14px', background: '#111111', border: '1.5px solid #2A2A2A', borderRadius: 10, color: '#FFF', fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '11px 14px', background: '#101013', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, color: '#FFF', fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
         )}
 
         {/* Image / Video upload */}
         <div style={{ padding: '10px 16px 4px' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', marginBottom: 8 }}>
             {video ? 'VIDEO' : 'FOTOS Y VIDEO'}
-            {images.length > 0 && <span style={{ color: '#374151', fontWeight: 400 }}> ({images.length}/10)</span>}
+            {images.length > 0 && <span style={{ color: '#6E747D', fontWeight: 400 }}> ({images.length}/10)</span>}
           </div>
           {/* UN solo input: acepta fotos y videos, como IG */}
           <input ref={fileRef} type="file" accept="image/*,video/*" multiple onChange={handleMediaSelect} style={{ display: 'none' }} />
 
           {video ? (
             /* ── Video preview ── */
-            <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', background: '#000' }}>
+            <div style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', background: '#000' }}>
               <video
                 src={video.preview}
                 controls
@@ -583,12 +583,12 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
                 position: 'absolute', bottom: 8, left: 8,
                 display: 'flex', gap: 6, alignItems: 'center',
               }}>
-                <div style={{ background: 'rgba(0,0,0,0.65)', borderRadius: 20, padding: '3px 10px', fontSize: 11, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>
+                <div style={{ background: 'rgba(0,0,0,0.65)', borderRadius: 999, padding: '3px 10px', fontSize: 11, color: '#9AA0A8', fontFamily: 'Inter, sans-serif' }}>
                   {(video.file.size / (1024 * 1024)).toFixed(1)} MB
                   {video.duration != null && ` · ${Math.floor(video.duration / 60)}:${String(Math.round(video.duration % 60)).padStart(2, '0')}`}
                 </div>
                 {video.file.size >= 5 * 1024 * 1024 && (
-                  <div style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#FBBF24', fontFamily: 'Inter, sans-serif' }}>
+                  <div style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 999, padding: '3px 10px', fontSize: 10, color: '#F5C34B', fontFamily: 'Inter, sans-serif' }}>
                     ⚡ se comprimirá al publicar
                   </div>
                 )}
@@ -599,7 +599,7 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
               {/* 4:5 crop preview for active image */}
               <div
                 ref={cropRef}
-                style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', aspectRatio: String(images[activeImg]?.targetRatio ?? TARGET_RATIO), touchAction: 'none', cursor: 'grab' }}
+                style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', aspectRatio: String(images[activeImg]?.targetRatio ?? TARGET_RATIO), touchAction: 'none', cursor: 'grab' }}
                 onMouseDown={startDrag}
                 onMouseMove={moveDrag}
                 onMouseUp={endDrag}
@@ -673,10 +673,10 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
                 {images.length < 10 && (
                   <div onClick={() => fileRef.current?.click()} style={{
                     flexShrink: 0, width: 58, aspectRatio: '4/5', borderRadius: 8,
-                    border: '2px dashed #2A2A2A', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', cursor: 'pointer', background: '#111',
+                    border: '2px dashed rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', cursor: 'pointer', background: '#161619',
                   }}>
-                    <span style={{ color: '#4B5563', fontSize: 22, lineHeight: 1 }}>+</span>
+                    <span style={{ color: '#8A8F98', fontSize: 22, lineHeight: 1 }}>+</span>
                   </div>
                 )}
               </div>
@@ -686,15 +686,15 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
             <div
               onClick={() => fileRef.current?.click()}
               style={{
-                borderRadius: 12, border: '2px dashed #2A2A2A',
+                borderRadius: 20, border: '2px dashed rgba(255,255,255,0.12)',
                 padding: '30px 16px', display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center', gap: 8,
-                cursor: 'pointer', background: '#111111',
+                cursor: 'pointer', background: '#161619',
               }}
             >
-              <div style={{ color: '#6B7280' }}><CameraIcon size={26} /></div>
-              <div style={{ fontSize: 14, color: '#E5E7EB', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>Subir</div>
-              <div style={{ fontSize: 11, color: '#4B5563', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
+              <div style={{ color: '#8A8F98' }}><CameraIcon size={26} /></div>
+              <div style={{ fontSize: 14, color: '#E7E9EC', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>Subir</div>
+              <div style={{ fontSize: 11, color: '#6E747D', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
                 Fotos o video · hasta 10 fotos · video máx {MAX_VIDEO_MB} MB
               </div>
             </div>
@@ -703,13 +703,13 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
 
         {/* Caption */}
         <div style={{ padding: '10px 16px 24px' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>DESCRIPCIÓN</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', marginBottom: 8 }}>DESCRIPCIÓN</div>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             {pt && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 8px', borderRadius: 6, background: pt.bg, border: `1px solid ${pt.border}`, color: pt.color, fontSize: 11, fontWeight: 700 }}>{pt.label}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 999, background: pt.bg, border: `1px solid ${pt.border}`, color: pt.color, fontSize: 11, fontWeight: 700 }}>{pt.label}</span>
             )}
             {isPrivate && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 8px', borderRadius: 6, background: 'rgba(75,85,99,0.2)', border: '1px solid rgba(75,85,99,0.4)', color: '#9CA3AF', fontSize: 11, fontWeight: 700 }}>🔒 Privado</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 999, background: '#232329', border: '1px solid rgba(255,255,255,0.07)', color: '#9AA0A8', fontSize: 11, fontWeight: 700 }}>🔒 Privado</span>
             )}
           </div>
           <textarea
@@ -721,15 +721,15 @@ export default function CreatePostModal({ onClose, marketMode = false }) {
             }
             value={caption} onChange={e => setCaption(e.target.value.slice(0, 500))}
             style={{
-              width: '100%', background: '#111111',
-              border: '1.5px solid #2A2A2A', borderRadius: 10,
+              width: '100%', background: '#101013',
+              border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14,
               color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter, sans-serif',
               resize: 'none', outline: 'none', lineHeight: 1.6,
               minHeight: 100, padding: '12px 14px', boxSizing: 'border-box',
             }}
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-            <span style={{ fontSize: 11, fontFamily: 'Inter, sans-serif', color: caption.length >= 490 ? '#F87171' : caption.length >= 450 ? '#F59E0B' : '#374151' }}>{caption.length}/500</span>
+            <span style={{ fontSize: 11, fontFamily: 'Inter, sans-serif', color: caption.length >= 490 ? '#F65959' : caption.length >= 450 ? '#F5C34B' : '#6E747D' }}>{caption.length}/500</span>
           </div>
         </div>
 

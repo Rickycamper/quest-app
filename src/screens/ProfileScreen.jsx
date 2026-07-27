@@ -110,11 +110,11 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
     // than a centered spinner.
     const sk = (w, h, r = 6) => ({
       display: 'inline-block', width: w, height: h, borderRadius: r,
-      background: 'linear-gradient(90deg, #161616 0%, #1F1F1F 50%, #161616 100%)',
+      background: 'linear-gradient(90deg, #161619 0%, #1C1C21 50%, #161619 100%)',
       backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite',
     })
     return (
-      <div style={{ background: '#0A0A0A', minHeight: '100%', display: 'flex', flexDirection: 'column', padding: '14px 20px' }}>
+      <div style={{ background: '#050506', minHeight: '100%', display: 'flex', flexDirection: 'column', padding: '14px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <span style={sk(24, 24, 12)} />
           <span style={sk(120, 14)} />
@@ -149,21 +149,21 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
   }
 
   if (loadError) return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0A0A0A', minHeight: '100%', padding: 32, gap: 12 }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#050506', minHeight: '100%', padding: 32, gap: 12 }}>
       <div style={{ fontSize: 32 }}>⚠️</div>
-      <div style={{ fontSize: 14, color: '#F87171', textAlign: 'center' }}>{loadError}</div>
-      <button onClick={onBack} style={{ padding: '8px 20px', borderRadius: 8, background: '#1A1A1A', border: '1px solid #333', color: '#FFF', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>← Volver</button>
+      <div style={{ fontSize: 14, color: '#F65959', textAlign: 'center' }}>{loadError}</div>
+      <button onClick={onBack} style={{ padding: '8px 20px', borderRadius: 999, background: '#232329', border: '1px solid rgba(255,255,255,0.07)', color: '#E7E9EC', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>← Volver</button>
     </div>
   )
 
   return (
-    <div style={{ background: '#0A0A0A', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: '#050506', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
 
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '14px 20px 10px', gap: 12 }}>
         <button onClick={onBack} style={{
-          width: 36, height: 36, borderRadius: 10,
-          border: '1.5px solid #2A2A2A', background: '#1A1A1A',
+          width: 36, height: 36, borderRadius: 999,
+          border: '1px solid rgba(255,255,255,0.07)', background: '#232329',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', color: '#FFFFFF', fontSize: 18, flexShrink: 0,
         }}>‹</button>
@@ -193,11 +193,11 @@ export default function ProfileScreen({ userId, currentUserId, onBack, onEditPro
           title="Compartir perfil"
           className="pressable"
           style={{
-            width: 38, height: 38, borderRadius: RADIUS.md,
-            border: `1px solid ${COLOR.borderStrong}`, background: COLOR.surfaceRaised,
+            width: 38, height: 38, borderRadius: 999,
+            border: `1px solid rgba(255,255,255,0.07)`, background: '#232329',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', color: COLOR.textSecondary, flexShrink: 0,
-            boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
+            boxShadow: 'none',
             transition: MOTION.springTransition,
           }}
         >

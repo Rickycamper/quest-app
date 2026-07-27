@@ -756,15 +756,15 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
               width: '100%', marginBottom: 16,
               display: 'flex', alignItems: 'center', gap: 12,
               padding: '14px 16px', borderRadius: 14,
-              background: 'linear-gradient(135deg, rgba(167,139,250,0.10) 0%, rgba(96,165,250,0.10) 100%)',
-              border: '1.5px solid rgba(167,139,250,0.35)',
+              background: 'rgba(76,158,255,0.08)',
+              border: '1px solid rgba(76,158,255,0.35)',
               cursor: 'pointer', textAlign: 'left',
               transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms',
-              boxShadow: '0 4px 14px -4px rgba(167,139,250,0.18)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
               fontFamily: 'Inter, sans-serif',
             }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 20px -4px rgba(167,139,250,0.28)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 4px 14px -4px rgba(167,139,250,0.18)'}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.15)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.15)'}
             onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
             onMouseUp  ={e => e.currentTarget.style.transform = 'scale(1)'}
             onTouchStart={e => e.currentTarget.style.transform = 'scale(0.98)'}
@@ -772,10 +772,10 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
           >
             <div style={{
               width: 42, height: 42, borderRadius: 11,
-              background: 'linear-gradient(135deg, #A78BFA 0%, #60A5FA 100%)',
+              background: '#4C9EFF',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 20, flexShrink: 0,
-              boxShadow: '0 4px 12px -2px rgba(167,139,250,0.5)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}>⚡</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: '#111111', marginBottom: 2 }}>
@@ -792,19 +792,19 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
         {/* Phase 1 — request 6-digit code (expanded card after CTA tap). */}
         {magicMode && !magicSent && (
           <div style={{
-            background: 'linear-gradient(135deg, rgba(167,139,250,0.10) 0%, rgba(96,165,250,0.10) 100%)',
-            border: '1.5px solid rgba(167,139,250,0.35)',
+            background: 'rgba(76,158,255,0.08)',
+            border: '1px solid rgba(76,158,255,0.35)',
             borderRadius: 14, padding: '16px',
             marginBottom: 16, animation: 'fadeUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            boxShadow: '0 4px 14px -4px rgba(167,139,250,0.18)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <div style={{
                 width: 36, height: 36, borderRadius: 10,
-                background: 'linear-gradient(135deg, #A78BFA 0%, #60A5FA 100%)',
+                background: '#4C9EFF',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 18, flexShrink: 0,
-                boxShadow: '0 4px 10px -2px rgba(167,139,250,0.5)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
               }}>⚡</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 800, color: '#111111' }}>
@@ -833,13 +833,13 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
                   flex: 1, padding: '12px', borderRadius: 10, border: 'none',
                   background: (magicSending || !email)
                     ? '#E5E7EB'
-                    : 'linear-gradient(135deg, #A78BFA 0%, #60A5FA 100%)',
+                    : '#4C9EFF',
                   color: (magicSending || !email) ? '#9CA3AF' : '#FFFFFF',
                   fontSize: 13, fontWeight: 800,
                   cursor: (magicSending || !email) ? 'default' : 'pointer',
                   boxShadow: (magicSending || !email)
                     ? 'none'
-                    : '0 4px 12px -2px rgba(167,139,250,0.5)',
+                    : '0 1px 2px rgba(0,0,0,0.15)',
                   fontFamily: 'Inter, sans-serif',
                 }}
               >
@@ -863,20 +863,20 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
         {/* Phase 2 — user types the 6-digit code, we verify */}
         {magicSent && (
           <div style={{
-            background: 'linear-gradient(135deg, rgba(74,222,128,0.12) 0%, rgba(96,165,250,0.10) 100%)',
-            border: '1.5px solid rgba(74,222,128,0.35)',
+            background: 'rgba(76,158,255,0.08)',
+            border: '1px solid rgba(76,158,255,0.35)',
             borderRadius: 14, padding: '18px 16px 14px',
             marginBottom: 16,
             animation: 'fadeUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            boxShadow: '0 6px 18px -4px rgba(74,222,128,0.22)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <div style={{
                 width: 40, height: 40, borderRadius: 11,
-                background: 'linear-gradient(135deg, #4ADE80 0%, #60A5FA 100%)',
+                background: '#4C9EFF',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 20, flexShrink: 0,
-                boxShadow: '0 4px 12px -2px rgba(74,222,128,0.5)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
               }}>📩</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 800, color: '#065F46' }}>
@@ -929,13 +929,13 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
                 width: '100%', padding: '13px', borderRadius: 11, border: 'none',
                 background: (magicVerifying || magicCode.length !== 6)
                   ? '#E5E7EB'
-                  : 'linear-gradient(135deg, #4ADE80 0%, #60A5FA 100%)',
+                  : '#4C9EFF',
                 color: (magicVerifying || magicCode.length !== 6) ? '#9CA3AF' : '#FFFFFF',
                 fontSize: 15, fontWeight: 800,
                 cursor: (magicVerifying || magicCode.length !== 6) ? 'default' : 'pointer',
                 boxShadow: (magicVerifying || magicCode.length !== 6)
                   ? 'none'
-                  : '0 4px 14px -2px rgba(74,222,128,0.5)',
+                  : '0 1px 2px rgba(0,0,0,0.15)',
                 marginBottom: 6,
                 fontFamily: 'Inter, sans-serif',
               }}

@@ -115,18 +115,18 @@ export default function UpdateBanner() {
       zIndex: 9999,
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '10px 14px 10px 12px', borderRadius: 999,
-      background: 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)',
-      color: '#FFFFFF',
+      background: '#FFFFFF',
+      color: '#0B0B0D',
       fontSize: 13, fontWeight: 800,
       fontFamily: 'Inter, sans-serif',
       letterSpacing: '0.005em',
-      boxShadow: '0 10px 28px rgba(244,114,182,0.30), 0 4px 10px rgba(167,139,250,0.20), inset 0 1px 0 rgba(255,255,255,0.30)',
-      textShadow: '0 1px 0 rgba(0,0,0,0.18)',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+      
       maxWidth: 'calc(100% - 24px)',
       cursor: 'pointer',
       animation: 'updateBannerIn 360ms cubic-bezier(0.34,1.56,0.64,1)',
     }} onClick={handleReload}>
-      <RefreshCw size={16} strokeWidth={2.4} color="#FFFFFF" style={{
+      <RefreshCw size={16} strokeWidth={2.4} color="#0B0B0D" style={{
         animation: busy ? 'updateSpin 0.9s linear infinite' : 'none',
       }} />
       <span>{busy ? 'Actualizando…' : 'Nueva versión disponible · Recargar'}</span>

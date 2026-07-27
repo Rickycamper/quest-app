@@ -34,10 +34,7 @@ export default function EmptyState({
         }}>
           <div style={{
             position: 'absolute', inset: -10, borderRadius: '50%',
-            background: `
-              radial-gradient(ellipse 120px 90px at 50% 50%, rgba(167,139,250,0.10) 0%, transparent 65%),
-              radial-gradient(ellipse 90px 70px at 50% 60%, rgba(251,191,36,0.06) 0%, transparent 65%)
-            `,
+            background: 'radial-gradient(ellipse 120px 90px at 50% 50%, rgba(255,255,255,0.045) 0%, transparent 65%)',
             filter: 'blur(6px)',
           }} />
           <img
@@ -58,17 +55,17 @@ export default function EmptyState({
       {!heroImage && icon && (
         <div style={{
           width: 72, height: 72, borderRadius: 20,
-          background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 70%)',
-          border: '1px solid #1F1F1F',
+          background: '#161619',
+          border: '1px solid rgba(255,255,255,0.055)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: 14,
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.3)',
+          boxShadow: 'none',
         }}>
           <div style={{ color: '#4B5563', opacity: 0.9 }}>{icon}</div>
         </div>
       )}
       <div style={{
-        fontSize: 16, fontWeight: 700, color: '#E5E7EB',
+        fontSize: 16, fontWeight: 700, color: '#E7E9EC',
         letterSpacing: '-0.015em',
         lineHeight: 1.3,
       }}>
@@ -76,7 +73,7 @@ export default function EmptyState({
       </div>
       {subtitle && (
         <div style={{
-          fontSize: 13, color: '#9CA3AF',
+          fontSize: 13, color: '#9AA0A8',
           lineHeight: 1.5,
           maxWidth: 270, marginTop: 4,
           fontWeight: 400,
@@ -90,10 +87,10 @@ export default function EmptyState({
           onClick={onCta}
           className="pressable"
           style={{
-            marginTop: 18, padding: '12px 24px', borderRadius: 12,
-            background: '#FFFFFF', border: 'none', color: '#0A0A0A',
+            marginTop: 18, padding: '12px 24px', borderRadius: 999,
+            background: '#FFFFFF', border: 'none', color: '#0B0B0D',
             fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.4) inset',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.35)',
             transition: 'all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
             letterSpacing: '-0.005em',
           }}

@@ -67,9 +67,9 @@ function SeasonBanner({ season }) {
     <div style={{
       margin: '6px 14px 0',
       padding: '9px 12px',
-      borderRadius: 12,
-      background: '#F59E0B08',
-      border: '1px solid #F59E0B22',
+      borderRadius: 20,
+      background: '#161619',
+      border: '1px solid rgba(255,255,255,0.055)',
       display: 'flex', flexDirection: 'column', gap: 6,
       animation: 'slideDown 0.22s cubic-bezier(0.34,1.3,0.64,1)',
     }}>
@@ -78,25 +78,25 @@ function SeasonBanner({ season }) {
           <path d={HAND_MIDDLE_PATH} />
         </svg>
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B' }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#F5C34B' }}>
             {season.name}
           </span>
-          <span style={{ fontSize: 10, color: '#4B5563', marginLeft: 6 }}>{rangeStr}</span>
+          <span style={{ fontSize: 10, color: '#6E747D', marginLeft: 6 }}>{rangeStr}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: daysLeft <= 7 ? '#F87171' : '#6B7280' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: daysLeft <= 7 ? '#F65959' : '#9AA0A8' }}>
             {daysLeft === 0 ? '¡hoy!' : `${daysLeft}d`}
           </span>
           <div style={{
-            fontSize: 8, fontWeight: 800, padding: '2px 6px', borderRadius: 5,
-            background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)',
-            color: '#4ADE80', letterSpacing: '0.05em',
+            fontSize: 8, fontWeight: 800, padding: '2px 6px', borderRadius: 999,
+            background: 'rgba(61,220,132,0.12)', border: '1px solid rgba(61,220,132,0.25)',
+            color: '#3DDC84', letterSpacing: '0.05em',
           }}>ACTIVA</div>
         </div>
       </div>
       {/* Progress bar */}
       <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: '#F59E0B60', transition: 'width 0.6s ease' }} />
+        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: '#F5C34B66', transition: 'width 0.6s ease' }} />
       </div>
     </div>
   )
@@ -331,14 +331,14 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
           width: 32, height: 32, borderRadius: RADIUS.sm,
           background: gs.bg, border: `1px solid ${gs.border}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: `0 0 14px ${gs.border}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+          boxShadow: 'none',
         }}>
           <GameIcon game={game} size={16} />
         </div>
         <div style={{ flex: 1 }}>
           <div style={{
-            fontSize: 9.5, fontWeight: WEIGHT.bold,
-            color: COLOR.textTertiary, letterSpacing: '0.12em',
+            fontSize: 12, fontWeight: WEIGHT.bold,
+            color: '#8A8F98', letterSpacing: '0.08em',
             textTransform: 'uppercase',
           }}>
             Temporada activa
@@ -359,18 +359,18 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
           border: `1px solid ${COLOR.border}`,
           borderRadius: RADIUS.lg,
           padding: '14px 14px 16px',
-          boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+          boxShadow: '0 1px 2px rgba(0,0,0,0.35)',
           position: 'relative',
           overflow: 'hidden',
         }}>
           <PodiumLineGraphics tint="#FFFFFF" />
           <div style={{
             position: 'relative', zIndex: 1,
-            fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
-            letterSpacing: '0.12em', textTransform: 'uppercase',
+            fontSize: 12, fontWeight: WEIGHT.bold, color: '#8A8F98',
+            letterSpacing: '0.08em', textTransform: 'uppercase',
             marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6,
           }}>
-            🏆 Top 3 global
+            Top 3 global
           </div>
 
           {/* Podium layout — 2nd | 1st | 3rd, columns of different height for that "podium" feel */}
@@ -415,7 +415,7 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
                     background: COLOR.surfaceRaised,
                     border: `2px solid ${c.border}`,
                     overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: `0 0 16px ${c.glow}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                    boxShadow: 'none',
                     marginBottom: 6,
                   }}>
                     <Avatar url={e.avatar_url} size={50} role={e.role} isOwner={e.is_owner} />
@@ -471,15 +471,15 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
         border: `1px solid ${COLOR.border}`,
         borderRadius: RADIUS.lg,
         padding: '14px 14px 8px',
-        boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.35)',
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           marginBottom: 14,
         }}>
           <div style={{
-            fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
-            letterSpacing: '0.12em', textTransform: 'uppercase',
+            fontSize: 12, fontWeight: WEIGHT.bold, color: '#8A8F98',
+            letterSpacing: '0.08em', textTransform: 'uppercase',
           }}>
             Sucursales
           </div>
@@ -506,10 +506,8 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
                 style={{
                   display: 'flex', flexDirection: 'column', gap: 7,
                   padding: '10px 12px',
-                  background: hasTop3
-                    ? `linear-gradient(135deg, ${bs.bg} 0%, transparent 70%)`
-                    : COLOR.background,
-                  border: `1px solid ${hasTop3 ? bs.border : COLOR.border}`,
+                  background: 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${COLOR.border}`,
                   borderRadius: RADIUS.md,
                   cursor: 'pointer',
                   textAlign: 'left',
@@ -517,7 +515,7 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
                   transition: MOTION.springTransition,
                   opacity: animateIn ? 1 : 0,
                   transform: animateIn ? 'translateX(0)' : 'translateX(-8px)',
-                  boxShadow: hasTop3 ? `0 0 12px ${bs.border}` : 'none',
+                  boxShadow: 'none',
                 }}
               >
                 {/* Top row — branch name + dot + crown if top-3 + total pts */}
@@ -526,7 +524,7 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
                     width: 8, height: 8, borderRadius: '50%',
                     background: bs.dot ?? COLOR.textTertiary,
                     flexShrink: 0,
-                    boxShadow: `0 0 8px ${bs.dot}`,
+                    boxShadow: 'none',
                   }} />
                   <span style={{
                     fontSize: 14, fontWeight: WEIGHT.bold,
@@ -546,7 +544,7 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
                       letterSpacing: '0.04em',
                       display: 'inline-flex', alignItems: 'center', gap: 3,
                     }}>
-                      👑 TOP {b.topRank}
+                      TOP {b.topRank}
                     </span>
                   )}
                   <span style={{
@@ -564,18 +562,16 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
                 {/* Bar */}
                 <div style={{
                   width: '100%', height: 8, borderRadius: 4,
-                  background: COLOR.surfaceRaised,
+                  background: 'rgba(255,255,255,0.05)',
                   overflow: 'hidden', position: 'relative',
-                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                  boxShadow: 'none',
                 }}>
                   <div style={{
                     height: '100%',
                     width: animateIn ? `${pct}%` : '0%',
-                    background: hasTop3
-                      ? `linear-gradient(90deg, ${bs.dot} 0%, ${bs.color} 100%)`
-                      : `linear-gradient(90deg, ${bs.dot}aa 0%, ${bs.dot} 100%)`,
+                    background: bs.dot,
                     borderRadius: 4,
-                    boxShadow: `0 0 8px ${bs.dot}88`,
+                    boxShadow: 'none',
                     transition: `width 1100ms cubic-bezier(0.34,1.56,0.64,1) ${delay + 80}ms`,
                   }} />
                 </div>
@@ -656,14 +652,14 @@ function BranchPodium({ entries, branch, game, canEdit = false, onEditEntry }) {
           background: bs.bg,
           border: `1px solid ${bs.border}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: `0 0 14px ${bs.border}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+          boxShadow: 'none',
         }}>
           <MapPinIcon size={15} color={bs.color} />
         </div>
         <div style={{ flex: 1 }}>
           <div style={{
-            fontSize: 9.5, fontWeight: WEIGHT.bold,
-            color: COLOR.textTertiary, letterSpacing: '0.12em',
+            fontSize: 12, fontWeight: WEIGHT.bold,
+            color: '#8A8F98', letterSpacing: '0.08em',
             textTransform: 'uppercase',
             display: 'flex', alignItems: 'center', gap: 5,
           }}>
@@ -695,11 +691,11 @@ function BranchPodium({ entries, branch, game, canEdit = false, onEditEntry }) {
 
       {/* ── Podium card ──────────────────────────────────────────────── */}
       <div style={{
-        background: `linear-gradient(180deg, ${bs.bg} 0%, ${COLOR.surface} 70%)`,
-        border: `1px solid ${bs.border}`,
+        background: COLOR.surface,
+        border: `1px solid ${COLOR.border}`,
         borderRadius: RADIUS.lg,
         padding: '14px 14px 16px',
-        boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}, 0 0 24px ${bs.border}`,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.35)',
         position: 'relative',
         overflow: 'hidden',
       }}>
@@ -707,11 +703,11 @@ function BranchPodium({ entries, branch, game, canEdit = false, onEditEntry }) {
         <PodiumLineGraphics tint={bs.color || '#FFFFFF'} />
         <div style={{
           position: 'relative', zIndex: 1,
-          fontSize: 10, fontWeight: WEIGHT.bold, color: COLOR.textTertiary,
-          letterSpacing: '0.12em', textTransform: 'uppercase',
+          fontSize: 12, fontWeight: WEIGHT.bold, color: '#8A8F98',
+          letterSpacing: '0.08em', textTransform: 'uppercase',
           marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6,
         }}>
-          🏆 Top 3 {branch}
+          Top 3 {branch}
         </div>
 
         {/* Podium layout — 2nd | 1st | 3rd */}
@@ -754,7 +750,7 @@ function BranchPodium({ entries, branch, game, canEdit = false, onEditEntry }) {
                   background: COLOR.surfaceRaised,
                   border: `2px solid ${c.border}`,
                   overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: `0 0 16px ${c.glow}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  boxShadow: 'none',
                   marginBottom: 6,
                 }}>
                   <Avatar url={e.avatar_url} size={50} role={e.role} isOwner={e.is_owner} />
@@ -823,21 +819,18 @@ function SeasonOverviewCard({ season }) {
   return (
     <div style={{
       borderRadius: RADIUS.lg, overflow: 'hidden',
-      background: `
-        linear-gradient(135deg, rgba(245,158,11,0.14) 0%, rgba(251,191,36,0.04) 100%),
-        radial-gradient(ellipse at top right, rgba(251,191,36,0.10) 0%, transparent 60%)
-      `,
-      border: '1px solid rgba(245,158,11,0.28)',
-      boxShadow: `0 0 24px rgba(245,158,11,0.10), ${ELEVATION.md}, ${ELEVATION.innerLit}`,
+      background: COLOR.surface,
+      border: `1px solid ${COLOR.border}`,
+      boxShadow: '0 1px 2px rgba(0,0,0,0.35)',
       transition: MOTION.springTransition,
       position: 'relative',
     }}>
       {/* Diagonal shimmer ribbon — passes once every ~6s */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%)',
+        background: 'none',
         backgroundSize: '200% 100%',
-        animation: 'seasonShine 6s ease-in-out infinite',
+        animation: 'none',
         pointerEvents: 'none', borderRadius: 'inherit',
       }} />
 
@@ -857,11 +850,11 @@ function SeasonOverviewCard({ season }) {
         {/* Trophy icon with soft pulse glow */}
         <div style={{
           width: 36, height: 36, borderRadius: RADIUS.sm, flexShrink: 0,
-          background: 'rgba(245,158,11,0.15)',
-          border: '1px solid rgba(245,158,11,0.35)',
+          background: 'rgba(245,158,11,0.12)',
+          border: '1px solid rgba(245,158,11,0.25)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 14px rgba(245,158,11,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
-          animation: 'trophyGlow 2.8s ease-in-out infinite',
+          boxShadow: 'none',
+          animation: 'none',
           position: 'relative', overflow: 'hidden',
         }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="#FBBF24" strokeWidth="0">
@@ -872,14 +865,14 @@ function SeasonOverviewCard({ season }) {
         {/* Title + date range — date hides when collapsed for a cleaner look */}
         <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
           <div style={{
-            fontSize: 9.5, fontWeight: WEIGHT.bold,
-            color: 'rgba(245,158,11,0.7)', letterSpacing: '0.12em',
+            fontSize: 12, fontWeight: WEIGHT.bold,
+            color: '#8A8F98', letterSpacing: '0.08em',
             textTransform: 'uppercase', lineHeight: 1,
           }}>
             Temporada activa
           </div>
           <div style={{
-            fontSize: 16, fontWeight: WEIGHT.bold, color: '#FBBF24',
+            fontSize: 16, fontWeight: WEIGHT.bold, color: '#F5C34B',
             letterSpacing: '-0.015em', lineHeight: 1.2, marginTop: 3,
           }}>
             {seasonName}
@@ -901,13 +894,13 @@ function SeasonOverviewCard({ season }) {
             <span style={{
               width: 6, height: 6, borderRadius: '50%',
               background: COLOR.green,
-              boxShadow: '0 0 8px rgba(74,222,128,0.7)',
+              boxShadow: 'none',
               animation: 'pulseDot 1.6s ease-in-out infinite',
             }} />
             ACTIVA
           </div>
           <svg
-            width="14" height="14" viewBox="0 0 16 16" fill={COLOR.gold} strokeWidth="0"
+            width="14" height="14" viewBox="0 0 16 16" fill={COLOR.textTertiary} strokeWidth="0"
             style={{
               transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -931,7 +924,7 @@ function SeasonOverviewCard({ season }) {
       }}>
         <div style={{
           padding: '4px 14px 14px',
-          borderTop: '1px solid rgba(245,158,11,0.18)',
+          borderTop: `1px solid ${COLOR.border}`,
           marginTop: 4,
         }}>
           {/* Days left big number + progress */}
@@ -940,7 +933,7 @@ function SeasonOverviewCard({ season }) {
             paddingTop: 12, marginBottom: 12,
           }}>
             <div style={{
-              fontSize: 32, fontWeight: WEIGHT.bold, color: '#FBBF24',
+              fontSize: 32, fontWeight: WEIGHT.bold, color: COLOR.text,
               fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', lineHeight: 0.95,
             }}>
               {daysLeft}
@@ -966,24 +959,24 @@ function SeasonOverviewCard({ season }) {
             height: 6, borderRadius: 3,
             background: 'rgba(255,255,255,0.05)',
             overflow: 'hidden', marginBottom: 14,
-            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+            boxShadow: 'none',
           }}>
             <div style={{
               height: '100%',
               width: expanded ? `${pct}%` : '0%',
               borderRadius: 3,
-              background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)',
-              boxShadow: '0 0 8px rgba(251,191,36,0.6)',
+              background: '#F5C34B',
+              boxShadow: 'none',
               transition: 'width 900ms cubic-bezier(0.34,1.3,0.64,1) 120ms',
             }} />
           </div>
 
           {/* Description */}
           <p style={{
-            margin: '0 0 8px', fontSize: 12.5, color: '#E5E7EB',
+            margin: '0 0 8px', fontSize: 12.5, color: '#9AA0A8',
             lineHeight: 1.55, letterSpacing: '-0.005em',
           }}>
-            La <strong style={{ color: '#FBBF24' }}>{seasonName} es oficial</strong> — los puntos que acumules <strong style={{ color: COLOR.text }}>cuentan para el ranking final</strong> y el Season Championship.
+            La <strong style={{ color: '#F5C34B' }}>{seasonName} es oficial</strong> — los puntos que acumules <strong style={{ color: COLOR.text }}>cuentan para el ranking final</strong> y el Season Championship.
           </p>
 
           {/* Championship rule pill */}
@@ -996,7 +989,6 @@ function SeasonOverviewCard({ season }) {
             fontSize: 11.5, fontWeight: WEIGHT.semibold,
             letterSpacing: '-0.005em',
           }}>
-            <span style={{ fontSize: 13 }}>🏆</span>
             Top 2 por ciudad clasifica al Championship
           </div>
         </div>
@@ -1098,7 +1090,7 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
       border: `1px solid ${COLOR.border}`,
       borderRadius: RADIUS.lg,
       padding: '14px 14px 12px',
-      boxShadow: `${ELEVATION.md}, ${ELEVATION.innerLit}`,
+      boxShadow: '0 1px 2px rgba(0,0,0,0.35)',
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1731,7 +1723,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
       {/* ── Rules card (collapsible) ── */}
       <div style={{
         borderRadius: 14,
-        background: '#111111',
+        background: '#161619',
         border: '1px solid #1E1E1E',
         overflow: 'hidden',
       }}>
@@ -1910,7 +1902,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
             onClick={() => { setShowAward(o => !o); setAwardErr('') }}
             style={{
               width: '100%', padding: '9px 14px',
-              background: showAward ? 'rgba(167,139,250,0.08)' : '#111111',
+              background: showAward ? 'rgba(167,139,250,0.08)' : '#161619',
               border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
               display: 'flex', alignItems: 'center', gap: 8,
               borderBottom: showAward ? '1px solid #1F1F1F' : 'none',
@@ -2830,7 +2822,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
                     onClick={() => onViewProfile?.(r.user_id)}
                     style={{
                       flex: 1, padding: '8px 6px', borderRadius: 8,
-                      background: '#0A0A0A', border: '1px solid #1A1A1A', textAlign: 'center',
+                      background: '#101013', border: '1px solid rgba(255,255,255,0.10)', textAlign: 'center',
                       cursor: onViewProfile ? 'pointer' : 'default',
                       transition: 'border-color 0.12s',
                     }}
@@ -2890,7 +2882,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
                       autoFocus
                       style={{
                         width: '100%', padding: '7px 10px 7px 28px', borderRadius: 8, boxSizing: 'border-box',
-                        background: '#0A0A0A', border: '1px solid #222', color: '#FFF',
+                        background: '#101013', border: '1px solid rgba(255,255,255,0.10)', color: '#FFF',
                         fontSize: 12, outline: 'none', fontFamily: 'Inter, sans-serif',
                       }}
                     />
@@ -3029,7 +3021,7 @@ function TournamentCard({ t, index, onViewProfile, isAdmin, autoOpen }) {
             onClick={e => e.stopPropagation()}
             style={{
               width: '100%', maxWidth: 340,
-              background: '#111111', border: '1px solid #2A2A2A',
+              background: '#161619', border: '1px solid rgba(255,255,255,0.055)',
               borderRadius: 16, padding: '22px 20px 18px',
               boxShadow: '0 24px 60px rgba(0,0,0,0.7)',
               animation: 'slideUp 0.28s cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -3444,7 +3436,7 @@ function LeagueCard({ league, profile, isStaff, onViewProfile, index, defaultOpe
   return (
     <div ref={cardRef} style={{
       margin: '0 16px 10px',
-      background: '#111111', borderRadius: 14,
+      background: '#161619', borderRadius: 14,
       border: `1px solid ${enrolled ? (bs?.border ?? 'rgba(167,139,250,0.3)') : '#1F1F1F'}`,
       animation: 'fadeUp 0.3s ease both',
       animationDelay: `${index * 0.04}s`,
@@ -4283,7 +4275,7 @@ function ClaimsTab({ isStaff }) {
         const pts = PTS[c.position]
         return (
           <div key={c.id} style={{
-            background: '#111111', borderRadius: 8,
+            background: '#161619', borderRadius: 14,
             border: '1px solid #1F1F1F', padding: '14px 16px', marginBottom: 10,
           }}>
             {/* User + tournament */}
@@ -4445,18 +4437,18 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
                 padding: active ? '7px 14px' : '7px 0',
                 borderRadius: active ? 9999 : 0,
                 background: active
-                  ? 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)'
+                  ? '#FFFFFF'
                   : 'none',
                 border: 'none',
-                color: active ? '#FFFFFF' : '#6B7280',
+                color: active ? '#0B0B0D' : '#9AA0A8',
                 fontSize: 13, fontWeight: active ? 800 : 600,
                 letterSpacing: '-0.005em',
                 cursor: 'pointer', fontFamily: 'Inter, sans-serif',
                 flexShrink: 0,
                 boxShadow: active
-                  ? '0 6px 18px rgba(251,146,60,0.30), 0 2px 6px rgba(167,139,250,0.20), inset 0 1px 0 rgba(255,255,255,0.28)'
+                  ? 'none'
                   : 'none',
-                textShadow: active ? '0 1px 0 rgba(0,0,0,0.18)' : 'none',
+                textShadow: 'none',
                 transition: 'background 220ms ease, color 180ms ease, padding 200ms ease, box-shadow 220ms ease',
               }}>
                 {t.label}
@@ -4602,7 +4594,7 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
     return (
       <div style={{ padding: '10px 14px 4px' }}>
         <div style={{
-          background: '#111111',
+          background: '#161619',
           border: '1px solid #1E1E1E',
           borderRadius: 14,
           padding: '10px 12px',

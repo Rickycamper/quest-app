@@ -71,10 +71,10 @@ export default function SearchScreen({ onViewProfile }) {
       <div style={{ padding: '8px 16px 12px' }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          background: '#141414', border: '1.5px solid #222',
-          borderRadius: 12, padding: '10px 14px',
+          background: '#101013', border: '1px solid rgba(255,255,255,0.10)',
+          borderRadius: 14, padding: '10px 14px',
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6E747D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
@@ -94,7 +94,7 @@ export default function SearchScreen({ onViewProfile }) {
           />
           {query.length > 0 && (
             <button onClick={() => setQuery('')} style={{
-              background: 'none', border: 'none', color: '#4B5563',
+              background: 'none', border: 'none', color: '#6E747D',
               cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0,
             }}>✕</button>
           )}
@@ -103,7 +103,7 @@ export default function SearchScreen({ onViewProfile }) {
 
       {/* Section header */}
       {!loading && (
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.1em', padding: '0 16px 10px', fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', padding: '0 16px 10px', fontFamily: 'Inter, sans-serif' }}>
           {q ? `${results.length} resultado${results.length !== 1 ? 's' : ''}` : `${allUsers.length} jugador${allUsers.length !== 1 ? 'es' : ''}`}
         </div>
       )}
@@ -138,12 +138,12 @@ export default function SearchScreen({ onViewProfile }) {
                 onClick={() => onViewProfile?.(u.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
-                  background: '#111111', border: '1px solid #1A1A1A',
-                  borderRadius: 14, padding: '12px 14px', cursor: 'pointer',
+                  background: '#161619', border: '1px solid rgba(255,255,255,0.055)',
+                  borderRadius: 20, padding: '12px 14px', cursor: 'pointer',
                   transition: 'border-color 0.15s',
                 }}
-                onTouchStart={e => e.currentTarget.style.borderColor = '#2A2A2A'}
-                onTouchEnd={e => e.currentTarget.style.borderColor = '#1A1A1A'}
+                onTouchStart={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'}
+                onTouchEnd={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.055)'}
               >
                 {/* Avatar */}
                 <div style={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#1F1F1F' }}>
@@ -156,7 +156,7 @@ export default function SearchScreen({ onViewProfile }) {
                     {u.username}
                   </div>
                   {u.full_name && (
-                    <div style={{ fontSize: 12, color: '#4B5563', fontFamily: 'Inter, sans-serif', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: 12.5, color: '#9AA0A8', fontFamily: 'Inter, sans-serif', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {u.full_name}
                     </div>
                   )}
@@ -167,10 +167,10 @@ export default function SearchScreen({ onViewProfile }) {
                   onClick={e => handleFollow(e, u.id)}
                   disabled={busy}
                   style={{
-                    padding: '6px 14px', borderRadius: 8, flexShrink: 0,
-                    background: isFollowing ? 'transparent' : '#FFFFFF',
-                    border: isFollowing ? '1.5px solid #2A2A2A' : 'none',
-                    color: isFollowing ? '#6B7280' : '#111111',
+                    padding: '6px 14px', borderRadius: 999, flexShrink: 0,
+                    background: isFollowing ? '#232329' : '#FFFFFF',
+                    border: isFollowing ? '1px solid rgba(255,255,255,0.07)' : 'none',
+                    color: isFollowing ? '#E7E9EC' : '#0B0B0D',
                     fontSize: 12, fontWeight: 700, cursor: busy ? 'default' : 'pointer',
                     fontFamily: 'Inter, sans-serif', opacity: busy ? 0.5 : 1,
                     transition: 'all 0.15s',

@@ -105,8 +105,8 @@ function ProductImage({ src, game, ratio = '1/1', detail = false }) {
 
   const wrap = {
     width: '100%', aspectRatio: ratio,
-    background: (src && !err) ? '#FFFFFF' : '#0A0A0A', position: 'relative',
-    borderRadius: detail ? 12 : '10px 10px 0 0',
+    background: (src && !err) ? '#FFFFFF' : '#101013', position: 'relative',
+    borderRadius: detail ? 16 : 0,
     overflow: 'hidden',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   }
@@ -148,9 +148,9 @@ function ProductImage({ src, game, ratio = '1/1', detail = false }) {
 const PREORDER_MAX = 4
 
 const qtyBtnStyle = (enabled) => ({
-  width: 28, height: 28, borderRadius: 8, border: 'none',
-  background: enabled ? '#2A2A2A' : '#161616',
-  color: enabled ? '#FFF' : '#4B5563',
+  width: 28, height: 28, borderRadius: 999, border: 'none',
+  background: enabled ? '#232329' : '#161619',
+  color: enabled ? '#E7E9EC' : '#6E747D',
   fontSize: 16, fontWeight: 800, lineHeight: 1,
   cursor: enabled ? 'pointer' : 'default',
   fontFamily: 'Inter, sans-serif',
@@ -158,9 +158,9 @@ const qtyBtnStyle = (enabled) => ({
 })
 
 function stockLabel(p) {
-  if (p.coming_soon) return { text: 'Pre order', color: '#FBBF24', dot: '#FBBF24' }
-  if (totalStock(p) > 0) return { text: 'En stock',      color: '#4ADE80', dot: '#4ADE80' }
-  return                        { text: 'Sin stock',     color: '#6B7280', dot: '#374151' }
+  if (p.coming_soon) return { text: 'Pre order', color: '#F5C34B', dot: '#F5C34B' }
+  if (totalStock(p) > 0) return { text: 'En stock',      color: '#3DDC84', dot: '#3DDC84' }
+  return                        { text: 'Sin stock',     color: '#6E747D', dot: '#374151' }
 }
 
 function fmtPriceOrAsk(n) {
@@ -261,31 +261,31 @@ function ReservationsSection({ product, onQtyChange }) {
   const totalReserved = reservations.reduce((s, r) => s + (r.qty || 0), 0)
 
   return (
-    <div style={{ borderTop: '1px solid #1A1A1A', marginTop: 4, paddingTop: 14 }}>
+    <div style={{ borderTop: '1px solid rgba(255,255,255,0.055)', marginTop: 4, paddingTop: 14 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em' }}>RESERVAS</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em' }}>RESERVAS</div>
           {totalReserved > 0 && (
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#A78BFA', background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)', borderRadius: 10, padding: '2px 7px' }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#4C9EFF', background: 'rgba(76,158,255,0.12)', border: '1px solid rgba(76,158,255,0.25)', borderRadius: 999, padding: '2px 7px' }}>
               {totalReserved} uds
             </span>
           )}
         </div>
         <button onClick={() => setShowForm(v => !v)} style={{
-          padding: '4px 10px', borderRadius: 7, border: '1px solid #2A2A2A',
-          background: showForm ? '#A78BFA' : 'transparent',
-          color: showForm ? '#FFF' : '#A78BFA',
+          padding: '4px 12px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.10)',
+          background: showForm ? '#4C9EFF' : 'transparent',
+          color: showForm ? '#FFFFFF' : '#4C9EFF',
           fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
         }}>{showForm ? '✕ Cancelar' : '+ Reserva'}</button>
       </div>
 
       {/* Add form */}
       {showForm && (
-        <div style={{ background: '#111', border: '1px solid #2A2A2A', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+        <div style={{ background: '#161619', border: '1px solid rgba(255,255,255,0.055)', borderRadius: 14, padding: 12, marginBottom: 12 }}>
 
           {/* User search */}
-          <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>CLIENTE</div>
+          <div style={{ fontSize: 11, color: '#8A8F98', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>CLIENTE</div>
           {selected ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.25)', borderRadius: 9, marginBottom: 10 }}>
               {selected.avatar_url
@@ -317,7 +317,7 @@ function ReservationsSection({ product, onQtyChange }) {
 
           {/* Sucursal */}
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>SUCURSAL</div>
+            <div style={{ fontSize: 11, color: '#8A8F98', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>SUCURSAL</div>
             <div style={{ display: 'flex', gap: 5 }}>
               {BRANCHES_RES.map(b => (
                 <button key={b.key} onClick={() => setBranch(b.key)} style={{
@@ -333,7 +333,7 @@ function ReservationsSection({ product, onQtyChange }) {
           {/* Qty + Pago */}
           <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>CANTIDAD</div>
+              <div style={{ fontSize: 11, color: '#8A8F98', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>CANTIDAD</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <button onClick={() => setQty(v => String(Math.max(1, (parseInt(v)||1) - 1)))} style={{ width: 28, height: 28, borderRadius: 7, background: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9CA3AF', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                 <input type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} style={{ width: 44, textAlign: 'center', background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 7, color: '#FFF', fontSize: 14, fontWeight: 700, padding: '5px 0', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
@@ -341,7 +341,7 @@ function ReservationsSection({ product, onQtyChange }) {
               </div>
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>PAGO</div>
+              <div style={{ fontSize: 11, color: '#8A8F98', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>PAGO</div>
               <div style={{ display: 'flex', gap: 5 }}>
                 {[50, 100].map(p => (
                   <button key={p} onClick={() => setPaidPct(p)} style={{
@@ -357,7 +357,7 @@ function ReservationsSection({ product, onQtyChange }) {
 
           {/* Notes */}
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>NOTAS (opcional)</div>
+            <div style={{ fontSize: 11, color: '#8A8F98', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>NOTAS (opcional)</div>
             <input value={notes} onChange={e => setNotes(e.target.value)}
               placeholder="ej: pagó en efectivo, busca el viernes..."
               style={{ width: '100%', padding: '9px 12px', background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 9, color: '#FFF', fontSize: 12, outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }} />
@@ -621,7 +621,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
 
           {isOwner ? (
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>NOMBRE</div>
+              <div style={{ fontSize: 11, color: '#8A8F98', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 5 }}>NOMBRE</div>
               <textarea
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -1977,38 +1977,29 @@ export default function ShopScreen({ isOwner, isStaff }) {
         </div>
       </div>
 
-      {/* ── Category tabs — Battle Now gradient bubble en el activo,
-          mismo tratamiento que Rankings/Torneos/Liga para coherencia. */}
+      {/* ── Category tabs — segmented control One UI: burbuja BLANCA en el
+          activo, superficie neutra, sin gradientes ni glows. */}
       <div style={{ padding: '0 16px', marginBottom: 12 }}>
         <div style={{
           display: 'flex',
-          background: 'rgba(255,255,255,0.04)',
-          backdropFilter: 'saturate(180%) blur(20px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 12, padding: 4, gap: 4,
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+          background: '#161619',
+          border: '1px solid rgba(255,255,255,0.055)',
+          borderRadius: 999, padding: 4, gap: 4,
         }}>
           {CATEGORIES.map(c => {
             const active = category === c.id
             return (
               <button key={c.id} onClick={() => handleCategory(c.id)} style={{
-                flex: 1, padding: '9px 0', borderRadius: 9, border: 'none',
-                background: active
-                  ? 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)'
-                  : 'transparent',
-                color: active ? '#FFFFFF' : '#6B7280',
+                flex: 1, padding: '8px 0', borderRadius: 999, border: 'none',
+                background: active ? '#FFFFFF' : 'transparent',
+                color: active ? '#0B0B0D' : '#9AA0A8',
                 fontSize: 12, fontWeight: 800, cursor: 'pointer',
                 fontFamily: 'Inter, sans-serif',
-                boxShadow: active
-                  ? '0 6px 18px rgba(251,146,60,0.30), 0 2px 6px rgba(167,139,250,0.20), inset 0 1px 0 rgba(255,255,255,0.28)'
-                  : 'none',
-                textShadow: active ? '0 1px 0 rgba(0,0,0,0.18)' : 'none',
-                transition: 'background 220ms ease, color 180ms ease, box-shadow 220ms ease',
+                transition: 'background 220ms ease, color 180ms ease',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
               }}>
                 {c.label}
-                <span style={{ fontSize: 8, fontWeight: 600, opacity: active ? 0.85 : 0.6 }}>{catCounts[c.id]}</span>
+                <span style={{ fontSize: 8, fontWeight: 600, opacity: active ? 0.7 : 0.6 }}>{catCounts[c.id]}</span>
               </button>
             )
           })}

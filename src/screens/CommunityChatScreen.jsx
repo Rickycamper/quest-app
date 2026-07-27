@@ -67,7 +67,7 @@ function RoomList({ onPick, onClose }) {
         <span style={s.title}>Chat de la comunidad</span>
       </div>
       <div style={{ padding: 16, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ fontSize: 12, color: '#6B7280', fontFamily: 'Inter, sans-serif', marginBottom: 2 }}>
+        <div style={{ fontSize: 12.5, color: '#9AA0A8', fontFamily: 'Inter, sans-serif', marginBottom: 2 }}>
           Elegí una sala para chatear con toda la comunidad
         </div>
         {GAMES.map(g => {
@@ -75,12 +75,12 @@ function RoomList({ onPick, onClose }) {
           return (
             <button key={g} onClick={() => onPick(g)} style={{
               display: 'flex', alignItems: 'center', gap: 14, width: '100%',
-              padding: 14, borderRadius: 16, cursor: 'pointer', textAlign: 'left',
-              background: gs.bg || 'rgba(255,255,255,0.04)',
-              border: `1px solid ${gs.border || 'rgba(255,255,255,0.08)'}`,
+              padding: 14, borderRadius: 20, cursor: 'pointer', textAlign: 'left',
+              background: '#161619',
+              border: '1px solid rgba(255,255,255,0.055)',
             }}>
               <div style={{
-                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                width: 44, height: 44, borderRadius: 14, flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: 'rgba(0,0,0,0.3)',
               }}>
@@ -88,9 +88,9 @@ function RoomList({ onPick, onClose }) {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
                 <span style={{ fontSize: 16, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>{g}</span>
-                <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Sala de {g}</span>
+                <span style={{ fontSize: 12, color: '#9AA0A8', fontFamily: 'Inter, sans-serif' }}>Sala de {g}</span>
               </div>
-              <span style={{ fontSize: 20, color: gs.color || '#6B7280' }}>›</span>
+              <span style={{ fontSize: 20, color: '#6E747D' }}>›</span>
             </button>
           )
         })}
@@ -276,7 +276,7 @@ function Room({ game, onBack, onClose }) {
   return (
     <div style={s.root}>
       {/* Header de la sala */}
-      <div style={{ ...s.header, borderBottom: `1px solid ${gs.border || '#1A1A1A'}` }}>
+      <div style={{ ...s.header, borderBottom: '1px solid rgba(255,255,255,0.055)' }}>
         <button onClick={onBack} style={s.backBtn} aria-label="Volver">‹</button>
         <div style={{ width: 30, height: 30, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}>
           <GameIcon game={game} size={20} />
@@ -300,7 +300,7 @@ function Room({ game, onBack, onClose }) {
             <div key={m.id}>
               {showDate && (
                 <div style={{ textAlign: 'center', margin: '10px 0 6px' }}>
-                  <span style={{ fontSize: 11, color: '#6B7280', background: '#111', padding: '2px 10px', borderRadius: 10, fontFamily: 'Inter, sans-serif' }}>
+                  <span style={{ fontSize: 11, color: '#6E747D', background: '#161619', padding: '2px 10px', borderRadius: 10, fontFamily: 'Inter, sans-serif' }}>
                     {dateLabel(m.created_at)}
                   </span>
                 </div>
@@ -314,7 +314,7 @@ function Room({ game, onBack, onClose }) {
                 <div style={{ maxWidth: '74%', display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
                   {!mine && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '0 0 2px 6px' }}>
-                      <span style={{ fontSize: 11, color: gs.color || '#9CA3AF', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>{m.author_name}</span>
+                      <span style={{ fontSize: 11, color: '#9AA0A8', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>{m.author_name}</span>
                       <CityChip city={m.author_city} />
                     </span>
                   )}
@@ -345,13 +345,13 @@ function Room({ game, onBack, onClose }) {
         <div ref={bottomRef} />
       </div>
 
-      {err && <div style={{ padding: '6px 16px', background: 'rgba(239,68,68,0.1)', borderTop: '1px solid rgba(239,68,68,0.2)', fontSize: 12, color: '#F87171', fontFamily: 'Inter, sans-serif' }}>{err}</div>}
+      {err && <div style={{ padding: '6px 16px', background: 'rgba(246,89,89,0.08)', borderTop: '1px solid rgba(246,89,89,0.2)', fontSize: 12, color: '#F65959', fontFamily: 'Inter, sans-serif' }}>{err}</div>}
 
       {/* Invitado: nombre editable (los logueados usan su usuario del perfil) */}
       {!profile && guestName && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0 0', background: '#0F0F0F' }}>
-          <button onClick={openChangeName} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>
-            Escribís como <span style={{ color: '#9CA3AF', fontWeight: 700 }}>{guestName}</span> · cambiar
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0 0', background: '#0B0B0D' }}>
+          <button onClick={openChangeName} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#6E747D', fontFamily: 'Inter, sans-serif' }}>
+            Escribís como <span style={{ color: '#9AA0A8', fontWeight: 700 }}>{guestName}</span> · cambiar
           </button>
         </div>
       )}
@@ -359,13 +359,13 @@ function Room({ game, onBack, onClose }) {
       {/* Barra de escritura */}
       {recording ? (
         <div style={{ ...s.inputBar, alignItems: 'center', gap: 12 }}>
-          <button onClick={() => stopRec(true)} style={{ ...s.iconBtn, color: '#F87171' }} aria-label="Cancelar"><TrashIcon size={20} color="#F87171" /></button>
+          <button onClick={() => stopRec(true)} style={{ ...s.iconBtn, color: '#F65959' }} aria-label="Cancelar"><TrashIcon size={20} color="#F65959" /></button>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#EF4444', animation: 'pulse 1s infinite', display: 'inline-block' }} />
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#F65959', animation: 'pulse 1s infinite', display: 'inline-block' }} />
             <span style={{ color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums', fontSize: 15, fontWeight: 700 }}>{fmtDur(recMs)}</span>
-            <span style={{ color: '#6B7280', fontSize: 12, fontFamily: 'Inter, sans-serif' }}>· soltá para enviar</span>
+            <span style={{ color: '#6E747D', fontSize: 12, fontFamily: 'Inter, sans-serif' }}>· soltá para enviar</span>
           </div>
-          <button onClick={() => stopRec(false)} style={{ ...s.sendBtn, background: gs.color || '#FFF' }} aria-label="Enviar"><SendIcon size={19} color="#111" /></button>
+          <button onClick={() => stopRec(false)} style={s.sendBtn} aria-label="Enviar"><SendIcon size={19} color="#111" /></button>
         </div>
       ) : (
         <div style={s.inputBar}>
@@ -395,7 +395,7 @@ function Room({ game, onBack, onClose }) {
             style={s.input}
           />
           {text.trim() && (
-            <button onClick={handleSendText} disabled={sending} style={{ ...s.sendBtn, background: gs.color || '#FFF', opacity: sending ? 0.5 : 1 }} aria-label="Enviar">
+            <button onClick={handleSendText} disabled={sending} style={{ ...s.sendBtn, opacity: sending ? 0.5 : 1 }} aria-label="Enviar">
               <SendIcon size={19} color="#111" />
             </button>
           )}
@@ -463,19 +463,19 @@ function dateLabel(ts) {
 }
 
 const s = {
-  root: { display: 'flex', flexDirection: 'column', height: '100%', background: '#0A0A0A' },
+  root: { display: 'flex', flexDirection: 'column', height: '100%', background: '#050506' },
   header: { display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 12px', flexShrink: 0 },
   backBtn: { background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: 22, padding: 0, lineHeight: 1 },
   title: { color: '#FFFFFF', fontWeight: 800, fontSize: 16, fontFamily: 'Inter, sans-serif' },
   messageList: { flex: 1, overflowY: 'auto', padding: '10px 14px 16px', display: 'flex', flexDirection: 'column', gap: 6, scrollbarWidth: 'none' },
-  emptyHint: { color: '#555', fontSize: 13, textAlign: 'center', marginTop: 40, fontFamily: 'Inter, sans-serif', lineHeight: 1.6 },
+  emptyHint: { color: '#6E747D', fontSize: 13, textAlign: 'center', marginTop: 40, fontFamily: 'Inter, sans-serif', lineHeight: 1.6 },
   bubble: { padding: '9px 13px', fontSize: 14, lineHeight: 1.45, fontFamily: 'Inter, sans-serif', wordBreak: 'break-word' },
   bubbleMe:   { borderRadius: '16px 16px 4px 16px', background: '#FFFFFF', color: '#111111' },
-  bubbleThem: { borderRadius: '16px 16px 16px 4px', background: '#1A1A1F', color: '#E5E5E5' },
-  inputBar: { display: 'flex', gap: 8, alignItems: 'center', padding: '10px 12px calc(env(safe-area-inset-bottom,0px) + 12px)', borderTop: '1px solid #1A1A1F', background: '#0F0F0F', flexShrink: 0 },
-  input: { flex: 1, background: '#1A1A1F', border: '1px solid #2A2A2A', borderRadius: 20, padding: '10px 14px', color: '#FFFFFF', fontSize: 14, outline: 'none', fontFamily: 'Inter, sans-serif' },
+  bubbleThem: { borderRadius: '16px 16px 16px 4px', background: '#1C1C21', color: '#E7E9EC' },
+  inputBar: { display: 'flex', gap: 8, alignItems: 'center', padding: '10px 12px calc(env(safe-area-inset-bottom,0px) + 12px)', borderTop: '1px solid rgba(255,255,255,0.055)', background: '#0B0B0D', flexShrink: 0 },
+  input: { flex: 1, background: '#101013', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: '10px 14px', color: '#FFFFFF', fontSize: 14, outline: 'none', fontFamily: 'Inter, sans-serif' },
   iconBtn: { background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', padding: '4px 6px', lineHeight: 1 },
-  sendBtn: { minWidth: 42, height: 42, borderRadius: '50%', background: '#FFFFFF', border: 'none', fontWeight: 800, fontSize: 18, color: '#111111', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  sendBtn: { minWidth: 42, height: 42, borderRadius: 999, background: '#FFFFFF', border: 'none', fontWeight: 800, fontSize: 18, color: '#111111', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   modalWrap: { position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  modalCard: { width: '100%', maxWidth: 320, background: '#141418', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 18, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 },
+  modalCard: { width: '100%', maxWidth: 320, background: '#1C1C21', border: '1px solid rgba(255,255,255,0.055)', borderRadius: 24, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 },
 }

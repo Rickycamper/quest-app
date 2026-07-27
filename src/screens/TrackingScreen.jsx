@@ -164,8 +164,8 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, onEdit
   return (
     <div style={{
       margin: '0 16px 12px',
-      background: '#111111', borderRadius: 8,
-      border: `1px solid ${showAlert ? cs.border : '#1F1F1F'}`,
+      background: '#161619', borderRadius: 20,
+      border: `1px solid ${showAlert ? cs.border : 'rgba(255,255,255,0.055)'}`,
       animation: 'fadeUp 0.3s ease both',
       overflow: 'hidden',
     }}>
@@ -266,7 +266,7 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, onEdit
               aria-label="Ver imagen completa"
               style={{
                 marginBottom: 12, borderRadius: 8, overflow: 'hidden',
-                background: '#0A0A0A', cursor: 'pointer', padding: 0,
+                background: '#101013', cursor: 'pointer', padding: 0,
                 border: 'none', width: '100%', display: 'block',
                 position: 'relative',
               }}
@@ -449,7 +449,7 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, onEdit
                     onChange={e => setNotes(e.target.value)}
                     style={{
                       width: '100%', padding: '10px 12px', borderRadius: 8,
-                      background: '#0A0A0A', border: '1px solid #2A2A2A',
+                      background: '#101013', border: '1px solid rgba(255,255,255,0.10)',
                       color: '#FFF', fontSize: 12, fontFamily: 'Inter, sans-serif',
                       outline: 'none', boxSizing: 'border-box', marginBottom: 8,
                     }}
@@ -584,7 +584,7 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId, initialR
   const canCreate = recipient && notes.trim() && imageFile
 
   const inputStyle = {
-    width: '100%', padding: '11px 14px', background: '#111111',
+    width: '100%', padding: '11px 14px', background: '#101013',
     border: '1.5px solid #2A2A2A', borderRadius: 10, color: '#FFFFFF',
     fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none',
     boxSizing: 'border-box',
@@ -596,7 +596,7 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId, initialR
 
   return (
     <div style={{
-      position: 'absolute', inset: 0, background: '#0A0A0A',
+      position: 'absolute', inset: 0, background: '#050506',
       zIndex: 200, display: 'flex', flexDirection: 'column',
       paddingTop: 'env(safe-area-inset-top, 0px)',
       animation: 'slideUp 0.3s ease both',
@@ -684,7 +684,7 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId, initialR
         <div style={{ padding: '14px 16px 0' }}>
           <div style={labelStyle}>DESTINATARIO <span style={{ color: '#EF4444' }}>*</span></div>
           {recipient ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#111111', border: '1.5px solid #2A2A2A', borderRadius: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#101013', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14 }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>👤</div>
               <span style={{ flex: 1, fontSize: 14, color: '#FFFFFF', fontWeight: 600 }}>{recipient.username}</span>
               <button onClick={() => { setRecipient(null); setRecipQuery('') }}
@@ -707,7 +707,7 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId, initialR
                 )}
               </div>
               {recipResult.length > 0 && (
-                <div style={{ background: '#111111', border: '1.5px solid #2A2A2A', borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+                <div style={{ background: '#1C1C21', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
                   {recipResult.map(u => (
                     <button key={u.id}
                       onClick={() => { setRecipient(u); setRecipQuery(''); setRecipResult([]) }}
@@ -820,7 +820,7 @@ export function EditPackageModal({ pkg, onClose, onSaved, currentUserId }) {
   }
 
   const inputStyle = {
-    width: '100%', padding: '11px 14px', background: '#111111',
+    width: '100%', padding: '11px 14px', background: '#101013',
     border: '1.5px solid #2A2A2A', borderRadius: 10, color: '#FFFFFF',
     fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box',
   }
@@ -828,7 +828,7 @@ export function EditPackageModal({ pkg, onClose, onSaved, currentUserId }) {
   const canSave = !!recipient && !!notes.trim()
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: '#0A0A0A', zIndex: 210, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)', animation: 'slideUp 0.3s ease both' }}>
+    <div style={{ position: 'absolute', inset: 0, background: '#050506', zIndex: 210, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)', animation: 'slideUp 0.3s ease both' }}>
       <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1F1F1F', flexShrink: 0 }}>
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Cancelar</button>
         <span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter, sans-serif' }}>✎ Corregir envío</span>
@@ -865,7 +865,7 @@ export function EditPackageModal({ pkg, onClose, onSaved, currentUserId }) {
         <div style={{ padding: '14px 16px 0' }}>
           <div style={labelStyle}>DESTINATARIO <span style={{ color: '#EF4444' }}>*</span></div>
           {recipient ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#111111', border: '1.5px solid #2A2A2A', borderRadius: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#101013', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14 }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1F1F1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>👤</div>
               <span style={{ flex: 1, fontSize: 14, color: '#FFFFFF', fontWeight: 600 }}>{recipient.username}</span>
               <button onClick={() => { setRecipient(null); setRecipQuery('') }} style={{ background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', fontSize: 20, padding: 0, lineHeight: 1 }}>×</button>
@@ -881,7 +881,7 @@ export function EditPackageModal({ pkg, onClose, onSaved, currentUserId }) {
                 )}
               </div>
               {recipResult.length > 0 && (
-                <div style={{ background: '#111111', border: '1.5px solid #2A2A2A', borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+                <div style={{ background: '#1C1C21', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
                   {recipResult.map(u => (
                     <button key={u.id} onClick={() => { setRecipient(u); setRecipQuery(''); setRecipResult([]) }}
                       style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid #1A1A1A', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -1023,7 +1023,7 @@ export default function TrackingScreen({ profile, isStaff, onNewPackage, refresh
               placeholder="Buscar por usuario..."
               style={{
                 width: '100%', padding: '8px 12px 8px 34px',
-                background: '#111111', border: '1px solid #2A2A2A',
+                background: '#161619', border: '1px solid rgba(255,255,255,0.055)',
                 borderRadius: 9, color: '#FFF', fontSize: 12,
                 fontFamily: 'Inter, sans-serif', outline: 'none',
                 boxSizing: 'border-box',
@@ -1044,7 +1044,7 @@ export default function TrackingScreen({ profile, isStaff, onNewPackage, refresh
       )}
 
       {/* How it works banner */}
-      <div style={{ margin: '0 16px 12px', padding: '10px 14px', background: '#111111', borderRadius: 8, border: '1px solid #1F1F1F' }}>
+      <div style={{ margin: '0 16px 12px', padding: '10px 14px', background: '#161619', borderRadius: 14, border: '1px solid rgba(255,255,255,0.055)' }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 6 }}>CÓMO FUNCIONA</div>
         <div style={{ display: 'flex', gap: 0, alignItems: 'center' }}>
           {PKG_STEPS.map((s, i) => {

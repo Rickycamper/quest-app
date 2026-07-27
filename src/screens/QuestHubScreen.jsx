@@ -179,7 +179,7 @@ function SucursalesView({ onBack }) {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 32px' }}>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: '#4B5563', lineHeight: 1.5 }}>
+        <div style={{ fontSize: 13, color: '#9AA0A8', lineHeight: 1.5 }}>
           Encuéntranos en nuestras 3 sucursales en Panamá.
         </div>
       </div>
@@ -189,16 +189,14 @@ function SucursalesView({ onBack }) {
         const info = BRANCH_INFO[branch]
         return (
           <div key={branch} style={{
-            background: '#111', borderRadius: 14,
-            border: `1px solid ${bs.border}`,
-            borderLeft: `3px solid ${bs.dot}`,
+            background: '#161619', borderRadius: 20,
+            border: '1px solid rgba(255,255,255,0.055)',
             padding: '16px 16px 14px', marginBottom: 12,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <div style={{
                 width: 8, height: 8, borderRadius: '50%',
                 background: bs.dot, flexShrink: 0,
-                boxShadow: `0 0 6px ${bs.dot}`,
               }} />
               <span style={{ fontSize: 15, fontWeight: 800, color: '#FFF' }}>{branch}</span>
             </div>
@@ -209,8 +207,8 @@ function SucursalesView({ onBack }) {
               { icon: 'phone',    text: info.phone },
             ].map(({ icon, text }) => (
               <div key={icon} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <Icon id={icon} size={13} color="#4B5563" />
-                <span style={{ fontSize: 12, color: '#6B7280' }}>{text}</span>
+                <Icon id={icon} size={13} color="#6E747D" />
+                <span style={{ fontSize: 12, color: '#9AA0A8' }}>{text}</span>
               </div>
             ))}
 
@@ -221,13 +219,13 @@ function SucursalesView({ onBack }) {
               onClick={e => e.stopPropagation()}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                padding: '9px 0', borderRadius: 10, textDecoration: 'none',
-                background: bs.bg, border: `1px solid ${bs.border}`,
-                color: bs.color, fontSize: 12, fontWeight: 700,
+                padding: '11px 0', borderRadius: 999, textDecoration: 'none',
+                background: '#232329', border: '1px solid rgba(255,255,255,0.07)',
+                color: '#E7E9EC', fontSize: 12, fontWeight: 700,
                 fontFamily: 'Inter, sans-serif', marginTop: 8,
               }}
             >
-              <Icon id="navigate" size={13} color={bs.color} /> Cómo llegar
+              <Icon id="navigate" size={13} color="#E7E9EC" /> Cómo llegar
             </a>
           </div>
         )
@@ -251,15 +249,15 @@ function MiniBar({ label, used, allowed, color }) {
   return (
     <div style={{ flex: 1 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-        <span style={{ fontSize: 11, color: '#9CA3AF' }}>{label}</span>
-        <span style={{ fontSize: 11, fontWeight: 800, color: full ? '#F87171' : color }}>
+        <span style={{ fontSize: 11, color: '#9AA0A8' }}>{label}</span>
+        <span style={{ fontSize: 11, fontWeight: 800, color: full ? '#F65959' : color }}>
           {used}/{allowed}
         </span>
       </div>
-      <div style={{ height: 5, borderRadius: 4, background: '#1F1F1F', overflow: 'hidden' }}>
-        <div style={{ height: '100%', borderRadius: 4, width: `${pct * 100}%`, background: full ? '#F87171' : color, transition: 'width 0.4s ease' }} />
+      <div style={{ height: 5, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: 4, width: `${pct * 100}%`, background: full ? '#F65959' : color, transition: 'width 0.4s ease' }} />
       </div>
-      <div style={{ fontSize: 10, color: full ? '#F87171' : '#4B5563', marginTop: 3 }}>
+      <div style={{ fontSize: 10, color: full ? '#F65959' : '#6E747D', marginTop: 3 }}>
         {full ? 'Agotado' : `${allowed - used} disponible${(allowed - used) !== 1 ? 's' : ''}`}
       </div>
     </div>
@@ -295,17 +293,17 @@ function MembresiaView({ profile }) {
       {/* ── My plan card (only when member) ── */}
       {isPaid && myTier && (
         <div style={{
-          background: `${myTier.color}0D`,
-          border: `1.5px solid ${myTier.color}35`,
-          borderRadius: 16, padding: '16px 18px', marginBottom: 20,
+          background: '#161619',
+          border: '1px solid rgba(255,255,255,0.055)',
+          borderRadius: 20, padding: '16px 18px', marginBottom: 20,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: `${myTier.color}99`, letterSpacing: '0.12em', marginBottom: 3 }}>TU PLAN</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', marginBottom: 3 }}>TU PLAN</div>
               <div style={{ fontSize: 20, fontWeight: 900, color: myTier.color }}>{myTier.label.toUpperCase()}</div>
             </div>
-            <div style={{ fontSize: 11, color: '#4B5563', textAlign: 'right' }}>
-              <div style={{ fontWeight: 700, color: '#9CA3AF', textTransform: 'capitalize' }}>{monthName}</div>
+            <div style={{ fontSize: 11, color: '#6E747D', textAlign: 'right' }}>
+              <div style={{ fontWeight: 700, color: '#9AA0A8', textTransform: 'capitalize' }}>{monthName}</div>
               <div style={{ marginTop: 2 }}>Uso mensual</div>
             </div>
           </div>
@@ -316,25 +314,25 @@ function MembresiaView({ profile }) {
             </div>
           ) : (
             <div style={{ display: 'flex', gap: 16 }}>
-              <MiniBar label="🎴 Boosters"  {...getU('booster')}    color={myTier.color} />
-              <MiniBar label="🏆 Torneos"   {...getU('tournament')} color={myTier.color} />
+              <MiniBar label="Boosters"  {...getU('booster')}    color={myTier.color} />
+              <MiniBar label="Torneos"   {...getU('tournament')} color={myTier.color} />
             </div>
           )}
         </div>
       )}
 
-      <div style={{ fontSize: 12, color: '#4B5563', marginBottom: 12, lineHeight: 1.6 }}>
+      <div style={{ fontSize: 12, color: '#9AA0A8', marginBottom: 12, lineHeight: 1.6 }}>
         {isPaid ? 'Tus beneficios incluidos en el plan.' : 'Elige tu rango y actívalo en cualquier sucursal Quest.'}
       </div>
 
       {/* National coverage note */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
-        background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)',
-        borderRadius: 12, padding: '10px 14px', marginBottom: 20,
+        background: '#161619', border: '1px solid rgba(255,255,255,0.055)',
+        borderRadius: 14, padding: '10px 14px', marginBottom: 20,
       }}>
-        <SAFlag size={14} color="#34D399" />
-        <span style={{ fontSize: 12, color: '#34D399', fontWeight: 600, lineHeight: 1.5 }}>
+        <SAFlag size={14} color="#3DDC84" />
+        <span style={{ fontSize: 12, color: '#9AA0A8', fontWeight: 600, lineHeight: 1.5 }}>
           Tus beneficios de tienda aplican en cualquier sucursal Quest a nivel nacional.
         </span>
       </div>
@@ -344,9 +342,9 @@ function MembresiaView({ profile }) {
         const waText = encodeURIComponent(`Hola Quest! Me interesa la membresía ${tier.name} ($${tier.price.replace('$','')}/mes). ¿Cómo la activo?`)
         return (
         <div key={tier.id} style={{
-          background: tier.bg,
-          borderRadius: 20,
-          border: `1.5px solid ${tier.border}`,
+          background: '#161619',
+          borderRadius: 24,
+          border: '1px solid rgba(255,255,255,0.055)',
           marginBottom: 18,
           overflow: 'hidden',
           position: 'relative',
@@ -354,9 +352,9 @@ function MembresiaView({ profile }) {
           {/* popular strip */}
           {tier.popular && (
             <div style={{
-              background: `linear-gradient(90deg, ${tier.color}CC, ${tier.color}88)`,
+              background: '#1C1C21',
               padding: '5px 0', textAlign: 'center',
-              fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', color: '#000',
+              fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', color: tier.color,
             }}>★ MÁS POPULAR</div>
           )}
 
@@ -366,21 +364,19 @@ function MembresiaView({ profile }) {
             <div style={{
               width: 56, height: 56, borderRadius: 16, flexShrink: 0,
               background: `${tier.color}18`,
-              border: `1.5px solid ${tier.color}40`,
+              border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 0 18px ${tier.color}40`,
             }}>
               <Icon size={28} color={tier.color} />
             </div>
             {/* Name + price */}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: `${tier.color}99`, letterSpacing: '0.14em', marginBottom: 2 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', marginBottom: 2 }}>
                 {tier.rank}
               </div>
               <div style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 34, lineHeight: 1, color: tier.color,
-                textShadow: `0 0 24px ${tier.color}70`,
                 letterSpacing: '0.04em',
               }}>
                 {tier.name}
@@ -390,12 +386,12 @@ function MembresiaView({ profile }) {
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 38, color: '#FFF', lineHeight: 1 }}>
                 {tier.price}
               </div>
-              <div style={{ fontSize: 11, color: '#4B5563', marginTop: 2 }}>/mes</div>
+              <div style={{ fontSize: 11, color: '#6E747D', marginTop: 2 }}>/mes</div>
             </div>
           </div>
 
           {/* ── Store benefits ── */}
-          <div style={{ height: 1, background: `${tier.color}18` }} />
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.055)' }} />
           <button onClick={() => toggle(`${tier.id}-store`)} style={{
             width: '100%', padding: '13px 20px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -403,12 +399,12 @@ function MembresiaView({ profile }) {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <SATruck size={14} color={tier.color} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#D1D5DB' }}>Tienda</span>
-              <span style={{ fontSize: 10, fontWeight: 800, color: tier.color, background: `${tier.color}22`, borderRadius: 10, padding: '2px 7px' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#E7E9EC' }}>Tienda</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: tier.color, background: 'rgba(255,255,255,0.07)', borderRadius: 999, padding: '2px 7px' }}>
                 {tier.store.length}
               </span>
             </div>
-            <span style={{ fontSize: 11, color: '#4B5563', display: 'inline-block', transform: open[`${tier.id}-store`] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+            <span style={{ fontSize: 11, color: '#6E747D', display: 'inline-block', transform: open[`${tier.id}-store`] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
           </button>
           {open[`${tier.id}-store`] && (
             <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -416,19 +412,19 @@ function MembresiaView({ profile }) {
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
                   <div style={{
                     width: 22, height: 22, borderRadius: 8, flexShrink: 0,
-                    background: `${tier.color}18`, border: `1px solid ${tier.color}30`,
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.055)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {BENEFIT_ICON[perk.icon]?.(tier.color)}
                   </div>
-                  <span style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, paddingTop: 3 }}>{perk.text}</span>
+                  <span style={{ fontSize: 12, color: '#9AA0A8', lineHeight: 1.6, paddingTop: 3 }}>{perk.text}</span>
                 </div>
               ))}
             </div>
           )}
 
           {/* ── App benefits ── */}
-          <div style={{ height: 1, background: `${tier.color}12` }} />
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.055)' }} />
           <button onClick={() => toggle(`${tier.id}-app`)} style={{
             width: '100%', padding: '13px 20px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -436,12 +432,12 @@ function MembresiaView({ profile }) {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <SABolt size={14} color={tier.color} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#D1D5DB' }}>App</span>
-              <span style={{ fontSize: 10, fontWeight: 800, color: tier.color, background: `${tier.color}22`, borderRadius: 10, padding: '2px 7px' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#E7E9EC' }}>App</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: tier.color, background: 'rgba(255,255,255,0.07)', borderRadius: 999, padding: '2px 7px' }}>
                 {tier.app.length}
               </span>
             </div>
-            <span style={{ fontSize: 11, color: '#4B5563', display: 'inline-block', transform: open[`${tier.id}-app`] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+            <span style={{ fontSize: 11, color: '#6E747D', display: 'inline-block', transform: open[`${tier.id}-app`] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
           </button>
           {open[`${tier.id}-app`] && (
             <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -449,12 +445,12 @@ function MembresiaView({ profile }) {
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
                   <div style={{
                     width: 22, height: 22, borderRadius: 8, flexShrink: 0,
-                    background: `${tier.color}18`, border: `1px solid ${tier.color}30`,
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.055)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {BENEFIT_ICON[perk.icon]?.(tier.color)}
                   </div>
-                  <span style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, paddingTop: 3 }}>{perk.text}</span>
+                  <span style={{ fontSize: 12, color: '#9AA0A8', lineHeight: 1.6, paddingTop: 3 }}>{perk.text}</span>
                 </div>
               ))}
             </div>
@@ -467,15 +463,14 @@ function MembresiaView({ profile }) {
               target="_blank" rel="noopener noreferrer"
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
-                padding: '13px 0', borderRadius: 12, textDecoration: 'none',
-                background: `linear-gradient(135deg, ${tier.color}22, ${tier.color}0D)`,
-                border: `1.5px solid ${tier.color}50`,
-                color: tier.color, fontFamily: 'Inter, sans-serif',
-                fontSize: 13, fontWeight: 800,
-                boxShadow: `0 4px 20px ${tier.color}25`,
+                padding: '13px 0', borderRadius: 999, textDecoration: 'none',
+                background: '#25D366',
+                border: 'none',
+                color: '#FFFFFF', fontFamily: 'Inter, sans-serif',
+                fontSize: 13, fontWeight: 700,
               }}
             >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill={tier.color}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="#FFFFFF"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
               Activar {tier.name}
             </a>
           </div>
@@ -539,21 +534,21 @@ function QPointsView({ profile, onRedeemed }) {
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 40px' }}>
       {/* Balance card */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(251,191,36,0.12), rgba(251,191,36,0.04))',
-        border: '1.5px solid rgba(251,191,36,0.25)',
-        borderRadius: 16, padding: '20px 20px 18px', marginBottom: 16,
+        background: '#161619',
+        border: '1px solid rgba(255,255,255,0.055)',
+        borderRadius: 24, padding: '20px 20px 18px', marginBottom: 16,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-          <Icon id="diamond" size={13} color="#FBBF24" />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#92400E', letterSpacing: '0.08em' }}>TUS Q COINS</span>
+          <Icon id="diamond" size={13} color="#F5C34B" />
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em' }}>TUS Q COINS</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontSize: 48, fontWeight: 800, color: '#FBBF24', fontFamily: 'Inter, sans-serif', lineHeight: 1 }}>
+          <span style={{ fontSize: 48, fontWeight: 800, color: '#F5C34B', fontFamily: 'Inter, sans-serif', lineHeight: 1 }}>
             {balance.toLocaleString()}
           </span>
-          <span style={{ fontSize: 14, color: '#92400E', fontWeight: 700 }}>Q Coins</span>
+          <span style={{ fontSize: 14, color: '#9AA0A8', fontWeight: 700 }}>Q Coins</span>
         </div>
-        <div style={{ fontSize: 12, color: '#92400E', marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: '#9AA0A8', marginTop: 4 }}>
           ≈ ${(balance / 1000).toFixed(2)} en crédito de tienda
         </div>
       </div>
@@ -561,20 +556,20 @@ function QPointsView({ profile, onRedeemed }) {
       {/* Redeem section */}
       {canRedeem && (
         <div style={{
-          background: '#111', border: '1px solid #2A2A2A',
-          borderRadius: 14, padding: '14px 14px 16px', marginBottom: 16,
+          background: '#161619', border: '1px solid rgba(255,255,255,0.055)',
+          borderRadius: 20, padding: '14px 14px 16px', marginBottom: 16,
         }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Icon id="diamond" size={12} color="#FBBF24" />
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Icon id="diamond" size={12} color="#F5C34B" />
             Canjear Q Coins
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             {[1000, 2000, 5000].filter(v => v <= balance).map(v => (
               <button key={v} onClick={() => setRedeemAmt(v)} style={{
-                flex: 1, padding: '8px 0', borderRadius: 8,
-                background: redeemAmt === v ? 'rgba(251,191,36,0.15)' : '#1A1A1A',
-                border: `1.5px solid ${redeemAmt === v ? 'rgba(251,191,36,0.5)' : '#2A2A2A'}`,
-                color: redeemAmt === v ? '#FBBF24' : '#6B7280',
+                flex: 1, padding: '9px 0', borderRadius: 14,
+                background: redeemAmt === v ? '#FFFFFF' : '#1C1C21',
+                border: 'none',
+                color: redeemAmt === v ? '#0B0B0D' : '#9AA0A8',
                 fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
               }}>
                 {v.toLocaleString()}<br/>
@@ -583,7 +578,7 @@ function QPointsView({ profile, onRedeemed }) {
             ))}
           </div>
           {redeemMsg && (
-            <div style={{ fontSize: 12, color: redeemMsg.startsWith('✅') ? '#4ADE80' : '#F87171', marginBottom: 10, fontFamily: 'Inter, sans-serif' }}>
+            <div style={{ fontSize: 12, color: redeemMsg.startsWith('✅') ? '#3DDC84' : '#F65959', marginBottom: 10, fontFamily: 'Inter, sans-serif' }}>
               {redeemMsg}
             </div>
           )}
@@ -601,10 +596,10 @@ function QPointsView({ profile, onRedeemed }) {
               setRedeemBusy(false)
             }}
             style={{
-              width: '100%', padding: '12px 0', borderRadius: 10,
-              background: redeemBusy ? '#1A1A1A' : '#FBBF24',
-              border: 'none', color: redeemBusy ? '#555' : '#111',
-              fontSize: 14, fontWeight: 800, cursor: redeemBusy ? 'default' : 'pointer',
+              width: '100%', padding: '13px 0', borderRadius: 999,
+              background: redeemBusy ? '#232329' : '#FFFFFF',
+              border: 'none', color: redeemBusy ? '#6E747D' : '#0B0B0D',
+              fontSize: 14, fontWeight: 700, cursor: redeemBusy ? 'default' : 'pointer',
               fontFamily: 'Inter, sans-serif',
             }}
           >
@@ -614,8 +609,8 @@ function QPointsView({ profile, onRedeemed }) {
       )}
 
       {/* How to earn */}
-      <div style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: 14, padding: '14px 14px 8px', marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#4B5563', marginBottom: 10 }}>Cómo ganar Q Coins</div>
+      <div style={{ background: '#161619', border: '1px solid rgba(255,255,255,0.055)', borderRadius: 20, padding: '14px 14px 8px', marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8F98', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Cómo ganar Q Coins</div>
         {[
           ['edit',    'Crear un post',              '+10', 'máx 5/día'],
           ['heart',   'Recibir un like',             '+1',  ''],
@@ -623,26 +618,26 @@ function QPointsView({ profile, onRedeemed }) {
           ['package', 'Envío confirmado',            '+10', ''],
           ['gavel',   'Ganar una subasta',           '+10', ''],
         ].map(([iconId, label, coins, cap]) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #1A1A1A' }}>
+          <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.055)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Icon id={iconId} size={14} color="#6B7280" />
-              <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>{label}</span>
+              <Icon id={iconId} size={14} color="#6E747D" />
+              <span style={{ fontSize: 12, color: '#9AA0A8', fontFamily: 'Inter, sans-serif' }}>{label}</span>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: '#FBBF24', fontFamily: 'Inter, sans-serif' }}>{coins}</span>
-              {cap && <div style={{ fontSize: 9, color: '#4B5563' }}>{cap}</div>}
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#F5C34B', fontFamily: 'Inter, sans-serif' }}>{coins}</span>
+              {cap && <div style={{ fontSize: 9, color: '#6E747D' }}>{cap}</div>}
             </div>
           </div>
         ))}
-        <div style={{ fontSize: 10, color: '#374151', marginTop: 8, textAlign: 'center' }}>1000 Q Coins = $1.00 en tienda</div>
+        <div style={{ fontSize: 10, color: '#6E747D', marginTop: 8, textAlign: 'center' }}>1000 Q Coins = $1.00 en tienda</div>
       </div>
 
       {/* Premium upsell */}
       {profile?.role !== 'premium' && profile?.role !== 'admin' && (
         <div style={{
-          background: 'linear-gradient(135deg, rgba(167,139,250,0.12), rgba(167,139,250,0.04))',
-          border: '1.5px solid rgba(167,139,250,0.25)',
-          borderRadius: 14, padding: '14px 16px', marginBottom: 16,
+          background: '#161619',
+          border: '1px solid rgba(255,255,255,0.055)',
+          borderRadius: 20, padding: '14px 16px', marginBottom: 16,
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <Icon id="diamond" size={22} color="#A78BFA" />
@@ -752,13 +747,13 @@ function DecksView() {
             flex: 1,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             padding: '12px 12px', borderRadius: 12,
-            background: 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)',
+            background: '#FFFFFF',
             border: 'none', cursor: 'pointer',
-            color: '#FFFFFF', fontSize: 13, fontWeight: 800,
+            color: '#0B0B0D', fontSize: 13, fontWeight: 800,
             fontFamily: 'Inter, sans-serif',
             letterSpacing: '0.005em',
-            boxShadow: '0 6px 18px rgba(251,146,60,0.22), 0 2px 6px rgba(167,139,250,0.14), inset 0 1px 0 rgba(255,255,255,0.28)',
-            textShadow: '0 1px 0 rgba(0,0,0,0.18)',
+            boxShadow: 'none',
+            textShadow: 'none',
           }}
         ><Layers size={16} strokeWidth={2.3} />
           IMPORTAR
@@ -1483,13 +1478,13 @@ function RecordView({ onBattleNow }) {
             width: '100%', marginBottom: 14,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             padding: '14px 16px', borderRadius: 14,
-            background: 'linear-gradient(135deg, #FB923C 0%, #F472B6 60%, #A78BFA 130%)',
+            background: '#FFFFFF',
             border: 'none', cursor: 'pointer',
-            color: '#FFFFFF', fontSize: 14, fontWeight: 800,
+            color: '#0B0B0D', fontSize: 14, fontWeight: 800,
             fontFamily: 'Inter, sans-serif',
             letterSpacing: '0.01em',
-            boxShadow: '0 10px 28px rgba(251,146,60,0.25), 0 4px 10px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.3)',
-            textShadow: '0 1px 0 rgba(0,0,0,0.18)',
+            boxShadow: 'none',
+            textShadow: 'none',
             transition: 'transform 200ms cubic-bezier(0.34,1.56,0.64,1)',
           }}
         >
@@ -1890,7 +1885,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
   return (
     <div style={{
       position: 'absolute', inset: 0, zIndex: 200,
-      background: '#0A0A0A', display: 'flex', flexDirection: 'column',
+      background: '#050506', display: 'flex', flexDirection: 'column',
       paddingTop: 'env(safe-area-inset-top, 0px)',
       animation: 'slideDown 0.22s ease',
     }}>
