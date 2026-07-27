@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from 'react'
 // We use stroke-weight + color to imply "active" since Lucide is
 // stroke-only (no fill weight like Phosphor).
 import {
-  Home, ShoppingBag, Trophy, Heart, Bell, ArrowLeftRight,
+  Home, ShoppingBag, Trophy, Heart, Bell, ArrowLeftRight, Dice5,
 } from 'lucide-react'
 import Avatar from './Avatar'
 import { HAPTIC } from '../lib/design-tokens'
@@ -183,7 +183,7 @@ export function BottomNav({
     ...(canShop ? [{ id: 'shop', label: 'Tienda', icon: Lu(ShoppingBag, 22), action: () => onTab('shop') }] : []),
     { id: 'post',   label: 'Crear',  icon: null,                    action: onPost, variant: 'primary' },
     { id: 'market', label: 'Trade',  icon: Lu(ArrowLeftRight, 23),  action: () => onTab('market') },
-    { id: 'life',   label: 'Vida',   icon: Lu(Heart,          23),  action: onLifeCounter },
+    { id: 'life',   label: 'Vida',   icon: Lu(Dice5,          23),  action: onLifeCounter },
   ]
   return <OwnerBottomNav active={active} hidden={hidden} tabs={tabs} />
 }
