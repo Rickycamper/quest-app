@@ -149,6 +149,20 @@ export const CameraIcon = ({ size = 24, color = 'currentColor' }) => (
   </svg>
 )
 
+// Dado de 20 caras (d20) — no existe en lucide, así que lo dibujamos con
+// su mismo lenguaje (stroke-only, viewBox 24, API size/color/strokeWidth):
+// silueta hexagonal + cara triangular superior + aristas a los vértices.
+export const D20Icon = ({ size = 23, color = 'currentColor', strokeWidth = 1.8 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="12 2 20.7 7 20.7 17 12 22 3.3 17 3.3 7" />
+    <polygon points="12 7.5 15.9 14.25 8.1 14.25" />
+    <line x1="12" y1="7.5" x2="12" y2="2" />
+    <line x1="8.1" y1="14.25" x2="3.3" y2="17" />
+    <line x1="15.9" y1="14.25" x2="20.7" y2="17" />
+  </svg>
+)
+
 export const RefreshIcon = ({ size = 14, color = 'currentColor', spinning = false }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
     style={spinning ? { animation: 'spin 0.9s linear infinite' } : undefined}>
