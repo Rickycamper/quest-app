@@ -5,7 +5,7 @@
 // Search bar across all sections
 // ─────────────────────────────────────────────
 import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react'
-import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, markReservationReady, searchUsers, notifyOwnerOfShopChange, createPreorder } from '../lib/supabase'
+import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, markReservationReady, searchUsers, notifyOwnerOfShopChange, createPreorder, supabase } from '../lib/supabase'
 import { downloadTicket } from '../lib/ticket'
 import { useAuth } from '../context/AuthContext'
 import { GAMES, GAME_STYLES } from '../lib/constants'
@@ -462,6 +462,7 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
   const [preQty,     setPreQty]     = useState(1)      // pre order: 1..PREORDER_MAX
   const [preLoading, setPreLoading] = useState(false)  // creando nº de orden
   const [preTicket,  setPreTicket]  = useState(null)   // { code, qty } → modal ticket
+  const [paidOrder,  setPaidOrder]  = useState(null)   // pago online confirmado
   const [priceFetch, setPriceFetch] = useState('idle') // 'idle' | 'loading' | '✓ SCG' | '✓ Scryfall' | '✓ TCGPlayer'
   const [imageUrl,   setImageUrl]   = useState(product.image_url ?? '')
   const [imgError,   setImgError]   = useState(false)
@@ -929,20 +930,32 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
                   </button>
                 </div>
               ) : (
-                <button onClick={handleAsk} style={{
-                  width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
-                  background: '#25D366', color: '#FFF',
-                  fontSize: 14, fontWeight: 800, cursor: 'pointer',
-                  fontFamily: 'Inter, sans-serif',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                }}>
-                  <WAIcon size={15} /> Preguntar por WhatsApp
-                </button>
+                <>
+                  {/* Pago online — SOLO productos en stock con precio publicado.
+                      Los pre orders quedan afuera a propósito. */}
+                  {totalStock(product) > 0 && Number(product.price) > 0 && (
+                    <PayOnlineBlock product={product} onPaid={setPaidOrder} />
+                  )}
+                  <button onClick={handleAsk} style={{
+                    width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
+                    background: '#25D366', color: '#FFF',
+                    fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                    fontFamily: 'Inter, sans-serif',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}>
+                    <WAIcon size={15} /> Preguntar por WhatsApp
+                  </button>
+                </>
               )}
             </div>
           )}
         </div>
       </div>
+
+      {/* Comprobante del pago online */}
+      {paidOrder && (
+        <PaidOrderModal order={paidOrder} product={product} onClose={() => setPaidOrder(null)} />
+      )}
 
       {/* Ticket del pre order — número de orden + descarga + WhatsApp */}
       {preTicket && (
@@ -954,6 +967,206 @@ function ProductDetailSheet({ product, onClose, isOwner = false, onSave, onDelet
           onClose={() => setPreTicket(null)}
         />
       )}
+    </div>
+  )
+}
+
+// ── Pago online con PayPal (SOLO productos en stock) ──────────────────
+// Los pre orders NO se pagan online: tardan meses y ahí es donde pegan las
+// disputas y los reembolsos vencidos. Acá se vende lo que ya está en tienda.
+let _ppSdk = null
+function loadPayPalSdk(clientId, currency = 'USD') {
+  if (_ppSdk) return _ppSdk
+  _ppSdk = new Promise((resolve, reject) => {
+    if (window.paypal) return resolve(window.paypal)
+    const s = document.createElement('script')
+    s.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${currency}&intent=capture&disable-funding=paylater`
+    s.onload = () => window.paypal ? resolve(window.paypal) : reject(new Error('sdk'))
+    s.onerror = () => { _ppSdk = null; reject(new Error('No se pudo cargar PayPal')) }
+    document.head.appendChild(s)
+  })
+  return _ppSdk
+}
+
+const PP_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID
+
+function PayOnlineBlock({ product, onPaid }) {
+  const [qty, setQty]       = useState(1)
+  const [branch, setBranch] = useState(null)
+  const [err, setErr]       = useState('')
+  const [busy, setBusy]     = useState(false)
+  const boxRef = useRef(null)
+  const stateRef = useRef({ qty: 1, branch: null })
+  useEffect(() => { stateRef.current = { qty, branch } }, [qty, branch])
+
+  // Sucursales con stock — el cliente elige dónde retira
+  const options = [
+    { key: 'david',  label: 'David',  stock: product.qty_david  ?? 0 },
+    { key: 'panama', label: 'Panamá', stock: product.qty_panama ?? 0 },
+    { key: 'chitre', label: 'Chitré', stock: product.qty_chitre ?? 0 },
+  ].filter(b => b.stock > 0)
+
+  useEffect(() => { if (!branch && options.length === 1) setBranch(options[0].key) }, []) // eslint-disable-line
+  const maxQty = branch ? (options.find(o => o.key === branch)?.stock ?? 1) : 1
+  useEffect(() => { setQty(q => Math.min(q, Math.max(1, maxQty))) }, [maxQty])
+
+  // Monta los botones de PayPal una vez elegida la sucursal
+  useEffect(() => {
+    if (!PP_CLIENT_ID || !branch || !boxRef.current) return
+    let cancelled = false
+    boxRef.current.innerHTML = ''
+    loadPayPalSdk(PP_CLIENT_ID)
+      .then(paypal => {
+        if (cancelled || !boxRef.current) return
+        paypal.Buttons({
+          style: { layout: 'vertical', shape: 'pill', height: 46, label: 'pay' },
+          createOrder: async () => {
+            setErr(''); setBusy(true)
+            const { qty: q, branch: b } = stateRef.current
+            const r = await fetch('/api/paypal', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'create', productId: product.id, qty: q, branch: b }),
+            })
+            const d = await r.json()
+            setBusy(false)
+            if (!r.ok) { setErr(d.error || 'No se pudo iniciar el pago'); throw new Error(d.error) }
+            return d.id
+          },
+          onApprove: async (data) => {
+            setBusy(true); setErr('')
+            const { data: { session } } = await supabase.auth.getSession()
+            const r = await fetch('/api/paypal', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+              },
+              body: JSON.stringify({ action: 'capture', paypalOrderId: data.orderID }),
+            })
+            const d = await r.json()
+            setBusy(false)
+            if (!r.ok) { setErr(d.error || 'El pago no se pudo confirmar'); return }
+            onPaid?.(d)
+          },
+          onError: () => { setBusy(false); setErr('Hubo un problema con PayPal. Intentá de nuevo.') },
+          onCancel: () => { setBusy(false) },
+        }).render(boxRef.current).catch(() => {})
+      })
+      .catch(() => setErr('No se pudo cargar PayPal'))
+    return () => { cancelled = true }
+  }, [branch, product.id])
+
+  if (!PP_CLIENT_ID) return null   // sin credenciales, el bloque no aparece
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 12,
+      padding: 14, borderRadius: 14,
+      background: 'rgba(96,165,250,0.06)',
+      border: '1px solid rgba(96,165,250,0.25)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: '#60A5FA', fontFamily: 'Inter, sans-serif' }}>
+          COMPRAR ONLINE
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Cantidad</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#111', borderRadius: 10, padding: 3, border: '1px solid #2A2A2A' }}>
+            <button onClick={(e) => { e.stopPropagation(); setQty(q => Math.max(1, q - 1)) }} style={qtyBtnStyle(qty > 1)}>−</button>
+            <span style={{ minWidth: 22, textAlign: 'center', fontSize: 15, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums' }}>{qty}</span>
+            <button onClick={(e) => { e.stopPropagation(); setQty(q => Math.min(maxQty, q + 1)) }} style={qtyBtnStyle(qty < maxQty)}>+</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sucursal de retiro */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Retirás en</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {options.map(b => (
+            <button key={b.key} onClick={(e) => { e.stopPropagation(); setBranch(b.key) }} style={{
+              flex: 1, padding: '9px 6px', borderRadius: 10, cursor: 'pointer',
+              background: branch === b.key ? 'rgba(96,165,250,0.16)' : '#111',
+              border: `1px solid ${branch === b.key ? 'rgba(96,165,250,0.6)' : '#2A2A2A'}`,
+              color: branch === b.key ? '#FFF' : '#9CA3AF',
+              fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+            }}>
+              {b.label}
+              <span style={{ display: 'block', fontSize: 9, color: '#6B7280', fontWeight: 600 }}>{b.stock} disp.</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Total</span>
+        <span style={{ fontSize: 20, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
+          {fmtPrice(Number(product.price) * qty)}
+        </span>
+      </div>
+
+      {err && <div style={{ fontSize: 12, color: '#F87171', fontFamily: 'Inter, sans-serif' }}>{err}</div>}
+
+      {branch ? (
+        <div ref={boxRef} style={{ minHeight: 46, opacity: busy ? 0.6 : 1, pointerEvents: busy ? 'none' : 'auto' }} />
+      ) : (
+        <div style={{ fontSize: 12, color: '#6B7280', textAlign: 'center', padding: '10px 0', fontFamily: 'Inter, sans-serif' }}>
+          Elegí la sucursal para pagar
+        </div>
+      )}
+
+      <span style={{ fontSize: 10.5, color: '#6B7280', textAlign: 'center', fontFamily: 'Inter, sans-serif', lineHeight: 1.5 }}>
+        Pagás con PayPal (o tarjeta) y retirás en tienda con tu número de pedido.
+      </span>
+    </div>
+  )
+}
+
+// ── Comprobante del pedido pagado ─────────────
+function PaidOrderModal({ order, product, onClose }) {
+  return (
+    <div onClick={(e) => { e.stopPropagation(); onClose() }} style={{
+      position: 'fixed', inset: 0, zIndex: 90,
+      background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+      animation: 'fadeUp 0.2s ease',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: '100%', maxWidth: 360,
+        background: '#101014', border: '1px solid rgba(74,222,128,0.35)',
+        borderRadius: 20, padding: '22px 20px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+        boxShadow: '0 18px 50px rgba(0,0,0,0.6)',
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.16em', color: '#4ADE80', fontFamily: 'Inter, sans-serif' }}>✓ PAGO CONFIRMADO</span>
+        <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Tu número de pedido</span>
+        <span style={{
+          fontSize: 34, fontWeight: 900, color: '#FFF', fontFamily: 'SF Mono, Menlo, monospace',
+          letterSpacing: '0.04em', padding: '8px 22px', borderRadius: 12,
+          border: '2px solid rgba(74,222,128,0.5)', background: 'rgba(74,222,128,0.07)',
+        }}>{order.code}</span>
+        <div style={{ textAlign: 'center', fontSize: 13, color: '#E5E7EB', fontFamily: 'Inter, sans-serif', lineHeight: 1.5 }}>
+          {product.name}<br />
+          <span style={{ color: '#9CA3AF', fontSize: 12 }}>
+            Cantidad: {order.qty} · Total pagado: ${order.total}
+          </span>
+        </div>
+        <div style={{
+          width: '100%', padding: '10px 12px', borderRadius: 10, textAlign: 'center',
+          background: 'rgba(74,222,128,0.09)', border: '1px solid rgba(74,222,128,0.25)',
+          fontSize: 12.5, color: '#BBF7D0', fontFamily: 'Inter, sans-serif', lineHeight: 1.45,
+        }}>
+          Retirás en <strong>{order.branch}</strong> — mostrá este número.
+        </div>
+        <span style={{ fontSize: 11, color: '#6B7280', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
+          También podés verlo cuando quieras en Mis Pedidos.
+        </span>
+        <button onClick={onClose} style={{
+          width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
+          background: '#FFFFFF', color: '#111', fontSize: 14, fontWeight: 800,
+          cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+        }}>Listo</button>
+      </div>
     </div>
   )
 }

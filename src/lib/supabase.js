@@ -3261,7 +3261,7 @@ export async function getMyOrders() {
   const uid = session?.user?.id
   if (!uid) return []
 
-  const [resv, pre] = await Promise.all([
+  const [resv, pre, paid] = await Promise.all([
     supabase.from('shop_reservations')
       .select('*, product:product_id(name, game, price, image_url)')
       .eq('user_id', uid)
@@ -3272,6 +3272,11 @@ export async function getMyOrders() {
       .eq('user_id', uid)
       .order('created_at', { ascending: false })
       .then(r => r.data ?? [], () => []),   // tabla puede no existir aún
+    supabase.from('shop_orders')            // compras pagadas online (PayPal)
+      .select('*')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .then(r => r.data ?? [], () => []),
   ])
 
   const items = [
@@ -3288,6 +3293,14 @@ export async function getMyOrders() {
       name: p.product_name, game: p.game, price: p.price, image: null,
       qty: p.qty, paidPct: null, branch: null,
       createdAt: p.created_at,
+    })),
+    ...paid.map(o => ({
+      kind: 'paid', id: o.id, code: o.code,
+      name: o.product_name, game: null, price: o.unit_price, image: null,
+      qty: o.qty, paidPct: 100, branch: o.branch,
+      readyAt: o.ready_at ?? null, pickupNote: o.pickup_note ?? null,
+      total: o.total, status: o.status,
+      createdAt: o.created_at,
     })),
   ]
   return items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
