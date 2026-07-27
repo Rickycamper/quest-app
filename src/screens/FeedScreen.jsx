@@ -700,10 +700,12 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
           {shared && <span style={{ fontSize: 11.5, color: COLOR.green, fontWeight: WEIGHT.semibold }}>Copiado</span>}
         </button>
 
-        {/* Game icon — pushed to the right */}
+        {/* Game icon — pushed to the right (📰 para posts de Noticia) */}
         {post.tag && (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', opacity: 0.75 }}>
-            <GameIcon game={post.tag} size={18} />
+            {post.tag === 'Noticia'
+              ? <span style={{ fontSize: 15, lineHeight: 1 }} title="Noticia">📰</span>
+              : <GameIcon game={post.tag} size={18} />}
           </div>
         )}
       </div>
@@ -729,7 +731,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
               fontWeight: WEIGHT.regular,
               letterSpacing: '-0.005em',
             }}>
-              {displayed}
+              {linkify(displayed)}
               {shouldTruncate && (
                 <>
                   {'… '}
@@ -782,7 +784,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
                   fontSize: 12.5, fontWeight: WEIGHT.semibold, color: COLOR.text,
                   marginRight: 6, letterSpacing: '-0.005em',
                 }}>{c.profiles?.username ?? 'user'}</span>
-                <span style={{ fontSize: 12.5, color: '#D1D5DB', lineHeight: 1.45 }}>{c.content}</span>
+                <span style={{ fontSize: 12.5, color: '#D1D5DB', lineHeight: 1.45 }}>{linkify(c.content)}</span>
               </div>
             </div>
           ))}
@@ -845,6 +847,25 @@ const menuIconBtn = {
   color: '#9CA3AF', padding: '7px 10px', borderRadius: 8,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   transition: 'background 0.15s, color 0.15s',
+}
+
+// Links clickeables en captions/comentarios (hyperlinks de noticias, etc.)
+const URL_RE = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi
+function linkify(text) {
+  return String(text).split(URL_RE).map((part, i) => {
+    if (!part) return null
+    if (/^(https?:\/\/|www\.)/i.test(part)) {
+      const href = part.startsWith('http') ? part : `https://${part}`
+      return (
+        <a key={i} href={href} target="_blank" rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          style={{ color: '#FBBF24', textDecoration: 'underline', wordBreak: 'break-all' }}>
+          {part}
+        </a>
+      )
+    }
+    return part
+  })
 }
 
 const PULL_THRESHOLD = 65

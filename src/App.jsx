@@ -656,7 +656,9 @@ const needsTerms = profile && !profile.terms_accepted_at
           onOpenChat={(u) => { setChatUser(u); setShowNotifs(false) }}
           onViewProfile={(id) => { setViewingUserId(id); setShowNotifs(false) }} />
       )}
-      {showPost   && <CreatePostModal onClose={() => setShowPost(false)} />}
+      {/* marketMode: si estás en Trade y Ventas, el modal pide Venta/Trade;
+          desde el feed es un post de comunidad (TCG o Noticia, sin tipos). */}
+      {showPost   && <CreatePostModal marketMode={activeTab === 'market'} onClose={() => setShowPost(false)} />}
       {showSearch && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 200, background: '#0A0A0A', display: 'flex', flexDirection: 'column', animation: 'slideDown 0.22s ease' }}>
           <div style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)', paddingLeft: 16, paddingRight: 16, paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 10, background: '#111', borderBottom: '1px solid #1F1F1F' }}>

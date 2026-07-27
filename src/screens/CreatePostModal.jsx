@@ -154,18 +154,26 @@ async function compressAndCrop(file, cropX, cropY, targetRatio = null, fitMode =
   })
 }
 
+// Tipos SOLO para la zona de Trade y Ventas (marketMode). El post normal del
+// feed ya no pregunta tipo: es post de comunidad, con TCG o Noticia.
 const POST_TYPES = [
-  { id: 'quiero', label: 'Compro', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.25)'  },
-  { id: 'tengo',  label: 'Tengo',  color: '#60A5FA', bg: 'rgba(96,165,250,0.12)',  border: 'rgba(96,165,250,0.25)'  },
-  { id: 'tradeo', label: 'Tradeo', color: '#A78BFA', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.25)' },
-  { id: 'vendo',  label: 'Vendo',  color: '#4ADE80', bg: 'rgba(74,222,128,0.12)',  border: 'rgba(74,222,128,0.25)'  },
+  // prefix: se escribe en el caption como [Vendo]/[Tradeo] — tiene que seguir
+  // matcheando el filtro por prefijo del feed (fallback pre-migración).
+  { id: 'vendo',  label: 'Venta',           prefix: 'Vendo',  color: '#4ADE80', bg: 'rgba(74,222,128,0.12)',  border: 'rgba(74,222,128,0.25)'  },
+  { id: 'tradeo', label: 'Abierto a trade', prefix: 'Tradeo', color: '#A78BFA', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.25)' },
 ]
+
+// Chip especial "Noticia" para el post normal (comparte la fila de juegos)
+const NEWS_TAG   = 'Noticia'
+const NEWS_STYLE = { color: '#FBBF24', bg: 'rgba(251,191,36,0.12)', border: 'rgba(251,191,36,0.3)' }
 
 const VIDEO_EXTS = /\.(mp4|mov|webm|avi|mkv)$/i
 const isVideoFile = (f) => f.type?.startsWith('video/') || VIDEO_EXTS.test(f.name)
 const MAX_VIDEO_MB = 100
 
-export default function CreatePostModal({ onClose }) {
+// marketMode: abierto desde Trade y Ventas → pide Venta/Abierto a trade
+// (obligatorio). Sin marketMode (feed) → post de comunidad: TCG o Noticia.
+export default function CreatePostModal({ onClose, marketMode = false }) {
   const toast = useToast()
   const [caption,      setCaption]      = useState('')
   const [game,         setGame]         = useState(null)
@@ -298,6 +306,8 @@ export default function CreatePostModal({ onClose }) {
 
   const handleShare = async () => {
     if (!caption.trim()) return
+    // En la zona de ventas hay que elegir Venta o Abierto a trade
+    if (marketMode && !postType) { setError('Elegí si es Venta o Abierto a trade'); return }
     // Guard against re-entry: if a publish is already running, ignore further
     // taps — even if the safety timer re-enabled the button, the network call
     // may still be in flight, and a second createPost() would duplicate the post.
@@ -316,7 +326,7 @@ export default function CreatePostModal({ onClose }) {
 
     try {
       const pt = POST_TYPES.find(p => p.id === postType)
-      const typePrefix = pt ? `[${pt.label}] ` : ''
+      const typePrefix = pt ? `[${pt.prefix}] ` : ''
       const privTag = isPrivate ? '[PRIVADO] ' : ''
       const finalCaption = `${typePrefix}${privTag}${caption.trim()}`
 
@@ -426,32 +436,49 @@ export default function CreatePostModal({ onClose }) {
 
       <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', display: limitReached ? 'none' : undefined }}>
 
-        {/* Post type */}
-        <div style={{ padding: '14px 16px 6px' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>TIPO DE POST</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {POST_TYPES.map(p => {
-              const active = postType === p.id
-              return (
-                <button key={p.id}
-                  onClick={() => setPostType(prev => prev === p.id ? null : p.id)}
-                  style={{
-                    padding: '7px 14px', borderRadius: 8, flexShrink: 0,
-                    border: `1.5px solid ${active ? p.border : '#2A2A2A'}`,
-                    background: active ? p.bg : 'transparent',
-                    color: active ? p.color : '#4B5563',
-                    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                    transition: 'all 0.15s',
-                  }}>{p.label}</button>
-              )
-            })}
+        {/* Tipo — SOLO en la zona de Trade y Ventas (obligatorio) */}
+        {marketMode && (
+          <div style={{ padding: '14px 16px 6px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>¿VENTA O TRADE?</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {POST_TYPES.map(p => {
+                const active = postType === p.id
+                return (
+                  <button key={p.id}
+                    onClick={() => setPostType(prev => prev === p.id ? null : p.id)}
+                    style={{
+                      padding: '7px 14px', borderRadius: 8, flexShrink: 0,
+                      border: `1.5px solid ${active ? p.border : '#2A2A2A'}`,
+                      background: active ? p.bg : 'transparent',
+                      color: active ? p.color : '#4B5563',
+                      fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                      transition: 'all 0.15s',
+                    }}>{p.label}</button>
+                )
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* TCG selector */}
-        <div style={{ padding: '10px 16px 6px' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>JUEGO</div>
+        {/* TCG selector (+ Noticia en el post normal del feed) */}
+        <div style={{ padding: marketMode ? '10px 16px 6px' : '14px 16px 6px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', letterSpacing: '0.08em', marginBottom: 8 }}>
+            {marketMode ? 'JUEGO' : 'JUEGO O NOTICIA'}
+          </div>
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
+            {!marketMode && (() => {
+              const isActive = game === NEWS_TAG
+              return (
+                <button onClick={() => setGame(prev => prev === NEWS_TAG ? null : NEWS_TAG)} style={{
+                  padding: '6px 14px', borderRadius: 8, flexShrink: 0,
+                  border: `1.5px solid ${isActive ? NEWS_STYLE.border : '#2A2A2A'}`,
+                  background: isActive ? NEWS_STYLE.bg : 'transparent',
+                  color: isActive ? NEWS_STYLE.color : '#4B5563',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
+                }}>📰 Noticia</button>
+              )
+            })()}
             {GAMES.map(g => {
               const gs = GAME_STYLES[g]
               const isActive = game === g
@@ -467,6 +494,11 @@ export default function CreatePostModal({ onClose }) {
               )
             })}
           </div>
+          {game === NEWS_TAG && (
+            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 7, fontFamily: 'Inter, sans-serif' }}>
+              Pegá el link de la noticia en el texto — queda clickeable para todos.
+            </div>
+          )}
         </div>
 
         {/* Visibility */}
@@ -703,10 +735,9 @@ export default function CreatePostModal({ onClose }) {
           </div>
           <textarea
             placeholder={
-              postType === 'quiero' ? '¿Qué carta o producto estás buscando?' :
-              postType === 'tengo'  ? '¿Qué tenés disponible?' :
               postType === 'tradeo' ? '¿Qué ofrecés y qué buscás a cambio?' :
               postType === 'vendo'  ? '¿Qué vendés? Precio, condición, set...' :
+              game === NEWS_TAG     ? 'Contá la noticia y pegá el link (queda clickeable)...' :
               'Escribí tu publicación...'
             }
             value={caption} onChange={e => setCaption(e.target.value.slice(0, 500))}
