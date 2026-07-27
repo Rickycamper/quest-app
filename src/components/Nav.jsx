@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from 'react'
 // We use stroke-weight + color to imply "active" since Lucide is
 // stroke-only (no fill weight like Phosphor).
 import {
-  Home, ShoppingBag, Trophy, Heart, Bell, ArrowLeftRight,
+  Home, ShoppingBag, Bell, ArrowLeftRight,
 } from 'lucide-react'
 import { D20Icon } from './Icons'
 import Avatar from './Avatar'
