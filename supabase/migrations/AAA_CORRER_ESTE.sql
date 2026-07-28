@@ -222,7 +222,9 @@ ALTER TABLE public.shop_products
 
 -- ─── 6) LIMPIEZA de datos de prueba (QA) ─────────────────────────
 DELETE FROM public.community_messages WHERE author_name IN ('__probe__', 'TesterQA');
-DELETE FROM storage.objects WHERE bucket_id = 'chat' AND name LIKE 'MTG/test/%';
+-- (El archivo de prueba del bucket 'chat' NO se puede borrar por SQL:
+--  Supabase lo bloquea. Es un .txt de 2 bytes en chat/MTG/test/probe.txt;
+--  si querés sacarlo, es desde Storage → chat en el panel. Es inofensivo.)
 DELETE FROM public.posts WHERE caption = '[QA] prueba diagnostico';
 DELETE FROM auth.users
  WHERE email LIKE 'qa.claude.p%.20260720@gmail.com'
