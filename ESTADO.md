@@ -19,7 +19,8 @@ tiene respaldos, pero no guardan):
 | Pre order cerrado | El toggle no guarda |
 | Precio de oferta | El descuento no guarda |
 
-Además limpia los datos de prueba que quedaron del diagnóstico.
+La limpieza de datos de prueba quedó aparte y es **opcional**:
+`supabase/migrations/OPCIONAL_limpieza_qa.sql`.
 
 ## Ramas
 
