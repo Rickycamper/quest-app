@@ -45,9 +45,17 @@ propósito: tardan meses y ahí pegan las disputas y los reembolsos vencidos).
 
 Está completo y probado. Para activarlo:
 
-1. **Credenciales en Vercel** (las generás vos en developer.paypal.com):
-   `PAYPAL_CLIENT_ID`, `PAYPAL_SECRET`, `PAYPAL_ENV=sandbox`,
-   `VITE_PAYPAL_CLIENT_ID`.
+1. **Credenciales en Vercel** (las de PayPal las generás en
+   developer.paypal.com): `PAYPAL_CLIENT_ID`, `PAYPAL_SECRET`,
+   `PAYPAL_ENV=sandbox`, `VITE_PAYPAL_CLIENT_ID` **y
+   `SUPABASE_SERVICE_KEY`** (la key privada/secret de Supabase →
+   Settings → API; antes se llamaba `service_role`). Sin esta última la
+   función devuelve 503 "Base de datos no configurada": la necesita para
+   escribir el pedido salteando RLS. **Nunca con prefijo `VITE_`** — con
+   ese prefijo viaja al navegador de todos los visitantes.
+   Marcá cada variable para **Production y Preview**, y acordate de que
+   `VITE_PAYPAL_CLIENT_ID` se hornea al compilar: hay que **redesplegar**
+   después de cargarla, no alcanza con guardarla.
 2. **Correr** `supabase/migrations/20260726_paypal_orders.sql`.
 3. **Probar en sandbox** (compra completa: baja el stock, aparece el pedido).
    Recién ahí pasar a `PAYPAL_ENV=live`.
