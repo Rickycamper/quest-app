@@ -1,50 +1,116 @@
 # Estado del proyecto — Quest
 
-Resumen de dónde está todo. Actualizar cuando cambie algo importante.
+App de la comunidad TCG de Panamá (questhobbystore.com).
+**Stack:** React 18 + Vite (JSX, estilos inline) · Supabase (Postgres + Auth +
+RLS + Realtime + Storage) · Vercel (hosting + funciones en `api/`).
+Push a `main` → Vercel despliega solo.
 
-## ⚠️ Pendiente: correr el SQL
+> Para retomar: leé este archivo. Está verificado contra producción
+> (jul 2026), no escrito de memoria.
 
-Pegá **`supabase/migrations/AAA_CORRER_ESTE.sql`** completo en
-Supabase → SQL Editor y ejecutá **una vez**. Es idempotente.
+---
 
-Hasta que lo corras, estas features están a medias (la app **no se rompe**,
-tiene respaldos, pero no guardan):
+## 1. En producción y funcionando
 
-| Feature | Sin el SQL |
-|---|---|
-| Feed vs Trade y Ventas | Separa por el prefijo `[Vendo]` del texto |
-| Chat: borrar de invitado | El mensaje vuelve al recargar |
-| Números de pre order (TCG-####) | Pre-ordenar abre WhatsApp sin número |
-| Mis Pedidos / Listo para retirar | Sin números ni aviso de retiro |
-| Pre order cerrado | El toggle no guarda |
-| Precio de oferta | El descuento no guarda |
+La migración grande **ya se aplicó** (verificado: columnas, tablas y
+funciones responden OK en prod). Todo esto está vivo para los usuarios:
 
-Además limpia los datos de prueba que quedaron del diagnóstico.
+- **Feed separado de Trade y Ventas.** El feed son posts de comunidad; las
+  compras/ventas viven en su sección. 72 posts viejos quedaron clasificados
+  automáticamente (41 venta, 19 compra, 9 tengo, 3 trade).
+- **Crear post**: desde el Feed pedís TCG **o Noticia** (con links
+  clickeables); desde Trade y Ventas pide **Venta / Abierto a trade**.
+  Subida unificada estilo IG (un solo botón para foto y video).
+- **Pre orders con número** (`MTG-0001`, `OP-0042`…), máx. 4 por persona,
+  50% de depósito, sujeto a recorte. Ticket descargable en PNG.
+- **Mis Pedidos** (tile en el Q Hub): el cliente ve sus pedidos con número.
+- **Listo para retirar**: el equipo lo marca con una observación
+  (ej. "mañana a partir de las 3pm") y el cliente recibe aviso.
+- **Pre order cerrado**: oculta las cantidades al público; el equipo las
+  sigue viendo.
+- **Precio de oferta**: el equipo carga un precio con descuento y el público
+  ve el precio viejo tachado + el nuevo.
+- **Chat de comunidad** por TCG (texto, foto, nota de voz), invitados
+  incluidos.
+- **Nav** con iconos estándar + etiquetas: Feed · Tienda · Crear · Trade ·
+  Vida (d20).
+- **Desktop** se ve como website (header con navegación, sin barra inferior).
 
-## Ramas
+---
 
-- **`main`** → es lo que ven los usuarios (questhobbystore.com).
-- **`paypal-checkout`** → pago online con PayPal, **solo productos en stock**.
-  Listo y probado, **sin publicar**. Para activarlo:
-  1. Cargar en Vercel: `PAYPAL_CLIENT_ID`, `PAYPAL_SECRET`,
-     `PAYPAL_ENV=sandbox`, `VITE_PAYPAL_CLIENT_ID`.
-  2. Correr `supabase/migrations/20260726_paypal_orders.sql`.
-  3. Probar en sandbox → recién ahí `PAYPAL_ENV=live`.
-  - ✅ Ya cobra el **precio de oferta** cuando el producto tiene descuento
-    (validado en el servidor: el navegador nunca define el precio).
-  - Sin credenciales el bloque de pago no aparece: es seguro publicar.
-- **`rebuild-oneui`** → rediseño visual estilo One UI que **se descartó**
-  (quedó frío/genérico). Se guarda por si sirve alguna pieza suelta.
-- **`redesign`**, **`claude/*`** → ramas viejas, ignorar.
+## 2. Pendiente: PayPal (rama `paypal-checkout`, NO publicado)
 
-## Cosas a tener en cuenta
+Pago online **solo para productos en stock** (los pre orders quedan afuera a
+propósito: tardan meses y ahí pegan las disputas y los reembolsos vencidos).
 
-- **La base de prod está desincronizada** de `supabase/migrations/`: el SQL
-  se aplica a mano en el SQL Editor. Escribir migraciones defensivas
-  (`IF NOT EXISTS`) y que el cliente tolere que la columna no exista.
-- Al crear una tabla, PostgREST tarda unos segundos en verla (da 404 y
-  después anda). No es bug del código.
-- Para verificar si algo existe en prod: probar un **UPLOAD/insert real**,
-  no el GET de metadata (con la anon key da falso negativo).
-- Roles: no existe el rol `owner` — es el booleano `is_owner`.
+Está completo y probado. Para activarlo:
+
+1. **Credenciales en Vercel** (las generás vos en developer.paypal.com):
+   `PAYPAL_CLIENT_ID`, `PAYPAL_SECRET`, `PAYPAL_ENV=sandbox`,
+   `VITE_PAYPAL_CLIENT_ID`.
+2. **Correr** `supabase/migrations/20260726_paypal_orders.sql`.
+3. **Probar en sandbox** (compra completa: baja el stock, aparece el pedido).
+   Recién ahí pasar a `PAYPAL_ENV=live`.
+4. Mergear la rama a `main`.
+
+Seguridad ya resuelta: el precio sale siempre de la base (nunca del
+navegador), se valida el stock dos veces con la fila bloqueada, se verifica
+que el monto cobrado coincida, y si algo no cuadra **se reembolsa
+automáticamente**. Ya cobra el **precio de oferta** si el producto tiene
+descuento. Sin credenciales el bloque de pago no aparece: es seguro publicar.
+
+---
+
+## 3. Opcional
+
+- `supabase/migrations/OPCIONAL_limpieza_qa.sql` — borra datos de prueba del
+  diagnóstico (2 mensajes en el chat de MTG, 1 post, 4 cuentas QA). No hace
+  falta para nada; es solo higiene.
+- Queda un `.txt` de 2 bytes en Storage → `chat` → `MTG/test/`. Solo se borra
+  desde el panel (Supabase bloquea borrar storage por SQL).
+
+---
+
+## 4. Trampas de este proyecto (aprendidas a los golpes)
+
+- **La base de prod está desincronizada de `supabase/migrations/`.** El SQL se
+  corre **a mano** en el SQL Editor. Escribí migraciones defensivas
+  (`IF NOT EXISTS`) y hacé que el cliente tolere que la columna no exista —
+  si no, se rompe para todos hasta que corran el SQL.
+- **El SQL Editor corre todo como un bloque**: un error al final aborta el
+  script entero. No mezclar cambios de esquema con borrado de datos.
+- **Supabase bloquea `DELETE FROM storage.objects`** (usar el panel).
+- Al crear una tabla, PostgREST tarda unos segundos en verla (da 404 y luego
+  anda). No es bug del código.
+- **Para verificar si algo existe en prod**: probá un insert/upload real. El
+  GET de metadata con la anon key da falsos negativos. Y las funciones hay
+  que probarlas **con los nombres de argumento reales** (con `{}` parecen no
+  existir).
+- **Roles**: no existe el rol `owner` — es el booleano `is_owner`.
   `is_staff()` = `is_owner OR role IN ('staff','admin')`.
+
+---
+
+## 5. Bugs ya resueltos (no reintroducir)
+
+- **Registro roto**: el usuario se derivaba del email y chocaba con el unique
+  constraint. Ahora se busca uno libre antes de registrar.
+- **No se veía lo que uno escribía al crear cuenta**: los campos son claros
+  dentro de una app oscura; con el teléfono en modo oscuro el navegador
+  pintaba el texto de blanco. Fix: `colorScheme: light` +
+  `WebkitTextFillColor` en `inputLight` (AuthScreens).
+- **Crear posts roto en prod**: `createPost` mandaba `post_type` cuando la
+  columna no existía. Ahora solo se manda si tiene valor, con reintento.
+- **Voz "paso turno"** (Life Counter): iOS reemplaza el transcript, no lo
+  acumula. Se reinicia el reconocedor tras cada acierto.
+
+---
+
+## 6. Ramas
+
+- **`main`** → producción.
+- **`paypal-checkout`** → ver sección 2.
+- **`rebuild-oneui`** → rediseño visual estilo One UI **descartado** (quedó
+  frío y genérico; se perdía la personalidad de la app). Se guarda por si
+  sirve alguna pieza suelta.
+- `redesign`, `claude/*` → viejas, ignorar.

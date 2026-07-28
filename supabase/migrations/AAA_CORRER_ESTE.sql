@@ -10,7 +10,6 @@
 --   3) Pre orders: números TCG-####, Mis Pedidos, listo para retirar
 --   4) Pre order cerrado        (oculta cantidades al público)
 --   5) Precio de oferta         (descuento público)
---   6) Limpieza de datos de prueba (QA)
 --
 -- NO incluye el checkout de PayPal: eso vive en la rama `paypal-checkout`
 -- y tiene su propio archivo (20260726_paypal_orders.sql). Corré ese SOLO
@@ -219,11 +218,3 @@ ALTER TABLE public.shop_products
 
 ALTER TABLE public.shop_products
   ADD COLUMN IF NOT EXISTS sale_price numeric;
-
--- ─── 6) LIMPIEZA de datos de prueba (QA) ─────────────────────────
-DELETE FROM public.community_messages WHERE author_name IN ('__probe__', 'TesterQA');
-DELETE FROM storage.objects WHERE bucket_id = 'chat' AND name LIKE 'MTG/test/%';
-DELETE FROM public.posts WHERE caption = '[QA] prueba diagnostico';
-DELETE FROM auth.users
- WHERE email LIKE 'qa.claude.p%.20260720@gmail.com'
-    OR email = 'qa.claude.prueba.20260720@gmail.com';

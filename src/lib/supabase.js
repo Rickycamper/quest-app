@@ -618,7 +618,38 @@ export async function updateProfile(userId, updates) {
 // type: 'feed'   → solo posts normales (post_type IS NULL)
 //       'market' → solo Trade y Ventas (post_type NOT NULL: Compro/Tengo/Tradeo/Vendo)
 const MARKET_PREFIX_RE = /^\s*\[(Compro|Tengo|Tradeo|Vendo)\]/i
+
+// La columna posts.post_type puede no existir todavía en prod (migración
+// pendiente). La primera petición falla con 400 y caemos al filtro por
+// prefijo; recordamos ese estado para NO repetir la petición fallida en cada
+// carga del feed (ensuciaba los logs y agregaba una request de más).
+let _noPostType = false
+
+// Consulta por prefijo del caption — respaldo mientras no exista la columna.
+async function feedByPrefix({ game, limit, offset, type }) {
+  let q = supabase
+    .from('posts')
+    .select(`
+      id, caption, tag, image_url, images, created_at,
+      profiles:user_id ( id, username, avatar_url, role, verified, is_owner ),
+      post_likes ( count ),
+      post_comments ( count )
+    `)
+    .order('created_at', { ascending: false })
+  if (game) q = q.eq('tag', game)
+  // Ventana amplia de filas crudas: incluyen posts del OTRO tipo, así que
+  // offset+limit no alcanzaría y cortaría la paginación antes de tiempo.
+  const windowSize = Math.min(1000, Math.max((offset + limit) * 4, 300))
+  const r = await q.range(0, windowSize - 1)
+  if (r.error) throw r.error
+  const filtered = (r.data ?? []).filter(p =>
+    type === 'market' ? MARKET_PREFIX_RE.test(p.caption || '') : !MARKET_PREFIX_RE.test(p.caption || '')
+  )
+  return filtered.slice(offset, offset + limit).map(p => ({ ...p, user_has_liked: false }))
+}
+
 export async function getFeed({ game = null, limit = 20, offset = 0, type = 'feed' } = {}) {
+  if (_noPostType) return feedByPrefix({ game, limit, offset, type })
   let postsQuery = supabase
     .from('posts')
     .select(`
@@ -636,32 +667,12 @@ export async function getFeed({ game = null, limit = 20, offset = 0, type = 'fee
 
   const { data, error } = await postsQuery
   if (error) {
-    // Fallback si la columna post_type aún no existe en prod (migración sin
-    // correr): filtramos por el prefijo del caption para que el Feed/Trade no
-    // se rompan durante la transición.
+    // La columna post_type no existe todavía (migración sin correr):
+    // recordamos el estado para no repetir esta petición fallida y
+    // filtramos por el prefijo del caption.
     if (/post_type/i.test(error.message || '')) {
-      let q = supabase
-        .from('posts')
-        .select(`
-          id, caption, tag, image_url, images, created_at,
-          profiles:user_id ( id, username, avatar_url, role, verified, is_owner ),
-          post_likes ( count ),
-          post_comments ( count )
-        `)
-        .order('created_at', { ascending: false })
-      if (game) q = q.eq('tag', game)
-      // Sin columna no se puede paginar por tipo server-side: traemos una
-      // ventana GRANDE de filas crudas y recortamos en cliente. La ventana
-      // escala con el offset multiplicado (las filas crudas incluyen posts
-      // del OTRO tipo, así que offset+limit crudas no alcanzan — cortaba la
-      // paginación antes de tiempo, sobre todo en Trade y Ventas).
-      const windowSize = Math.min(1000, Math.max((offset + limit) * 4, 300))
-      const r = await q.range(0, windowSize - 1)
-      if (r.error) throw r.error
-      const filtered = (r.data ?? []).filter(p =>
-        type === 'market' ? MARKET_PREFIX_RE.test(p.caption || '') : !MARKET_PREFIX_RE.test(p.caption || '')
-      )
-      return filtered.slice(offset, offset + limit).map(p => ({ ...p, user_has_liked: false }))
+      _noPostType = true
+      return feedByPrefix({ game, limit, offset, type })
     }
     throw error
   }
