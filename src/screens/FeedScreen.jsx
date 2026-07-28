@@ -131,7 +131,10 @@ function ImageCarousel({ images }) {
   const translateX = -slide * 100
   const stripStyle = {
     display: 'flex', willChange: 'transform',
-    alignItems: 'center',   // center shorter images vertically without stretching them
+    // height 100% para que el alto del contenedor (que viene del aspectRatio)
+    // llegue hasta las imágenes; si no, el strip queda en auto y el height:100%
+    // de cada <img> no tiene contra qué resolver.
+    height: '100%',
     transform: dragging
       ? `translateX(calc(${translateX}% + ${dragX}px))`
       : `translateX(${translateX}%)`,
@@ -144,7 +147,9 @@ function ImageCarousel({ images }) {
       style={{
         borderRadius: 10, overflow: 'hidden', marginBottom: 14,
         background: '#0A0A0A', position: 'relative',
-        maxHeight: 450,
+        // Mismo criterio que la imagen suelta: el alto queda reservado antes
+        // de que cargue nada, así el carrusel no empuja el feed al cargar.
+        aspectRatio: '4 / 5', maxHeight: 450,
         userSelect: 'none', touchAction: 'pan-y',
         cursor: images.length > 1 ? (dragging ? 'grabbing' : 'grab') : 'default',
       }}
@@ -165,7 +170,7 @@ function ImageCarousel({ images }) {
             // the post above the fold); lazy-load the rest as the user swipes.
             loading={i === 0 ? 'eager' : 'lazy'}
             decoding="async"
-            style={{ width: '100%', flexShrink: 0, height: '100%', maxHeight: 450, objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
+            style={{ width: '100%', flexShrink: 0, height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
           />
         ))}
       </div>
@@ -249,13 +254,15 @@ function VideoPlayer({ src }) {
       {/* ── Feed thumbnail — muted, auto-play, no controls ── */}
       <div
         onClick={openExpanded}
-        style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 14, background: '#000', cursor: 'pointer' }}
+        // Sin aspectRatio el <video> mide 300x150 (el default del spec) hasta
+        // que llega la metadata, y ahí salta al tamaño real. Reservamos la caja.
+        style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 14, background: '#000', cursor: 'pointer', aspectRatio: '4 / 5', maxHeight: 480 }}
       >
         <video
           ref={vidRef}
           src={src}
           muted loop playsInline preload="metadata"
-          style={{ width: '100%', maxHeight: 480, display: 'block', objectFit: 'cover' }}
+          style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
         />
         {/* Play icon shown only when paused */}
         {!playing && (
@@ -612,8 +619,13 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
         if (imgs.length === 0) return null
         if (imgs.length === 1 && IS_VIDEO_URL.test(imgs[0])) return <VideoPlayer src={imgs[0]} />
         if (imgs.length === 1) return (
-          <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 12, background: '#0A0A0A', maxHeight: 450 }}>
-            <img src={imgs[0]} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', maxHeight: 450, objectFit: 'cover', display: 'block' }} />
+          // aspectRatio reserva el alto ANTES de que la imagen cargue. Sin esto
+          // la caja medía ~0 y saltaba a 450px al cargar — y como las imágenes
+          // son lazy, el salto pasaba mientras el usuario scrolleaba (lo peor
+          // para CLS). 4/5 es la proporción de feed estándar; maxHeight la
+          // recorta en pantallas anchas. Ambos se resuelven en layout, sin red.
+          <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 12, background: '#0A0A0A', aspectRatio: '4 / 5', maxHeight: 450 }}>
+            <img src={imgs[0]} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             {/* Subtle bottom fade — image blends with card */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
