@@ -2165,9 +2165,18 @@ export default function ShopScreen({ isOwner, isStaff }) {
     setSortBy('newest')
   }
 
+  // Agotados: no se le muestran al público — si no se puede comprar ni
+  // reservar, solo ensucia el catálogo. Dos excepciones deliberadas:
+  //   · Los pre orders (coming_soon) NO tienen stock por diseño: se venden
+  //     antes de existir. Si entraran en la regla, desaparecerían todos.
+  //   · El equipo los sigue viendo, si no no tendría cómo encontrarlos
+  //     para reponerlos.
+  const esVisible = (p) => canEdit || p.coming_soon || totalStock(p) > 0
+
   const filtered = products.filter(p => {
     const pCat = p.category || 'sealed'
     if (pCat !== category) return false
+    if (!esVisible(p)) return false
     if (search) {
       const q = search.toLowerCase()
       return p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.game?.toLowerCase().includes(q)
@@ -2279,10 +2288,12 @@ export default function ShopScreen({ isOwner, isStaff }) {
     setRefreshLog({ updated, skipped, errors, total: singles.length })
   }
 
+  // Los contadores de las pestañas usan la MISMA regla de visibilidad que la
+  // lista: si no, el público vería "Singles 683" y al entrar contaría 400.
   const catCounts = {
-    sealed:    products.filter(p => (p.category || 'sealed') === 'sealed').length,
-    single:    products.filter(p => (p.category || 'sealed') === 'single').length,
-    accessory: products.filter(p => (p.category || 'sealed') === 'accessory').length,
+    sealed:    products.filter(p => (p.category || 'sealed') === 'sealed'    && esVisible(p)).length,
+    single:    products.filter(p => (p.category || 'sealed') === 'single'    && esVisible(p)).length,
+    accessory: products.filter(p => (p.category || 'sealed') === 'accessory' && esVisible(p)).length,
   }
 
   return (
