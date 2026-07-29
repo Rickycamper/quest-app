@@ -1,31 +1,25 @@
 -- ─────────────────────────────────────────────
--- QUEST — Pagos con PayPal en estado PENDING
+-- QUEST — FIX: place_paid_order() abortaba al numerar el pedido
 -- ─────────────────────────────────────────────
--- PayPal no siempre libera el cobro al instante: puede dejarlo "retenido"
--- 24 h por una revisión de seguridad, o más si la cuenta de vendedor es
--- nueva (también pasa con eCheck). La plata YA se tomó del comprador.
+-- Síntoma: la compra se cobraba, el pedido no se registraba y el cliente
+-- veía "No se pudo registrar tu pedido" (antes decía, peor todavía, que
+-- se había agotado el stock).
 --
--- Antes el servidor rechazaba esos cobros y NO creaba el pedido ni
--- reembolsaba: el cliente quedaba pagado y sin nada. Ahora el pedido se
--- registra con status 'pending' y el equipo no entrega hasta que PayPal
--- libere los fondos.
+-- Causa: la función declara RETURNS TABLE (code text, id uuid), y eso crea
+-- un parámetro de SALIDA llamado `id` de tipo uuid. En esta línea:
 --
--- Requiere 20260726_paypal_orders.sql. Aplicar en SQL Editor. Idempotente.
+--     UPDATE public.order_counter SET n = n + 1 WHERE id = 1 ...
+--
+-- PL/pgSQL sustituye `id` por ESE parámetro en vez de leer la columna
+-- order_counter.id, y termina comparando un uuid con un entero.
+--
+-- El resto de la función ya calificaba las columnas con el nombre de la
+-- tabla (WHERE public.shop_products.id = ...). A esta se le escapó.
+--
+-- Requiere 20260728_paypal_pending.sql. Aplicar en SQL Editor. Idempotente.
 -- ─────────────────────────────────────────────
 
--- 1) 'pending' pasa a ser un status válido.
-ALTER TABLE public.shop_orders DROP CONSTRAINT IF EXISTS shop_orders_status_check;
-ALTER TABLE public.shop_orders ADD  CONSTRAINT shop_orders_status_check
-  CHECK (status IN ('paid', 'pending', 'ready', 'delivered', 'refunded'));
-
--- 2) place_paid_order() recibe el status del cobro.
---    Se DROPEA antes de recrear: agregar un parámetro con DEFAULT crearía
---    una sobrecarga en vez de reemplazarla, y las dos versiones convivirían
---    generando llamadas ambiguas.
-DROP FUNCTION IF EXISTS public.place_paid_order(uuid, integer, text, numeric, text, uuid, text, text);
-DROP FUNCTION IF EXISTS public.place_paid_order(uuid, integer, text, numeric, text, uuid, text, text, text);
-
-CREATE FUNCTION public.place_paid_order(
+CREATE OR REPLACE FUNCTION public.place_paid_order(
   p_product_id      uuid,
   p_qty             integer,
   p_branch          text,
@@ -48,9 +42,8 @@ DECLARE
   v_status  text;
   v_existing public.shop_orders;
 BEGIN
-  -- Idempotencia: ¿este cobro ya se registró?
   SELECT * INTO v_existing FROM public.shop_orders
-   WHERE paypal_order_id = p_paypal_order_id;
+   WHERE public.shop_orders.paypal_order_id = p_paypal_order_id;
   IF FOUND THEN
     RETURN QUERY SELECT v_existing.code, v_existing.id;
     RETURN;
@@ -60,8 +53,6 @@ BEGIN
     RAISE EXCEPTION 'Cantidad inválida';
   END IF;
 
-  -- Solo se aceptan los dos estados de cobro tomado. Cualquier otra cosa
-  -- sería un bug del servidor, no un caso de negocio.
   v_status := CASE WHEN p_status = 'pending' THEN 'pending' ELSE 'paid' END;
 
   v_col := CASE p_branch
@@ -71,8 +62,6 @@ BEGIN
            END;
   IF v_col IS NULL THEN RAISE EXCEPTION 'Sucursal inválida: %', p_branch; END IF;
 
-  -- Bloquea la fila del producto hasta el commit (evita sobreventa si dos
-  -- personas compran la última unidad al mismo tiempo).
   SELECT * INTO v_prod FROM public.shop_products
    WHERE public.shop_products.id = p_product_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Producto no encontrado'; END IF;
@@ -87,16 +76,15 @@ BEGIN
     RAISE EXCEPTION 'Sin stock suficiente en esa sucursal (quedan %)', coalesce(v_stock, 0);
   END IF;
 
-  -- El stock se descuenta también con 'pending': la unidad queda reservada.
-  -- Si no, se podría vender dos veces mientras PayPal libera el pago.
   EXECUTE format('UPDATE public.shop_products SET %I = %I - $1 WHERE id = $2', v_col, v_col)
     USING p_qty, p_product_id;
 
-  -- `id` calificado: sin el prefijo resuelve al parámetro de salida `id`
-  -- (uuid) en vez de a la columna order_counter.id (integer), y aborta.
+  -- ACÁ ESTABA EL BUG: sin calificar, `id` resolvía al parámetro de salida
+  -- (uuid) en vez de a la columna order_counter.id (integer).
   UPDATE public.order_counter SET n = n + 1
    WHERE public.order_counter.id = 1
    RETURNING n INTO v_n;
+
   v_code := 'QO-' || lpad(v_n::text, 4, '0');
 
   RETURN QUERY
@@ -110,9 +98,5 @@ BEGIN
   RETURNING public.shop_orders.code, public.shop_orders.id;
 END $$;
 
--- Solo el servidor la ejecuta (service role). Nadie más.
--- OJO: hay que revocarle a PUBLIC, no solo a anon/authenticated. Postgres
--- concede EXECUTE a PUBLIC al crear la función y anon hereda de ahí — sin
--- esta línea la función queda abierta a cualquiera con la anon key.
 REVOKE EXECUTE ON FUNCTION public.place_paid_order(uuid, integer, text, numeric, text, uuid, text, text, text) FROM PUBLIC, anon, authenticated;
 GRANT  EXECUTE ON FUNCTION public.place_paid_order(uuid, integer, text, numeric, text, uuid, text, text, text) TO service_role;

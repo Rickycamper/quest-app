@@ -126,7 +126,11 @@ BEGIN
   EXECUTE format('UPDATE public.shop_products SET %I = %I - $1 WHERE id = $2', v_col, v_col)
     USING p_qty, p_product_id;
 
-  UPDATE public.order_counter SET n = n + 1 WHERE id = 1 RETURNING n INTO v_n;
+  -- `id` calificado: sin el prefijo resuelve al parámetro de salida `id`
+  -- (uuid) en vez de a la columna order_counter.id (integer), y aborta.
+  UPDATE public.order_counter SET n = n + 1
+   WHERE public.order_counter.id = 1
+   RETURNING n INTO v_n;
   v_code := 'QO-' || lpad(v_n::text, 4, '0');
 
   RETURN QUERY
