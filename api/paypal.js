@@ -164,8 +164,20 @@ export default async function handler(req, res) {
 
       const unit    = ord?.purchase_units?.[0]
       const capture = unit?.payments?.captures?.[0]
-      if (capture?.status !== 'COMPLETED') {
-        return res.status(402).json({ error: 'El pago no quedó completado' })
+      const capStatus = capture?.status
+
+      // PENDING no es un fallo: PayPal ya tomó la plata pero la retiene un
+      // rato (revisión de seguridad, eCheck, cuenta de vendedor nueva). Antes
+      // se rechazaba acá y el cliente quedaba pagado, sin pedido y sin
+      // reembolso — la plata se perdía en el limbo. Ahora se registra el
+      // pedido como 'pending' y el equipo no entrega hasta que PayPal libere.
+      const cobroTomado = capStatus === 'COMPLETED' || capStatus === 'PENDING'
+      if (!cobroTomado) {
+        // El status va en el mensaje: sin esto, diagnosticar un rechazo real
+        // era adivinar (nos pasó con PENDING).
+        return res.status(402).json({
+          error: `El pago no quedó completado (estado: ${capStatus || 'sin captura'})`,
+        })
       }
 
       const [productId, qtyStr, branch] = String(unit?.custom_id || '').split('|')
@@ -216,6 +228,7 @@ export default async function handler(req, res) {
             p_user_id: user?.id ?? null,
             p_buyer_name: [payer?.name?.given_name, payer?.name?.surname].filter(Boolean).join(' ') || null,
             p_buyer_email: payer?.email_address ?? null,
+            p_status: capStatus === 'PENDING' ? 'pending' : 'paid',
           }),
         })
       } catch (e) {
@@ -230,6 +243,9 @@ export default async function handler(req, res) {
         branch: BRANCHES[branch],
         qty,
         total: paidAmount.toFixed(2),
+        // El front avisa que PayPal todavía no liberó el pago, así el cliente
+        // no se presenta a retirar antes de tiempo.
+        pending: capStatus === 'PENDING',
       })
     }
 

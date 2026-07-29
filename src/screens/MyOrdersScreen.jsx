@@ -86,7 +86,9 @@ export default function MyOrdersScreen({ onClose }) {
                   {isReady
                     ? '✓ LISTO PARA RETIRAR'
                     : o.kind === 'paid'
-                      ? (o.status === 'delivered' ? 'ENTREGADO' : 'PAGADO ONLINE ✓')
+                      ? (o.status === 'delivered' ? 'ENTREGADO'
+                         : o.status === 'pending' ? 'PAGO EN VERIFICACIÓN ⏳'
+                         : 'PAGADO ONLINE ✓')
                       : o.kind === 'reservation'
                         ? (o.paidPct === 100 ? 'CONFIRMADO · 100% PAGADO' : `CONFIRMADO · ${o.paidPct ?? 50}% ABONADO`)
                         : 'SOLICITUD ENVIADA'}

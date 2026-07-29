@@ -1264,7 +1264,9 @@ function PaidOrderModal({ order, product, onClose }) {
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
         boxShadow: '0 18px 50px rgba(0,0,0,0.6)',
       }}>
-        <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.16em', color: '#4ADE80', fontFamily: 'Inter, sans-serif' }}>✓ PAGO CONFIRMADO</span>
+        <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.16em', color: order.pending ? '#FBBF24' : '#4ADE80', fontFamily: 'Inter, sans-serif' }}>
+          {order.pending ? '⏳ PAGO EN VERIFICACIÓN' : '✓ PAGO CONFIRMADO'}
+        </span>
         <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Tu número de pedido</span>
         <span style={{
           fontSize: 34, fontWeight: 900, color: '#FFF', fontFamily: 'SF Mono, Menlo, monospace',
@@ -1282,7 +1284,11 @@ function PaidOrderModal({ order, product, onClose }) {
           background: 'rgba(74,222,128,0.09)', border: '1px solid rgba(74,222,128,0.25)',
           fontSize: 12.5, color: '#BBF7D0', fontFamily: 'Inter, sans-serif', lineHeight: 1.45,
         }}>
-          Retirás en <strong>{order.branch}</strong> — mostrá este número.
+          {order.pending
+            ? <>PayPal está verificando el pago (suele tardar hasta 24 h). Tu unidad
+               ya quedó reservada en <strong>{order.branch}</strong>; te avisamos
+               cuando esté lista para retirar.</>
+            : <>Retirás en <strong>{order.branch}</strong> — mostrá este número.</>}
         </div>
         <span style={{ fontSize: 11, color: '#6B7280', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
           También podés verlo cuando quieras en Mis Pedidos.
