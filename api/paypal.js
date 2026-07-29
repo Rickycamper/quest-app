@@ -91,6 +91,26 @@ export default async function handler(req, res) {
   const { action } = body
 
   try {
+    // ── 0) DIAGNÓSTICO ─────────────────────────────────────────────
+    // Comprueba que SUPABASE_SERVICE_KEY sea de verdad la key secreta y no
+    // la publicable. order_counter tiene REVOKE ALL para anon/authenticated,
+    // así que solo el service_role puede leerla: si esto falla, la key está
+    // mal y el checkout va a romper recién DESPUÉS de cobrarle al cliente.
+    // Devuelve solo booleanos — ningún secreto sale de acá.
+    if (action === 'diag') {
+      let leeOrderCounter = false, detalle = null
+      try {
+        await sb('order_counter?select=n&limit=1')
+        leeOrderCounter = true
+      } catch (e) { detalle = (e?.message || '').slice(0, 200) }
+      return res.status(200).json({
+        paypal_configurado: true,          // si no, no habríamos llegado acá
+        entorno_paypal: process.env.PAYPAL_ENV || 'sandbox',
+        service_key_es_secreta: leeOrderCounter,
+        detalle,
+      })
+    }
+
     // ── 1) CREAR ORDEN ─────────────────────────────────────────────
     if (action === 'create') {
       const qty = Math.floor(Number(body.qty) || 0)
@@ -232,9 +252,25 @@ export default async function handler(req, res) {
           }),
         })
       } catch (e) {
-        // Se quedó sin stock entre el pago y el registro → devolvemos la plata.
-        await refund('Sin stock disponible — reembolso automático')
-        return res.status(409).json({ error: 'Se agotó el stock durante el pago. Se reembolsó tu dinero.' })
+        // OJO: acá cae CUALQUIER error de la base, no solo el de stock.
+        // Antes se reportaban todos como "se agotó el stock", lo que mandó a
+        // buscar un problema de inventario cuando en realidad era de permisos.
+        const msg = e?.message || ''
+        const esFaltaDeStock = /stock/i.test(msg)
+
+        // El reembolso va igual: el cobro entró y no hay pedido, así que el
+        // cliente no puede quedar pagando. Lo que cambia es el diagnóstico.
+        await refund(esFaltaDeStock
+          ? 'Sin stock disponible — reembolso automático'
+          : 'No se pudo registrar el pedido — reembolso automático')
+
+        return res.status(409).json({
+          error: esFaltaDeStock
+            ? 'Se agotó el stock durante el pago. Se reembolsó tu dinero.'
+            : 'No se pudo registrar tu pedido. Se reembolsó el pago, no te cobramos.',
+          // El motivo real, para que el equipo no tenga que adivinar.
+          detalle: msg.slice(0, 300),
+        })
       }
 
       const order = Array.isArray(placed) ? placed[0] : placed
