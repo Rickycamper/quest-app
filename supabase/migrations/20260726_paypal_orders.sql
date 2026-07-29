@@ -142,4 +142,8 @@ BEGIN
 END $$;
 
 -- Solo el servidor la ejecuta (service role). Nadie más.
-REVOKE EXECUTE ON FUNCTION public.place_paid_order(uuid, integer, text, numeric, text, uuid, text, text) FROM anon, authenticated;
+-- OJO: hay que revocarle a PUBLIC, no solo a anon/authenticated. Postgres
+-- concede EXECUTE a PUBLIC al crear la función y anon hereda de ahí — sin
+-- esta línea la función queda abierta a cualquiera con la anon key.
+REVOKE EXECUTE ON FUNCTION public.place_paid_order(uuid, integer, text, numeric, text, uuid, text, text) FROM PUBLIC, anon, authenticated;
+GRANT  EXECUTE ON FUNCTION public.place_paid_order(uuid, integer, text, numeric, text, uuid, text, text) TO service_role;
