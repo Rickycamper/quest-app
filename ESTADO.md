@@ -72,6 +72,14 @@ que el monto cobrado coincida, y si algo no cuadra **se reembolsa
 automáticamente**. Ya cobra el **precio de oferta** si el producto tiene
 descuento. Sin credenciales el bloque de pago no aparece: es seguro publicar.
 
+**FALTA para poder operarlo** (no está hecho): no existe ninguna pantalla de
+gestión de pedidos online. `shop_orders` se lee en un solo lugar de la app —
+`getMyOrders`, la vista del cliente. El equipo no tiene dónde ver los pedidos
+que entran, marcar "listo para retirar" ni registrar la entrega, y **nada pasa
+un pedido de `pending` a `paid`** cuando PayPal libera el cobro. Las columnas
+(`ready_at`, `pickup_note`, `status`) y las políticas RLS ya están; falta la
+interfaz. Hoy solo se operan desde el SQL Editor.
+
 **Diagnóstico**: `POST /api/paypal` con `{"action":"diag"}` responde si las
 credenciales están cargadas, en qué entorno apunta y si `SUPABASE_SERVICE_KEY`
 es realmente la secreta. Devuelve solo booleanos. Usalo **antes** de probar
@@ -107,6 +115,10 @@ haberle cobrado a alguien.
   existir).
 - **Roles**: no existe el rol `owner` — es el booleano `is_owner`.
   `is_staff()` = `is_owner OR role IN ('staff','admin')`.
+- **No hay base de prueba: el preview de Vercel usa la MISMA base que
+  producción.** Cualquier prueba en preview escribe en prod — las compras
+  sandbox de PayPal descuentan stock real. Revisá y revertí después de
+  probar.
 - **`RETURNS TABLE (code, id)` tapa las columnas que se llamen igual.** Los
   nombres de retorno se vuelven variables dentro del cuerpo de la función:
   un `WHERE id = 1` deja de apuntar a la columna y apunta al parámetro de
