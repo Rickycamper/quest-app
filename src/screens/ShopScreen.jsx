@@ -1164,7 +1164,12 @@ function PayOnlineBlock({ product, onPaid }) {
             })
             const d = await r.json()
             setBusy(false)
-            if (!r.ok) { setErr(d.error || 'El pago no se pudo confirmar'); return }
+            // `detalle` trae el error real de la base. Se muestra porque sin
+            // eso un fallo al registrar es indistinguible de cualquier otro.
+            if (!r.ok) {
+              setErr([d.error || 'El pago no se pudo confirmar', d.detalle].filter(Boolean).join(' · '))
+              return
+            }
             onPaid?.(d)
           },
           onError: () => { setBusy(false); setErr('Hubo un problema con PayPal. Intentá de nuevo.') },
