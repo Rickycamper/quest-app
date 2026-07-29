@@ -234,6 +234,21 @@ export default async function handler(req, res) {
       const user  = await userFromAuth(req)
       const payer = ord?.payer
 
+      // Datos de contacto que escribió el comprador. Son SUS datos, así que
+      // aceptarlos del cliente está bien — nada de esto toca el precio ni el
+      // stock, que siguen saliendo de la base. Solo se recortan por largo.
+      const txt = (v, max) => {
+        const s = typeof v === 'string' ? v.trim() : ''
+        return s ? s.slice(0, max) : null
+      }
+      const form = body.buyer || {}
+      // Lo que escribió la persona gana sobre lo que devuelve PayPal: el
+      // email de PayPal puede ser uno que no mira nunca.
+      const buyerName  = txt(form.name, 120)
+        || [payer?.name?.given_name, payer?.name?.surname].filter(Boolean).join(' ') || null
+      const buyerEmail = txt(form.email, 160) || payer?.email_address || null
+      const buyerPhone = txt(form.phone, 40)
+
       // Descuenta stock + numera el pedido, todo atómico.
       let placed
       try {
@@ -246,8 +261,9 @@ export default async function handler(req, res) {
             p_total: paidAmount,
             p_paypal_order_id: paypalOrderId,
             p_user_id: user?.id ?? null,
-            p_buyer_name: [payer?.name?.given_name, payer?.name?.surname].filter(Boolean).join(' ') || null,
-            p_buyer_email: payer?.email_address ?? null,
+            p_buyer_name: buyerName,
+            p_buyer_email: buyerEmail,
+            p_buyer_phone: buyerPhone,
             p_status: capStatus === 'PENDING' ? 'pending' : 'paid',
           }),
         })

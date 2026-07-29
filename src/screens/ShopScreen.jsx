@@ -1110,13 +1110,35 @@ function loadPayPalSdk(clientId, currency = 'USD') {
 const PP_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID
 
 function PayOnlineBlock({ product, onPaid }) {
+  const { user, profile } = useAuth()
   const [qty, setQty]       = useState(1)
   const [branch, setBranch] = useState(null)
   const [err, setErr]       = useState('')
   const [busy, setBusy]     = useState(false)
+
+  // Datos de contacto. No se hereda del pagador de PayPal: puede pagar con
+  // una cuenta a nombre de otro, y el email de PayPal suele ser uno que la
+  // persona no mira. Se precargan si está logueada, pero puede corregirlos.
+  const [nombre,  setNombre]  = useState('')
+  const [tel,     setTel]     = useState('')
+  const [email,   setEmail]   = useState('')
+  useEffect(() => {
+    if (profile?.username) setNombre(n => n || profile.username)
+    if (profile?.phone)    setTel(t => t || profile.phone)
+    const e = profile?.email || user?.email
+    if (e) setEmail(v => v || e)
+  }, [profile?.username, profile?.phone, profile?.email, user?.email])
+
+  const nombreOk = nombre.trim().length >= 2
+  const telOk    = tel.replace(/\D/g, '').length >= 7   // Panamá: 7-8 dígitos
+  const emailOk  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  const datosOk  = nombreOk && telOk && emailOk
+
   const boxRef = useRef(null)
-  const stateRef = useRef({ qty: 1, branch: null })
-  useEffect(() => { stateRef.current = { qty, branch } }, [qty, branch])
+  const stateRef = useRef({ qty: 1, branch: null, buyer: null })
+  useEffect(() => {
+    stateRef.current = { qty, branch, buyer: { name: nombre.trim(), phone: tel.trim(), email: email.trim() } }
+  }, [qty, branch, nombre, tel, email])
 
   // Sucursales con stock — el cliente elige dónde retira
   const options = [
@@ -1129,9 +1151,10 @@ function PayOnlineBlock({ product, onPaid }) {
   const maxQty = branch ? (options.find(o => o.key === branch)?.stock ?? 1) : 1
   useEffect(() => { setQty(q => Math.min(q, Math.max(1, maxQty))) }, [maxQty])
 
-  // Monta los botones de PayPal una vez elegida la sucursal
+  // Monta los botones de PayPal recién con sucursal elegida Y datos completos.
+  // Así nadie llega a pagar y después descubrimos que no tenemos cómo avisarle.
   useEffect(() => {
-    if (!PP_CLIENT_ID || !branch || !boxRef.current) return
+    if (!PP_CLIENT_ID || !branch || !datosOk || !boxRef.current) return
     let cancelled = false
     boxRef.current.innerHTML = ''
     loadPayPalSdk(PP_CLIENT_ID)
@@ -1160,7 +1183,11 @@ function PayOnlineBlock({ product, onPaid }) {
                 'Content-Type': 'application/json',
                 ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
               },
-              body: JSON.stringify({ action: 'capture', paypalOrderId: data.orderID }),
+              body: JSON.stringify({
+                action: 'capture',
+                paypalOrderId: data.orderID,
+                buyer: stateRef.current.buyer,
+              }),
             })
             const d = await r.json()
             setBusy(false)
@@ -1178,7 +1205,9 @@ function PayOnlineBlock({ product, onPaid }) {
       })
       .catch(() => setErr('No se pudo cargar PayPal'))
     return () => { cancelled = true }
-  }, [branch, product.id])
+    // datosOk va en las dependencias: sin él, el efecto no se re-ejecuta
+    // cuando el formulario pasa a estar completo y los botones nunca montan.
+  }, [branch, datosOk, product.id])
 
   if (!PP_CLIENT_ID) return null   // sin credenciales, el bloque no aparece
 
@@ -1222,6 +1251,37 @@ function PayOnlineBlock({ product, onPaid }) {
         </div>
       </div>
 
+      {/* Datos de contacto — con esto se le avisa cuando el pedido está listo */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>
+          Tus datos {user ? '' : '· o iniciá sesión para que se completen solos'}
+        </span>
+        {[
+          { val: nombre, set: setNombre, ph: 'Nombre y apellido', ok: nombreOk, type: 'text',  ac: 'name' },
+          { val: tel,    set: setTel,    ph: 'Teléfono (ej. 6000-0000)', ok: telOk, type: 'tel', ac: 'tel' },
+          { val: email,  set: setEmail,  ph: 'Email', ok: emailOk, type: 'email', ac: 'email' },
+        ].map(f => (
+          <input
+            key={f.ph}
+            type={f.type}
+            autoComplete={f.ac}
+            value={f.val}
+            placeholder={f.ph}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => f.set(e.target.value)}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              background: '#111', borderRadius: 10, padding: '10px 12px',
+              // El borde solo se pone rojo si escribió algo y está mal: un
+              // campo vacío todavía no es un error, es un campo sin llenar.
+              border: `1px solid ${f.val && !f.ok ? 'rgba(248,113,113,0.6)' : '#2A2A2A'}`,
+              color: '#FFF', fontSize: 13, outline: 'none',
+              fontFamily: 'Inter, sans-serif',
+            }}
+          />
+        ))}
+      </div>
+
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}>Total</span>
         <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
@@ -1238,11 +1298,16 @@ function PayOnlineBlock({ product, onPaid }) {
 
       {err && <div style={{ fontSize: 12, color: '#F87171', fontFamily: 'Inter, sans-serif' }}>{err}</div>}
 
-      {branch ? (
+      {/* El contenedor de los botones se monta recién cuando se puede pagar.
+          Si falta algo, decimos QUÉ falta en vez de dejar un hueco mudo. */}
+      {branch && datosOk ? (
         <div ref={boxRef} style={{ minHeight: 46, opacity: busy ? 0.6 : 1, pointerEvents: busy ? 'none' : 'auto' }} />
       ) : (
         <div style={{ fontSize: 12, color: '#6B7280', textAlign: 'center', padding: '10px 0', fontFamily: 'Inter, sans-serif' }}>
-          Elegí la sucursal para pagar
+          {!branch
+            ? 'Elegí la sucursal para pagar'
+            : `Completá ${[!nombreOk && 'tu nombre', !telOk && 'tu teléfono', !emailOk && 'tu email']
+                .filter(Boolean).join(', ')} para pagar`}
         </div>
       )}
 
