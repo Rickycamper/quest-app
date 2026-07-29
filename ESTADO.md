@@ -56,16 +56,27 @@ Está completo y probado. Para activarlo:
    Marcá cada variable para **Production y Preview**, y acordate de que
    `VITE_PAYPAL_CLIENT_ID` se hornea al compilar: hay que **redesplegar**
    después de cargarla, no alcanza con guardarla.
-2. **Correr** `supabase/migrations/20260726_paypal_orders.sql`.
-3. **Probar en sandbox** (compra completa: baja el stock, aparece el pedido).
+2. **Correr las cuatro migraciones, en orden**:
+   `20260726_paypal_orders.sql` → `20260728_paypal_pending.sql` →
+   `20260728_paypal_revoke_public.sql` → `20260728_fix_order_counter_ambiguo.sql`.
+3. **Probar en sandbox** — al menos **dos compras seguidas**, para confirmar
+   que la numeración avanza (`QO-0001`, `QO-0002`). Verificar: baja el stock
+   de la sucursal correcta, aparece el pedido en Mis Pedidos.
    Recién ahí pasar a `PAYPAL_ENV=live`.
-4. Mergear la rama a `main`.
+4. Mergear la rama a `main`. Ojo: las variables hay que cargarlas también con
+   scope **Production**, y correr las migraciones en la base de producción.
 
 Seguridad ya resuelta: el precio sale siempre de la base (nunca del
 navegador), se valida el stock dos veces con la fila bloqueada, se verifica
 que el monto cobrado coincida, y si algo no cuadra **se reembolsa
 automáticamente**. Ya cobra el **precio de oferta** si el producto tiene
 descuento. Sin credenciales el bloque de pago no aparece: es seguro publicar.
+
+**Diagnóstico**: `POST /api/paypal` con `{"action":"diag"}` responde si las
+credenciales están cargadas, en qué entorno apunta y si `SUPABASE_SERVICE_KEY`
+es realmente la secreta. Devuelve solo booleanos. Usalo **antes** de probar
+una compra: sin eso, los errores de configuración recién aparecen después de
+haberle cobrado a alguien.
 
 ---
 
@@ -96,6 +107,30 @@ descuento. Sin credenciales el bloque de pago no aparece: es seguro publicar.
   existir).
 - **Roles**: no existe el rol `owner` — es el booleano `is_owner`.
   `is_staff()` = `is_owner OR role IN ('staff','admin')`.
+- **`RETURNS TABLE (code, id)` tapa las columnas que se llamen igual.** Los
+  nombres de retorno se vuelven variables dentro del cuerpo de la función:
+  un `WHERE id = 1` deja de apuntar a la columna y apunta al parámetro de
+  salida. **Calificá siempre** con el nombre de la tabla
+  (`WHERE public.order_counter.id = 1`). Nos costó dos compras de prueba y
+  el error salía como "no se pudo registrar el pedido".
+- **`REVOKE ... FROM anon, authenticated` NO cierra una función.** Postgres
+  le concede `EXECUTE` a `PUBLIC` al crearla y anon hereda de ahí. Hay que
+  hacer `REVOKE ... FROM PUBLIC` explícito. Estuvo abierta en prod una
+  función `SECURITY DEFINER` que descuenta stock. Para verificar:
+  `has_function_privilege('anon', p.oid, 'EXECUTE')` sobre `pg_proc`.
+  **Pendiente**: auditar el resto de las funciones `SECURITY DEFINER` del
+  proyecto, que pueden tener el mismo patrón.
+- **La CSP de `vercel.json` bloquea cualquier dominio externo nuevo.** Si
+  agregás un script de terceros, no alcanza con `script-src`: también
+  `connect-src` (sus llamadas) y `frame-src` (si dibuja iframes, como los
+  botones de PayPal). Despista que abrir la URL a mano funciona — una
+  navegación de primer nivel no pasa por la CSP de la página.
+- **PayPal puede dejar el cobro en `PENDING`** (revisión de seguridad,
+  eCheck, vendedor nuevo): la plata ya se tomó. Tratarlo como fallo deja al
+  cliente pagado y sin pedido. Se registra como `status = 'pending'`.
+- **No enmascares errores de la base con un mensaje de negocio.** El `catch`
+  del checkout reportaba cualquier excepción como "se agotó el stock", con
+  7 unidades disponibles. Devolvé el mensaje real.
 
 ---
 
@@ -118,6 +153,12 @@ descuento. Sin credenciales el bloque de pago no aparece: es seguro publicar.
 
 - **`main`** → producción.
 - **`paypal-checkout`** → ver sección 2.
+- **`fix-cls-feed`** → arregla el CLS del feed (estaba en 0.35, "Poor", por
+  Speed Insights). Reserva el alto de imágenes y video con `aspect-ratio 4/5`
+  y hace que el fallback de Suspense ocupe el alto de la pantalla en vez de
+  200 px. **Sin mergear**: cambia el encuadre de las fotos horizontales del
+  feed, hay que mirarlo en preview antes. No es verificable en localhost —
+  con caché caliente y sin latencia ni el código viejo muestra shift.
 - **`rebuild-oneui`** → rediseño visual estilo One UI **descartado** (quedó
   frío y genérico; se perdía la personalidad de la app). Se guarda por si
   sirve alguna pieza suelta.
