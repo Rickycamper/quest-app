@@ -95,17 +95,21 @@ es realmente la secreta. Devuelve solo booleanos. Usalo **antes** de probar
 una compra: sin eso, los errores de configuración recién aparecen después de
 haberle cobrado a alguien.
 
-**Quest Café** (misma rama): menú oculto en `/cafe` — no aparece en ninguna
-navegación; se entra por QR (`public/cafe-qr.png`, apunta a
-questhobbystore.com/cafe) o URL directa. El pedido sale por WhatsApp al
-número del negocio con "para tomar en tienda / para llevar", items y total.
-Sin login ni cobro online. El equipo gestiona los productos en la pestaña
-**Cafetería** del Shop (visible solo para admins): categoría `cafe` en
-`shop_products`, sin migración (la columna es texto libre). Se muestra todo
-lo que tenga precio > 0, sin lógica de stock. App.jsx también detecta
-hostnames `cafe.*` o `questcafe*`: si mañana se compra un dominio aparte,
-se apunta al mismo proyecto de Vercel y abre el menú directo — **imprimir
-el QR recién cuando el URL definitivo esté decidido**.
+**Quest Café** (misma rama): SITIO INDEPENDIENTE de la cafetería. main.jsx
+detecta el hostname (`cafe.*` o `questcafe*`) o el path `/cafe` y monta SOLO
+CafeScreen — la app (feed, nav, auth) ni se ejecuta, así el café no afecta
+al site normal. Look de catálogo como la tienda (mismos design tokens),
+grilla de cards con foto/precio/stepper; el logo de Quest y el botón
+"Ir a la tienda" llevan a questhobbystore.com. El pedido sale por WhatsApp
+al número del negocio con "para tomar en tienda / para llevar", items,
+nombre, nota y total. Sin login ni cobro online.
+**Para activar el subdominio**: Vercel → proyecto → Settings → Domains →
+Add `cafe.questhobbystore.com` (el apex ya está en Vercel, se autoconfigura).
+El QR (`public/cafe-qr.png`, también servido en /cafe-qr.png) apunta a
+https://cafe.questhobbystore.com — no imprimirlo hasta agregar el dominio.
+Gestión de productos: pestaña **Cafetería** del Shop (solo admins),
+categoría `cafe` en `shop_products`, sin migración (columna de texto libre).
+El menú muestra todo lo que tenga precio > 0, sin lógica de stock.
 
 ---
 

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import App from './App.jsx'
@@ -68,4 +68,25 @@ if (SENTRY_DSN && import.meta.env.PROD) {
   })
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+// ── Quest Café: sitio independiente ──────────────────────────────────────────
+// En el subdominio de la cafetería (cafe.questhobbystore.com, o un dominio
+// questcafe apuntado a este proyecto) o entrando por /cafe, se monta SOLO el
+// menú del café: la app entera (feed, nav, auth screens) ni se renderiza, así
+// el café no afecta al site normal. El logo de Quest lleva al website.
+const CafeScreen = lazy(() => import('./screens/CafeScreen'))
+const esCafe = window.location.pathname.replace(/\/+$/, '') === '/cafe'
+  || /^cafe\.|questcafe/i.test(window.location.hostname)
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  esCafe
+    ? (
+      <Suspense fallback={
+        <div style={{ minHeight: '100dvh', background: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid #2A2A2A', borderTopColor: '#FB923C', animation: 'spin 0.8s linear infinite' }} />
+        </div>
+      }>
+        <CafeScreen />
+      </Suspense>
+    )
+    : <App />
+)
