@@ -33,7 +33,7 @@ const FILTROS = [
 
 /**
  * Teléfono a formato wa.me (E.164 sin +). El cliente lo escribe como quiere
- * ("6613-0548", "66130548", "+507 6613 0548"); wa.me necesita 50766130548.
+ * ("1234-5678", "12345678", "+507 1234 5678"); wa.me necesita 50712345678.
  * Un número panameño son 8 dígitos, así que si vienen 8 se le antepone 507.
  */
 function waNumber(phone) {

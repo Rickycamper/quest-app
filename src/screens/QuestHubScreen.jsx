@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
-import { BRANCH_STYLES, GAME_STYLES } from '../lib/constants'
+import { BRANCH_STYLES, GAME_STYLES, STORE_WHATSAPP } from '../lib/constants'
 import { getPointsHistory, redeemPoints, getMembershipUsageSummary, getMyStats, getMyMatchHistory, resetMyMatches } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useConfirm } from '../components/Confirm'
@@ -172,7 +172,8 @@ const BENEFIT_ICON = {
   dungeon: (c) => <SADungeon size={13} color={c} />,
 }
 
-const MEMBERSHIP_WA = '50766130548'
+// Antes tenía el número personal hardcodeado. Ahora usa el de la tienda.
+const MEMBERSHIP_WA = STORE_WHATSAPP
 
 // ── Sucursales view ───────────────────────────
 function SucursalesView({ onBack }) {

@@ -53,6 +53,26 @@ export const GAME_STYLES = {
 
 export const BRANCHES = ['Panama', 'David', 'Chitre']
 
+// ── WhatsApp de la tienda ─────────────────────
+// Número de WhatsApp BUSINESS, en E.164 sin el "+" (formato que pide wa.me).
+// Acá caen las consultas y reservas de los clientes: es la cuenta donde
+// trabajan varios admins con dispositivos vinculados.
+//
+// Estaba hardcodeado en ShopScreen y en QuestHubScreen por separado, con un
+// número personal. Vive acá para que cambiarlo sea un solo lugar.
+export const STORE_WHATSAPP = '50767620445'
+
+// Números por sucursal. Hoy todas apuntan al WhatsApp Business para que
+// ninguna consulta quede fuera de esa plataforma. Si alguna sucursal vuelve
+// a tener su propia línea, se cambia solo su valor acá — la lógica que rutea
+// según dónde hay stock (waNumberForProduct en ShopScreen) sigue intacta.
+// El número que tenía David era 50762718525.
+export const BRANCH_WHATSAPP = {
+  david:  STORE_WHATSAPP,
+  panama: STORE_WHATSAPP,
+  chitre: STORE_WHATSAPP,
+}
+
 export const BRANCH_STYLES = {
   'Panama': { color: '#38BDF8', bg: 'rgba(56,189,248,0.10)', border: 'rgba(56,189,248,0.25)', dot: '#38BDF8' },
   'David':  { color: '#FB923C', bg: 'rgba(251,146,60,0.10)',  border: 'rgba(251,146,60,0.25)',  dot: '#FB923C' },

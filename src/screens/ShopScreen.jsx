@@ -8,23 +8,15 @@ import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } fr
 import { getShopProducts, updateShopProduct, upsertShopProduct, deleteShopProduct, getProductReservations, createReservation, deleteReservation, markReservationReady, searchUsers, notifyOwnerOfShopChange, createPreorder, supabase } from '../lib/supabase'
 import { downloadTicket } from '../lib/ticket'
 import { useAuth } from '../context/AuthContext'
-import { GAMES, GAME_STYLES } from '../lib/constants'
+import { GAMES, GAME_STYLES, STORE_WHATSAPP, BRANCH_WHATSAPP } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
 import { ShopIcon, SearchIcon, RefreshIcon } from '../components/Icons'
 import EmptyState from '../components/EmptyState'
 import { useToast } from '../components/Toast'
 import { COLOR, RADIUS, TYPE, WEIGHT, MOTION, FONT_STACK, ELEVATION } from '../lib/ui'
 
-const STORE_WHATSAPP = '50766130548'
-// Branch-specific WhatsApp numbers.
-// Key = branch, value = E.164 without + (for wa.me). When a product is only
-// stocked in a single branch, we route the customer to that branch's number.
-// Fallback: STORE_WHATSAPP (used for multi-branch or out-of-stock products).
-const BRANCH_WHATSAPP = {
-  david:  '50762718525',
-  panama: STORE_WHATSAPP,
-  chitre: STORE_WHATSAPP,
-}
+// Los números viven en lib/constants.js: estaban duplicados acá y en
+// QuestHubScreen, así que cambiarlos obligaba a buscarlos por todo el código.
 
 // Decide which WhatsApp number to use for a given product.
 // Rule: if the product has stock in exactly one branch, use that branch's
