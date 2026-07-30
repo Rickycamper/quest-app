@@ -56,9 +56,12 @@ Está completo y probado. Para activarlo:
    Marcá cada variable para **Production y Preview**, y acordate de que
    `VITE_PAYPAL_CLIENT_ID` se hornea al compilar: hay que **redesplegar**
    después de cargarla, no alcanza con guardarla.
-2. **Correr las cuatro migraciones, en orden**:
+2. **Correr las migraciones, en orden**:
    `20260726_paypal_orders.sql` → `20260728_paypal_pending.sql` →
-   `20260728_paypal_revoke_public.sql` → `20260728_fix_order_counter_ambiguo.sql`.
+   `20260728_paypal_revoke_public.sql` → `20260728_fix_order_counter_ambiguo.sql`
+   → `20260729_shop_orders_buyer_phone.sql`.
+   (Aparte, no es de PayPal: `20260730_package_recipient_phone.sql` para el
+   aviso por WhatsApp en envíos entre tiendas.)
 3. **Probar en sandbox** — al menos **dos compras seguidas**, para confirmar
    que la numeración avanza (`QO-0001`, `QO-0002`). Verificar: baja el stock
    de la sucursal correcta, aparece el pedido en Mis Pedidos.
@@ -119,6 +122,16 @@ haberle cobrado a alguien.
   producción.** Cualquier prueba en preview escribe en prod — las compras
   sandbox de PayPal descuentan stock real. Revisá y revertí después de
   probar.
+- **`create_package_as_user()` NO está en el repo**, solo se referencia su
+  firma. Si hay que cambiarla, primero traé su cuerpo desde prod
+  (`pg_get_functiondef`) — recrearla de memoria se lleva puesta la
+  generación del `tracking_code` y los eventos.
+- **El teléfono y el email de `profiles` son PII.** `20260510_pii_lockdown.sql`
+  los cerró para anónimos y dejó como fase 2 cerrarlos para usuarios
+  logueados. No los expongas de un usuario a otro: usá una función
+  `SECURITY DEFINER` que valide `is_staff()`, como
+  `get_package_recipient_phone()`. Si se filtran a la UI, esa fase 2 queda
+  imposible de completar.
 - **`RETURNS TABLE (code, id)` tapa las columnas que se llamen igual.** Los
   nombres de retorno se vuelven variables dentro del cuerpo de la función:
   un `WHERE id = 1` deja de apuntar a la columna y apunta al parámetro de
