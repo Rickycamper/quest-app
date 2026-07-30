@@ -61,7 +61,13 @@ Está completo y probado. Para activarlo:
    `20260728_paypal_revoke_public.sql` → `20260728_fix_order_counter_ambiguo.sql`
    → `20260729_shop_orders_buyer_phone.sql`.
    (Aparte, no es de PayPal: `20260730_package_recipient_phone.sql` para el
-   aviso por WhatsApp en envíos entre tiendas.)
+   aviso por WhatsApp en envíos entre tiendas, y
+   `20260730_auditoria_security_definer.sql` — auditoría EN VIVO que cierra
+   toda función SECURITY DEFINER y re-otorga solo lo que la app llama.
+   OJO con su allowlist de anon: los INVITADOS usan delete_community_message,
+   create_preorder, next_preorder_code y get_game_leaderboard, además de
+   is_staff que lo llaman las políticas RLS. Revocar anon ahí rompe chat,
+   pre-orders o rankings para los no logueados.)
 3. **Probar en sandbox** — al menos **dos compras seguidas**, para confirmar
    que la numeración avanza (`QO-0001`, `QO-0002`). Verificar: baja el stock
    de la sucursal correcta, aparece el pedido en Mis Pedidos.
