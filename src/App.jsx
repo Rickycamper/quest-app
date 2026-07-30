@@ -169,11 +169,11 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 
 const globalCSS = `
-  /* Inter is the fallback when SF Pro isn't available (Android, Windows).
-     The system font stack below resolves to SF Pro Display/Text on Apple
-     devices automatically — that's why questhobbystore.com feels noticeably
-     more native on iPhone Safari now. */
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  /* Inter vive ahora AUTOHOSPEDADA en index.html (@font-face + preload,
+     variable font de un solo archivo). El @import de Google Fonts que estaba
+     acá era la cadena más lenta posible: JS inyecta este CSS → fetch del CSS
+     de Google → recién ahí los 5 archivos de fuente. En Apple el stack del
+     body resuelve a SF Pro igual que siempre. */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { height: 100%; }
   /* iOS Safari zooms in cuando hace focus en un input con font-size <16px

@@ -332,7 +332,7 @@ function VideoPlayer({ src }) {
 // Wrapped in memo at the bottom of the file. Receives `isFollowed` boolean
 // (not the whole `following` Set) so a follow toggle invalidates only the
 // affected card instead of every card in the feed.
-function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange, onViewProfile, onDeleted, animDelay = 0 }) {
+function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange, onViewProfile, onDeleted, animDelay = 0, eagerMedia = false }) {
   const { requireAuth } = useGuest()
   const confirmAction   = useConfirm()
   const showFollowSuccess = useFollowSuccess()
@@ -625,7 +625,7 @@ function PostCardImpl({ post, currentUserId, isStaff, isFollowed, onFollowChange
           // para CLS). 4/5 es la proporción de feed estándar; maxHeight la
           // recorta en pantallas anchas. Ambos se resuelven en layout, sin red.
           <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 12, background: '#0A0A0A', aspectRatio: '4 / 5', maxHeight: 450 }}>
-            <img src={imgs[0]} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img src={imgs[0]} alt="" loading={eagerMedia ? 'eager' : 'lazy'} fetchpriority={eagerMedia ? 'high' : undefined} decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             {/* Subtle bottom fade — image blends with card */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
@@ -851,7 +851,8 @@ const PostCard = memo(PostCardImpl, (prev, next) => (
   prev.onFollowChange === next.onFollowChange &&
   prev.onViewProfile === next.onViewProfile &&
   prev.onDeleted === next.onDeleted &&
-  prev.animDelay === next.animDelay
+  prev.animDelay === next.animDelay &&
+  prev.eagerMedia === next.eagerMedia
 ))
 
 const menuIconBtn = {
@@ -1319,7 +1320,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
             Noticias
           </div>
           <div className="filter-scroll" style={{ padding: '0 14px', gap: 10 }}>
-            {articles.map(a => {
+            {articles.map((a, i) => {
               const gs = GAME_STYLES[a.game] ?? {}
               const ago = (() => {
                 if (!a.published_at) return ''
@@ -1345,7 +1346,18 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
                 >
                   {a.image_url ? (
                     <div style={{ width: '100%', height: 100, overflow: 'hidden', background: '#0A0A0A', flexShrink: 0 }}>
-                      <img src={a.image_url} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <img
+                        src={a.image_url}
+                        alt=""
+                        // Las primeras 2 cards del rail están SIEMPRE en el
+                        // primer viewport: lazy acá solo retrasa el LCP.
+                        // fetchpriority (minúscula: React 18 lo pasa tal cual
+                        // al DOM) sube la primera en la cola de red.
+                        loading={i < 2 ? 'eager' : 'lazy'}
+                        fetchpriority={i === 0 ? 'high' : undefined}
+                        decoding="async"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
                     </div>
                   ) : (
                     <div style={{
@@ -1467,6 +1479,7 @@ export default function FeedScreen({ profile, isStaff, isOwner, onViewProfile, o
               <PostCard
                 key={post.id}
                 post={post}
+                eagerMedia={i === 0}  // el 1er post suele ser el LCP en mobile
                 animDelay={i < 6 ? Math.min(i * 40, 200) : 0}  // skip stagger past fold
                 currentUserId={profile?.id}
                 isStaff={isStaff}

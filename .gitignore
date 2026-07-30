@@ -6,3 +6,6 @@ dist
 .env*.local
 .claude/settings.local.json
 *.mov
+
+# macOS
+.DS_Store

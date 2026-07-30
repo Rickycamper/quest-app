@@ -1616,6 +1616,9 @@ export async function deleteCard(cardId) {
 // ── TRACKING ─────────────────────────────────
 export async function getMyPackages() {
   const { data: { session } } = await supabase.auth.getSession()
+  // Invitado: sin sesión no hay paquetes propios. Sin esta guarda, el screen
+  // mostraba el error crudo "Cannot read properties of null (reading 'user')".
+  if (!session?.user?.id) return []
   const { data, error } = await supabase
     .from('packages')
     .select(`

@@ -29,12 +29,36 @@
     <!-- Speed up first API call to Supabase (saves ~100-200 ms on first request) -->
     <link rel="preconnect" href="https://qattyrdmlbolocnzczos.supabase.co" crossorigin />
 
-    <!-- Fonts — Bebas Neue loaded async so it doesn't block render. The print
-         media trick: link loads as non-render-blocking, then onload swaps to all. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" /></noscript>
+    <!-- Bebas Neue AUTO-HOSPEDADA (subset latin, 8.6 KB — cubre todos los
+         acentos del español). Antes venía de Google Fonts: 2 conexiones
+         nuevas + un CSS intermedio antes de poder pedir el .woff2, y los
+         títulos se repintaban al llegar (font swap → layout shift). Servida
+         del mismo dominio + preload, la fuente llega antes del primer paint
+         y el swap desaparece en la práctica. font-display:swap queda como
+         red de seguridad en conexiones muy lentas. -->
+    <link rel="preload" href="/fonts/bebas-neue-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      @font-face {
+        font-family: 'Bebas Neue';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('/fonts/bebas-neue-latin.woff2') format('woff2');
+      }
+      /* Inter VARIABLE: un archivo de 47 KB reemplaza los 5 pesos que antes
+         llegaban vía @import en App.jsx — la cadena más lenta posible (CSS
+         inyectado por JS → CSS de Google → recién ahí las fuentes). Los
+         estilos inline piden 'Inter' directo, así que se descarga en todos
+         los dispositivos: precargarla evita el repintado del swap. */
+      @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400 800;
+        font-display: swap;
+        src: url('/fonts/inter-var-latin.woff2') format('woff2');
+      }
+    </style>
 
     <!-- SEO -->
     <meta name="description" content="La comunidad TCG de Panamá — competí en torneos de Magic, Pokémon, One Piece y más. Coleccioná, tradeá y conectá con jugadores cerca tuyo." />
@@ -91,7 +115,10 @@
              a cool tint somewhere instead of pure warm everywhere. */
           radial-gradient(ellipse 45% 38% at 32% 30%,  rgba(56,189,248,0.16)  0%, transparent 65%),
           #0A0A12;
-        background-attachment:fixed;
+        /* SIN background-attachment:fixed — el body nunca scrollea (el scroll
+           vive en .screen-scroll), así que "fixed" no cambiaba nada visual,
+           pero saca a varios navegadores del fast path de composición con un
+           fondo de 7 gradientes. iOS directamente lo ignora. */
         font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter",system-ui,sans-serif;
         -webkit-font-smoothing:antialiased;
         -moz-osx-font-smoothing:grayscale;
