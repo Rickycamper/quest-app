@@ -37,6 +37,7 @@ const ChatScreen            = lazy(() => import('./screens/ChatScreen'))
 const CommunityChatScreen   = lazy(() => import('./screens/CommunityChatScreen'))
 const MyOrdersScreen        = lazy(() => import('./screens/MyOrdersScreen'))
 const ShopOrdersScreen      = lazy(() => import('./screens/ShopOrdersScreen'))
+const CafeScreen            = lazy(() => import('./screens/CafeScreen'))
 const LogMatchModal         = lazy(() => import('./screens/LogMatchModal'))
 const SearchScreen          = lazy(() => import('./screens/SearchScreen'))
 const ShopScreen            = lazy(() => import('./screens/ShopScreen'))
@@ -433,6 +434,16 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   const [showCommunity,   setShowCommunity]  = useState(false)  // chat de comunidad por TCG
   const [showMyOrders,    setShowMyOrders]   = useState(false)  // pedidos del cliente (pre orders + reservas)
   const [showShopOrders,  setShowShopOrders] = useState(false)  // gestión de pedidos online (equipo)
+  // Quest Café: pantalla OCULTA de la navegación — se entra por QR o URL.
+  // Detecta el path /cafe (rewrite en vercel.json) y también cualquier
+  // hostname de cafetería (cafe.questhobbystore.com o un dominio questcafe
+  // apuntado a este mismo proyecto), así el URL aparte funciona sin tocar
+  // código. Sin auth: el QR lo escanea cualquiera que pasa por la tienda.
+  const [showCafe, setShowCafe] = useState(() =>
+    typeof window !== 'undefined' && (
+      window.location.pathname.replace(/\/+$/, '') === '/cafe' ||
+      /^cafe\.|questcafe/i.test(window.location.hostname)
+    ))
   const [vsUser,          setVsUser]         = useState(null)   // { id, username } | null = no preselect
   const [showMatchModal,    setShowMatchModal]    = useState(false)
   const [showPackageCreate, setShowPackageCreate] = useState(false)
@@ -860,6 +871,27 @@ const needsTerms = profile && !profile.terms_accepted_at
         }}>
           <Suspense fallback={<ScreenFallback />}>
             <ShopOrdersScreen onClose={() => setShowShopOrders(false)} />
+          </Suspense>
+        </div>
+      )}
+
+      {/* Quest Café — menú por QR/URL, pedido por WhatsApp. Sin login. */}
+      {showCafe && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 130,
+          background: '#0C0A08', display: 'flex', flexDirection: 'column',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          animation: 'slideUp 0.22s ease',
+        }}>
+          <Suspense fallback={<ScreenFallback />}>
+            <CafeScreen onClose={() => {
+              // Al cerrar, limpiar /cafe de la barra para que un refresh
+              // no reabra el menú (si entró por dominio propio, se queda).
+              if (window.location.pathname.replace(/\/+$/, '') === '/cafe') {
+                window.history.replaceState(null, '', '/')
+              }
+              setShowCafe(false)
+            }} />
           </Suspense>
         </div>
       )}

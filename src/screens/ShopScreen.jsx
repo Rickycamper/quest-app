@@ -66,6 +66,10 @@ const CATEGORIES = [
   { id: 'single',    label: 'Singles'     },
   { id: 'accessory', label: 'Accesorios'  },
 ]
+// Cafetería: NO va en CATEGORIES — el público no ve la pestaña en la tienda.
+// El menú público vive en /cafe (QR); acá solo la gestiona el equipo, con
+// el mismo editor que el resto de los productos.
+const CAFE_CAT = { id: 'cafe', label: 'Cafetería' }
 
 const ACCESSORY_SUBS = [
   { id: null,       label: 'Todos'    },
@@ -1723,7 +1727,7 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
       const prod = await upsertShopProduct({
         sku: sku.trim() || `MANUAL-${Date.now()}`,
         name: name.trim(), category,
-        game: category !== 'accessory' ? game : null,
+        game: (category === 'sealed' || category === 'single') ? game : null,
         subcategory: category === 'accessory' ? subcat : null,
         price: askPrice ? 0 : finalPrice,
         coming_soon: comingSoon,
@@ -1755,7 +1759,7 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
         <div>
           <FL>Categoría</FL>
           <div style={{ display: 'flex', gap: 6 }}>
-            {CATEGORIES.map(c => (
+            {[...CATEGORIES, CAFE_CAT].map(c => (
               <button key={c.id} onClick={() => setCategory(c.id)} style={{
                 flex: 1, padding: '8px 0', borderRadius: 8,
                 background: category === c.id ? '#FFF' : '#1A1A1A',
@@ -1768,7 +1772,7 @@ function AddProductModal({ onClose, onAdded, defaultCategory }) {
         </div>
 
         {/* Game (sealed/single) or subcategory (accessory) */}
-        {category !== 'accessory' ? (
+        {category === 'cafe' ? null : category !== 'accessory' ? (
           <div>
             <FL>Juego</FL>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -2362,6 +2366,7 @@ export default function ShopScreen({ isOwner, isStaff }) {
     sealed:    products.filter(p => (p.category || 'sealed') === 'sealed'    && esVisible(p)).length,
     single:    products.filter(p => (p.category || 'sealed') === 'single'    && esVisible(p)).length,
     accessory: products.filter(p => (p.category || 'sealed') === 'accessory' && esVisible(p)).length,
+    cafe:      products.filter(p => (p.category || 'sealed') === 'cafe'      && esVisible(p)).length,
   }
 
   return (
@@ -2432,7 +2437,7 @@ export default function ShopScreen({ isOwner, isStaff }) {
           borderRadius: 12, padding: 4, gap: 4,
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
         }}>
-          {CATEGORIES.map(c => {
+          {(canEdit ? [...CATEGORIES, CAFE_CAT] : CATEGORIES).map(c => {
             const active = category === c.id
             return (
               <button key={c.id} onClick={() => handleCategory(c.id)} style={{
@@ -2461,9 +2466,11 @@ export default function ShopScreen({ isOwner, isStaff }) {
       {/* ── Sub-filter ── */}
       {!search && (
         <div style={{ padding: '0 16px', marginBottom: 10 }}>
-          {category !== 'accessory'
-            ? <GameFilter value={gameFilter} onChange={setGameFilter} />
-            : <AccessoryFilter value={subFilter} onChange={setSubFilter} />
+          {category === 'cafe'
+            ? null
+            : category !== 'accessory'
+              ? <GameFilter value={gameFilter} onChange={setGameFilter} />
+              : <AccessoryFilter value={subFilter} onChange={setSubFilter} />
           }
         </div>
       )}

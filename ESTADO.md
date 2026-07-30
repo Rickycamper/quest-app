@@ -95,6 +95,18 @@ es realmente la secreta. Devuelve solo booleanos. Usalo **antes** de probar
 una compra: sin eso, los errores de configuración recién aparecen después de
 haberle cobrado a alguien.
 
+**Quest Café** (misma rama): menú oculto en `/cafe` — no aparece en ninguna
+navegación; se entra por QR (`public/cafe-qr.png`, apunta a
+questhobbystore.com/cafe) o URL directa. El pedido sale por WhatsApp al
+número del negocio con "para tomar en tienda / para llevar", items y total.
+Sin login ni cobro online. El equipo gestiona los productos en la pestaña
+**Cafetería** del Shop (visible solo para admins): categoría `cafe` en
+`shop_products`, sin migración (la columna es texto libre). Se muestra todo
+lo que tenga precio > 0, sin lógica de stock. App.jsx también detecta
+hostnames `cafe.*` o `questcafe*`: si mañana se compra un dominio aparte,
+se apunta al mismo proyecto de Vercel y abre el menú directo — **imprimir
+el QR recién cuando el URL definitivo esté decidido**.
+
 ---
 
 ## 3. Opcional
