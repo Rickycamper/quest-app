@@ -1114,38 +1114,23 @@ function PayOnlineBlock({ product, onPaid }) {
   const [nombre,  setNombre]  = useState('')
   const [tel,     setTel]     = useState('')
   const [email,   setEmail]   = useState('')
-  // WhatsApp de quien retira. Suele ser el mismo comprador, pero no siempre:
-  // se compra para un hermano, de regalo, o lo busca alguien de la casa. Es
-  // opcional — si queda vacío el equipo usa el teléfono del comprador.
-  const [waRecibe, setWaRecibe] = useState('')
   useEffect(() => {
     if (profile?.username) setNombre(n => n || profile.username)
-    if (profile?.phone) {
-      setTel(t => t || profile.phone)
-      // Se precarga también acá: en la mayoría de los casos quien paga es
-      // quien retira, así el campo queda listo y no hay que escribirlo.
-      setWaRecibe(v => v || profile.phone)
-    }
+    if (profile?.phone)    setTel(t => t || profile.phone)
     const e = profile?.email || user?.email
     if (e) setEmail(v => v || e)
   }, [profile?.username, profile?.phone, profile?.email, user?.email])
 
-  // Solo se valida si escribió algo: vacío es válido (cae en el del comprador).
-  const waRecibeOk = !waRecibe.trim() || waRecibe.replace(/\D/g, '').length >= 7
-
   const nombreOk = nombre.trim().length >= 2
   const telOk    = tel.replace(/\D/g, '').length >= 7   // Panamá: 7-8 dígitos
   const emailOk  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-  const datosOk  = nombreOk && telOk && emailOk && waRecibeOk
+  const datosOk  = nombreOk && telOk && emailOk
 
   const boxRef = useRef(null)
   const stateRef = useRef({ qty: 1, branch: null, buyer: null })
   useEffect(() => {
-    stateRef.current = { qty, branch, buyer: {
-      name: nombre.trim(), phone: tel.trim(), email: email.trim(),
-      recipientPhone: waRecibe.trim(),
-    } }
-  }, [qty, branch, nombre, tel, email, waRecibe])
+    stateRef.current = { qty, branch, buyer: { name: nombre.trim(), phone: tel.trim(), email: email.trim() } }
+  }, [qty, branch, nombre, tel, email])
 
   // Sucursales con stock — el cliente elige dónde retira
   const options = [
@@ -1267,7 +1252,6 @@ function PayOnlineBlock({ product, onPaid }) {
           { val: nombre, set: setNombre, ph: 'Nombre y apellido', ok: nombreOk, type: 'text',  ac: 'name' },
           { val: tel,    set: setTel,    ph: 'Teléfono (ej. 6000-0000)', ok: telOk, type: 'tel', ac: 'tel' },
           { val: email,  set: setEmail,  ph: 'Email', ok: emailOk, type: 'email', ac: 'email' },
-          { val: waRecibe, set: setWaRecibe, ph: 'WhatsApp de quien retira (si es otra persona)', ok: waRecibeOk, type: 'tel', ac: 'off' },
         ].map(f => (
           <input
             key={f.ph}
@@ -1312,15 +1296,10 @@ function PayOnlineBlock({ product, onPaid }) {
         <div ref={boxRef} style={{ minHeight: 46, opacity: busy ? 0.6 : 1, pointerEvents: busy ? 'none' : 'auto' }} />
       ) : (
         <div style={{ fontSize: 12, color: '#6B7280', textAlign: 'center', padding: '10px 0', fontFamily: 'Inter, sans-serif' }}>
-          {(() => {
-            if (!branch) return 'Elegí la sucursal para pagar'
-            const faltan = [!nombreOk && 'tu nombre', !telOk && 'tu teléfono', !emailOk && 'tu email'].filter(Boolean)
-            if (faltan.length) return `Completá ${faltan.join(', ')} para pagar`
-            // Único caso restante: el campo opcional tiene algo mal escrito.
-            // Sin esta rama el mensaje quedaba en "Completá para pagar", sin
-            // decir qué revisar.
-            return 'Revisá el WhatsApp de quien retira, o dejalo vacío'
-          })()}
+          {!branch
+            ? 'Elegí la sucursal para pagar'
+            : `Completá ${[!nombreOk && 'tu nombre', !telOk && 'tu teléfono', !emailOk && 'tu email']
+                .filter(Boolean).join(', ')} para pagar`}
         </div>
       )}
 

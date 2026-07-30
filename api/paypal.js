@@ -248,9 +248,6 @@ export default async function handler(req, res) {
         || [payer?.name?.given_name, payer?.name?.surname].filter(Boolean).join(' ') || null
       const buyerEmail = txt(form.email, 160) || payer?.email_address || null
       const buyerPhone = txt(form.phone, 40)
-      // WhatsApp de quien retira, si es otra persona. Opcional: el equipo
-      // cae en buyerPhone cuando viene vacío.
-      const recipientPhone = txt(form.recipientPhone, 40)
 
       // Descuenta stock + numera el pedido, todo atómico.
       let placed
@@ -267,7 +264,6 @@ export default async function handler(req, res) {
             p_buyer_name: buyerName,
             p_buyer_email: buyerEmail,
             p_buyer_phone: buyerPhone,
-            p_recipient_phone: recipientPhone,
             p_status: capStatus === 'PENDING' ? 'pending' : 'paid',
           }),
         })

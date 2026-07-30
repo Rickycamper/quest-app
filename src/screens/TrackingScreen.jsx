@@ -2,9 +2,23 @@
 // QUEST — TrackingScreen
 // ─────────────────────────────────────────────
 import { useState, useEffect, useRef } from 'react'
-import { getMyPackages, getAllPackages, createPackage, updatePackageStatus, updatePackageDetails, deletePackage, searchUsers, uploadPackageImage } from '../lib/supabase'
+import { getMyPackages, getAllPackages, createPackage, updatePackageStatus, updatePackageDetails, deletePackage, searchUsers, uploadPackageImage, getPackageRecipientPhone } from '../lib/supabase'
 import { PKG_STATUS, PKG_STEPS, BRANCHES } from '../lib/constants'
 import { CameraIcon } from '../components/Icons'
+
+/**
+ * Teléfono a formato wa.me (E.164 sin "+"). Se escribe como se quiere
+ * ("6000-0000", "+507 6000 0000"); wa.me necesita 50760000000. Panamá son
+ * 8 dígitos, así que a 8 se le antepone 507. Menos de 7 se descarta.
+ */
+function waDigits(phone) {
+  const d = String(phone || '').replace(/\D/g, '')
+  if (!d) return null
+  if (d.length === 8) return '507' + d
+  if (d.startsWith('507') && d.length === 11) return d
+  if (d.length >= 10) return d
+  return null
+}
 
 const sk = (w, h, r = 6) => ({
   width: w, height: h, borderRadius: r, flexShrink: 0, display: 'block',
@@ -119,6 +133,7 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, onEdit
   const [deleting,   setDeleting]   = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
   const [cardErr,    setCardErr]    = useState('')
+  const [avisando,   setAvisando]   = useState(false)
   // Lightbox — when tapped, the package image opens fullscreen so the
   // user can actually see what's inside (instead of just a 200 px crop).
   const [lightbox,   setLightbox]   = useState(false)
@@ -140,6 +155,38 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, onEdit
   const cs      = PKG_STATUS[pkg.status] ?? PKG_STATUS.pending_confirmation
   const nextKey = cs.adminNext
   const nextCs  = nextKey ? PKG_STATUS[nextKey] : null
+
+  // Avisar por WhatsApp — solo en los dos momentos que le importan al que
+  // recibe: quedó en la tienda de origen, y llegó a destino.
+  const avisable = pkg.status === 'received_origin' || pkg.status === 'arrived'
+  const handleAvisar = async () => {
+    if (avisando) return
+    setAvisando(true); setCardErr('')
+    try {
+      // El teléfono se pide acá y no viene en el listado: es PII y solo el
+      // equipo puede leerlo (get_package_recipient_phone valida is_staff()).
+      const tel = await getPackageRecipientPhone(pkg.id)
+      const num = waDigits(tel)
+      if (!num) {
+        setCardErr(tel
+          ? `El teléfono guardado no sirve para WhatsApp (${tel})`
+          : 'No hay teléfono del destinatario. Pedíselo y cargalo al crear el envío.')
+        return
+      }
+      const quien = pkg.recipient?.username ? `Hola ${pkg.recipient.username}!` : 'Hola!'
+      const texto = pkg.status === 'arrived'
+        ? `${quien} Tu paquete #${pkg.tracking_code} ya llegó a nuestra tienda de ${pkg.destination_branch} y podés retirarlo. Mostranos este número. — Quest`
+        : `${quien} Recibimos tu paquete #${pkg.tracking_code} en la tienda de ${pkg.origin_branch}. Te avisamos en cuanto llegue a ${pkg.destination_branch}. — Quest`
+      // En escritorio va a WhatsApp Web para que salga desde la sesión de la
+      // tienda y no desde el WhatsApp personal del admin que clickea.
+      const esEscritorio = window.matchMedia('(min-width: 1024px)').matches
+      window.open(esEscritorio
+        ? `https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(texto)}`
+        : `https://wa.me/${num}?text=${encodeURIComponent(texto)}`, '_blank')
+    } catch (e) {
+      setCardErr(e?.message || 'No se pudo obtener el teléfono')
+    } finally { setAvisando(false) }
+  }
 
   const isSender    = pkg.sender?.id    === currentUserId || pkg.sender_id    === currentUserId
   const isRecipient = pkg.recipient?.id === currentUserId || pkg.recipient_id === currentUserId
@@ -438,6 +485,26 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, onEdit
             </div>
           )}
 
+          {/* Avisar por WhatsApp — solo equipo, y solo en los dos estados que
+              le interesan a quien recibe. Va ANTES de la acción de avanzar:
+              primero se avisa del estado actual, después se pasa al siguiente. */}
+          {isStaff && avisable && (
+            <button onClick={handleAvisar} disabled={avisando} style={{
+              width: '100%', padding: '11px', marginBottom: 8,
+              borderRadius: 8, background: 'rgba(37,211,102,0.10)',
+              border: '1px solid rgba(37,211,102,0.40)',
+              color: '#25D366', fontSize: 13, fontWeight: 700,
+              cursor: avisando ? 'default' : 'pointer', opacity: avisando ? 0.6 : 1,
+              fontFamily: 'Inter, sans-serif',
+            }}>
+              {avisando
+                ? 'Buscando el teléfono…'
+                : pkg.status === 'arrived'
+                  ? 'Avisar por WhatsApp que llegó'
+                  : 'Avisar por WhatsApp que está en origen'}
+            </button>
+          )}
+
           {/* Admin action */}
           {isStaff && nextKey && nextCs && (
             <div>
@@ -522,6 +589,11 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId, initialR
   const [recipQuery,   setRecipQuery]  = useState('')
   const [recipResult,  setRecipResult] = useState([])
   const [recipient,    setRecipient]   = useState(initialRecipient)
+  // WhatsApp del destinatario. Vacío a propósito: NO se precarga del perfil
+  // del destinatario porque sería mostrarle a un usuario el teléfono de otro
+  // (ver 20260510_pii_lockdown.sql). Si queda vacío, el equipo cae al del
+  // perfil por get_package_recipient_phone(), que solo el staff puede llamar.
+  const [waDestino,    setWaDestino]   = useState('')
   const [notes,        setNotes]       = useState('')
   const [items,        setItems]       = useState([{ name: '', qty: 1 }])
   const [imageFile,    setImageFile]   = useState(null)
@@ -574,6 +646,7 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId, initialR
         notes,
         items: validItems,
         imageUrl,
+        recipientPhone: waDestino,
       })
       onCreated(pkg)
       onClose()
@@ -720,6 +793,25 @@ export function CreatePackageModal({ onClose, onCreated, currentUserId, initialR
               )}
             </>
           )}
+        </div>
+
+        {/* ── WHATSAPP DEL DESTINATARIO ──
+            Opcional: si el destinatario ya tiene teléfono en su perfil, el
+            equipo lo resuelve solo. Este campo es para cuando no lo tiene. */}
+        <div style={{ padding: '14px 16px 0' }}>
+          <div style={labelStyle}>WHATSAPP DE QUIEN RECIBE</div>
+          <input
+            type="tel"
+            placeholder="Ej. 6000-0000"
+            value={waDestino}
+            onChange={e => setWaDestino(e.target.value.slice(0, 40))}
+            style={inputStyle}
+          />
+          <div style={{ fontSize: 11, color: '#4B5563', marginTop: 6, lineHeight: 1.5, fontFamily: 'Inter, sans-serif' }}>
+            Solo si no lo tenemos registrado. Con esto el equipo le avisa
+            cuando el paquete queda en la tienda de origen y cuando llega a
+            destino.
+          </div>
         </div>
 
         {/* ── OBSERVACIONES ── */}

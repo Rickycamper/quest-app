@@ -1758,7 +1758,7 @@ export async function subscribeToPush(userId) {
   }
 }
 
-export async function createPackage({ originBranch, destinationBranch, recipientId, notes, items, imageUrl }) {
+export async function createPackage({ originBranch, destinationBranch, recipientId, notes, items, imageUrl, recipientPhone }) {
   // Use SECURITY DEFINER RPC to bypass RLS on insert
   const { data: newId, error: rpcErr } = await supabase.rpc('create_package_as_user', {
     p_origin_branch: originBranch,
@@ -1786,6 +1786,15 @@ export async function createPackage({ originBranch, destinationBranch, recipient
   await Promise.all([
     items?.length
       ? supabase.from('package_items').insert(items.map(i => ({ package_id: pkg.id, name: i.name, qty: i.qty })))
+      : Promise.resolve(),
+    // El teléfono se carga aparte, con su propia función: create_package_as_user
+    // vive solo en prod (su cuerpo no está en supabase/migrations) y recrearla
+    // para agregarle un parámetro se llevaría puesta la generación del
+    // tracking_code. Si esto falla, el paquete igual queda creado — es un dato
+    // de contacto, no vale abortar el envío por él.
+    recipientPhone?.trim()
+      ? supabase.rpc('set_package_recipient_phone', { p_package_id: pkg.id, p_phone: recipientPhone.trim() })
+          .then(({ error }) => { if (error) console.warn('No se pudo guardar el WhatsApp del destinatario:', error.message) })
       : Promise.resolve(),
     recipientId
       ? createNotification(
@@ -1826,6 +1835,20 @@ const PKG_NOTIFS = {
     title: '🎉 Paquete retirado',
     body:  (code) => `El paquete #${code} fue retirado exitosamente. ¡Todo listo!`,
   },
+}
+
+/**
+ * WhatsApp del destinatario — SOLO equipo.
+ *
+ * Pasa por una función SECURITY DEFINER en vez de leer profiles.phone: el
+ * teléfono de un perfil es PII y exponerlo por REST haría imposible cerrar
+ * la fase 2 de 20260510_pii_lockdown.sql. Devuelve el número que cargó el
+ * remitente o, si no cargó ninguno, el del perfil del destinatario.
+ */
+export async function getPackageRecipientPhone(packageId) {
+  const { data, error } = await supabase.rpc('get_package_recipient_phone', { p_package_id: packageId })
+  if (error) throw error
+  return data ?? null
 }
 
 export async function updatePackageStatus(packageId, status, notes = '') {
