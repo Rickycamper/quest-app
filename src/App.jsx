@@ -36,6 +36,7 @@ const LiveStreamScreen      = lazy(() => import('./screens/LiveStreamScreen'))
 const ChatScreen            = lazy(() => import('./screens/ChatScreen'))
 const CommunityChatScreen   = lazy(() => import('./screens/CommunityChatScreen'))
 const MyOrdersScreen        = lazy(() => import('./screens/MyOrdersScreen'))
+const ShopOrdersScreen      = lazy(() => import('./screens/ShopOrdersScreen'))
 const LogMatchModal         = lazy(() => import('./screens/LogMatchModal'))
 const SearchScreen          = lazy(() => import('./screens/SearchScreen'))
 const ShopScreen            = lazy(() => import('./screens/ShopScreen'))
@@ -427,6 +428,7 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   const [chatUser,        setChatUser]       = useState(null)   // { id, username }
   const [showCommunity,   setShowCommunity]  = useState(false)  // chat de comunidad por TCG
   const [showMyOrders,    setShowMyOrders]   = useState(false)  // pedidos del cliente (pre orders + reservas)
+  const [showShopOrders,  setShowShopOrders] = useState(false)  // gestión de pedidos online (equipo)
   const [vsUser,          setVsUser]         = useState(null)   // { id, username } | null = no preselect
   const [showMatchModal,    setShowMatchModal]    = useState(false)
   const [showPackageCreate, setShowPackageCreate] = useState(false)
@@ -702,6 +704,8 @@ const needsTerms = profile && !profile.terms_accepted_at
           onOpenShop={() => { setShowHub(false); setActiveTab('shop'); setVisitedTabs(prev => { const n = new Set(prev); n.add('shop'); return n }) }}
           onOpenRanking={() => { setShowHub(false); setActiveTab('ranks'); setVisitedTabs(prev => { const n = new Set(prev); n.add('ranks'); return n }) }}
           onOpenMyOrders={() => { setShowHub(false); requireAuth(() => setShowMyOrders(true)) }}
+          onOpenShopOrders={() => { setShowHub(false); requireAuth(() => setShowShopOrders(true)) }}
+          canManageOrders={isOwner || isStaff}
           profile={profile}
           initialView={hubInitialView}
         />
@@ -838,6 +842,20 @@ const needsTerms = profile && !profile.terms_accepted_at
         }}>
           <Suspense fallback={<ScreenFallback />}>
             <MyOrdersScreen onClose={() => setShowMyOrders(false)} />
+          </Suspense>
+        </div>
+      )}
+
+      {/* Pedidos online — gestión del equipo (confirmar pago, listo, entregado) */}
+      {showShopOrders && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 110,
+          background: '#0A0A0A', display: 'flex', flexDirection: 'column',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          animation: 'slideUp 0.22s ease',
+        }}>
+          <Suspense fallback={<ScreenFallback />}>
+            <ShopOrdersScreen onClose={() => setShowShopOrders(false)} />
           </Suspense>
         </div>
       )}

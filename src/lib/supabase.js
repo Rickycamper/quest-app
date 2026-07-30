@@ -3317,6 +3317,58 @@ export async function getMyOrders() {
   return items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 }
 
+// ── Pedidos online (gestión del equipo) ───────
+// El cliente los ve por getMyOrders(); esto es la vista del staff. RLS ya
+// restringe la lectura a is_staff() OR dueño del pedido, así que un usuario
+// común que llame esto recibe solo los suyos — no hace falta gatear acá,
+// pero la pantalla igual se muestra únicamente al equipo.
+
+/** Pedidos pagados online. `status` y `branch` son filtros opcionales. */
+export async function getShopOrders({ status = null, branch = null } = {}) {
+  let q = supabase
+    .from('shop_orders')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (status) q = q.eq('status', status)
+  if (branch) q = q.eq('branch', branch)
+  const { data, error } = await q
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * Cambia el estado de un pedido online.
+ *
+ * `ready` marca listo para retirar y sella `ready_at` — eso es lo que el
+ * cliente ve como "✓ LISTO PARA RETIRAR" en Mis Pedidos. `pickupNote` es la
+ * observación libre (ej. "mañana a partir de las 3pm"), igual que en reservas.
+ *
+ * No toca el stock: ya se descontó al registrarse el pago. Cambiar de estado
+ * no devuelve ni consume unidades.
+ */
+export async function updateShopOrder(id, { status, pickupNote } = {}) {
+  const fields = {}
+  if (status) {
+    fields.status = status
+    // ready_at se sella al marcar listo. 'delivered' NO lo borra: el pedido
+    // entregado estuvo listo, y perder esa fecha sería perder el historial.
+    // Solo se limpia si se vuelve atrás a paid/pending, donde deja de ser
+    // cierto que el cliente puede ir a buscarlo.
+    if (status === 'ready')                          fields.ready_at = new Date().toISOString()
+    else if (status === 'paid' || status === 'pending') fields.ready_at = null
+  }
+  if (pickupNote !== undefined) fields.pickup_note = pickupNote || null
+
+  const { data, error } = await supabase
+    .from('shop_orders')
+    .update(fields)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 // ── Shop Reservations ─────────────────────────
 
 const BRANCH_QTY_COL = { david: 'qty_david', panama: 'qty_panama', chitre: 'qty_chitre' }

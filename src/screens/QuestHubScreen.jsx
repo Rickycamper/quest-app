@@ -1846,7 +1846,7 @@ const TILES = [
 ]
 
 // ── Main component ────────────────────────────
-export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onOpenRanking, onOpenMyOrders, onOpenLive, onOpenLiveStream, onBattleNow, profile, canLive = false, canStream = false, initialView = null }) {
+export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onOpenRanking, onOpenMyOrders, onOpenShopOrders, onOpenLive, onOpenLiveStream, onBattleNow, profile, canLive = false, canStream = false, canManageOrders = false, initialView = null }) {
   const [view, setView] = useState(initialView) // null | 'sucursales' | 'membresia' | 'qpoints'
 
   // Tile LIVE — sorteo en vivo (sorteos de grupos). Visible para todos.
@@ -1859,7 +1859,14 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
     id: 'livestream', icon: 'live', label: 'Transmisión', desc: 'Stream en vivo',
     color: '#FB7185', bg: 'rgba(244,63,94,0.08)', border: 'rgba(244,63,94,0.22)', enabled: true,
   }
+  // Gestión de pedidos online — solo el equipo. Va primero porque es una
+  // herramienta de trabajo: se entra varias veces al día, no una vez al mes.
+  const VENTAS_TILE = {
+    id: 'ventasonline', icon: 'package', label: 'Pedidos online', desc: 'Compras pagadas por PayPal',
+    color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.22)', enabled: true,
+  }
   const tiles = [
+    ...(canManageOrders ? [VENTAS_TILE] : []),
     ...(canLive ? [LIVE_TILE] : []),
     ...(canStream ? [STREAM_TILE] : []),
     ...TILES,
@@ -1876,6 +1883,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
     if (tile.id === 'shop')        { onOpenShop?.(); onClose(); return }
     if (tile.id === 'ranking')     { onOpenRanking?.(); onClose(); return }
     if (tile.id === 'pedidos')     { onOpenMyOrders?.(); onClose(); return }
+    if (tile.id === 'ventasonline'){ onOpenShopOrders?.(); onClose(); return }
     setView(tile.id)
   }
 
