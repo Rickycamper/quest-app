@@ -97,8 +97,11 @@ export default function ShopOrdersScreen({ onClose }) {
   }
 
   const abrirWA = (o) => {
-    const num = waNumber(o.buyer_phone)
-    if (!num) { setErr(`${o.code}: el teléfono guardado no sirve para WhatsApp (${o.buyer_phone || 'vacío'})`); return }
+    // Se le escribe a quien RETIRA. Si el comprador no cargó un número
+    // distinto, es él mismo.
+    const destino = o.recipient_phone || o.buyer_phone
+    const num = waNumber(destino)
+    if (!num) { setErr(`${o.code}: el teléfono guardado no sirve para WhatsApp (${destino || 'vacío'})`); return }
     const texto = encodeURIComponent(mensajeWA(o))
 
     // En escritorio se manda a WhatsApp Web, que usa la sesión LOGUEADA —
@@ -194,6 +197,13 @@ export default function ShopOrdersScreen({ onClose }) {
               <div style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Inter, sans-serif', lineHeight: 1.5, paddingTop: 2, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                 {o.buyer_name || 'Sin nombre'}
                 {o.buyer_phone && <> · {o.buyer_phone}</>}
+                {/* Solo se muestra si retira otra persona: repetir el mismo
+                    número dos veces no aporta nada y ensucia la tarjeta. */}
+                {o.recipient_phone && o.recipient_phone !== o.buyer_phone && (
+                  <span style={{ display: 'block', fontSize: 11.5, color: '#25D366' }}>
+                    Retira: {o.recipient_phone}
+                  </span>
+                )}
                 {o.buyer_email && <span style={{ display: 'block', fontSize: 11, color: '#6B7280', wordBreak: 'break-all' }}>{o.buyer_email}</span>}
               </div>
 
@@ -230,7 +240,7 @@ export default function ShopOrdersScreen({ onClose }) {
                   {(o.status === 'paid' || o.status === 'pending') && btn('Listo para retirar', () => { setNotaId(o.id); setNota(o.pickup_note || '') },
                     { color: '#4ADE80', bg: 'rgba(74,222,128,0.12)', border: 'rgba(74,222,128,0.45)' })}
                   {o.status === 'ready' && btn('Registrar entrega', () => cambiar(o, 'delivered'))}
-                  {o.buyer_phone && btn('WhatsApp', () => abrirWA(o),
+                  {(o.recipient_phone || o.buyer_phone) && btn('WhatsApp', () => abrirWA(o),
                     { color: '#25D366', bg: 'rgba(37,211,102,0.12)', border: 'rgba(37,211,102,0.45)' })}
                 </div>
               )}
