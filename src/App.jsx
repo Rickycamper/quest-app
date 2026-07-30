@@ -47,7 +47,11 @@ const ShopScreen            = lazy(() => import('./screens/ShopScreen'))
 function ScreenFallback() {
   return (
     <div style={{
-      minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      // minHeight 100% (no 200px): el fallback tiene que ocupar el MISMO alto
+      // que va a ocupar la pantalla real. Con 200px, al resolverse el chunk
+      // lazy el contenido saltaba de 200px a la altura completa y todo lo de
+      // abajo se movía — era la mayor fuente de CLS de la app (0.81 medido).
+      minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: '#0A0A0A',
     }}>
       <div style={{
