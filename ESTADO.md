@@ -102,7 +102,18 @@ al site normal. Look de catálogo como la tienda (mismos design tokens),
 grilla de cards con foto/precio/stepper; el logo de Quest y el botón
 "Ir a la tienda" llevan a questhobbystore.com. El pedido sale por WhatsApp
 al número del negocio con "para tomar en tienda / para llevar", items,
-nombre, nota y total. Sin login ni cobro online.
+nombre, teléfono, nota y total. Sin cobro online.
+**Cuentas en el café**: login OPCIONAL por código de email (OTP, solo
+cuentas existentes de Quest — funciona también para cuentas de
+Discord/Twitch y no necesita redirects, clave porque el subdominio es OTRO
+origen y NO comparte la sesión del site principal; se ingresa una vez y
+queda). Logueado precarga nombre y teléfono del perfil; invitado los
+escribe una vez y quedan en localStorage del aparato.
+**Admins en el café**: con sesión de staff aparecen "＋ Producto" y el lápiz
+en cada card — alta, precio, oferta, foto (sube por uploadPostImage o URL),
+orden y ocultar (soft delete, active=false). Mismo shop_products; RLS ya
+lo permite. El staff ve también los items sin precio ("no se publica");
+el público solo los que tienen precio > 0.
 **Para activar el subdominio**: Vercel → proyecto → Settings → Domains →
 Add `cafe.questhobbystore.com` (el apex ya está en Vercel, se autoconfigura).
 El QR (`public/cafe-qr.png`, también servido en /cafe-qr.png) apunta a
