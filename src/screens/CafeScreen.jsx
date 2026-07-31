@@ -267,6 +267,130 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
   )
 }
 
+// ── Tablero de órdenes (solo staff) ──────────────────────────────────────────
+// Vive del registro en cafe_orders (RLS: solo staff lee todo). Se refresca
+// solo cada 20 s mientras está abierto — suficiente para una barra, sin
+// depender de que la tabla esté en la publicación de realtime.
+const ESTADOS_CAFE = {
+  nueva:     { label: 'NUEVA',     color: COLOR.gold,          bg: 'rgba(251,191,36,0.10)',  border: 'rgba(251,191,36,0.4)'  },
+  lista:     { label: 'LISTA',     color: COLOR.green,         bg: 'rgba(74,222,128,0.10)',  border: 'rgba(74,222,128,0.4)'  },
+  entregada: { label: 'ENTREGADA', color: COLOR.textSecondary, bg: 'rgba(156,163,175,0.07)', border: 'rgba(156,163,175,0.25)' },
+  cancelada: { label: 'CANCELADA', color: COLOR.red,           bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.3)'  },
+}
+
+function OrdersSheet({ onClose }) {
+  const [ordenes, setOrdenes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [verTodas, setVerTodas] = useState(false)
+  const [err, setErr] = useState('')
+  const [busyId, setBusyId] = useState(null)
+
+  const cargar = () => {
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+    supabase
+      .from('cafe_orders')
+      .select('*')
+      .gte('created_at', hoy.toISOString())
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) setErr(error.message)
+        else { setErr(''); setOrdenes(data ?? []) }
+        setLoading(false)
+      })
+  }
+  useEffect(() => {
+    cargar()
+    const iv = setInterval(cargar, 20000)
+    return () => clearInterval(iv)
+  }, [])
+
+  const cambiarEstado = async (o, status) => {
+    if (busyId) return
+    setBusyId(o.id); setErr('')
+    const { error } = await supabase.from('cafe_orders').update({ status }).eq('id', o.id)
+    if (error) setErr(error.message)
+    else setOrdenes(prev => prev.map(x => x.id === o.id ? { ...x, status } : x))
+    setBusyId(null)
+  }
+
+  const visibles = verTodas ? ordenes : ordenes.filter(o => o.status === 'nueva' || o.status === 'lista')
+  const btnMini = (label, onClick, color, border, bg) => (
+    <button onClick={onClick} disabled={!!busyId} style={{
+      flex: 1, padding: '8px 6px', borderRadius: 9, cursor: busyId ? 'default' : 'pointer',
+      border: `1px solid ${border}`, background: bg, color,
+      fontSize: 11.5, fontWeight: 800, fontFamily: 'Inter, sans-serif', opacity: busyId ? 0.5 : 1,
+    }}>{label}</button>
+  )
+
+  return (
+    <div style={sheetWrap} onClick={onClose}>
+      <div style={{ ...sheetBox, maxWidth: 430, maxHeight: '88dvh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 15, fontWeight: 800, color: COLOR.text, flex: 1 }}>Órdenes de hoy</span>
+          <button onClick={() => setVerTodas(v => !v)} style={{
+            fontSize: 10.5, fontWeight: 700, padding: '6px 10px', borderRadius: 999,
+            border: `1px solid ${COLOR.borderStrong}`, background: verTodas ? COLOR.surfaceRaised : 'transparent',
+            color: COLOR.textSecondary, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          }}>{verTodas ? 'Solo activas' : 'Ver todas'}</button>
+          <button onClick={onClose} aria-label="Cerrar" style={{
+            background: 'none', border: 'none', color: COLOR.textTertiary, fontSize: 18, cursor: 'pointer', lineHeight: 1,
+          }}>×</button>
+        </div>
+
+        {err && <div style={{ fontSize: 12, color: COLOR.red }}>{err}</div>}
+        {loading && <div style={{ textAlign: 'center', padding: 20 }}><Spinner /></div>}
+        {!loading && visibles.length === 0 && (
+          <div style={{ fontSize: 12.5, color: COLOR.textTertiary, textAlign: 'center', padding: '18px 0' }}>
+            {verTodas ? 'Hoy todavía no hubo pedidos.' : 'Sin pedidos activos — ☕ tranquilidad.'}
+          </div>
+        )}
+
+        {visibles.map(o => {
+          const st = ESTADOS_CAFE[o.status] ?? ESTADOS_CAFE.nueva
+          const hora = new Date(o.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
+          const items = Array.isArray(o.items) ? o.items : []
+          return (
+            <div key={o.id} style={{
+              borderRadius: 13, padding: 12, background: st.bg, border: `1px solid ${st.border}`,
+              display: 'flex', flexDirection: 'column', gap: 7,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 15, fontWeight: 900, color: COLOR.text, fontFamily: 'SF Mono, Menlo, monospace' }}>{o.code}</span>
+                <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.08em', color: st.color }}>{st.label}</span>
+                <span style={{ fontSize: 10.5, color: COLOR.textTertiary }}>{o.modo === 'llevar' ? '🥡 llevar' : '☕ en tienda'}</span>
+                <span style={{ flex: 1 }} />
+                <span style={{ fontSize: 11, color: COLOR.textTertiary }}>{hora}</span>
+              </div>
+
+              <div style={{ fontSize: 12.5, color: COLOR.text, lineHeight: 1.55 }}>
+                {items.map((it, i) => <div key={i}>· {it.qty}× {it.name} — {fmt(it.sub)}</div>)}
+                <div style={{ fontWeight: 800, marginTop: 2 }}>Total: {fmt(o.total)}</div>
+              </div>
+
+              <div style={{ fontSize: 11.5, color: COLOR.textSecondary }}>
+                {o.customer_name || 'Sin nombre'}{o.customer_phone ? ` · ${o.customer_phone}` : ''}
+                {o.note && <span style={{ display: 'block', color: COLOR.gold }}>Nota: {o.note}</span>}
+              </div>
+
+              {o.status === 'nueva' && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {btnMini('Marcar LISTA', () => cambiarEstado(o, 'lista'), COLOR.green, 'rgba(74,222,128,0.45)', 'rgba(74,222,128,0.12)')}
+                  {btnMini('Cancelar', () => cambiarEstado(o, 'cancelada'), COLOR.textSecondary, COLOR.borderStrong, 'transparent')}
+                </div>
+              )}
+              {o.status === 'lista' && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {btnMini('Entregada ✓', () => cambiarEstado(o, 'entregada'), COLOR.textSecondary, COLOR.borderStrong, COLOR.surfaceRaised)}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Pantalla principal ───────────────────────────────────────────────────────
 export default function CafeScreen() {
   const [items, setItems]     = useState([])
@@ -283,6 +407,9 @@ export default function CafeScreen() {
   const [perfil, setPerfil]   = useState(null)
   const [verLogin, setVerLogin] = useState(false)
   const [editor, setEditor]   = useState(null)        // null | {} (nuevo) | producto
+  const [verOrdenes, setVerOrdenes] = useState(false) // tablero staff
+  const [pidiendo, setPidiendo] = useState(false)
+  const [codigoOk, setCodigoOk] = useState(null)      // 'C-0012' tras registrar
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
@@ -333,11 +460,15 @@ export default function CafeScreen() {
   const cambiar = (id, d) =>
     setQty(q => ({ ...q, [id]: Math.max(0, Math.min(20, (q[id] ?? 0) + d)) }))
 
-  const pedirPorWA = () => {
-    // Recordar los datos del aparato para el próximo pedido
-    try { localStorage.setItem(DATOS_KEY, JSON.stringify({ nombre: nombre.trim(), tel: tel.trim() })) } catch {}
+  // Identidad mínima para poder avisarle: nombre + teléfono. La cuenta de
+  // Quest es un atajo que los precarga, no un requisito.
+  const nombreOk = nombre.trim().length >= 2
+  const telOk    = tel.replace(/\D/g, '').length >= 7
+  const datosOk  = nombreOk && telOk
+
+  const armarWA = (codigo) => {
     const lineas = [
-      `☕ *PEDIDO QUEST CAFÉ* — ${modo === 'llevar' ? 'PARA LLEVAR 🥡' : 'PARA TOMAR EN TIENDA'}`,
+      `☕ *PEDIDO QUEST CAFÉ${codigo ? ` ${codigo}` : ''}* — ${modo === 'llevar' ? 'PARA LLEVAR 🥡' : 'PARA TOMAR EN TIENDA'}`,
       '',
       ...pedido.map(p => `· ${p.n}× ${p.name} — ${fmt(p.sub)}`),
       '',
@@ -347,7 +478,38 @@ export default function CafeScreen() {
       perfil?.username ? `Cuenta: @${perfil.username}` : null,
       nota.trim()   ? `Nota: ${nota.trim()}`     : null,
     ].filter(v => v !== null)
-    window.open(`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(lineas.join('\n'))}`, '_blank')
+    return `https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(lineas.join('\n'))}`
+  }
+
+  const hacerPedido = async () => {
+    if (pidiendo || !pedido.length || !datosOk) return
+    setPidiendo(true)
+    try { localStorage.setItem(DATOS_KEY, JSON.stringify({ nombre: nombre.trim(), tel: tel.trim() })) } catch {}
+
+    // 1) Registrar la orden — el tablero del equipo vive de esto. El precio
+    //    se recalcula en la base: solo viajan {id, qty}.
+    let codigo = null
+    try {
+      const { data, error } = await supabase.rpc('place_cafe_order', {
+        p_items: pedido.map(p => ({ id: p.id, qty: p.n })),
+        p_modo:  modo,
+        p_name:  nombre.trim(),
+        p_phone: tel.trim(),
+        p_note:  nota.trim() || null,
+      })
+      if (!error) codigo = (Array.isArray(data) ? data[0] : data)?.code ?? null
+      // Si falló (ej. migración sin correr — trampa conocida del proyecto),
+      // NO se pierde el pedido: sigue saliendo por WhatsApp sin código.
+    } catch {}
+
+    // 2) WhatsApp — el canal donde el equipo ya vive, ahora con el código.
+    window.open(armarWA(codigo), '_blank')
+    if (codigo) {
+      setCodigoOk(codigo)
+      setQty({}); setNota('')
+      setTimeout(() => setCodigoOk(null), 12000)
+    }
+    setPidiendo(false)
   }
 
   return (
@@ -377,6 +539,13 @@ export default function CafeScreen() {
           </div>
         </div>
 
+        {esStaff && (
+          <button onClick={() => setVerOrdenes(true)} style={{
+            fontSize: 11.5, fontWeight: 800, padding: '8px 11px', borderRadius: 999,
+            border: '1px solid rgba(96,165,250,0.55)', background: 'rgba(96,165,250,0.14)',
+            color: COLOR.text, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
+          }}>Órdenes</button>
+        )}
         {esStaff && (
           <button onClick={() => setEditor({})} style={{
             fontSize: 11.5, fontWeight: 800, padding: '8px 11px', borderRadius: 999,
@@ -510,22 +679,33 @@ export default function CafeScreen() {
             <input value={nota} onChange={e => setNota(e.target.value.slice(0, 120))}
                    placeholder="Nota (ej. sin azúcar)" style={inputStyle} />
 
-            <button disabled={pedido.length === 0} onClick={pedirPorWA} style={{
+            {codigoOk && (
+              <div style={{ textAlign: 'center', fontSize: 12.5, color: COLOR.green, fontWeight: 800 }}>
+                ✓ Pedido {codigoOk} registrado — te llamamos por tu nombre
+              </div>
+            )}
+            <button disabled={pedido.length === 0 || !datosOk || pidiendo} onClick={hacerPedido} style={{
               width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
-              background: pedido.length ? '#25D366' : COLOR.surfaceRaised,
-              color: pedido.length ? '#FFF' : COLOR.textQuaternary,
-              fontSize: 14.5, fontWeight: 800, cursor: pedido.length ? 'pointer' : 'default',
+              background: (pedido.length && datosOk && !pidiendo) ? '#25D366' : COLOR.surfaceRaised,
+              color: (pedido.length && datosOk) ? '#FFF' : COLOR.textQuaternary,
+              fontSize: 14.5, fontWeight: 800,
+              cursor: (pedido.length && datosOk && !pidiendo) ? 'pointer' : 'default',
               fontFamily: 'Inter, sans-serif',
             }}>
-              {pedido.length
-                ? `Pedir por WhatsApp · ${fmt(total)}`
-                : 'Elegí algo del menú para pedir'}
+              {pidiendo
+                ? 'Registrando…'
+                : !pedido.length
+                  ? 'Elegí algo del menú para pedir'
+                  : !datosOk
+                    ? `Poné ${[!nombreOk && 'tu nombre', !telOk && 'tu teléfono'].filter(Boolean).join(' y ')} para pedir`
+                    : `Pedir por WhatsApp · ${fmt(total)}`}
             </button>
           </div>
         </div>
       )}
 
       {verLogin && <LoginSheet onClose={() => setVerLogin(false)} />}
+      {verOrdenes && <OrdersSheet onClose={() => setVerOrdenes(false)} />}
       {editor !== null && (
         <EditorSheet
           producto={editor}

@@ -109,11 +109,20 @@ Discord/Twitch y no necesita redirects, clave porque el subdominio es OTRO
 origen y NO comparte la sesión del site principal; se ingresa una vez y
 queda). Logueado precarga nombre y teléfono del perfil; invitado los
 escribe una vez y quedan en localStorage del aparato.
-**Admins en el café**: con sesión de staff aparecen "＋ Producto" y el lápiz
-en cada card — alta, precio, oferta, foto (sube por uploadPostImage o URL),
-orden y ocultar (soft delete, active=false). Mismo shop_products; RLS ya
-lo permite. El staff ve también los items sin precio ("no se publica");
-el público solo los que tienen precio > 0.
+**Admins en el café**: con sesión de staff aparecen "Órdenes", "＋ Producto"
+y el lápiz en cada card — alta, precio, oferta, foto (sube por
+uploadPostImage o URL), orden y ocultar (soft delete, active=false). Mismo
+shop_products; RLS ya lo permite. El staff ve también los items sin precio
+("no se publica"); el público solo los que tienen precio > 0.
+**Órdenes del café — REGISTRADAS** (requiere correr
+`20260730_cafe_orders.sql`): cada pedido queda en `cafe_orders` con código
+C-#### y el tablero "Órdenes" del propio café las opera (nueva → lista →
+entregada / cancelar; se refresca solo cada 20 s). El pedido exige nombre +
+teléfono (la cuenta Quest los precarga; invitado los escribe una vez y
+quedan en el aparato). Los PRECIOS los recalcula place_cafe_order() en la
+base — el navegador manda solo {id, qty}. WhatsApp sigue saliendo, ahora
+con el código. Si la migración no corrió, el cliente NO se rompe: el
+pedido sale por WhatsApp sin código (trampa conocida del proyecto).
 **Para activar el subdominio**: Vercel → proyecto → Settings → Domains →
 Add `cafe.questhobbystore.com` (el apex ya está en Vercel, se autoconfigura).
 El QR (`public/cafe-qr.png`, también servido en /cafe-qr.png) apunta a
