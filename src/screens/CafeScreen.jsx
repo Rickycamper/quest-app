@@ -103,8 +103,10 @@ function LoginSheet({ onClose, onListo }) {
         {paso === 'email' ? (
           <>
             <div style={{ fontSize: 12.5, color: COLOR.textSecondary, lineHeight: 1.5 }}>
-              Te mandamos un código de 6 dígitos al email de tu cuenta. Sirve
-              también si entrás con Discord o Twitch.
+              Te mandamos un <strong style={{ color: COLOR.text }}>código de 6
+              dígitos</strong> al email de tu cuenta. Escribilo acá —
+              <strong style={{ color: COLOR.text }}> no toques ningún link del
+              email</strong>. Sirve también si entrás con Discord o Twitch.
             </div>
             <input type="email" autoComplete="email" placeholder="tu@email.com" value={email}
                    onChange={e => setEmail(e.target.value)} style={inputStyle}
@@ -120,7 +122,7 @@ function LoginSheet({ onClose, onListo }) {
         ) : (
           <>
             <div style={{ fontSize: 12.5, color: COLOR.textSecondary, lineHeight: 1.5 }}>
-              Código enviado a <strong style={{ color: COLOR.text }}>{email}</strong>. Revisá spam si no llega.
+              Código enviado a <strong style={{ color: COLOR.text }}>{email}</strong>. Copiá el número de 6 dígitos del email (ignorá el link si trae uno). Revisá spam si no llega.
             </div>
             <input inputMode="numeric" autoComplete="one-time-code" placeholder="123456" value={codigo}
                    onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
