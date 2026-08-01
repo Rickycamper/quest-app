@@ -4,24 +4,25 @@
 // o en /cafe, main.jsx monta ESTO en lugar de la app — el feed, la nav y el
 // resto del site ni se ejecutan. El logo de Quest lleva al website normal.
 //
-// Cuentas: el login es OPCIONAL y por código de email (sendOtpCode /
-// verifyOtpCode, solo cuentas EXISTENTES de Quest). Se eligió OTP a
-// propósito: funciona para cuentas de email Y de OAuth, y no necesita
-// redirects — clave porque el subdominio es OTRO origen y no comparte la
-// sesión del site principal (localStorage no cruza dominios; acá se inicia
-// sesión una vez y queda). Logueado: nombre y teléfono se precargan del
-// perfil. Invitado: se piden una vez y quedan en localStorage.
+// CLIENTES: sin login, a propósito — cada fricción antes de pedir es una
+// venta que se enfría. Se identifican con nombre + teléfono, que el
+// aparato recuerda (localStorage). Nada más.
 //
-// Admins (is_owner o role staff/admin): gestionan el menú ACÁ mismo —
-// agregar producto, editar precio/oferta/foto/orden, y ocultar (soft
-// delete, active=false, igual que la tienda). RLS ya permite escribir
-// shop_products al staff; la sesión vale desde cualquier origen.
+// EQUIPO: botón discreto "Staff" → email + CONTRASEÑA de la cuenta de
+// Quest (signInWithPassword: funciona hoy, sin plantillas de email ni
+// redirects — el login por código quedó descartado porque dependía de
+// configurar el template de Supabase y trabó el acceso). Si la cuenta no
+// es staff, se cierra la sesión ahí mismo: esta puerta es solo del equipo.
+// El subdominio es OTRO origen: acá se ingresa una vez y queda.
+//
+// Staff adentro: "Órdenes" (tablero), "＋ Producto" y lápiz en cada card.
+// RLS ya permite escribir shop_products al staff, desde cualquier origen.
 //
 // El pedido NO cobra online: sale por WhatsApp al número del negocio.
 // ─────────────────────────────────────────────
 import { useState, useEffect, useMemo, useRef } from 'react'
 import {
-  supabase, getProfile, sendOtpCode, verifyOtpCode,
+  supabase, getProfile,
   upsertShopProduct, updateShopProduct, deleteShopProduct, uploadPostImage,
 } from '../lib/supabase'
 import { STORE_WHATSAPP } from '../lib/constants'
@@ -73,71 +74,58 @@ const btnPrimario = (activo) => ({
   fontFamily: 'Inter, sans-serif',
 })
 
-// ── Login por código de email ────────────────────────────────────────────────
-function LoginSheet({ onClose, onListo }) {
-  const [email, setEmail]   = useState('')
-  const [codigo, setCodigo] = useState('')
-  const [paso, setPaso]     = useState('email')   // 'email' | 'codigo'
-  const [busy, setBusy]     = useState(false)
-  const [err, setErr]       = useState('')
+// ── Ingreso del EQUIPO (email + contraseña) ─────────────────────────────────
+// Sin códigos ni links: signInWithPassword no depende de plantillas de email
+// ni de redirects, así que funciona en el subdominio sin tocar el panel.
+// Si la cuenta no es staff, se cierra la sesión al instante — esta puerta
+// no le sirve (ni aparece) a los clientes.
+function StaffLoginSheet({ onClose }) {
+  const [email, setEmail] = useState('')
+  const [pass, setPass]   = useState('')
+  const [busy, setBusy]   = useState(false)
+  const [err, setErr]     = useState('')
 
-  const mandarCodigo = async () => {
+  const entrar = async () => {
     if (busy) return
     setBusy(true); setErr('')
-    try { await sendOtpCode(email); setPaso('codigo') }
-    catch (e) { setErr(e?.message || 'No se pudo mandar el código') }
-    finally { setBusy(false) }
-  }
-  const verificar = async () => {
-    if (busy) return
-    setBusy(true); setErr('')
-    try { await verifyOtpCode(email, codigo.trim()); onListo?.(); onClose() }
-    catch (e) { setErr(e?.message || 'Código incorrecto') }
-    finally { setBusy(false) }
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: pass,
+      })
+      if (error) throw error
+      const perfil = await getProfile(data.user.id).catch(() => null)
+      const esStaff = !!(perfil?.is_owner || ['staff', 'admin'].includes(perfil?.role))
+      if (!esStaff) {
+        await supabase.auth.signOut()
+        throw new Error('Esta entrada es solo para el equipo.')
+      }
+      onClose()
+    } catch (e) {
+      const m = e?.message || ''
+      setErr(/invalid login credentials/i.test(m)
+        ? 'Email o contraseña incorrectos.'
+        : m || 'No se pudo ingresar')
+    } finally { setBusy(false) }
   }
 
   return (
     <div style={sheetWrap} onClick={onClose}>
       <div style={sheetBox} onClick={e => e.stopPropagation()}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: COLOR.text }}>Ingresá con tu cuenta de Quest</div>
-        {paso === 'email' ? (
-          <>
-            <div style={{ fontSize: 12.5, color: COLOR.textSecondary, lineHeight: 1.5 }}>
-              Te mandamos un <strong style={{ color: COLOR.text }}>código de 6
-              dígitos</strong> al email de tu cuenta. Escribilo acá —
-              <strong style={{ color: COLOR.text }}> no toques ningún link del
-              email</strong>. Sirve también si entrás con Discord o Twitch.
-            </div>
-            <input type="email" autoComplete="email" placeholder="tu@email.com" value={email}
-                   onChange={e => setEmail(e.target.value)} style={inputStyle}
-                   onKeyDown={e => e.key === 'Enter' && mandarCodigo()} />
-            {err && <div style={{ fontSize: 12, color: COLOR.red }}>{err}</div>}
-            <button onClick={mandarCodigo} disabled={busy} style={btnPrimario(!busy && email.includes('@'))}>
-              {busy ? 'Mandando…' : 'Mandar código'}
-            </button>
-            <a href={urlSitioPrincipal()} style={{ fontSize: 11.5, color: COLOR.textTertiary, textAlign: 'center', textDecoration: 'none' }}>
-              ¿No tenés cuenta? Creala en questhobbystore.com ↗
-            </a>
-          </>
-        ) : (
-          <>
-            <div style={{ fontSize: 12.5, color: COLOR.textSecondary, lineHeight: 1.5 }}>
-              Código enviado a <strong style={{ color: COLOR.text }}>{email}</strong>. Copiá el número de 6 dígitos del email (ignorá el link si trae uno). Revisá spam si no llega.
-            </div>
-            <input inputMode="numeric" autoComplete="one-time-code" placeholder="123456" value={codigo}
-                   onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                   style={{ ...inputStyle, textAlign: 'center', fontSize: 20, letterSpacing: '0.35em', fontVariantNumeric: 'tabular-nums' }}
-                   onKeyDown={e => e.key === 'Enter' && verificar()} autoFocus />
-            {err && <div style={{ fontSize: 12, color: COLOR.red }}>{err}</div>}
-            <button onClick={verificar} disabled={busy} style={btnPrimario(!busy && codigo.length === 6)}>
-              {busy ? 'Verificando…' : 'Entrar'}
-            </button>
-            <button onClick={() => { setPaso('email'); setCodigo(''); setErr('') }}
-                    style={{ background: 'none', border: 'none', color: COLOR.textTertiary, fontSize: 11.5, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              Cambiar email
-            </button>
-          </>
-        )}
+        <div style={{ fontSize: 15, fontWeight: 800, color: COLOR.text }}>Acceso del equipo</div>
+        <div style={{ fontSize: 12.5, color: COLOR.textSecondary, lineHeight: 1.5 }}>
+          Ingresá con el email y la contraseña de tu cuenta de Quest.
+        </div>
+        <input type="email" autoComplete="email" placeholder="Email" value={email}
+               onChange={e => setEmail(e.target.value)} style={inputStyle}
+               onKeyDown={e => e.key === 'Enter' && entrar()} />
+        <input type="password" autoComplete="current-password" placeholder="Contraseña" value={pass}
+               onChange={e => setPass(e.target.value)} style={inputStyle}
+               onKeyDown={e => e.key === 'Enter' && entrar()} />
+        {err && <div style={{ fontSize: 12, color: COLOR.red }}>{err}</div>}
+        <button onClick={entrar} disabled={busy} style={btnPrimario(!busy && email.includes('@') && pass.length >= 6)}>
+          {busy ? 'Ingresando…' : 'Entrar'}
+        </button>
       </div>
     </div>
   )
@@ -477,7 +465,6 @@ export default function CafeScreen() {
       `*Total: ${fmt(total)}*`,
       nombre.trim() ? `Nombre: ${nombre.trim()}` : null,
       tel.trim()    ? `Tel: ${tel.trim()}`       : null,
-      perfil?.username ? `Cuenta: @${perfil.username}` : null,
       nota.trim()   ? `Nota: ${nota.trim()}`     : null,
     ].filter(v => v !== null)
     return `https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(lineas.join('\n'))}`
@@ -537,7 +524,7 @@ export default function CafeScreen() {
             CAFÉ
           </div>
           <div style={{ fontSize: 10.5, color: COLOR.textSecondary, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {perfil?.username ? `Hola, @${perfil.username}` : 'Pedí acá y retiralo en la barra'}
+            {esStaff ? `Equipo · @${perfil?.username ?? ''}` : 'Pedí acá y retiralo en la barra'}
           </div>
         </div>
 
@@ -555,18 +542,20 @@ export default function CafeScreen() {
             color: COLOR.text, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
           }}>＋ Producto</button>
         )}
-        {session ? (
+        {/* Los clientes NO tienen login: pedir no requiere cuenta. El botón
+            "Staff" es la única puerta, discreta a propósito. */}
+        {esStaff ? (
           <button onClick={() => supabase.auth.signOut()} style={{
             fontSize: 11.5, fontWeight: 700, padding: '8px 11px', borderRadius: 999,
             border: `1px solid ${COLOR.borderStrong}`, background: COLOR.surface,
             color: COLOR.textSecondary, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
           }}>Salir</button>
         ) : (
-          <button onClick={() => setVerLogin(true)} style={{
-            fontSize: 11.5, fontWeight: 800, padding: '8px 12px', borderRadius: 999,
-            border: 'none', background: '#FFF', color: '#111',
-            cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-          }}>Ingresar</button>
+          <button onClick={() => setVerLogin(true)} aria-label="Acceso del equipo" style={{
+            fontSize: 10.5, fontWeight: 700, padding: '7px 10px', borderRadius: 999,
+            border: `1px solid ${COLOR.border}`, background: 'transparent',
+            color: COLOR.textQuaternary, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          }}>Staff</button>
         )}
       </div>
 
@@ -706,7 +695,7 @@ export default function CafeScreen() {
         </div>
       )}
 
-      {verLogin && <LoginSheet onClose={() => setVerLogin(false)} />}
+      {verLogin && <StaffLoginSheet onClose={() => setVerLogin(false)} />}
       {verOrdenes && <OrdersSheet onClose={() => setVerOrdenes(false)} />}
       {editor !== null && (
         <EditorSheet

@@ -103,12 +103,14 @@ grilla de cards con foto/precio/stepper; el logo de Quest y el botón
 "Ir a la tienda" llevan a questhobbystore.com. El pedido sale por WhatsApp
 al número del negocio con "para tomar en tienda / para llevar", items,
 nombre, teléfono, nota y total. Sin cobro online.
-**Cuentas en el café**: login OPCIONAL por código de email (OTP, solo
-cuentas existentes de Quest — funciona también para cuentas de
-Discord/Twitch y no necesita redirects, clave porque el subdominio es OTRO
-origen y NO comparte la sesión del site principal; se ingresa una vez y
-queda). Logueado precarga nombre y teléfono del perfil; invitado los
-escribe una vez y quedan en localStorage del aparato.
+**Cuentas en el café — SOLO STAFF**: los clientes NO tienen login (decisión
+de negocio: la fricción antes de pedir cuesta ventas) — se identifican con
+nombre + teléfono, que quedan en localStorage del aparato. El equipo entra
+por el botón discreto "Staff" con email + CONTRASEÑA de su cuenta de Quest
+(signInWithPassword: sin plantillas de email, sin redirects — el login por
+código OTP se descartó porque dependía de configurar el template de
+Supabase y trabó el acceso). Si la cuenta no es staff, la sesión se cierra
+al instante. El subdominio es OTRO origen: se ingresa una vez y queda.
 **Admins en el café**: con sesión de staff aparecen "Órdenes", "＋ Producto"
 y el lápiz en cada card — alta, precio, oferta, foto (sube por
 uploadPostImage o URL), orden y ocultar (soft delete, active=false). Mismo
