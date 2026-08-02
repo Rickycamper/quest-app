@@ -151,7 +151,7 @@ export function OpeningScreen({ onSignIn, onSignUp, onGuest, oauthError }) {
                 borderTop: '1px solid rgba(255,255,255,0.07)',
               }}>
                 <div style={{ fontSize: 12, color: '#FED7D7', fontWeight: 600, marginBottom: 8 }}>
-                  Recibí un código de 6 dígitos al email:
+                  Recibí un código al email:
                 </div>
                 <input
                   type="email"
@@ -221,9 +221,9 @@ export function OpeningScreen({ onSignIn, onSignUp, onGuest, oauthError }) {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   pattern="[0-9]*"
-                  maxLength={6}
+                  maxLength={10}
                   value={mlCode}
-                  onChange={e => setMlCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onChange={e => setMlCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
                   placeholder="123456"
                   style={{
                     width: '100%', padding: '10px 12px', borderRadius: 8,
@@ -242,13 +242,13 @@ export function OpeningScreen({ onSignIn, onSignUp, onGuest, oauthError }) {
                 )}
                 <button
                   onClick={handleVerifyOtpCode}
-                  disabled={mlVerifying || mlCode.length !== 6}
+                  disabled={mlVerifying || mlCode.length < 6}
                   style={{
                     width: '100%', padding: '10px', borderRadius: 8, border: 'none',
-                    background: (mlVerifying || mlCode.length !== 6) ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
-                    color: (mlVerifying || mlCode.length !== 6) ? '#6B7280' : '#111111',
+                    background: (mlVerifying || mlCode.length < 6) ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
+                    color: (mlVerifying || mlCode.length < 6) ? '#6B7280' : '#111111',
                     fontSize: 13, fontWeight: 800,
-                    cursor: (mlVerifying || mlCode.length !== 6) ? 'default' : 'pointer',
+                    cursor: (mlVerifying || mlCode.length < 6) ? 'default' : 'pointer',
                     marginBottom: 6,
                   }}
                 >
@@ -897,16 +897,16 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
             </div>
 
             <div style={{ fontSize: 11, fontWeight: 700, color: '#065F46', letterSpacing: '0.08em', marginBottom: 6 }}>
-              ESCRIBÍ EL CÓDIGO DE 6 DÍGITOS:
+              ESCRIBÍ EL CÓDIGO DEL EMAIL:
             </div>
             <input
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
               pattern="[0-9]*"
-              maxLength={6}
+              maxLength={10}
               value={magicCode}
-              onChange={e => setMagicCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={e => setMagicCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
               placeholder="• • • • • •"
               autoFocus
               style={{
@@ -932,16 +932,16 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
             )}
             <button
               onClick={handleVerifyOtpCode}
-              disabled={magicVerifying || magicCode.length !== 6}
+              disabled={magicVerifying || magicCode.length < 6}
               style={{
                 width: '100%', padding: '13px', borderRadius: 11, border: 'none',
-                background: (magicVerifying || magicCode.length !== 6)
+                background: (magicVerifying || magicCode.length < 6)
                   ? '#E5E7EB'
                   : 'linear-gradient(135deg, #4ADE80 0%, #60A5FA 100%)',
-                color: (magicVerifying || magicCode.length !== 6) ? '#9CA3AF' : '#FFFFFF',
+                color: (magicVerifying || magicCode.length < 6) ? '#9CA3AF' : '#FFFFFF',
                 fontSize: 15, fontWeight: 800,
-                cursor: (magicVerifying || magicCode.length !== 6) ? 'default' : 'pointer',
-                boxShadow: (magicVerifying || magicCode.length !== 6)
+                cursor: (magicVerifying || magicCode.length < 6) ? 'default' : 'pointer',
+                boxShadow: (magicVerifying || magicCode.length < 6)
                   ? 'none'
                   : '0 4px 14px -2px rgba(74,222,128,0.5)',
                 marginBottom: 6,
