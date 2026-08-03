@@ -1,24 +1,19 @@
 // ─────────────────────────────────────────────
-// QUEST — CafeScreen (Quest Café)
-// SITIO INDEPENDIENTE de la cafetería: en el subdominio (cafe.* / questcafe*)
-// o en /cafe, main.jsx monta ESTO en lugar de la app — el feed, la nav y el
-// resto del site ni se ejecutan. El logo de Quest lleva al website normal.
+// QUEST — CafeScreen (Quest Café · coffee.questhobbystore.com)
+// SITIO INDEPENDIENTE de la cafetería: en el subdominio (cafe.*, coffee.* o
+// questcafe*) o en /cafe, main.jsx monta ESTO en lugar de la app.
 //
-// CLIENTES: sin login, a propósito — cada fricción antes de pedir es una
-// venta que se enfría. Se identifican con nombre + teléfono, que el
-// aparato recuerda (localStorage). Nada más.
+// ESTÉTICA: clara y limpia (referencia estilo app de café moderna) — fondo
+// papel, tarjetas VERDE profundo con la foto del producto FLOTANDO arriba,
+// esquinas muy redondeadas, sombras suaves, chips de sección, reveals al
+// scrollear. El logo de Quest (blanco) vive dentro de un chip verde para
+// funcionar sobre fondo claro.
 //
-// EQUIPO: botón discreto "Staff" → email + CONTRASEÑA de la cuenta de
-// Quest (signInWithPassword: funciona hoy, sin plantillas de email ni
-// redirects — el login por código quedó descartado porque dependía de
-// configurar el template de Supabase y trabó el acceso). Si la cuenta no
-// es staff, se cierra la sesión ahí mismo: esta puerta es solo del equipo.
-// El subdominio es OTRO origen: acá se ingresa una vez y queda.
-//
-// Staff adentro: "Órdenes" (tablero), "＋ Producto" y lápiz en cada card.
-// RLS ya permite escribir shop_products al staff, desde cualquier origen.
-//
-// El pedido NO cobra online: sale por WhatsApp al número del negocio.
+// CLIENTES: sin login — nombre + teléfono (localStorage). EQUIPO: botón
+// "Staff" → email + contraseña (signInWithPassword; sin plantillas ni
+// redirects). Pedido: place_cafe_order registra C-#### (precios
+// recalculados en la base) y sale por WhatsApp; si la migración no corrió,
+// WhatsApp sale igual sin código.
 // ─────────────────────────────────────────────
 import { useState, useEffect, useMemo, useRef } from 'react'
 import {
@@ -26,7 +21,6 @@ import {
   upsertShopProduct, updateShopProduct, deleteShopProduct, uploadPostImage,
 } from '../lib/supabase'
 import { STORE_WHATSAPP } from '../lib/constants'
-import { COLOR, RADIUS, ELEVATION } from '../lib/ui'
 import Spinner from '../components/Spinner'
 import questLogo from '../assets/quest-logo-sm.png'
 
@@ -50,53 +44,53 @@ const leerDatosGuardados = () => {
   try { return JSON.parse(localStorage.getItem(DATOS_KEY) || '{}') } catch { return {} }
 }
 
+// ── Paleta clara ─────────────────────────────────────────────────────────────
+const PAPEL   = '#F5F3EE'   // fondo general
+const BLANCO  = '#FFFFFF'
+const TINTA   = '#222824'   // texto principal
+const GRIS    = '#7A817B'   // texto secundario
+const LINEA   = '#E6E2D8'   // bordes suaves
+const VERDE   = '#173F2C'   // verde profundo de las cards
+const VERDE2  = '#1F5238'   // verde hover/degradé
+const WABTN   = '#22B85C'   // acción de WhatsApp
+const BEBAS   = '"Bebas Neue", Inter, sans-serif'
+const SOMBRA  = '0 18px 44px rgba(23,63,44,0.10)'
+
 const inputStyle = {
-  width: '100%', boxSizing: 'border-box', background: COLOR.surface,
-  border: `1px solid ${COLOR.borderStrong}`, borderRadius: 10, padding: '10px 12px',
-  color: COLOR.text, fontSize: 13, outline: 'none', fontFamily: 'Inter, sans-serif',
+  width: '100%', boxSizing: 'border-box', background: '#F1EEE6',
+  border: `1px solid ${LINEA}`, borderRadius: 12, padding: '11px 13px',
+  color: TINTA, fontSize: 13.5, outline: 'none', fontFamily: 'Inter, sans-serif',
 }
 const sheetWrap = {
-  position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.72)',
+  position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(24,32,27,0.38)',
   backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
   display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18,
 }
 const sheetBox = {
-  width: '100%', maxWidth: 380, background: '#101014',
-  border: `1px solid ${COLOR.borderStrong}`, borderRadius: 18, padding: 20,
+  width: '100%', maxWidth: 384, background: BLANCO,
+  border: `1px solid ${LINEA}`, borderRadius: 22, padding: 20,
   display: 'flex', flexDirection: 'column', gap: 12,
-  fontFamily: 'Inter, sans-serif',
+  fontFamily: 'Inter, sans-serif', boxShadow: '0 30px 70px rgba(23,63,44,0.22)',
+  color: TINTA,
 }
 const btnPrimario = (activo) => ({
-  width: '100%', padding: '12px 0', borderRadius: 11, border: 'none',
-  background: activo ? '#FFF' : COLOR.surfaceRaised,
-  color: activo ? '#111' : COLOR.textQuaternary,
+  width: '100%', padding: '13px 0', borderRadius: 14, border: 'none',
+  background: activo ? VERDE : '#E9E6DD',
+  color: activo ? '#FFF' : '#A8ADA6',
   fontSize: 13.5, fontWeight: 800, cursor: activo ? 'pointer' : 'default',
   fontFamily: 'Inter, sans-serif',
 })
-
-// ── Paleta y piezas del sitio ────────────────────────────────────────────────
-// Los colores cálidos que ya veníamos usando, ahora como constantes con
-// nombre: el sitio entero se lee en clave café, no en clave tienda.
-const CREMA    = '#F5E9DC'
-const CARAMELO = '#D69E60'
-const BEBAS    = '"Bebas Neue", Inter, sans-serif'
-const FONDO    = 'radial-gradient(ellipse 90% 46% at 50% -6%, rgba(180,120,60,0.18) 0%, transparent 62%), #0C0907'
-
-const chipHeader = (border, bg, color = CREMA) => ({
-  fontSize: 11.5, fontWeight: 800, padding: '8px 11px', borderRadius: 999,
-  border: `1px solid ${border}`, background: bg, color,
+const chipHeader = (solido = false) => ({
+  fontSize: 11.5, fontWeight: 800, padding: '8px 12px', borderRadius: 999,
+  border: solido ? 'none' : `1px solid ${LINEA}`,
+  background: solido ? VERDE : BLANCO,
+  color: solido ? '#FFF' : GRIS,
   cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
-})
-const btnQty = (mas, activo) => ({
-  flex: 1, height: 32, borderRadius: 9, cursor: 'pointer', lineHeight: 1, fontSize: 16,
-  border: `1px solid ${mas ? 'rgba(214,158,96,0.55)' : 'rgba(255,255,255,0.12)'}`,
-  background: mas ? 'rgba(214,158,96,0.14)' : 'rgba(255,255,255,0.05)',
-  color: activo ? CREMA : '#5A4F42',
+  boxShadow: solido ? '0 8px 20px rgba(23,63,44,0.25)' : 'none',
 })
 
-// Secciones del menú, con sus iconos (pedidos así, con humor: el godzilla
-// escupiendo fuego para lo caliente). Se guardan en shop_products.subcategory
-// — la columna ya existía (la usan los accesorios), cero migración.
+// Secciones del menú (pedidas así, con humor: el godzilla para lo caliente).
+// Viven en shop_products.subcategory — columna ya existente, cero migración.
 const SECCIONES_CAFE = [
   { id: 'caliente', titulo: 'CAFÉ CALIENTE', icono: '🦖🔥' },
   { id: 'frio',     titulo: 'FRÍOS',         icono: '🧊'   },
@@ -104,20 +98,20 @@ const SECCIONES_CAFE = [
   { id: 'salado',   titulo: 'SALADOS',       icono: '🧂'   },
 ]
 
-// Imágenes genéricas hasta tener material propio (img-src * en la CSP las
-// permite; los VIDEOS externos no pasarían — por eso son placeholders).
+// Imágenes genéricas hasta tener material propio (img-src * las permite;
+// VIDEO externo no pasaría la CSP — por eso placeholders).
 const VIDEOS = [
   { titulo: 'El espresso perfecto',  img: 'https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?w=800&q=60&auto=format&fit=crop' },
   { titulo: 'Arte latte en vivo',    img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=60&auto=format&fit=crop' },
   { titulo: 'Del grano a tu taza',   img: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&q=60&auto=format&fit=crop' },
 ]
 
-// Keyframes reales (inline styles no pueden declararlos). Un solo <style>.
+// Keyframes reales (inline styles no pueden declararlos).
 const CSS_CAFE = `
 @keyframes cafeLlenar { from { height: 12% } to { height: 82% } }
 @keyframes cafeVapor {
   0%   { transform: translateY(4px) scaleX(1);   opacity: 0 }
-  35%  { opacity: 0.7 }
+  35%  { opacity: 0.65 }
   100% { transform: translateY(-16px) scaleX(1.6); opacity: 0 }
 }
 @keyframes cafeIrse { to { opacity: 0; visibility: hidden } }
@@ -134,20 +128,19 @@ const CSS_CAFE = `
   to   { transform: translateY(0) }
 }
 .cafe-rise { opacity: 0; animation: cafeAparecer 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.cafe-card { transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.2s ease; }
-@media (hover: hover) { .cafe-card:hover { transform: translateY(-4px) } }
+.cafe-card { transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease; }
+@media (hover: hover) { .cafe-card:hover { transform: translateY(-5px) } }
 .cafe-zoom { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
-@media (hover: hover) { .cafe-card:hover .cafe-zoom { transform: scale(1.06) } }
+@media (hover: hover) { .cafe-card:hover .cafe-zoom { transform: scale(1.05) } }
+.cafe-chips { scrollbar-width: none; -ms-overflow-style: none; }
+.cafe-chips::-webkit-scrollbar { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .cafe-rise { animation: none; opacity: 1 }
   .cafe-card, .cafe-zoom { transition: none }
 }
 `
 
-// ── Splash: la taza llenándose ───────────────────────────────────────────────
-// Puro CSS (nada que descargar): taza dibujada con bordes, "café" que sube
-// con cafeLlenar, vapor, y el overlay entero se desvanece solo. onFin
-// desmonta y marca la sesión para no repetirlo en cada vista.
+// ── Splash: la taza llenándose (claro) ───────────────────────────────────────
 function SplashTaza({ onFin }) {
   useEffect(() => {
     const t = setTimeout(onFin, 2050)
@@ -155,44 +148,40 @@ function SplashTaza({ onFin }) {
   }, [onFin])
   return (
     <div aria-hidden style={{
-      position: 'fixed', inset: 0, zIndex: 100, background: '#0C0907',
+      position: 'fixed', inset: 0, zIndex: 100, background: PAPEL,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20,
       animation: 'cafeIrse 0.45s ease 1.55s both',
     }}>
       <div style={{ position: 'relative', width: 86, height: 74 }}>
-        {/* vapor */}
         {[18, 38, 58].map((left, i) => (
           <span key={i} style={{
             position: 'absolute', top: -16, left, width: 3, height: 12, borderRadius: 3,
-            background: 'rgba(245,233,220,0.5)',
+            background: 'rgba(23,63,44,0.4)',
             animation: `cafeVapor 1.3s ease-out ${0.35 + i * 0.22}s infinite`,
           }} />
         ))}
-        {/* taza */}
         <div style={{
           position: 'absolute', left: 0, bottom: 0, width: 66, height: 56,
-          border: `3px solid ${CREMA}`, borderRadius: '6px 6px 20px 20px',
-          overflow: 'hidden', background: 'rgba(255,255,255,0.03)',
+          border: `3px solid ${VERDE}`, borderRadius: '6px 6px 20px 20px',
+          overflow: 'hidden', background: BLANCO,
         }}>
           <div style={{
             position: 'absolute', left: 0, right: 0, bottom: 0,
-            background: `linear-gradient(180deg, ${CARAMELO} 0%, #8A5A28 100%)`,
+            background: 'linear-gradient(180deg, #8A5A28 0%, #5B3A17 100%)',
             animation: 'cafeLlenar 1.15s cubic-bezier(0.3, 0, 0.4, 1) 0.15s both',
           }} />
         </div>
-        {/* asa */}
         <div style={{
           position: 'absolute', right: 0, bottom: 14, width: 20, height: 26,
-          border: `3px solid ${CREMA}`, borderLeft: 'none',
+          border: `3px solid ${VERDE}`, borderLeft: 'none',
           borderRadius: '0 12px 12px 0',
         }} />
-        {/* plato */}
         <div style={{
           position: 'absolute', left: -6, bottom: -8, width: 78, height: 5,
-          borderRadius: 3, background: 'rgba(245,233,220,0.35)',
+          borderRadius: 3, background: 'rgba(23,63,44,0.18)',
         }} />
       </div>
-      <div style={{ fontFamily: BEBAS, fontSize: 22, letterSpacing: '0.22em', color: CREMA, opacity: 0.9 }}>
+      <div style={{ fontFamily: BEBAS, fontSize: 22, letterSpacing: '0.22em', color: VERDE }}>
         QUEST CAFÉ
       </div>
     </div>
@@ -200,8 +189,6 @@ function SplashTaza({ onFin }) {
 }
 
 // ── Reveal al scrollear ──────────────────────────────────────────────────────
-// IntersectionObserver: cada sección/card entra con fade+subida la primera
-// vez que asoma. Con prefers-reduced-motion se muestra directo.
 function Reveal({ children, delay = 0 }) {
   const ref = useRef(null)
   const [visto, setVisto] = useState(() =>
@@ -228,10 +215,6 @@ function Reveal({ children, delay = 0 }) {
 }
 
 // ── Ingreso del EQUIPO (email + contraseña) ─────────────────────────────────
-// Sin códigos ni links: signInWithPassword no depende de plantillas de email
-// ni de redirects, así que funciona en el subdominio sin tocar el panel.
-// Si la cuenta no es staff, se cierra la sesión al instante — esta puerta
-// no le sirve (ni aparece) a los clientes.
 function StaffLoginSheet({ onClose }) {
   const [email, setEmail] = useState('')
   const [pass, setPass]   = useState('')
@@ -265,8 +248,8 @@ function StaffLoginSheet({ onClose }) {
   return (
     <div style={sheetWrap} onClick={onClose}>
       <div style={sheetBox} onClick={e => e.stopPropagation()}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: COLOR.text }}>Acceso del equipo</div>
-        <div style={{ fontSize: 12.5, color: COLOR.textSecondary, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 15.5, fontWeight: 800, color: TINTA }}>Acceso del equipo</div>
+        <div style={{ fontSize: 12.5, color: GRIS, lineHeight: 1.5 }}>
           Ingresá con el email y la contraseña de tu cuenta de Quest.
         </div>
         <input type="email" autoComplete="email" placeholder="Email" value={email}
@@ -275,7 +258,7 @@ function StaffLoginSheet({ onClose }) {
         <input type="password" autoComplete="current-password" placeholder="Contraseña" value={pass}
                onChange={e => setPass(e.target.value)} style={inputStyle}
                onKeyDown={e => e.key === 'Enter' && entrar()} />
-        {err && <div style={{ fontSize: 12, color: COLOR.red }}>{err}</div>}
+        {err && <div style={{ fontSize: 12, color: '#C0392B' }}>{err}</div>}
         <button onClick={entrar} disabled={busy} style={btnPrimario(!busy && email.includes('@') && pass.length >= 6)}>
           {busy ? 'Ingresando…' : 'Entrar'}
         </button>
@@ -302,8 +285,6 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
     if (!file) return
     setBusy(true); setErr('')
     try {
-      // Reusa el pipeline de imágenes del feed: comprime y devuelve URL
-      // pública. Mismo bucket que ven los invitados en el feed.
       const url = await uploadPostImage(file)
       setFoto(url)
     } catch (e) { setErr(e?.message || 'No se pudo subir la foto') }
@@ -329,7 +310,7 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
         ? await upsertShopProduct({
             ...campos,
             sku: `CAFE-${Date.now()}`,
-            category: 'cafe', game: null, subcategory: null, active: true,
+            category: 'cafe', game: null, active: true,
           })
         : await updateShopProduct(producto.id, campos)
       onGuardado?.(fila)
@@ -342,7 +323,6 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
     if (!confirmar) { setConfirmar(true); return }
     setBusy(true); setErr('')
     try {
-      // Soft delete, igual que la tienda: active=false. No borra la fila.
       await deleteShopProduct(producto.id)
       onBorrado?.(producto.id)
       onClose()
@@ -352,7 +332,7 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
   return (
     <div style={sheetWrap} onClick={onClose}>
       <div style={{ ...sheetBox, maxHeight: '86dvh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: COLOR.text }}>
+        <div style={{ fontSize: 15.5, fontWeight: 800, color: TINTA }}>
           {esNuevo ? 'Nuevo producto del café' : 'Editar producto'}
         </div>
 
@@ -366,15 +346,14 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
                  onChange={e => setOferta(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
         </div>
 
-        {/* Foto: subir archivo o pegar URL — la card es imagen-primero */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ width: 54, height: 54, borderRadius: 10, overflow: 'hidden', background: COLOR.surfaceRaised, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 54, height: 54, borderRadius: 14, overflow: 'hidden', background: '#F1EEE6', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${LINEA}` }}>
             {foto ? <img src={foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 20 }}>☕</span>}
           </div>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <button onClick={() => fileRef.current?.click()} disabled={busy} style={{
-              padding: '9px 0', borderRadius: 9, border: `1px solid ${COLOR.borderStrong}`,
-              background: COLOR.surfaceRaised, color: COLOR.text, fontSize: 12, fontWeight: 700,
+              padding: '9px 0', borderRadius: 10, border: `1px solid ${LINEA}`,
+              background: '#F1EEE6', color: TINTA, fontSize: 12, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'Inter, sans-serif',
             }}>{busy ? 'Subiendo…' : '📷 Subir foto'}</button>
             <input placeholder="…o pegá una URL de imagen" value={foto}
@@ -386,38 +365,38 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
 
         {/* Sección del menú — dónde aparece la card */}
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: COLOR.textSecondary, marginBottom: 6 }}>SECCIÓN DEL MENÚ</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: GRIS, marginBottom: 6 }}>SECCIÓN DEL MENÚ</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {SECCIONES_CAFE.map(sc => (
               <button key={sc.id} onClick={() => setSeccion(sc.id)} style={{
                 padding: '8px 11px', borderRadius: 999, cursor: 'pointer',
-                background: seccion === sc.id ? 'rgba(214,158,96,0.16)' : COLOR.surface,
-                border: `1px solid ${seccion === sc.id ? 'rgba(214,158,96,0.6)' : COLOR.borderStrong}`,
-                color: seccion === sc.id ? '#FFF' : COLOR.textSecondary,
+                background: seccion === sc.id ? VERDE : BLANCO,
+                border: `1px solid ${seccion === sc.id ? VERDE : LINEA}`,
+                color: seccion === sc.id ? '#FFF' : GRIS,
                 fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
               }}>{sc.icono} {sc.titulo}</button>
             ))}
           </div>
         </div>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: COLOR.textSecondary }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: GRIS }}>
           Orden en el menú
           <input type="number" value={orden} onChange={e => setOrden(e.target.value)}
                  style={{ ...inputStyle, width: 76, padding: '7px 10px' }} />
-          <span style={{ fontSize: 10.5, color: COLOR.textQuaternary }}>(menor = primero)</span>
+          <span style={{ fontSize: 10.5, color: '#A8ADA6' }}>(menor = primero)</span>
         </label>
 
-        {err && <div style={{ fontSize: 12, color: COLOR.red }}>{err}</div>}
+        {err && <div style={{ fontSize: 12, color: '#C0392B' }}>{err}</div>}
 
         <button onClick={guardar} disabled={busy} style={btnPrimario(!busy)}>
           {busy ? 'Guardando…' : esNuevo ? 'Agregar al menú' : 'Guardar cambios'}
         </button>
         {!esNuevo && (
           <button onClick={borrar} disabled={busy} style={{
-            width: '100%', padding: '10px 0', borderRadius: 10,
-            border: `1px solid ${confirmar ? COLOR.red : COLOR.borderStrong}`,
-            background: confirmar ? 'rgba(248,113,113,0.12)' : 'transparent',
-            color: confirmar ? COLOR.red : COLOR.textTertiary,
+            width: '100%', padding: '10px 0', borderRadius: 12,
+            border: `1px solid ${confirmar ? '#C0392B' : LINEA}`,
+            background: confirmar ? 'rgba(192,57,43,0.08)' : 'transparent',
+            color: confirmar ? '#C0392B' : GRIS,
             fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
           }}>
             {confirmar ? '¿Seguro? Toca de nuevo para ocultarlo' : 'Ocultar del menú'}
@@ -429,14 +408,11 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
 }
 
 // ── Tablero de órdenes (solo staff) ──────────────────────────────────────────
-// Vive del registro en cafe_orders (RLS: solo staff lee todo). Se refresca
-// solo cada 20 s mientras está abierto — suficiente para una barra, sin
-// depender de que la tabla esté en la publicación de realtime.
 const ESTADOS_CAFE = {
-  nueva:     { label: 'NUEVA',     color: COLOR.gold,          bg: 'rgba(251,191,36,0.10)',  border: 'rgba(251,191,36,0.4)'  },
-  lista:     { label: 'LISTA',     color: COLOR.green,         bg: 'rgba(74,222,128,0.10)',  border: 'rgba(74,222,128,0.4)'  },
-  entregada: { label: 'ENTREGADA', color: COLOR.textSecondary, bg: 'rgba(156,163,175,0.07)', border: 'rgba(156,163,175,0.25)' },
-  cancelada: { label: 'CANCELADA', color: COLOR.red,           bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.3)'  },
+  nueva:     { label: 'NUEVA',     color: '#B45309', bg: '#FEF3E2', border: '#F5CD8F' },
+  lista:     { label: 'LISTA',     color: '#166534', bg: '#E8F6EC', border: '#B7E2C3' },
+  entregada: { label: 'ENTREGADA', color: '#6B7280', bg: '#F3F2EE', border: '#E0DED6' },
+  cancelada: { label: 'CANCELADA', color: '#B42318', bg: '#FDEEEC', border: '#F2C4BE' },
 }
 
 function OrdersSheet({ onClose }) {
@@ -477,7 +453,7 @@ function OrdersSheet({ onClose }) {
   const visibles = verTodas ? ordenes : ordenes.filter(o => o.status === 'nueva' || o.status === 'lista')
   const btnMini = (label, onClick, color, border, bg) => (
     <button onClick={onClick} disabled={!!busyId} style={{
-      flex: 1, padding: '8px 6px', borderRadius: 9, cursor: busyId ? 'default' : 'pointer',
+      flex: 1, padding: '9px 6px', borderRadius: 10, cursor: busyId ? 'default' : 'pointer',
       border: `1px solid ${border}`, background: bg, color,
       fontSize: 11.5, fontWeight: 800, fontFamily: 'Inter, sans-serif', opacity: busyId ? 0.5 : 1,
     }}>{label}</button>
@@ -485,23 +461,23 @@ function OrdersSheet({ onClose }) {
 
   return (
     <div style={sheetWrap} onClick={onClose}>
-      <div style={{ ...sheetBox, maxWidth: 430, maxHeight: '88dvh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+      <div style={{ ...sheetBox, maxWidth: 440, maxHeight: '88dvh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 15, fontWeight: 800, color: COLOR.text, flex: 1 }}>Órdenes de hoy</span>
+          <span style={{ fontSize: 15.5, fontWeight: 800, color: TINTA, flex: 1 }}>Órdenes de hoy</span>
           <button onClick={() => setVerTodas(v => !v)} style={{
             fontSize: 10.5, fontWeight: 700, padding: '6px 10px', borderRadius: 999,
-            border: `1px solid ${COLOR.borderStrong}`, background: verTodas ? COLOR.surfaceRaised : 'transparent',
-            color: COLOR.textSecondary, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            border: `1px solid ${LINEA}`, background: verTodas ? '#F1EEE6' : 'transparent',
+            color: GRIS, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
           }}>{verTodas ? 'Solo activas' : 'Ver todas'}</button>
           <button onClick={onClose} aria-label="Cerrar" style={{
-            background: 'none', border: 'none', color: COLOR.textTertiary, fontSize: 18, cursor: 'pointer', lineHeight: 1,
+            background: 'none', border: 'none', color: GRIS, fontSize: 18, cursor: 'pointer', lineHeight: 1,
           }}>×</button>
         </div>
 
-        {err && <div style={{ fontSize: 12, color: COLOR.red }}>{err}</div>}
+        {err && <div style={{ fontSize: 12, color: '#C0392B' }}>{err}</div>}
         {loading && <div style={{ textAlign: 'center', padding: 20 }}><Spinner /></div>}
         {!loading && visibles.length === 0 && (
-          <div style={{ fontSize: 12.5, color: COLOR.textTertiary, textAlign: 'center', padding: '18px 0' }}>
+          <div style={{ fontSize: 12.5, color: GRIS, textAlign: 'center', padding: '18px 0' }}>
             {verTodas ? 'Hoy todavía no hubo pedidos.' : 'Sin pedidos activos — ☕ tranquilidad.'}
           </div>
         )}
@@ -512,36 +488,36 @@ function OrdersSheet({ onClose }) {
           const items = Array.isArray(o.items) ? o.items : []
           return (
             <div key={o.id} style={{
-              borderRadius: 13, padding: 12, background: st.bg, border: `1px solid ${st.border}`,
+              borderRadius: 16, padding: 13, background: st.bg, border: `1px solid ${st.border}`,
               display: 'flex', flexDirection: 'column', gap: 7,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 15, fontWeight: 900, color: COLOR.text, fontFamily: 'SF Mono, Menlo, monospace' }}>{o.code}</span>
+                <span style={{ fontSize: 15, fontWeight: 900, color: TINTA, fontFamily: 'SF Mono, Menlo, monospace' }}>{o.code}</span>
                 <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.08em', color: st.color }}>{st.label}</span>
-                <span style={{ fontSize: 10.5, color: COLOR.textTertiary }}>{o.modo === 'llevar' ? '🥡 llevar' : '☕ en tienda'}</span>
+                <span style={{ fontSize: 10.5, color: GRIS }}>{o.modo === 'llevar' ? '🥡 llevar' : '☕ en tienda'}</span>
                 <span style={{ flex: 1 }} />
-                <span style={{ fontSize: 11, color: COLOR.textTertiary }}>{hora}</span>
+                <span style={{ fontSize: 11, color: GRIS }}>{hora}</span>
               </div>
 
-              <div style={{ fontSize: 12.5, color: COLOR.text, lineHeight: 1.55 }}>
+              <div style={{ fontSize: 12.5, color: TINTA, lineHeight: 1.55 }}>
                 {items.map((it, i) => <div key={i}>· {it.qty}× {it.name} — {fmt(it.sub)}</div>)}
                 <div style={{ fontWeight: 800, marginTop: 2 }}>Total: {fmt(o.total)}</div>
               </div>
 
-              <div style={{ fontSize: 11.5, color: COLOR.textSecondary }}>
+              <div style={{ fontSize: 11.5, color: GRIS }}>
                 {o.customer_name || 'Sin nombre'}{o.customer_phone ? ` · ${o.customer_phone}` : ''}
-                {o.note && <span style={{ display: 'block', color: COLOR.gold }}>Nota: {o.note}</span>}
+                {o.note && <span style={{ display: 'block', color: '#B45309' }}>Nota: {o.note}</span>}
               </div>
 
               {o.status === 'nueva' && (
                 <div style={{ display: 'flex', gap: 6 }}>
-                  {btnMini('Marcar LISTA', () => cambiarEstado(o, 'lista'), COLOR.green, 'rgba(74,222,128,0.45)', 'rgba(74,222,128,0.12)')}
-                  {btnMini('Cancelar', () => cambiarEstado(o, 'cancelada'), COLOR.textSecondary, COLOR.borderStrong, 'transparent')}
+                  {btnMini('Marcar LISTA', () => cambiarEstado(o, 'lista'), '#166534', '#B7E2C3', '#FFFFFF')}
+                  {btnMini('Cancelar', () => cambiarEstado(o, 'cancelada'), GRIS, LINEA, 'transparent')}
                 </div>
               )}
               {o.status === 'lista' && (
                 <div style={{ display: 'flex', gap: 6 }}>
-                  {btnMini('Entregada ✓', () => cambiarEstado(o, 'entregada'), COLOR.textSecondary, COLOR.borderStrong, COLOR.surfaceRaised)}
+                  {btnMini('Entregada ✓', () => cambiarEstado(o, 'entregada'), GRIS, LINEA, '#FFFFFF')}
                 </div>
               )}
             </div>
@@ -563,17 +539,14 @@ export default function CafeScreen() {
   const [tel, setTel]         = useState(guardado.tel ?? '')
   const [nota, setNota]       = useState('')
 
-  // Sesión propia (sin AuthContext: acá no corre la app)
   const [session, setSession] = useState(null)
   const [perfil, setPerfil]   = useState(null)
   const [verLogin, setVerLogin] = useState(false)
-  const [editor, setEditor]   = useState(null)        // null | {} (nuevo) | producto
+  const [editor, setEditor]   = useState(null)
   const [verOrdenes, setVerOrdenes] = useState(false)
   const [pidiendo, setPidiendo] = useState(false)
   const [codigoOk, setCodigoOk] = useState(null)
 
-  // Splash de entrada: la taza llenándose. Una vez por sesión de navegador —
-  // en el segundo pageview ya molestaría en vez de gustar.
   const [cargando, setCargando] = useState(() => {
     if (typeof window === 'undefined') return false
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false
@@ -598,7 +571,7 @@ export default function CafeScreen() {
       .from('shop_products')
       .select('id, name, price, sale_price, image_url, sort_order, active, subcategory')
       .eq('category', 'cafe')
-      .eq('active', true)   // sin esto, los "ocultados" (soft delete) seguirían saliendo
+      .eq('active', true)
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true })
       .then(({ data, error }) => {
@@ -612,8 +585,7 @@ export default function CafeScreen() {
     () => esStaff ? items : items.filter(p => precio(p) > 0),
     [items, esStaff])
 
-  // Agrupado por sección. Lo sin clasificar cae en 'otros' — visible igual,
-  // así nada desaparece mientras el staff termina de asignar secciones.
+  // Agrupado por sección; lo sin clasificar cae en 'otros'.
   const grupos = useMemo(() => {
     const por = { caliente: [], frio: [], postre: [], salado: [], otros: [] }
     for (const p of visibles) (por[p.subcategory] ?? por.otros).push(p)
@@ -661,7 +633,6 @@ export default function CafeScreen() {
         p_note:  nota.trim() || null,
       })
       if (!error) codigo = (Array.isArray(data) ? data[0] : data)?.code ?? null
-      // Si falló (migración sin correr), el pedido igual sale por WhatsApp.
     } catch {}
     window.open(armarWA(codigo), '_blank')
     if (codigo) {
@@ -672,67 +643,91 @@ export default function CafeScreen() {
     setPidiendo(false)
   }
 
-const tarjeta = (p, i) => {
-            const n = qty[p.id] ?? 0
-            const sinPrecio = precio(p) <= 0
-            const enOferta = !sinPrecio && precio(p) < (Number(p.price) || 0)
-            return (
-              <Reveal key={p.id} delay={Math.min(i * 55, 330)}>
-                <div className="cafe-card" style={{
-                  background: 'rgba(255,255,255,0.035)',
-                  borderRadius: 18, overflow: 'hidden',
-                  border: `1px solid ${n > 0 ? 'rgba(214,158,96,0.65)' : 'rgba(255,255,255,0.08)'}`,
-                  boxShadow: n > 0 ? '0 10px 34px rgba(214,158,96,0.16)' : '0 6px 22px rgba(0,0,0,0.35)',
-                  display: 'flex', flexDirection: 'column', position: 'relative',
-                  opacity: sinPrecio ? 0.6 : 1,
-                }}>
-                  {esStaff && (
-                    <button onClick={() => setEditor(p)} aria-label={`Editar ${p.name}`} style={{
-                      position: 'absolute', top: 8, right: 8, zIndex: 2,
-                      width: 30, height: 30, borderRadius: 9, border: '1px solid rgba(255,255,255,0.25)',
-                      background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
-                      color: '#FFF', fontSize: 13, cursor: 'pointer', lineHeight: 1,
-                    }}>✎</button>
-                  )}
-                  <div style={{ width: '100%', aspectRatio: '1 / 1', background: '#1B140E', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {p.image_url
-                      ? <img src={p.image_url} alt="" loading="lazy" decoding="async" className="cafe-zoom" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      : <span style={{ fontSize: 36 }}>☕</span>}
-                  </div>
-                  <div style={{ padding: '11px 12px 13px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: CREMA, lineHeight: 1.3, flex: 1 }}>{p.name}</div>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
-                      {sinPrecio
-                        ? <span style={{ color: '#D6A560', fontSize: 11, fontWeight: 700 }}>Sin precio — no se publica</span>
-                        : <>
-                            {enOferta && <span style={{ color: '#6B5B4A', textDecoration: 'line-through', fontSize: 11 }}>{fmt(p.price)}</span>}
-                            <span style={{ color: CARAMELO, fontWeight: 800, fontSize: 15, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</span>
-                          </>}
-                    </div>
-                    {!sinPrecio && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        <button onClick={() => cambiar(p.id, -1)} style={btnQty(false, n > 0)}>−</button>
-                        <span style={{ minWidth: 20, textAlign: 'center', fontSize: 14, fontWeight: 800, color: n > 0 ? CARAMELO : '#5A4F42', fontVariantNumeric: 'tabular-nums' }}>{n}</span>
-                        <button onClick={() => cambiar(p.id, +1)} style={btnQty(true, true)}>+</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Reveal>
-            )
-          }
-
   const irAlMenu = (m) => {
     if (m) setModo(m)
     document.getElementById('cafe-menu')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+  const irASeccion = (id) =>
+    document.getElementById(`cafe-sec-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+  // ── Card estilo referencia: verde profundo, foto FLOTANDO arriba ──
+  const tarjeta = (p, i) => {
+    const n = qty[p.id] ?? 0
+    const sinPrecio = precio(p) <= 0
+    const enOferta = !sinPrecio && precio(p) < (Number(p.price) || 0)
+    return (
+      <Reveal key={p.id} delay={Math.min(i * 55, 330)}>
+        <div className="cafe-card" style={{ paddingTop: 46 }}>
+          <div style={{
+            position: 'relative',
+            background: n > 0
+              ? `linear-gradient(160deg, ${VERDE2} 0%, ${VERDE} 100%)`
+              : `linear-gradient(160deg, ${VERDE} 0%, #10301F 100%)`,
+            borderRadius: 26,
+            padding: '74px 14px 14px',
+            boxShadow: n > 0 ? '0 22px 48px rgba(23,63,44,0.30)' : SOMBRA,
+            display: 'flex', flexDirection: 'column', gap: 8,
+            opacity: sinPrecio ? 0.65 : 1,
+          }}>
+            {/* Foto flotando, saliéndose de la card (como la referencia) */}
+            <div style={{
+              position: 'absolute', top: -42, left: '50%', transform: 'translateX(-50%)',
+              width: 96, height: 96, borderRadius: '50%', overflow: 'hidden',
+              background: BLANCO, border: `5px solid ${PAPEL}`,
+              boxShadow: '0 16px 30px rgba(23,63,44,0.28)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {p.image_url
+                ? <img src={p.image_url} alt="" loading="lazy" decoding="async" className="cafe-zoom" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                : <span style={{ fontSize: 40 }}>☕</span>}
+            </div>
+
+            {esStaff && (
+              <button onClick={() => setEditor(p)} aria-label={`Editar ${p.name}`} style={{
+                position: 'absolute', top: 10, right: 10,
+                width: 30, height: 30, borderRadius: 10, border: '1px solid rgba(255,255,255,0.3)',
+                background: 'rgba(255,255,255,0.14)', color: '#FFF', fontSize: 13,
+                cursor: 'pointer', lineHeight: 1,
+              }}>✎</button>
+            )}
+
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: '#FFF', lineHeight: 1.3, textAlign: 'center', minHeight: 35 }}>{p.name}</div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'baseline', justifyContent: 'center' }}>
+              {sinPrecio
+                ? <span style={{ color: '#FFD98A', fontSize: 11, fontWeight: 700 }}>Sin precio — no se publica</span>
+                : <>
+                    {enOferta && <span style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'line-through', fontSize: 11.5 }}>{fmt(p.price)}</span>}
+                    <span style={{ color: '#FFF', fontWeight: 800, fontSize: 17, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</span>
+                  </>}
+            </div>
+            {!sinPrecio && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 2 }}>
+                <button onClick={() => cambiar(p.id, -1)} style={{
+                  flex: 1, height: 34, borderRadius: 11, border: 'none', cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.13)', color: n > 0 ? '#FFF' : 'rgba(255,255,255,0.4)',
+                  fontSize: 17, lineHeight: 1,
+                }}>−</button>
+                <span style={{ minWidth: 22, textAlign: 'center', fontSize: 15, fontWeight: 800, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+                <button onClick={() => cambiar(p.id, +1)} style={{
+                  flex: 1, height: 34, borderRadius: 11, border: 'none', cursor: 'pointer',
+                  background: '#FFFFFF', color: VERDE,
+                  fontSize: 17, fontWeight: 800, lineHeight: 1,
+                }}>+</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </Reveal>
+    )
+  }
+
+  const seccionesConItems = [...SECCIONES_CAFE, { id: 'otros', titulo: 'MÁS DEL MENÚ', icono: '☕' }]
+    .filter(sec => grupos[sec.id]?.length)
 
   return (
     <div style={{
       minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-      background: FONDO,
-      fontFamily: 'Inter, sans-serif',
-      color: CREMA,
+      background: PAPEL, color: TINTA, fontFamily: 'Inter, sans-serif',
     }}>
       <style>{CSS_CAFE}</style>
       {cargando && <SplashTaza onFin={() => {
@@ -740,111 +735,113 @@ const tarjeta = (p, i) => {
         setCargando(false)
       }} />}
 
-      {/* ── Header fijo ── */}
+      {/* ── Header ── */}
       <div style={{
-        padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10,
+        padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10,
         position: 'sticky', top: 0, zIndex: 20,
-        background: 'rgba(12,9,7,0.78)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(214,158,96,0.14)',
-        paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
+        background: 'rgba(245,243,238,0.85)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: `1px solid ${LINEA}`,
+        paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))',
       }}>
-        <a href={urlSitioPrincipal()} aria-label="Ir al sitio de Quest" style={{ display: 'flex', alignItems: 'center' }}>
-          <img src={questLogo} alt="Quest" style={{ height: 30, display: 'block' }} />
+        {/* El logo de Quest es blanco: vive en un chip verde para leerse en claro */}
+        <a href={urlSitioPrincipal()} aria-label="Ir al sitio de Quest" style={{
+          display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none',
+          background: VERDE, borderRadius: 999, padding: '6px 12px',
+          boxShadow: '0 8px 20px rgba(23,63,44,0.22)',
+        }}>
+          <img src={questLogo} alt="Quest" style={{ height: 22, display: 'block' }} />
+          <span style={{ fontFamily: BEBAS, fontSize: 15, letterSpacing: '0.12em', color: '#FFF', lineHeight: 1 }}>CAFÉ</span>
         </a>
-        <span style={{ fontFamily: BEBAS, fontSize: 19, letterSpacing: '0.1em', color: CREMA, lineHeight: 1 }}>CAFÉ</span>
         <span style={{ flex: 1 }} />
         {esStaff && (
           <>
-            <button onClick={() => setVerOrdenes(true)} style={chipHeader('rgba(96,165,250,0.5)', 'rgba(96,165,250,0.12)')}>Órdenes</button>
-            <button onClick={() => setEditor({})} style={chipHeader('rgba(214,158,96,0.55)', 'rgba(214,158,96,0.13)')}>＋ Producto</button>
-            <button onClick={() => supabase.auth.signOut()} style={chipHeader('rgba(255,255,255,0.14)', 'transparent', '#8A7660')}>Salir</button>
+            <button onClick={() => setVerOrdenes(true)} style={chipHeader(true)}>Órdenes</button>
+            <button onClick={() => setEditor({})} style={chipHeader()}>＋ Producto</button>
+            <button onClick={() => supabase.auth.signOut()} style={chipHeader()}>Salir</button>
           </>
         )}
         {!esStaff && (
-          <button onClick={() => setVerLogin(true)} aria-label="Acceso del equipo"
-                  style={chipHeader('rgba(255,255,255,0.10)', 'transparent', '#5A4F42')}>Staff</button>
+          <button onClick={() => setVerLogin(true)} aria-label="Acceso del equipo" style={{
+            ...chipHeader(), color: '#B4B9B1', borderColor: '#EDEAE1',
+          }}>Staff</button>
         )}
       </div>
 
       {/* ── HERO ── */}
       <section style={{
-        minHeight: 'calc(88dvh - 60px)', display: 'flex', flexDirection: 'column',
+        minHeight: 'calc(86dvh - 56px)', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        padding: '40px 22px 30px', position: 'relative', overflow: 'hidden',
+        padding: '44px 22px 30px', position: 'relative', overflow: 'hidden',
       }}>
-        {/* halo cálido + granos flotando */}
         <div aria-hidden style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse 75% 55% at 50% 8%, rgba(214,158,96,0.20) 0%, transparent 62%)',
+          background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(23,63,44,0.07) 0%, transparent 60%)',
         }} />
-        {['12%', '78%', '30%', '64%', '88%'].map((left, i) => (
+        {['10%', '80%', '26%', '66%', '90%'].map((left, i) => (
           <span key={i} aria-hidden style={{
-            position: 'absolute', left, top: `${18 + i * 14}%`, fontSize: 15 + (i % 3) * 6,
-            opacity: 0.13, animation: `cafeFlotar ${5.5 + i}s ease-in-out ${i * 0.8}s infinite`,
+            position: 'absolute', left, top: `${16 + i * 15}%`, fontSize: 16 + (i % 3) * 7,
+            opacity: 0.09, animation: `cafeFlotar ${5.5 + i}s ease-in-out ${i * 0.8}s infinite`,
           }}>☕</span>
         ))}
 
-        <div className="cafe-rise" style={{ animationDelay: '0.05s', fontSize: 12, fontWeight: 700, letterSpacing: '0.32em', color: CARAMELO, marginBottom: 14 }}>
+        <div className="cafe-rise" style={{ animationDelay: '0.05s', fontSize: 12, fontWeight: 800, letterSpacing: '0.32em', color: '#7FA28F', marginBottom: 14 }}>
           QUEST HOBBY STORE PRESENTA
         </div>
         <h1 className="cafe-rise" style={{
           animationDelay: '0.15s', margin: 0,
           fontFamily: BEBAS, fontWeight: 400,
           fontSize: 'clamp(64px, 16vw, 150px)', lineHeight: 0.92,
-          letterSpacing: '0.02em', color: CREMA,
-          textShadow: '0 10px 60px rgba(214,158,96,0.25)',
+          letterSpacing: '0.02em', color: VERDE,
         }}>
           QUEST<br />CAFÉ
         </h1>
-        <p className="cafe-rise" style={{ animationDelay: '0.28s', margin: '18px 0 26px', fontSize: 'clamp(14px, 2.6vw, 17px)', color: '#B99F84', maxWidth: 430, lineHeight: 1.65 }}>
+        <p className="cafe-rise" style={{ animationDelay: '0.28s', margin: '18px 0 26px', fontSize: 'clamp(14px, 2.6vw, 17px)', color: GRIS, maxWidth: 430, lineHeight: 1.65 }}>
           Café de verdad, en tu tienda de siempre. Pedí desde el celular
           y te avisamos cuando esté listo.
         </p>
 
-        {/* Directo al pedido: elegís cómo y bajás al menú */}
         <div className="cafe-rise" style={{ animationDelay: '0.4s', display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
           <button onClick={() => irAlMenu('tienda')} style={{
             padding: '15px 26px', borderRadius: 999, border: 'none', cursor: 'pointer',
-            background: `linear-gradient(135deg, ${CARAMELO} 0%, #B4783C 100%)`,
-            color: '#1A0F06', fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
-            boxShadow: '0 12px 34px rgba(214,158,96,0.35)',
+            background: VERDE, color: '#FFF',
+            fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+            boxShadow: '0 14px 34px rgba(23,63,44,0.30)',
           }}>☕ Para tomar en tienda</button>
           <button onClick={() => irAlMenu('llevar')} style={{
             padding: '15px 26px', borderRadius: 999, cursor: 'pointer',
-            background: 'rgba(214,158,96,0.10)', border: `1.5px solid rgba(214,158,96,0.55)`,
-            color: CREMA, fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+            background: BLANCO, border: `1.5px solid ${VERDE}`,
+            color: VERDE, fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
           }}>🥡 Para llevar</button>
         </div>
 
-        <div aria-hidden style={{ position: 'absolute', bottom: 18, left: 0, right: 0, textAlign: 'center', animation: 'cafeFlotar 2.6s ease-in-out infinite', color: '#6B5B4A', fontSize: 20 }}>⌄</div>
+        <div aria-hidden style={{ position: 'absolute', bottom: 18, left: 0, right: 0, textAlign: 'center', animation: 'cafeFlotar 2.6s ease-in-out infinite', color: '#B4B9B1', fontSize: 20 }}>⌄</div>
       </section>
 
       {/* ── UBICACIÓN ── */}
       <Reveal>
-        <section style={{ padding: '30px 22px 10px', maxWidth: 760, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        <section style={{ padding: '26px 20px 8px', maxWidth: 760, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
           <div style={{
             display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap',
-            background: 'linear-gradient(140deg, rgba(214,158,96,0.10) 0%, rgba(214,158,96,0.03) 100%)',
-            border: '1px solid rgba(214,158,96,0.25)', borderRadius: 22, padding: '22px 24px',
+            background: BLANCO, border: `1px solid ${LINEA}`, borderRadius: 24,
+            padding: '22px 24px', boxShadow: SOMBRA,
           }}>
-            <div style={{ fontSize: 40 }}>📍</div>
+            <div style={{ fontSize: 38 }}>📍</div>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontFamily: BEBAS, fontSize: 26, letterSpacing: '0.05em', color: CREMA }}>ENCONTRANOS</div>
-              <div style={{ fontSize: 13.5, color: '#B99F84', lineHeight: 1.6, marginTop: 4 }}>
-                Dentro de <strong style={{ color: CREMA }}>Quest Hobby Store</strong> — venís por el café,
+              <div style={{ fontFamily: BEBAS, fontSize: 25, letterSpacing: '0.05em', color: VERDE }}>ENCONTRANOS</div>
+              <div style={{ fontSize: 13.5, color: GRIS, lineHeight: 1.6, marginTop: 4 }}>
+                Dentro de <strong style={{ color: TINTA }}>Quest Hobby Store</strong> — venís por el café,
                 te quedás por las cartas. Horario de la tienda.
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <a href="https://www.google.com/maps/search/Quest+Hobby+Store+Panamá" target="_blank" rel="noreferrer" style={{
                 padding: '11px 16px', borderRadius: 999, textDecoration: 'none',
-                background: 'rgba(214,158,96,0.14)', border: '1px solid rgba(214,158,96,0.5)',
-                color: CREMA, fontSize: 12.5, fontWeight: 800,
+                background: VERDE, color: '#FFF', fontSize: 12.5, fontWeight: 800,
               }}>Cómo llegar ↗</a>
               <a href={`https://wa.me/${STORE_WHATSAPP}`} target="_blank" rel="noreferrer" style={{
                 padding: '11px 16px', borderRadius: 999, textDecoration: 'none',
-                background: 'rgba(37,211,102,0.12)', border: '1px solid rgba(37,211,102,0.45)',
-                color: '#7CE3A5', fontSize: 12.5, fontWeight: 800,
+                background: '#E8F8EE', border: '1px solid #BEE8CD',
+                color: '#15803D', fontSize: 12.5, fontWeight: 800,
               }}>Escribinos</a>
             </div>
           </div>
@@ -852,21 +849,37 @@ const tarjeta = (p, i) => {
       </Reveal>
 
       {/* ── MENÚ / PEDIDO ── */}
-      <section id="cafe-menu" style={{ padding: '44px 18px 10px', maxWidth: 860, margin: '0 auto', width: '100%', boxSizing: 'border-box', scrollMarginTop: 70 }}>
+      <section id="cafe-menu" style={{ padding: '40px 18px 10px', maxWidth: 880, margin: '0 auto', width: '100%', boxSizing: 'border-box', scrollMarginTop: 64 }}>
         <Reveal>
-          <div style={{ textAlign: 'center', marginBottom: 22 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.3em', color: CARAMELO }}>HAZ TU PEDIDO</div>
-            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(38px, 7vw, 56px)', letterSpacing: '0.03em', color: CREMA }}>EL MENÚ</h2>
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.3em', color: '#7FA28F' }}>HAZ TU PEDIDO</div>
+            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(38px, 7vw, 56px)', letterSpacing: '0.03em', color: VERDE }}>EL MENÚ</h2>
           </div>
         </Reveal>
+
+        {/* Chips de sección — como los tabs de la referencia */}
+        {seccionesConItems.length > 1 && (
+          <Reveal>
+            <div className="cafe-chips" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '2px 2px 18px', justifyContent: 'safe center' }}>
+              {seccionesConItems.map(sec => (
+                <button key={sec.id} onClick={() => irASeccion(sec.id)} style={{
+                  padding: '9px 14px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap',
+                  background: BLANCO, border: `1px solid ${LINEA}`, color: TINTA,
+                  fontSize: 12.5, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                  boxShadow: '0 6px 16px rgba(23,63,44,0.06)',
+                }}>{sec.icono} {sec.titulo}</button>
+              ))}
+            </div>
+          </Reveal>
+        )}
 
         {loading && <div style={{ textAlign: 'center', marginTop: 40 }}><Spinner /></div>}
 
         {!loading && visibles.length === 0 && (
           <div style={{ textAlign: 'center', margin: '46px 0 60px', display: 'flex', flexDirection: 'column', gap: 8, padding: '0 26px' }}>
             <span style={{ fontSize: 36 }}>☕</span>
-            <span style={{ fontSize: 15, fontWeight: 800, color: CREMA }}>El menú está en preparación</span>
-            <span style={{ fontSize: 13, color: '#8A7660', lineHeight: 1.6 }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: TINTA }}>El menú está en preparación</span>
+            <span style={{ fontSize: 13, color: GRIS, lineHeight: 1.6 }}>
               {esStaff
                 ? 'Tocá "＋ Producto" arriba para cargar el primero.'
                 : 'Muy pronto vas a poder pedir desde acá. Mientras tanto, acercate a la barra.'}
@@ -874,58 +887,53 @@ const tarjeta = (p, i) => {
           </div>
         )}
 
-        {[...SECCIONES_CAFE, { id: 'otros', titulo: 'MÁS DEL MENÚ', icono: '☕' }].map(sec => {
-          const lista = grupos[sec.id]
-          if (!lista?.length) return null
-          return (
-            <div key={sec.id} style={{ marginBottom: 34 }}>
-              <Reveal>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 11, margin: '2px 2px 14px' }}>
-                  <span aria-hidden style={{ fontSize: 26, display: 'inline-block', animation: 'cafeFlotar 4.5s ease-in-out infinite' }}>{sec.icono}</span>
-                  <h3 style={{ margin: 0, fontFamily: BEBAS, fontWeight: 400, fontSize: 27, letterSpacing: '0.06em', color: CREMA }}>{sec.titulo}</h3>
-                  <span aria-hidden style={{ flex: 1, height: 1, background: 'rgba(214,158,96,0.22)' }} />
-                </div>
-              </Reveal>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: 13 }}>
-                {lista.map((p, i) => tarjeta(p, i))}
+        {seccionesConItems.map(sec => (
+          <div key={sec.id} id={`cafe-sec-${sec.id}`} style={{ marginBottom: 26, scrollMarginTop: 76 }}>
+            <Reveal>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 11, margin: '2px 2px 8px' }}>
+                <span aria-hidden style={{ fontSize: 25, display: 'inline-block', animation: 'cafeFlotar 4.5s ease-in-out infinite' }}>{sec.icono}</span>
+                <h3 style={{ margin: 0, fontFamily: BEBAS, fontWeight: 400, fontSize: 26, letterSpacing: '0.06em', color: VERDE }}>{sec.titulo}</h3>
+                <span aria-hidden style={{ flex: 1, height: 1, background: LINEA }} />
               </div>
+            </Reveal>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '4px 14px' }}>
+              {grupos[sec.id].map((p, i) => tarjeta(p, i))}
             </div>
-          )
-        })}
+          </div>
+        ))}
       </section>
 
-      {/* ── ASÍ LO HACEMOS (placeholders de video) ── */}
-      <section style={{ padding: '40px 18px 30px', maxWidth: 860, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      {/* ── ASÍ LO HACEMOS ── */}
+      <section style={{ padding: '36px 18px 30px', maxWidth: 880, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.3em', color: CARAMELO }}>DETRÁS DE LA BARRA</div>
-            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(34px, 6vw, 48px)', letterSpacing: '0.03em', color: CREMA }}>ASÍ LO HACEMOS</h2>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.3em', color: '#7FA28F' }}>DETRÁS DE LA BARRA</div>
+            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(34px, 6vw, 48px)', letterSpacing: '0.03em', color: VERDE }}>ASÍ LO HACEMOS</h2>
           </div>
         </Reveal>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 13 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14 }}>
           {VIDEOS.map((v, i) => (
             <Reveal key={v.titulo} delay={i * 90}>
               <div className="cafe-card" style={{
-                position: 'relative', borderRadius: 18, overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.09)', aspectRatio: '16 / 10',
-                background: '#1B140E', cursor: 'default',
+                position: 'relative', borderRadius: 24, overflow: 'hidden',
+                aspectRatio: '16 / 10', background: BLANCO,
+                border: `1px solid ${LINEA}`, boxShadow: SOMBRA, cursor: 'default',
               }}>
-                {/* Imagen genérica hasta que haya videos propios */}
                 <img src={v.img} alt="" loading="lazy" decoding="async" className="cafe-zoom"
-                     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.75 }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,7,5,0.88) 0%, rgba(10,7,5,0.05) 55%)' }} />
+                     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13,26,19,0.82) 0%, rgba(13,26,19,0.02) 55%)' }} />
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -56%)',
                   width: 52, height: 52, borderRadius: '50%',
-                  background: 'rgba(214,158,96,0.22)', border: '1.5px solid rgba(245,233,220,0.65)',
+                  background: 'rgba(255,255,255,0.22)', border: '1.5px solid rgba(255,255,255,0.75)',
                   backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <span style={{ color: CREMA, fontSize: 18, marginLeft: 3 }}>▶</span>
+                  <span style={{ color: '#FFF', fontSize: 18, marginLeft: 3 }}>▶</span>
                 </div>
                 <div style={{ position: 'absolute', left: 14, right: 14, bottom: 12 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, color: CREMA }}>{v.titulo}</div>
-                  <div style={{ fontSize: 11, color: '#B99F84', marginTop: 2 }}>Video muy pronto ☕</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: '#FFF' }}>{v.titulo}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>Video muy pronto ☕</div>
                 </div>
               </div>
             </Reveal>
@@ -934,37 +942,40 @@ const tarjeta = (p, i) => {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ padding: '26px 22px calc(30px + env(safe-area-inset-bottom, 0px))', textAlign: 'center', borderTop: '1px solid rgba(214,158,96,0.12)', marginTop: 10 }}>
-        <a href={urlSitioPrincipal()} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <img src={questLogo} alt="Quest" style={{ height: 26 }} />
-          <span style={{ fontFamily: BEBAS, fontSize: 16, letterSpacing: '0.1em', color: '#8A7660' }}>CAFÉ</span>
+      <footer style={{ padding: '26px 22px calc(30px + env(safe-area-inset-bottom, 0px))', textAlign: 'center', borderTop: `1px solid ${LINEA}`, marginTop: 10 }}>
+        <a href={urlSitioPrincipal()} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none',
+          background: VERDE, borderRadius: 999, padding: '7px 14px',
+        }}>
+          <img src={questLogo} alt="Quest" style={{ height: 20 }} />
+          <span style={{ fontFamily: BEBAS, fontSize: 14, letterSpacing: '0.12em', color: '#FFF' }}>CAFÉ</span>
         </a>
-        <div style={{ fontSize: 11.5, color: '#5A4F42', marginTop: 8 }}>
-          Parte de Quest Hobby Store — <a href={urlSitioPrincipal()} style={{ color: '#8A7660' }}>ir a la tienda ↗</a>
+        <div style={{ fontSize: 11.5, color: GRIS, marginTop: 10 }}>
+          Parte de Quest Hobby Store — <a href={urlSitioPrincipal()} style={{ color: '#4E7A62' }}>ir a la tienda ↗</a>
         </div>
       </footer>
 
-      {/* ── Barra de pedido: aparece recién cuando hay algo en el carrito ── */}
+      {/* ── Barra de pedido (solo con carrito) ── */}
       {pedido.length > 0 && (
         <div style={{
           position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
           padding: '12px 16px calc(14px + env(safe-area-inset-bottom, 0px))',
-          background: 'rgba(12,9,7,0.94)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-          borderTop: '1px solid rgba(214,158,96,0.3)',
+          background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+          borderTop: `1px solid ${LINEA}`, boxShadow: '0 -14px 40px rgba(23,63,44,0.10)',
           animation: 'cafeSubir 0.28s cubic-bezier(0.22, 1, 0.36, 1) both',
         }}>
-          <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 9 }}>
+          <div style={{ maxWidth: 880, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 9 }}>
             <div style={{ display: 'flex', gap: 7 }}>
               {[
                 { id: 'tienda', label: '☕ Para tomar en tienda' },
                 { id: 'llevar', label: '🥡 Para llevar' },
               ].map(m => (
                 <button key={m.id} onClick={() => setModo(m.id)} style={{
-                  flex: 1, padding: '10px 6px', borderRadius: 10, cursor: 'pointer',
-                  background: modo === m.id ? 'rgba(214,158,96,0.18)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${modo === m.id ? 'rgba(214,158,96,0.65)' : 'rgba(255,255,255,0.10)'}`,
-                  color: modo === m.id ? CREMA : '#8A7660',
-                  fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                  flex: 1, padding: '10px 6px', borderRadius: 11, cursor: 'pointer',
+                  background: modo === m.id ? VERDE : '#F1EEE6',
+                  border: 'none',
+                  color: modo === m.id ? '#FFF' : GRIS,
+                  fontSize: 12, fontWeight: 800, fontFamily: 'Inter, sans-serif',
                 }}>{m.label}</button>
               ))}
             </div>
@@ -977,17 +988,18 @@ const tarjeta = (p, i) => {
             <input value={nota} onChange={e => setNota(e.target.value.slice(0, 120))}
                    placeholder="Nota (ej. sin azúcar)" style={inputStyle} />
             {codigoOk && (
-              <div style={{ textAlign: 'center', fontSize: 12.5, color: '#7CE3A5', fontWeight: 800 }}>
+              <div style={{ textAlign: 'center', fontSize: 12.5, color: '#15803D', fontWeight: 800 }}>
                 ✓ Pedido {codigoOk} registrado — te llamamos por tu nombre
               </div>
             )}
             <button disabled={!datosOk || pidiendo} onClick={hacerPedido} style={{
-              width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
-              background: (datosOk && !pidiendo) ? '#25D366' : 'rgba(255,255,255,0.06)',
-              color: datosOk ? '#FFF' : '#5A4F42',
+              width: '100%', padding: '15px 0', borderRadius: 14, border: 'none',
+              background: (datosOk && !pidiendo) ? WABTN : '#E9E6DD',
+              color: datosOk ? '#FFF' : '#A8ADA6',
               fontSize: 14.5, fontWeight: 800,
               cursor: (datosOk && !pidiendo) ? 'pointer' : 'default',
               fontFamily: 'Inter, sans-serif',
+              boxShadow: (datosOk && !pidiendo) ? '0 12px 30px rgba(34,184,92,0.30)' : 'none',
             }}>
               {pidiendo
                 ? 'Registrando…'

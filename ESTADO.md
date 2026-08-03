@@ -98,7 +98,11 @@ haberle cobrado a alguien.
 **Quest Café** (misma rama): SITIO INDEPENDIENTE de la cafetería. main.jsx
 detecta el hostname (`cafe.*`, `coffee.*` o `questcafe*`) o el path `/cafe`
 y monta SOLO CafeScreen — la app (feed, nav, auth) ni se ejecuta.
-**Es un LANDING con movimiento, no una web-app**: splash de entrada (taza
+**Es un LANDING con movimiento, no una web-app** — estética CLARA tipo app
+de café moderna (fondo papel #F5F3EE, cards VERDE profundo #173F2C con la
+foto del producto flotando en círculo arriba de la card, sombras suaves,
+esquinas 24px+; el logo blanco de Quest vive en un chip verde para leerse
+sobre claro): splash de entrada (taza
 llenándose, CSS puro, una vez por sesión), hero gigante con CTAs "en
 tienda / para llevar" que setean el modo y bajan al menú, secciones con
 reveal al scrollear (IntersectionObserver, respeta prefers-reduced-motion),
