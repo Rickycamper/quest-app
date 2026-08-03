@@ -45,7 +45,8 @@ const leerDatosGuardados = () => {
 }
 
 // ── Paleta clara ─────────────────────────────────────────────────────────────
-const PAPEL   = '#FAF3E7'   // fondo general
+const PAPEL    = '#FAF3E7'  // fondo general
+const CREMA_UI = '#FAF3E7'  // mismo crema, para texto sobre bloques oscuros
 const BLANCO  = '#FFFFFF'
 const TINTA   = '#2C1E15'   // texto principal
 const GRIS    = '#8A7461'   // texto secundario
@@ -56,7 +57,9 @@ const NARANJA2 = '#FF6E38'  // más claro, degradé de la card activa
 const NARANJA3 = '#C6410F'  // extremo oscuro del degradé
 const VERDE    = '#0E6B4C'  // verde bosque — acentos, textos chicos, acción
 const WABTN   = '#0E6B4C'   // acción principal — el verde de la paleta
-const BEBAS   = '"Bebas Neue", Inter, sans-serif'
+// Display del sitio: Rammetto One (Google Fonts, OFL) autohospedada en
+// index.html. Redonda y pesadísima — es la que le da el carácter editorial.
+const DISPLAY = '"Rammetto One", "Bebas Neue", Inter, sans-serif'
 const SOMBRA  = '0 18px 44px rgba(150,60,20,0.10)'
 
 const inputStyle = {
@@ -197,13 +200,68 @@ const CSS_CAFE = `
 @media (hover: hover) { .cafe-card:hover { transform: translateY(-5px) } }
 .cafe-zoom { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
 @media (hover: hover) { .cafe-card:hover .cafe-zoom { transform: scale(1.05) } }
+@keyframes cafeMarquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+@keyframes cafeFlecha { 0%,100% { transform: translateY(0) } 50% { transform: translateY(7px) } }
+.cafe-marquee { animation: cafeMarquee 26s linear infinite; }
 .cafe-chips { scrollbar-width: none; -ms-overflow-style: none; }
 .cafe-chips::-webkit-scrollbar { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .cafe-rise { animation: none; opacity: 1 }
   .cafe-card, .cafe-zoom { transition: none }
+  .cafe-marquee { animation: none }
 }
 `
+
+// ── Piezas del lenguaje visual (vibe editorial) ─────────────────────────────
+// Corte diagonal en la esquina: el triángulo que corta el bloque, como en la
+// referencia. Se dibuja con un borde, sin imágenes.
+function CorteEsquina({ color = TINTA, size = 74, lado = 'derecha', arriba = true }) {
+  return (
+    <div aria-hidden style={{
+      position: 'absolute', top: arriba ? 0 : 'auto', bottom: arriba ? 'auto' : 0,
+      right: lado === 'derecha' ? 0 : 'auto', left: lado === 'derecha' ? 'auto' : 0,
+      width: 0, height: 0, pointerEvents: 'none',
+      borderTop: arriba ? `${size}px solid ${color}` : 'none',
+      borderBottom: arriba ? 'none' : `${size}px solid ${color}`,
+      borderLeft: lado === 'derecha' ? `${size}px solid transparent` : 'none',
+      borderRight: lado === 'derecha' ? 'none' : `${size}px solid transparent`,
+    }} />
+  )
+}
+
+// Texto vertical rotado al costado de una sección ("SMALL BATCH" en la
+// referencia). Acá se usa para etiquetar cada bloque.
+function TextoVertical({ children, color = VERDE, lado = 'derecha' }) {
+  return (
+    <div aria-hidden style={{
+      position: 'absolute', top: 0, [lado === 'derecha' ? 'right' : 'left']: 6,
+      writingMode: 'vertical-rl', textOrientation: 'mixed',
+      fontSize: 11, fontWeight: 800, letterSpacing: '0.42em',
+      color, opacity: 0.85, fontFamily: 'Inter, sans-serif',
+      display: 'flex', alignItems: 'center', gap: 10,
+    }}>
+      {children}
+    </div>
+  )
+}
+
+// Cinta que se desplaza sin parar (marquee) — puro CSS, se frena con
+// prefers-reduced-motion.
+function Cinta({ texto, bg = TINTA, color = CREMA_UI }) {
+  const items = Array(8).fill(texto)
+  return (
+    <div aria-hidden style={{ background: bg, overflow: 'hidden', padding: '11px 0' }}>
+      <div className="cafe-marquee" style={{ display: 'flex', gap: 34, whiteSpace: 'nowrap' }}>
+        {[...items, ...items].map((t, i) => (
+          <span key={i} style={{
+            fontFamily: DISPLAY, fontSize: 15, letterSpacing: '0.12em', color,
+            display: 'inline-flex', alignItems: 'center', gap: 34,
+          }}>{t}<span style={{ opacity: 0.55 }}>◆</span></span>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 // ── Estrellas ────────────────────────────────────────────────────────────────
 // `valor` puede ser fraccionario para MOSTRAR (4.5 → cuatro llenas y media).
@@ -283,7 +341,7 @@ function SplashTaza({ onFin }) {
           borderRadius: 3, background: 'rgba(150,60,20,0.18)',
         }} />
       </div>
-      <div style={{ fontFamily: BEBAS, fontSize: 22, letterSpacing: '0.22em', color: NARANJA }}>
+      <div style={{ fontFamily: DISPLAY, fontSize: 22, letterSpacing: '0.22em', color: NARANJA }}>
         QUEST CAFÉ
       </div>
     </div>
@@ -1091,7 +1149,7 @@ export default function CafeScreen() {
           boxShadow: '0 8px 20px rgba(150,60,20,0.22)',
         }}>
           <img src={questLogo} alt="Quest" style={{ height: 22, display: 'block' }} />
-          <span style={{ fontFamily: BEBAS, fontSize: 15, letterSpacing: '0.12em', color: '#FFF', lineHeight: 1 }}>CAFÉ</span>
+          <span style={{ fontFamily: DISPLAY, fontSize: 15, letterSpacing: '0.12em', color: '#FFF', lineHeight: 1 }}>CAFÉ</span>
         </a>
         <span style={{ flex: 1 }} />
         {esStaff && (
@@ -1108,82 +1166,101 @@ export default function CafeScreen() {
         )}
       </div>
 
-      {/* ── HERO ── */}
+      {/* ── HERO — bloque de color a sangre, tipografía gigante ── */}
       <section style={{
-        minHeight: 'calc(86dvh - 56px)', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        padding: '44px 22px 30px', position: 'relative', overflow: 'hidden',
+        position: 'relative', background: NARANJA, color: CREMA_UI,
+        minHeight: 'calc(90dvh - 56px)', display: 'flex', flexDirection: 'column',
+        justifyContent: 'center', padding: '52px 22px 64px', overflow: 'hidden',
       }}>
-        <div aria-hidden style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(150,60,20,0.07) 0%, transparent 60%)',
-        }} />
-        {['10%', '80%', '26%', '66%', '90%'].map((left, i) => (
+        <CorteEsquina color={TINTA} size={76} />
+        <TextoVertical color="rgba(250,243,231,0.75)">CAFÉ · TCG · PANAMÁ</TextoVertical>
+
+        {/* granos flotando, muy sutiles */}
+        {['8%', '84%', '22%', '70%'].map((left, i) => (
           <span key={i} aria-hidden style={{
-            position: 'absolute', left, top: `${16 + i * 15}%`, fontSize: 16 + (i % 3) * 7,
-            opacity: 0.09, animation: `cafeFlotar ${5.5 + i}s ease-in-out ${i * 0.8}s infinite`,
+            position: 'absolute', left, top: `${18 + i * 18}%`, fontSize: 20 + (i % 3) * 10,
+            opacity: 0.10, animation: `cafeFlotar ${6 + i}s ease-in-out ${i * 0.7}s infinite`,
           }}>☕</span>
         ))}
 
-        <div className="cafe-rise" style={{ animationDelay: '0.05s', fontSize: 12, fontWeight: 800, letterSpacing: '0.32em', color: VERDE, marginBottom: 14 }}>
-          QUEST HOBBY STORE PRESENTA
+        <div style={{ maxWidth: 880, width: '100%', margin: '0 auto', position: 'relative' }}>
+          <div className="cafe-rise" style={{
+            animationDelay: '0.05s', fontSize: 11, fontWeight: 800,
+            letterSpacing: '0.38em', marginBottom: 18, opacity: 0.9,
+          }}>QUEST HOBBY STORE</div>
+
+          <h1 className="cafe-rise" style={{
+            animationDelay: '0.14s', margin: 0,
+            fontFamily: DISPLAY, fontWeight: 400,
+            fontSize: 'clamp(46px, 13vw, 118px)', lineHeight: 0.94,
+            letterSpacing: '-0.01em',
+          }}>
+            CAFÉ<br />
+            <span style={{ WebkitTextStroke: `2px ${CREMA_UI}`, color: 'transparent' }}>PARA</span><br />
+            JUGAR
+          </h1>
+
+          <p className="cafe-rise" style={{
+            animationDelay: '0.3s', margin: '22px 0 30px',
+            fontSize: 'clamp(14px, 2.7vw, 17px)', maxWidth: 420, lineHeight: 1.6,
+            opacity: 0.92,
+          }}>
+            Cafeína de verdad entre partida y partida. Pedí desde el celular,
+            seguí barajando, te avisamos cuando esté listo.
+          </p>
+
+          <div className="cafe-rise" style={{ animationDelay: '0.42s', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button onClick={() => irAlMenu('tienda')} style={{
+              padding: '16px 26px', border: `2px solid ${CREMA_UI}`, cursor: 'pointer',
+              background: CREMA_UI, color: NARANJA,
+              fontFamily: DISPLAY, fontSize: 14, letterSpacing: '0.1em',
+            }}>EN TIENDA</button>
+            <button onClick={() => irAlMenu('llevar')} style={{
+              padding: '16px 26px', border: `2px solid ${CREMA_UI}`, cursor: 'pointer',
+              background: 'transparent', color: CREMA_UI,
+              fontFamily: DISPLAY, fontSize: 14, letterSpacing: '0.1em',
+            }}>PARA LLEVAR</button>
+          </div>
         </div>
-        <h1 className="cafe-rise" style={{
-          animationDelay: '0.15s', margin: 0,
-          fontFamily: BEBAS, fontWeight: 400,
-          fontSize: 'clamp(64px, 16vw, 150px)', lineHeight: 0.92,
-          letterSpacing: '0.02em', color: NARANJA,
+
+        {/* flecha dibujada, como el "SEE WHAT'S INSIDE" de la referencia */}
+        <div aria-hidden style={{
+          position: 'absolute', left: 24, bottom: 22, display: 'flex', alignItems: 'center', gap: 10,
+          fontSize: 10.5, fontWeight: 800, letterSpacing: '0.24em', opacity: 0.85,
         }}>
-          QUEST<br />CAFÉ
-        </h1>
-        <p className="cafe-rise" style={{ animationDelay: '0.28s', margin: '18px 0 26px', fontSize: 'clamp(14px, 2.6vw, 17px)', color: GRIS, maxWidth: 430, lineHeight: 1.65 }}>
-          Café de verdad, en tu tienda de siempre. Pedí desde el celular
-          y te avisamos cuando esté listo.
-        </p>
-
-        <div className="cafe-rise" style={{ animationDelay: '0.4s', display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <button onClick={() => irAlMenu('tienda')} style={{
-            padding: '15px 26px', borderRadius: 999, border: 'none', cursor: 'pointer',
-            background: NARANJA, color: '#FFF',
-            fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
-            boxShadow: '0 14px 34px rgba(150,60,20,0.30)',
-          }}>☕ Para tomar en tienda</button>
-          <button onClick={() => irAlMenu('llevar')} style={{
-            padding: '15px 26px', borderRadius: 999, cursor: 'pointer',
-            background: BLANCO, border: `1.5px solid ${NARANJA}`,
-            color: NARANJA, fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
-          }}>🥡 Para llevar</button>
+          <svg width="26" height="34" viewBox="0 0 26 34" fill="none" style={{ animation: 'cafeFlecha 2.4s ease-in-out infinite' }}>
+            <path d="M13 2c-9 6-13 14-6 22" stroke={CREMA_UI} strokeWidth="2" strokeLinecap="round" />
+            <path d="M3 20l4 6 7-3" stroke={CREMA_UI} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          MIRÁ EL MENÚ
         </div>
-
-        <div aria-hidden style={{ position: 'absolute', bottom: 18, left: 0, right: 0, textAlign: 'center', animation: 'cafeFlotar 2.6s ease-in-out infinite', color: '#B5A390', fontSize: 20 }}>⌄</div>
       </section>
 
-      {/* ── UBICACIÓN ── */}
+      <Cinta texto="RECIÉN MOLIDO" bg={TINTA} />
+
+      {/* ── UBICACIÓN — bloque verde a sangre ── */}
       <Reveal>
-        <section style={{ padding: '26px 20px 8px', maxWidth: 760, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-          <div style={{
-            display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap',
-            background: BLANCO, border: `1px solid ${LINEA}`, borderRadius: 24,
-            padding: '22px 24px', boxShadow: SOMBRA,
-          }}>
-            <div style={{ fontSize: 38 }}>📍</div>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontFamily: BEBAS, fontSize: 25, letterSpacing: '0.05em', color: NARANJA }}>ENCONTRANOS</div>
-              <div style={{ fontSize: 13.5, color: GRIS, lineHeight: 1.6, marginTop: 4 }}>
-                Dentro de <strong style={{ color: TINTA }}>Quest Hobby Store</strong> — venís por el café,
-                te quedás por las cartas. Horario de la tienda.
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <section style={{ position: 'relative', background: VERDE, color: CREMA_UI, padding: '46px 22px 50px', overflow: 'hidden' }}>
+          <CorteEsquina color={PAPEL} size={62} lado="izquierda" arriba={false} />
+          <TextoVertical color="rgba(250,243,231,0.6)">DONDE ESTAMOS</TextoVertical>
+          <div style={{ maxWidth: 880, margin: '0 auto' }}>
+            <h2 style={{
+              margin: 0, fontFamily: DISPLAY, fontWeight: 400,
+              fontSize: 'clamp(34px, 9vw, 66px)', lineHeight: 0.95, letterSpacing: '-0.01em',
+            }}>ENCONTRANOS</h2>
+            <p style={{ margin: '14px 0 22px', fontSize: 15, lineHeight: 1.65, maxWidth: 420, opacity: 0.92 }}>
+              Dentro de <strong>Quest Hobby Store</strong>. Venís por el café,
+              te quedás por las cartas — o al revés.
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <a href="https://www.google.com/maps/search/Quest+Hobby+Store+Panamá" target="_blank" rel="noreferrer" style={{
-                padding: '11px 16px', borderRadius: 999, textDecoration: 'none',
-                background: NARANJA, color: '#FFF', fontSize: 12.5, fontWeight: 800,
-              }}>Cómo llegar ↗</a>
+                padding: '14px 22px', textDecoration: 'none', border: `2px solid ${CREMA_UI}`,
+                background: CREMA_UI, color: VERDE, fontFamily: DISPLAY, fontSize: 13, letterSpacing: '0.09em',
+              }}>CÓMO LLEGAR ↗</a>
               <a href={`https://wa.me/${STORE_WHATSAPP}`} target="_blank" rel="noreferrer" style={{
-                padding: '11px 16px', borderRadius: 999, textDecoration: 'none',
-                background: '#E8F3EC', border: '1px solid #BEE8CD',
-                color: VERDE, fontSize: 12.5, fontWeight: 800,
-              }}>Escribinos</a>
+                padding: '14px 22px', textDecoration: 'none', border: `2px solid ${CREMA_UI}`,
+                background: 'transparent', color: CREMA_UI, fontFamily: DISPLAY, fontSize: 13, letterSpacing: '0.09em',
+              }}>ESCRIBINOS</a>
             </div>
           </div>
         </section>
@@ -1192,9 +1269,17 @@ export default function CafeScreen() {
       {/* ── MENÚ / PEDIDO ── */}
       <section id="cafe-menu" style={{ padding: '40px 18px 10px', maxWidth: 880, margin: '0 auto', width: '100%', boxSizing: 'border-box', scrollMarginTop: 64 }}>
         <Reveal>
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.3em', color: VERDE }}>HAZ TU PEDIDO</div>
-            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(38px, 7vw, 56px)', letterSpacing: '0.03em', color: NARANJA }}>EL MENÚ</h2>
+          <div style={{ marginBottom: 18, position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.2em', color: VERDE, fontVariantNumeric: 'tabular-nums' }}>01</span>
+              <span style={{ flex: 1, height: 2, background: VERDE, opacity: 0.25 }} />
+              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.28em', color: VERDE }}>HAZ TU PEDIDO</span>
+            </div>
+            <h2 style={{
+              margin: '10px 0 0', fontFamily: DISPLAY, fontWeight: 400,
+              fontSize: 'clamp(40px, 11vw, 84px)', lineHeight: 0.95,
+              letterSpacing: '-0.01em', color: NARANJA,
+            }}>EL MENÚ</h2>
           </div>
         </Reveal>
 
@@ -1233,7 +1318,7 @@ export default function CafeScreen() {
             <Reveal>
               <div style={{ display: 'flex', alignItems: 'center', gap: 11, margin: '2px 2px 8px' }}>
                 <span aria-hidden style={{ fontSize: 25, display: 'inline-block', animation: 'cafeFlotar 4.5s ease-in-out infinite' }}>{sec.icono}</span>
-                <h3 style={{ margin: 0, fontFamily: BEBAS, fontWeight: 400, fontSize: 26, letterSpacing: '0.06em', color: NARANJA }}>{sec.titulo}</h3>
+                <h3 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: 26, letterSpacing: '0.06em', color: NARANJA }}>{sec.titulo}</h3>
                 <span aria-hidden style={{ flex: 1, height: 1, background: LINEA }} />
               </div>
             </Reveal>
@@ -1247,9 +1332,17 @@ export default function CafeScreen() {
       {/* ── ASÍ LO HACEMOS ── */}
       <section style={{ padding: '36px 18px 30px', maxWidth: 880, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         <Reveal>
-          <div style={{ textAlign: 'center', marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.3em', color: VERDE }}>DETRÁS DE LA BARRA</div>
-            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(34px, 6vw, 48px)', letterSpacing: '0.03em', color: NARANJA }}>ASÍ LO HACEMOS</h2>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.2em', color: VERDE, fontVariantNumeric: 'tabular-nums' }}>02</span>
+              <span style={{ flex: 1, height: 2, background: VERDE, opacity: 0.25 }} />
+              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.28em', color: VERDE }}>DETRÁS DE LA BARRA</span>
+            </div>
+            <h2 style={{
+              margin: '10px 0 0', fontFamily: DISPLAY, fontWeight: 400,
+              fontSize: 'clamp(34px, 9vw, 68px)', lineHeight: 0.95,
+              letterSpacing: '-0.01em', color: NARANJA,
+            }}>ASÍ LO HACEMOS</h2>
           </div>
         </Reveal>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14 }}>
@@ -1289,7 +1382,7 @@ export default function CafeScreen() {
           background: NARANJA, borderRadius: 999, padding: '7px 14px',
         }}>
           <img src={questLogo} alt="Quest" style={{ height: 20 }} />
-          <span style={{ fontFamily: BEBAS, fontSize: 14, letterSpacing: '0.12em', color: '#FFF' }}>CAFÉ</span>
+          <span style={{ fontFamily: DISPLAY, fontSize: 14, letterSpacing: '0.12em', color: '#FFF' }}>CAFÉ</span>
         </a>
         <div style={{ fontSize: 11.5, color: GRIS, marginTop: 10 }}>
           Parte de Quest Hobby Store — <a href={urlSitioPrincipal()} style={{ color: VERDE }}>ir a la tienda ↗</a>

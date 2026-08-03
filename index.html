@@ -38,6 +38,9 @@
          red de seguridad en conexiones muy lentas. -->
     <link rel="preload" href="/fonts/bebas-neue-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Rammetto One: display del sitio del café. NO se precarga — la app
+         principal no la usa y precargarla le costaría 12 KB a cada visita
+         del feed. El café la pide cuando monta. -->
     <style>
       @font-face {
         font-family: 'Bebas Neue';
@@ -51,6 +54,13 @@
          inyectado por JS → CSS de Google → recién ahí las fuentes). Los
          estilos inline piden 'Inter' directo, así que se descarga en todos
          los dispositivos: precargarla evita el repintado del swap. */
+      @font-face {
+        font-family: 'Rammetto One';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('/fonts/rammetto-one-latin.woff2') format('woff2');
+      }
       @font-face {
         font-family: 'Inter';
         font-style: normal;

@@ -98,7 +98,12 @@ haberle cobrado a alguien.
 **Quest Café** (misma rama): SITIO INDEPENDIENTE de la cafetería. main.jsx
 detecta el hostname (`cafe.*`, `coffee.*` o `questcafe*`) o el path `/cafe`
 y monta SOLO CafeScreen — la app (feed, nav, auth) ni se ejecuta.
-**Es un LANDING con movimiento, no una web-app** — estética CLARA tipo app
+**Tipografía**: Rammetto One (Google Fonts, OFL) autohospedada en
+`public/fonts/` — NO se precarga, la app principal no la usa.
+**Es un LANDING EDITORIAL con movimiento, no una web-app** (lenguaje visual
+inspirado en growerssoil.com: bloques de color a sangre, tipografía enorme,
+cortes diagonales en esquinas, texto vertical rotado, secciones numeradas
+01/02, cinta marquee, flecha dibujada) — estética CLARA tipo app
 de café moderna (fondo crema #FAF3E7, acentos VERDE bosque #0E6B4C, cards NARANJA QUEMADO #E8551F con la
 bebida flotando al COSTADO derecho de la card asomando poco (ilustración SVG propia: taza para caliente, copa con hielo y sorbete para frío — se usa cuando el producto no tiene image_url), sombras suaves,
 esquinas 24px+; el logo blanco de Quest vive en un chip verde para leerse
