@@ -26,6 +26,22 @@ import questLogo from '../assets/quest-logo-sm.png'
 
 const fmt = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+// Tamaños. Se guardan en shop_products.variants como
+// [{label:'8oz', price:2.5}, {label:'12oz', price:3}]. Si un producto no
+// tiene variantes (un brownie, una empanada), se usa su precio suelto.
+const variantes = (p) => Array.isArray(p?.variants) && p.variants.length ? p.variants : null
+const precioVariante = (p, label) => {
+  const vs = variantes(p)
+  if (!vs) return precio(p)
+  const v = vs.find(x => x.label === label) ?? vs[0]
+  return Number(v?.price) || 0
+}
+// El precio "desde" que se muestra en la card: el más barato de sus tamaños.
+const precioDesde = (p) => {
+  const vs = variantes(p)
+  return vs ? Math.min(...vs.map(v => Number(v.price) || 0)) : precio(p)
+}
+
 // Mismo criterio que el shop: si hay oferta válida, vale la oferta.
 const precio = (p) => {
   const base = Number(p?.price) || 0
@@ -102,6 +118,7 @@ const SECCIONES_CAFE = [
   { id: 'frio',     titulo: 'FRÍOS',         icono: '🧊'   },
   { id: 'postre',   titulo: 'POSTRES',       icono: '🫳✨' },
   { id: 'salado',   titulo: 'SALADOS',       icono: '🧂'   },
+  { id: 'extra',    titulo: 'EXTRAS',        icono: '🥛'   },
 ]
 
 // Ilustración de relleno mientras el equipo sube sus fotos. Es SVG propio
@@ -587,13 +604,17 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
 // después nombre, descripción, y el selector de cantidad 01 02 03 04 con el
 // triangulito debajo del elegido. El botón verde con la bolsita muestra el
 // TOTAL de esa cantidad, no el precio unitario.
-function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, onClose }) {
+function ProductoSheet({ producto, cantidadDe, rating, onVotar, onAgregar, onClose }) {
   const [miVoto, setMiVoto] = useState(() => {
     try { return Number(localStorage.getItem(`cafe_voto_${producto.id}`)) || 0 } catch { return 0 }
   })
-  const [n, setN] = useState(Math.min(4, Math.max(1, cantidadActual || 1)))
-  const unit = precio(producto)
-  const enOferta = unit < (Number(producto.price) || 0)
+  const vs = variantes(producto)
+  const [tam, setTam] = useState(vs ? vs[0].label : null)
+  const [n, setN] = useState(Math.min(4, Math.max(1, cantidadDe(tam) || 1)))
+  // Al cambiar de tamaño, la cantidad refleja lo que ya haya de ESE tamaño.
+  useEffect(() => { setN(Math.min(4, Math.max(1, cantidadDe(tam) || 1))) }, [tam])
+  const unit = precioVariante(producto, tam)
+  const enOferta = !vs && unit < (Number(producto.price) || 0)
 
   // Cerrar con Escape — es una pantalla, no un popup cualquiera.
   useEffect(() => {
@@ -681,6 +702,33 @@ function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, o
           <Estrellas valor={miVoto} size={26} onRate={(n) => { setMiVoto(n); onVotar(n) }} />
         </div>
 
+        {/* Tamaño — solo si el producto tiene más de uno */}
+        {vs && vs.length > 1 && (
+          <div style={{ marginTop: 26 }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: NARANJA, marginBottom: 10 }}>Tamaño</div>
+            <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+              {vs.map(v => {
+                const activo = tam === v.label
+                return (
+                  <button key={v.label} onClick={() => setTam(v.label)} style={{
+                    padding: '11px 18px', borderRadius: 999, cursor: 'pointer',
+                    background: activo ? NARANJA : BLANCO,
+                    border: `1.5px solid ${activo ? NARANJA : LINEA}`,
+                    color: activo ? '#FFF' : GRIS,
+                    fontFamily: DISPLAY, fontSize: 13, letterSpacing: '0.04em',
+                    display: 'flex', alignItems: 'baseline', gap: 7,
+                  }}>
+                    {v.label}
+                    <span style={{ fontSize: 11, opacity: 0.85, fontFamily: 'Inter, sans-serif', fontWeight: 700 }}>
+                      {fmt(v.price)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Cantidad — 01 02 03 04 con el triangulito debajo */}
         <div style={{ marginTop: 30 }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: NARANJA, marginBottom: 12 }}>Cantidad</div>
@@ -724,10 +772,10 @@ function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, o
             </div>
           )}
           <div style={{ fontSize: 12.5, color: GRIS }}>
-            {n} × {fmt(unit)}
+            {n} × {fmt(unit)}{tam ? ` · ${tam}` : ''}
           </div>
         </div>
-        <button onClick={() => { onAgregar(n); onClose() }} style={{
+        <button onClick={() => { onAgregar(n, tam); onClose() }} style={{
           display: 'flex', alignItems: 'center', gap: 12,
           padding: '18px 26px', borderRadius: 22, border: 'none', cursor: 'pointer',
           background: NARANJA, color: '#FFF',
@@ -908,6 +956,7 @@ export default function CafeScreen() {
 
   const cargarMenu = async () => {
     const base = 'id, name, price, sale_price, image_url, sort_order, active, subcategory'
+    const extra = ', description, variants'
     const pedir = (cols) => supabase
       .from('shop_products')
       .select(cols)
@@ -918,8 +967,10 @@ export default function CafeScreen() {
 
     // `description` puede no existir todavía (migración sin correr): si el
     // select falla por eso, se reintenta sin ella y el menú anda igual.
-    let { data, error } = await pedir(base + ', description')
-    if (error && /description/i.test(error.message || '')) {
+    // description y variants pueden no existir todavía (migración sin
+    // correr): si el select falla por eso, se reintenta sin ellas.
+    let { data, error } = await pedir(base + extra)
+    if (error && /description|variants/i.test(error.message || '')) {
       ({ data, error } = await pedir(base))
     }
     if (!error) setItems(data ?? [])
@@ -950,24 +1001,39 @@ export default function CafeScreen() {
   }
 
   const visibles = useMemo(
-    () => esStaff ? items : items.filter(p => precio(p) > 0),
+    () => esStaff ? items : items.filter(p => precioDesde(p) > 0),
     [items, esStaff])
 
   // Agrupado por sección; lo sin clasificar cae en 'otros'.
   const grupos = useMemo(() => {
-    const por = { caliente: [], frio: [], postre: [], salado: [], otros: [] }
+    const por = { caliente: [], frio: [], postre: [], salado: [], extra: [], otros: [] }
     for (const p of visibles) (por[p.subcategory] ?? por.otros).push(p)
     return por
   }, [visibles])
 
-  const pedido = useMemo(() =>
-    visibles.filter(p => (qty[p.id] ?? 0) > 0 && precio(p) > 0)
-            .map(p => ({ ...p, n: qty[p.id], sub: precio(p) * qty[p.id] })),
-  [visibles, qty])
+  // El carrito se indexa por producto|tamaño: un mismo café puede estar
+  // pedido en 8oz y en 12oz a la vez, y son líneas distintas.
+  const clave = (id, label) => `${id}|${label ?? ''}`
+
+  const pedido = useMemo(() => {
+    const out = []
+    for (const [k, n] of Object.entries(qty)) {
+      if (!n) continue
+      const [pid, label] = k.split('|')
+      const p = visibles.find(x => x.id === pid)
+      if (!p) continue
+      const unit = precioVariante(p, label || undefined)
+      if (unit <= 0) continue
+      out.push({ ...p, key: k, label: label || null, n, unit, sub: unit * n })
+    }
+    return out
+  }, [visibles, qty])
   const total = pedido.reduce((a, p) => a + p.sub, 0)
 
-  const cambiar = (id, d) =>
-    setQty(q => ({ ...q, [id]: Math.max(0, Math.min(20, (q[id] ?? 0) + d)) }))
+  // Cuántas unidades hay en el carrito de un producto, sumando sus tamaños.
+  const enCarrito = (id) => Object.entries(qty)
+    .filter(([k, n]) => n > 0 && k.split('|')[0] === id)
+    .reduce((a, [, n]) => a + n, 0)
 
   const nombreOk = nombre.trim().length >= 2
   const telOk    = tel.replace(/\D/g, '').length >= 7
@@ -977,7 +1043,7 @@ export default function CafeScreen() {
     const lineas = [
       `☕ *PEDIDO QUEST CAFÉ${codigo ? ` ${codigo}` : ''}* — ${modo === 'llevar' ? 'PARA LLEVAR 🥡' : 'PARA TOMAR EN TIENDA'}`,
       '',
-      ...pedido.map(p => `· ${p.n}× ${p.name} — ${fmt(p.sub)}`),
+      ...pedido.map(p => `· ${p.n}× ${p.name}${p.label ? ` (${p.label})` : ''} — ${fmt(p.sub)}`),
       '',
       `*Total: ${fmt(total)}*`,
       nombre.trim() ? `Nombre: ${nombre.trim()}` : null,
@@ -994,7 +1060,7 @@ export default function CafeScreen() {
     let codigo = null
     try {
       const { data, error } = await supabase.rpc('place_cafe_order', {
-        p_items: pedido.map(p => ({ id: p.id, qty: p.n })),
+        p_items: pedido.map(p => ({ id: p.id, qty: p.n, variant: p.label })),
         p_modo:  modo,
         p_name:  nombre.trim(),
         p_phone: tel.trim(),
@@ -1023,9 +1089,11 @@ export default function CafeScreen() {
   // verde con nombre y precio, y botón + abajo a la derecha. Tocar la card
   // abre la ficha para elegir cantidad — no se agrega de un toque.
   const tarjeta = (p, i) => {
-    const n = qty[p.id] ?? 0
-    const sinPrecio = precio(p) <= 0
-    const enOferta = !sinPrecio && precio(p) < (Number(p.price) || 0)
+    const n = enCarrito(p.id)
+    const vs = variantes(p)
+    const desde = precioDesde(p)
+    const sinPrecio = desde <= 0
+    const enOferta = !vs && !sinPrecio && precio(p) < (Number(p.price) || 0)
     return (
       <Reveal key={p.id} delay={Math.min(i * 55, 330)}>
         <div
@@ -1098,9 +1166,10 @@ export default function CafeScreen() {
                 }}>{p.name}</div>
                 {sinPrecio
                   ? <div style={{ color: '#FFD98A', fontSize: 11, fontWeight: 700, marginTop: 3 }}>Sin precio — no se publica</div>
-                  : <div style={{ marginTop: 1 }}>
-                      {enOferta && <span style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'line-through', fontSize: 11.5, marginRight: 6 }}>{fmt(p.price)}</span>}
-                      <span style={{ color: '#FFF', fontWeight: 800, fontSize: 19, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</span>
+                  : <div style={{ marginTop: 1, display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                      {enOferta && <span style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'line-through', fontSize: 11.5 }}>{fmt(p.price)}</span>}
+                      {vs && vs.length > 1 && <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10.5, fontWeight: 700 }}>desde</span>}
+                      <span style={{ color: '#FFF', fontWeight: 800, fontSize: 19, fontVariantNumeric: 'tabular-nums' }}>{fmt(desde)}</span>
                     </div>}
               </div>
               {!sinPrecio && (
@@ -1453,10 +1522,10 @@ export default function CafeScreen() {
       {fichaDe && (
         <ProductoSheet
           producto={fichaDe}
-          cantidadActual={qty[fichaDe.id] ?? 0}
+          cantidadDe={(label) => qty[clave(fichaDe.id, label)] ?? 0}
           rating={ratings[fichaDe.id]}
           onVotar={(n) => votar(fichaDe.id, n)}
-          onAgregar={(n) => setQty(q => ({ ...q, [fichaDe.id]: n }))}
+          onAgregar={(n, label) => setQty(q => ({ ...q, [clave(fichaDe.id, label)]: n }))}
           onClose={() => setFichaDe(null)}
         />
       )}
