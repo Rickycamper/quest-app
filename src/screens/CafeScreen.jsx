@@ -1205,8 +1205,9 @@ export default function CafeScreen() {
             fontSize: 'clamp(14px, 2.7vw, 17px)', maxWidth: 420, lineHeight: 1.6,
             opacity: 0.92,
           }}>
-            Cafeína de verdad entre partida y partida. Pedí desde el celular,
-            seguí barajando, te avisamos cuando esté listo.
+            Cafeína de verdad para el día. Entre tu momento chill y birrias,
+            pedí desde tu celular y seguí en lo tuyo — te avisamos cuando
+            esté ready.
           </p>
 
           <div className="cafe-rise" style={{ animationDelay: '0.42s', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
