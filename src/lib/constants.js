@@ -51,6 +51,10 @@ export const GAME_STYLES = {
 }
 
 
+// WhatsApp Business de la tienda, en E.164 sin "+" (formato de wa.me).
+// Lo usa el sitio del café para mandar los pedidos.
+export const STORE_WHATSAPP = '50767620445'
+
 export const BRANCHES = ['Panama', 'David', 'Chitre']
 
 export const BRANCH_STYLES = {
