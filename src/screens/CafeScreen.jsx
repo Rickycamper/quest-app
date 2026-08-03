@@ -4,7 +4,7 @@
 // questcafe*) o en /cafe, main.jsx monta ESTO en lugar de la app.
 //
 // ESTÉTICA: clara y limpia (referencia estilo app de café moderna) — fondo
-// papel, tarjetas VIOLETA profundo con la foto del producto FLOTANDO arriba,
+// papel, tarjetas NARANJA profundo con la foto del producto FLOTANDO arriba,
 // esquinas muy redondeadas, sombras suaves, chips de sección, reveals al
 // scrollear. El logo de Quest (blanco) vive dentro de un chip verde para
 // funcionar sobre fondo claro.
@@ -45,25 +45,27 @@ const leerDatosGuardados = () => {
 }
 
 // ── Paleta clara ─────────────────────────────────────────────────────────────
-const PAPEL   = '#F4F3F8'   // fondo general
+const PAPEL   = '#FAF3E7'   // fondo general
 const BLANCO  = '#FFFFFF'
-const TINTA   = '#23212E'   // texto principal
-const GRIS    = '#78758A'   // texto secundario
-const LINEA   = '#E4E2EC'   // bordes suaves
-const VIOLETA  = '#332C6E'  // morado casi azul (índigo) — color de marca del café
-const VIOLETA2 = '#453BA0'  // más claro, para el degradé de la card activa
-const VIOLETA3 = '#241F52'  // el extremo oscuro del degradé
-const WABTN   = '#22B85C'   // acción de WhatsApp
+const TINTA   = '#2C1E15'   // texto principal
+const GRIS    = '#8A7461'   // texto secundario
+const LINEA   = '#EADFCB'   // bordes suaves
+// Paleta de la referencia: naranja quemado + verde bosque sobre crema.
+const NARANJA  = '#E8551F'  // color de marca — cards, títulos, CTA
+const NARANJA2 = '#FF6E38'  // más claro, degradé de la card activa
+const NARANJA3 = '#C6410F'  // extremo oscuro del degradé
+const VERDE    = '#0E6B4C'  // verde bosque — acentos, textos chicos, acción
+const WABTN   = '#0E6B4C'   // acción principal — el verde de la paleta
 const BEBAS   = '"Bebas Neue", Inter, sans-serif'
-const SOMBRA  = '0 18px 44px rgba(51,44,110,0.10)'
+const SOMBRA  = '0 18px 44px rgba(150,60,20,0.10)'
 
 const inputStyle = {
-  width: '100%', boxSizing: 'border-box', background: '#EFEEF5',
+  width: '100%', boxSizing: 'border-box', background: '#F3EADA',
   border: `1px solid ${LINEA}`, borderRadius: 12, padding: '11px 13px',
   color: TINTA, fontSize: 13.5, outline: 'none', fontFamily: 'Inter, sans-serif',
 }
 const sheetWrap = {
-  position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(28,24,60,0.38)',
+  position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(60,32,18,0.42)',
   backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
   display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18,
 }
@@ -71,23 +73,23 @@ const sheetBox = {
   width: '100%', maxWidth: 384, background: BLANCO,
   border: `1px solid ${LINEA}`, borderRadius: 22, padding: 20,
   display: 'flex', flexDirection: 'column', gap: 12,
-  fontFamily: 'Inter, sans-serif', boxShadow: '0 30px 70px rgba(51,44,110,0.22)',
+  fontFamily: 'Inter, sans-serif', boxShadow: '0 30px 70px rgba(150,60,20,0.22)',
   color: TINTA,
 }
 const btnPrimario = (activo) => ({
   width: '100%', padding: '13px 0', borderRadius: 14, border: 'none',
-  background: activo ? VIOLETA : '#E6E4EF',
-  color: activo ? '#FFF' : '#A6A3B8',
+  background: activo ? NARANJA : '#EADFCB',
+  color: activo ? '#FFF' : '#B5A390',
   fontSize: 13.5, fontWeight: 800, cursor: activo ? 'pointer' : 'default',
   fontFamily: 'Inter, sans-serif',
 })
 const chipHeader = (solido = false) => ({
   fontSize: 11.5, fontWeight: 800, padding: '8px 12px', borderRadius: 999,
   border: solido ? 'none' : `1px solid ${LINEA}`,
-  background: solido ? VIOLETA : BLANCO,
+  background: solido ? NARANJA : BLANCO,
   color: solido ? '#FFF' : GRIS,
   cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
-  boxShadow: solido ? '0 8px 20px rgba(51,44,110,0.25)' : 'none',
+  boxShadow: solido ? '0 8px 20px rgba(150,60,20,0.25)' : 'none',
 })
 
 // Secciones del menú (pedidas así, con humor: el godzilla para lo caliente).
@@ -113,7 +115,7 @@ function IlustracionBebida({ tipo = 'caliente', size = 120 }) {
   if (tipo === 'frio') {
     return (
       <svg width={size} height={size} viewBox="0 0 120 120" fill="none" aria-hidden
-           style={{ display: 'block', filter: 'drop-shadow(0 14px 18px rgba(51,44,110,0.42))' }}>
+           style={{ display: 'block', filter: 'drop-shadow(0 14px 18px rgba(150,60,20,0.42))' }}>
         {/* copa alta */}
         <path d="M38 26h44l-5 66a10 10 0 0 1-10 9H53a10 10 0 0 1-10-9L38 26z"
               fill={CREMA} fillOpacity="0.92" />
@@ -137,7 +139,7 @@ function IlustracionBebida({ tipo = 'caliente', size = 120 }) {
 
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" fill="none" aria-hidden
-         style={{ display: 'block', filter: 'drop-shadow(0 14px 18px rgba(51,44,110,0.42))' }}>
+         style={{ display: 'block', filter: 'drop-shadow(0 14px 18px rgba(150,60,20,0.42))' }}>
       {/* vapor */}
       <path d="M50 26c-4-5 4-8 0-13" stroke="#FFFFFF" strokeOpacity="0.55" strokeWidth="3.4" strokeLinecap="round" />
       <path d="M61 24c-4-6 4-9 0-14" stroke="#FFFFFF" strokeOpacity="0.45" strokeWidth="3.4" strokeLinecap="round" />
@@ -256,13 +258,13 @@ function SplashTaza({ onFin }) {
         {[18, 38, 58].map((left, i) => (
           <span key={i} style={{
             position: 'absolute', top: -16, left, width: 3, height: 12, borderRadius: 3,
-            background: 'rgba(51,44,110,0.4)',
+            background: 'rgba(150,60,20,0.4)',
             animation: `cafeVapor 1.3s ease-out ${0.35 + i * 0.22}s infinite`,
           }} />
         ))}
         <div style={{
           position: 'absolute', left: 0, bottom: 0, width: 66, height: 56,
-          border: `3px solid ${VIOLETA}`, borderRadius: '6px 6px 20px 20px',
+          border: `3px solid ${NARANJA}`, borderRadius: '6px 6px 20px 20px',
           overflow: 'hidden', background: BLANCO,
         }}>
           <div style={{
@@ -273,15 +275,15 @@ function SplashTaza({ onFin }) {
         </div>
         <div style={{
           position: 'absolute', right: 0, bottom: 14, width: 20, height: 26,
-          border: `3px solid ${VIOLETA}`, borderLeft: 'none',
+          border: `3px solid ${NARANJA}`, borderLeft: 'none',
           borderRadius: '0 12px 12px 0',
         }} />
         <div style={{
           position: 'absolute', left: -6, bottom: -8, width: 78, height: 5,
-          borderRadius: 3, background: 'rgba(51,44,110,0.18)',
+          borderRadius: 3, background: 'rgba(150,60,20,0.18)',
         }} />
       </div>
-      <div style={{ fontFamily: BEBAS, fontSize: 22, letterSpacing: '0.22em', color: VIOLETA }}>
+      <div style={{ fontFamily: BEBAS, fontSize: 22, letterSpacing: '0.22em', color: NARANJA }}>
         QUEST CAFÉ
       </div>
     </div>
@@ -459,7 +461,7 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
                   style={{ ...inputStyle, minHeight: 74, resize: 'none', lineHeight: 1.5 }} />
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ width: 54, height: 54, borderRadius: 14, overflow: 'hidden', background: '#EFEEF5', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${LINEA}` }}>
+          <div style={{ width: 54, height: 54, borderRadius: 14, overflow: 'hidden', background: '#F3EADA', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${LINEA}` }}>
             {foto
               ? <img src={foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <span style={{ fontSize: 10, color: GRIS, textAlign: 'center', lineHeight: 1.3, padding: 4 }}>sin foto<br/>(se usa una genérica)</span>}
@@ -467,7 +469,7 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <button onClick={() => fileRef.current?.click()} disabled={busy} style={{
               padding: '9px 0', borderRadius: 10, border: `1px solid ${LINEA}`,
-              background: '#EFEEF5', color: TINTA, fontSize: 12, fontWeight: 700,
+              background: '#F3EADA', color: TINTA, fontSize: 12, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'Inter, sans-serif',
             }}>{busy ? 'Subiendo…' : '📷 Subir foto'}</button>
             <input placeholder="…o pegá una URL de imagen" value={foto}
@@ -484,8 +486,8 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
             {SECCIONES_CAFE.map(sc => (
               <button key={sc.id} onClick={() => setSeccion(sc.id)} style={{
                 padding: '8px 11px', borderRadius: 999, cursor: 'pointer',
-                background: seccion === sc.id ? VIOLETA : BLANCO,
-                border: `1px solid ${seccion === sc.id ? VIOLETA : LINEA}`,
+                background: seccion === sc.id ? NARANJA : BLANCO,
+                border: `1px solid ${seccion === sc.id ? NARANJA : LINEA}`,
                 color: seccion === sc.id ? '#FFF' : GRIS,
                 fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
               }}>{sc.icono} {sc.titulo}</button>
@@ -497,7 +499,7 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
           Orden en el menú
           <input type="number" value={orden} onChange={e => setOrden(e.target.value)}
                  style={{ ...inputStyle, width: 76, padding: '7px 10px' }} />
-          <span style={{ fontSize: 10.5, color: '#A6A3B8' }}>(menor = primero)</span>
+          <span style={{ fontSize: 10.5, color: '#B5A390' }}>(menor = primero)</span>
         </label>
 
         {err && <div style={{ fontSize: 12, color: '#C0392B' }}>{err}</div>}
@@ -554,7 +556,7 @@ function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, o
         <button onClick={onClose} aria-label="Volver" style={{
           width: 40, height: 40, borderRadius: 14, cursor: 'pointer',
           background: BLANCO, border: `1px solid ${LINEA}`, color: TINTA,
-          fontSize: 20, lineHeight: 1, boxShadow: '0 6px 16px rgba(51,44,110,0.08)',
+          fontSize: 20, lineHeight: 1, boxShadow: '0 6px 16px rgba(150,60,20,0.08)',
         }}>‹</button>
       </div>
 
@@ -568,21 +570,21 @@ function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, o
             {producto.image_url
               ? <img src={producto.image_url} alt="" style={{
                   width: '100%', height: '100%', objectFit: 'contain', display: 'block',
-                  filter: 'drop-shadow(0 26px 38px rgba(51,44,110,0.32))',
+                  filter: 'drop-shadow(0 26px 38px rgba(150,60,20,0.32))',
                 }} />
               : <IlustracionBebida tipo={tipoBebida(producto)} size="100%" />}
           </div>
           {/* sombra en el piso — lo despega del papel */}
           <div aria-hidden style={{
             position: 'absolute', bottom: -6, left: '18%', right: '18%', height: 16,
-            borderRadius: '50%', background: 'rgba(51,44,110,0.16)', filter: 'blur(9px)',
+            borderRadius: '50%', background: 'rgba(150,60,20,0.16)', filter: 'blur(9px)',
           }} />
         </div>
       </div>
 
       {/* Texto */}
       <div style={{ padding: '20px 24px 0', maxWidth: 620, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-        <h2 style={{ margin: 0, fontSize: 'clamp(26px, 6.4vw, 34px)', fontWeight: 800, color: VIOLETA, lineHeight: 1.15 }}>
+        <h2 style={{ margin: 0, fontSize: 'clamp(26px, 6.4vw, 34px)', fontWeight: 800, color: NARANJA, lineHeight: 1.15 }}>
           {producto.name}
         </h2>
         {/* Rating: promedio arriba y, debajo, las estrellas para votar */}
@@ -623,7 +625,7 @@ function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, o
 
         {/* Cantidad — 01 02 03 04 con el triangulito debajo */}
         <div style={{ marginTop: 30 }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: VIOLETA, marginBottom: 12 }}>Cantidad</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: NARANJA, marginBottom: 12 }}>Cantidad</div>
           <div style={{ display: 'flex', gap: 22, alignItems: 'flex-end' }}>
             {[1, 2, 3, 4].map(v => {
               const activo = n === v
@@ -636,12 +638,12 @@ function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, o
                   <span style={{
                     fontSize: activo ? 30 : 20,
                     fontWeight: activo ? 800 : 600,
-                    color: activo ? VIOLETA : '#B7B4CE',
+                    color: activo ? NARANJA : '#C6B7A4',
                     fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                     transition: 'font-size 0.18s ease, color 0.18s ease',
                   }}>{String(v).padStart(2, '0')}</span>
                   <span aria-hidden style={{
-                    fontSize: 10, color: VIOLETA, lineHeight: 1,
+                    fontSize: 10, color: NARANJA, lineHeight: 1,
                     opacity: activo ? 1 : 0, transition: 'opacity 0.18s ease',
                   }}>▲</span>
                 </button>
@@ -659,7 +661,7 @@ function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, o
       }}>
         <div style={{ flex: 1 }}>
           {enOferta && (
-            <div style={{ fontSize: 13, color: '#B7B4CE', textDecoration: 'line-through' }}>
+            <div style={{ fontSize: 13, color: '#C6B7A4', textDecoration: 'line-through' }}>
               {fmt(Number(producto.price) * n)}
             </div>
           )}
@@ -670,9 +672,9 @@ function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, o
         <button onClick={() => { onAgregar(n); onClose() }} style={{
           display: 'flex', alignItems: 'center', gap: 12,
           padding: '18px 26px', borderRadius: 22, border: 'none', cursor: 'pointer',
-          background: VIOLETA, color: '#FFF',
+          background: NARANJA, color: '#FFF',
           fontSize: 18, fontWeight: 800, fontFamily: 'Inter, sans-serif',
-          boxShadow: '0 16px 34px rgba(51,44,110,0.32)',
+          boxShadow: '0 16px 34px rgba(150,60,20,0.32)',
         }}>
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 8h14l-1 12H6L5 8z" />
@@ -689,7 +691,7 @@ function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, o
 const ESTADOS_CAFE = {
   nueva:     { label: 'NUEVA',     color: '#B45309', bg: '#FEF3E2', border: '#F5CD8F' },
   lista:     { label: 'LISTA',     color: '#166534', bg: '#E8F6EC', border: '#B7E2C3' },
-  entregada: { label: 'ENTREGADA', color: '#6B7280', bg: '#F1F0F6', border: '#DEDCE8' },
+  entregada: { label: 'ENTREGADA', color: '#6B7280', bg: '#F3EADA', border: '#E5D8C4' },
   cancelada: { label: 'CANCELADA', color: '#B42318', bg: '#FDEEEC', border: '#F2C4BE' },
 }
 
@@ -744,7 +746,7 @@ function OrdersSheet({ onClose }) {
           <span style={{ fontSize: 15.5, fontWeight: 800, color: TINTA, flex: 1 }}>Órdenes de hoy</span>
           <button onClick={() => setVerTodas(v => !v)} style={{
             fontSize: 10.5, fontWeight: 700, padding: '6px 10px', borderRadius: 999,
-            border: `1px solid ${LINEA}`, background: verTodas ? '#EFEEF5' : 'transparent',
+            border: `1px solid ${LINEA}`, background: verTodas ? '#F3EADA' : 'transparent',
             color: GRIS, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
           }}>{verTodas ? 'Solo activas' : 'Ver todas'}</button>
           <button onClick={onClose} aria-label="Cerrar" style={{
@@ -979,12 +981,13 @@ export default function CafeScreen() {
           <div style={{
             position: 'relative',
             background: n > 0
-              ? `linear-gradient(160deg, ${VIOLETA2} 0%, ${VIOLETA} 100%)`
-              : `linear-gradient(160deg, ${VIOLETA} 0%, ${VIOLETA3} 100%)`,
+              ? `linear-gradient(160deg, ${NARANJA2} 0%, ${NARANJA} 100%)`
+              : `linear-gradient(160deg, ${NARANJA} 0%, ${NARANJA3} 100%)`,
             borderRadius: 26,
-            padding: '84px 15px 16px',
-            boxShadow: n > 0 ? '0 22px 48px rgba(51,44,110,0.30)' : SOMBRA,
-            display: 'flex', flexDirection: 'column', gap: 5,
+            padding: '78px 15px 16px',
+            boxShadow: n > 0 ? '0 22px 48px rgba(150,60,20,0.30)' : SOMBRA,
+            display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 3,
+            minHeight: 52,
             opacity: sinPrecio ? 0.65 : 1,
           }}>
             {/* PNG flotando libre, saliéndose de la card */}
@@ -998,7 +1001,7 @@ export default function CafeScreen() {
               {p.image_url
                 ? <img src={p.image_url} alt="" loading="lazy" decoding="async" style={{
                     width: '100%', height: '100%', objectFit: 'contain', display: 'block',
-                    filter: 'drop-shadow(0 14px 22px rgba(51,44,110,0.40))',
+                    filter: 'drop-shadow(0 14px 22px rgba(150,60,20,0.40))',
                   }} />
                 : <IlustracionBebida tipo={tipoBebida(p)} size={108} />}
             </div>
@@ -1011,7 +1014,7 @@ export default function CafeScreen() {
             }}>
               {ratings[p.id]?.votos
                 ? <>
-                    <Estrellas valor={ratings[p.id].promedio} size={13} />
+                    <Estrellas valor={ratings[p.id].promedio} size={13} color="#FFE9C7" />
                     <span style={{ fontVariantNumeric: 'tabular-nums' }}>{ratings[p.id].promedio}</span>
                   </>
                 : <span style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>Sin puntuar</span>}
@@ -1026,21 +1029,26 @@ export default function CafeScreen() {
               }}>✎</button>
             )}
 
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#FFF', lineHeight: 1.3, minHeight: 36 }}>{p.name}</div>
-
+            {/* Nombre y precio en la MISMA columna (el nombre justo arriba
+                del precio) y el botón al costado. Antes el botón, más alto
+                que el precio, abría 18px de hueco entre ambos. */}
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 14, fontWeight: 800, color: '#FFF', lineHeight: 1.3,
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                }}>{p.name}</div>
                 {sinPrecio
-                  ? <span style={{ color: '#FFD98A', fontSize: 11, fontWeight: 700 }}>Sin precio — no se publica</span>
-                  : <>
-                      {enOferta && <div style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'line-through', fontSize: 11.5 }}>{fmt(p.price)}</div>}
-                      <div style={{ color: '#FFF', fontWeight: 800, fontSize: 19, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</div>
-                    </>}
+                  ? <div style={{ color: '#FFD98A', fontSize: 11, fontWeight: 700, marginTop: 3 }}>Sin precio — no se publica</div>
+                  : <div style={{ marginTop: 1 }}>
+                      {enOferta && <span style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'line-through', fontSize: 11.5, marginRight: 6 }}>{fmt(p.price)}</span>}
+                      <span style={{ color: '#FFF', fontWeight: 800, fontSize: 19, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</span>
+                    </div>}
               </div>
               {!sinPrecio && (
                 <div aria-hidden style={{
                   width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-                  background: '#FFF', color: VIOLETA,
+                  background: '#FFF', color: NARANJA,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: n > 0 ? 16 : 21, fontWeight: 800, lineHeight: 1,
                   fontVariantNumeric: 'tabular-nums',
@@ -1079,8 +1087,8 @@ export default function CafeScreen() {
         {/* El logo de Quest es blanco: vive en un chip verde para leerse en claro */}
         <a href={urlSitioPrincipal()} aria-label="Ir al sitio de Quest" style={{
           display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none',
-          background: VIOLETA, borderRadius: 999, padding: '6px 12px',
-          boxShadow: '0 8px 20px rgba(51,44,110,0.22)',
+          background: NARANJA, borderRadius: 999, padding: '6px 12px',
+          boxShadow: '0 8px 20px rgba(150,60,20,0.22)',
         }}>
           <img src={questLogo} alt="Quest" style={{ height: 22, display: 'block' }} />
           <span style={{ fontFamily: BEBAS, fontSize: 15, letterSpacing: '0.12em', color: '#FFF', lineHeight: 1 }}>CAFÉ</span>
@@ -1095,7 +1103,7 @@ export default function CafeScreen() {
         )}
         {!esStaff && (
           <button onClick={() => setVerLogin(true)} aria-label="Acceso del equipo" style={{
-            ...chipHeader(), color: '#ABA8BD', borderColor: '#EAE8F2',
+            ...chipHeader(), color: '#B5A390', borderColor: '#EFE5D4',
           }}>Staff</button>
         )}
       </div>
@@ -1108,7 +1116,7 @@ export default function CafeScreen() {
       }}>
         <div aria-hidden style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(51,44,110,0.07) 0%, transparent 60%)',
+          background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(150,60,20,0.07) 0%, transparent 60%)',
         }} />
         {['10%', '80%', '26%', '66%', '90%'].map((left, i) => (
           <span key={i} aria-hidden style={{
@@ -1117,14 +1125,14 @@ export default function CafeScreen() {
           }}>☕</span>
         ))}
 
-        <div className="cafe-rise" style={{ animationDelay: '0.05s', fontSize: 12, fontWeight: 800, letterSpacing: '0.32em', color: '#8E88C4', marginBottom: 14 }}>
+        <div className="cafe-rise" style={{ animationDelay: '0.05s', fontSize: 12, fontWeight: 800, letterSpacing: '0.32em', color: VERDE, marginBottom: 14 }}>
           QUEST HOBBY STORE PRESENTA
         </div>
         <h1 className="cafe-rise" style={{
           animationDelay: '0.15s', margin: 0,
           fontFamily: BEBAS, fontWeight: 400,
           fontSize: 'clamp(64px, 16vw, 150px)', lineHeight: 0.92,
-          letterSpacing: '0.02em', color: VIOLETA,
+          letterSpacing: '0.02em', color: NARANJA,
         }}>
           QUEST<br />CAFÉ
         </h1>
@@ -1136,18 +1144,18 @@ export default function CafeScreen() {
         <div className="cafe-rise" style={{ animationDelay: '0.4s', display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
           <button onClick={() => irAlMenu('tienda')} style={{
             padding: '15px 26px', borderRadius: 999, border: 'none', cursor: 'pointer',
-            background: VIOLETA, color: '#FFF',
+            background: NARANJA, color: '#FFF',
             fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
-            boxShadow: '0 14px 34px rgba(51,44,110,0.30)',
+            boxShadow: '0 14px 34px rgba(150,60,20,0.30)',
           }}>☕ Para tomar en tienda</button>
           <button onClick={() => irAlMenu('llevar')} style={{
             padding: '15px 26px', borderRadius: 999, cursor: 'pointer',
-            background: BLANCO, border: `1.5px solid ${VIOLETA}`,
-            color: VIOLETA, fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+            background: BLANCO, border: `1.5px solid ${NARANJA}`,
+            color: NARANJA, fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
           }}>🥡 Para llevar</button>
         </div>
 
-        <div aria-hidden style={{ position: 'absolute', bottom: 18, left: 0, right: 0, textAlign: 'center', animation: 'cafeFlotar 2.6s ease-in-out infinite', color: '#ABA8BD', fontSize: 20 }}>⌄</div>
+        <div aria-hidden style={{ position: 'absolute', bottom: 18, left: 0, right: 0, textAlign: 'center', animation: 'cafeFlotar 2.6s ease-in-out infinite', color: '#B5A390', fontSize: 20 }}>⌄</div>
       </section>
 
       {/* ── UBICACIÓN ── */}
@@ -1160,7 +1168,7 @@ export default function CafeScreen() {
           }}>
             <div style={{ fontSize: 38 }}>📍</div>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontFamily: BEBAS, fontSize: 25, letterSpacing: '0.05em', color: VIOLETA }}>ENCONTRANOS</div>
+              <div style={{ fontFamily: BEBAS, fontSize: 25, letterSpacing: '0.05em', color: NARANJA }}>ENCONTRANOS</div>
               <div style={{ fontSize: 13.5, color: GRIS, lineHeight: 1.6, marginTop: 4 }}>
                 Dentro de <strong style={{ color: TINTA }}>Quest Hobby Store</strong> — venís por el café,
                 te quedás por las cartas. Horario de la tienda.
@@ -1169,12 +1177,12 @@ export default function CafeScreen() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <a href="https://www.google.com/maps/search/Quest+Hobby+Store+Panamá" target="_blank" rel="noreferrer" style={{
                 padding: '11px 16px', borderRadius: 999, textDecoration: 'none',
-                background: VIOLETA, color: '#FFF', fontSize: 12.5, fontWeight: 800,
+                background: NARANJA, color: '#FFF', fontSize: 12.5, fontWeight: 800,
               }}>Cómo llegar ↗</a>
               <a href={`https://wa.me/${STORE_WHATSAPP}`} target="_blank" rel="noreferrer" style={{
                 padding: '11px 16px', borderRadius: 999, textDecoration: 'none',
-                background: '#E8F8EE', border: '1px solid #BEE8CD',
-                color: '#15803D', fontSize: 12.5, fontWeight: 800,
+                background: '#E8F3EC', border: '1px solid #BEE8CD',
+                color: VERDE, fontSize: 12.5, fontWeight: 800,
               }}>Escribinos</a>
             </div>
           </div>
@@ -1185,8 +1193,8 @@ export default function CafeScreen() {
       <section id="cafe-menu" style={{ padding: '40px 18px 10px', maxWidth: 880, margin: '0 auto', width: '100%', boxSizing: 'border-box', scrollMarginTop: 64 }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.3em', color: '#8E88C4' }}>HAZ TU PEDIDO</div>
-            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(38px, 7vw, 56px)', letterSpacing: '0.03em', color: VIOLETA }}>EL MENÚ</h2>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.3em', color: VERDE }}>HAZ TU PEDIDO</div>
+            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(38px, 7vw, 56px)', letterSpacing: '0.03em', color: NARANJA }}>EL MENÚ</h2>
           </div>
         </Reveal>
 
@@ -1199,7 +1207,7 @@ export default function CafeScreen() {
                   padding: '9px 14px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap',
                   background: BLANCO, border: `1px solid ${LINEA}`, color: TINTA,
                   fontSize: 12.5, fontWeight: 700, fontFamily: 'Inter, sans-serif',
-                  boxShadow: '0 6px 16px rgba(51,44,110,0.06)',
+                  boxShadow: '0 6px 16px rgba(150,60,20,0.06)',
                 }}>{sec.icono} {sec.titulo}</button>
               ))}
             </div>
@@ -1225,7 +1233,7 @@ export default function CafeScreen() {
             <Reveal>
               <div style={{ display: 'flex', alignItems: 'center', gap: 11, margin: '2px 2px 8px' }}>
                 <span aria-hidden style={{ fontSize: 25, display: 'inline-block', animation: 'cafeFlotar 4.5s ease-in-out infinite' }}>{sec.icono}</span>
-                <h3 style={{ margin: 0, fontFamily: BEBAS, fontWeight: 400, fontSize: 26, letterSpacing: '0.06em', color: VIOLETA }}>{sec.titulo}</h3>
+                <h3 style={{ margin: 0, fontFamily: BEBAS, fontWeight: 400, fontSize: 26, letterSpacing: '0.06em', color: NARANJA }}>{sec.titulo}</h3>
                 <span aria-hidden style={{ flex: 1, height: 1, background: LINEA }} />
               </div>
             </Reveal>
@@ -1240,8 +1248,8 @@ export default function CafeScreen() {
       <section style={{ padding: '36px 18px 30px', maxWidth: 880, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.3em', color: '#8E88C4' }}>DETRÁS DE LA BARRA</div>
-            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(34px, 6vw, 48px)', letterSpacing: '0.03em', color: VIOLETA }}>ASÍ LO HACEMOS</h2>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.3em', color: VERDE }}>DETRÁS DE LA BARRA</div>
+            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(34px, 6vw, 48px)', letterSpacing: '0.03em', color: NARANJA }}>ASÍ LO HACEMOS</h2>
           </div>
         </Reveal>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14 }}>
@@ -1254,7 +1262,7 @@ export default function CafeScreen() {
               }}>
                 <img src={v.img} alt="" loading="lazy" decoding="async" className="cafe-zoom"
                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(20,17,44,0.82) 0%, rgba(20,17,44,0.02) 55%)' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(38,20,12,0.82) 0%, rgba(38,20,12,0.02) 55%)' }} />
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -56%)',
                   width: 52, height: 52, borderRadius: '50%',
@@ -1278,13 +1286,13 @@ export default function CafeScreen() {
       <footer style={{ padding: '26px 22px calc(30px + env(safe-area-inset-bottom, 0px))', textAlign: 'center', borderTop: `1px solid ${LINEA}`, marginTop: 10 }}>
         <a href={urlSitioPrincipal()} style={{
           display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none',
-          background: VIOLETA, borderRadius: 999, padding: '7px 14px',
+          background: NARANJA, borderRadius: 999, padding: '7px 14px',
         }}>
           <img src={questLogo} alt="Quest" style={{ height: 20 }} />
           <span style={{ fontFamily: BEBAS, fontSize: 14, letterSpacing: '0.12em', color: '#FFF' }}>CAFÉ</span>
         </a>
         <div style={{ fontSize: 11.5, color: GRIS, marginTop: 10 }}>
-          Parte de Quest Hobby Store — <a href={urlSitioPrincipal()} style={{ color: '#5E56A8' }}>ir a la tienda ↗</a>
+          Parte de Quest Hobby Store — <a href={urlSitioPrincipal()} style={{ color: VERDE }}>ir a la tienda ↗</a>
         </div>
       </footer>
 
@@ -1294,7 +1302,7 @@ export default function CafeScreen() {
           position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
           padding: '12px 16px calc(14px + env(safe-area-inset-bottom, 0px))',
           background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-          borderTop: `1px solid ${LINEA}`, boxShadow: '0 -14px 40px rgba(51,44,110,0.10)',
+          borderTop: `1px solid ${LINEA}`, boxShadow: '0 -14px 40px rgba(150,60,20,0.10)',
           animation: 'cafeSubir 0.28s cubic-bezier(0.22, 1, 0.36, 1) both',
         }}>
           <div style={{ maxWidth: 880, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -1305,7 +1313,7 @@ export default function CafeScreen() {
               ].map(m => (
                 <button key={m.id} onClick={() => setModo(m.id)} style={{
                   flex: 1, padding: '10px 6px', borderRadius: 11, cursor: 'pointer',
-                  background: modo === m.id ? VIOLETA : '#EFEEF5',
+                  background: modo === m.id ? NARANJA : '#F3EADA',
                   border: 'none',
                   color: modo === m.id ? '#FFF' : GRIS,
                   fontSize: 12, fontWeight: 800, fontFamily: 'Inter, sans-serif',
@@ -1321,18 +1329,18 @@ export default function CafeScreen() {
             <input value={nota} onChange={e => setNota(e.target.value.slice(0, 120))}
                    placeholder="Nota (ej. sin azúcar)" style={inputStyle} />
             {codigoOk && (
-              <div style={{ textAlign: 'center', fontSize: 12.5, color: '#15803D', fontWeight: 800 }}>
+              <div style={{ textAlign: 'center', fontSize: 12.5, color: VERDE, fontWeight: 800 }}>
                 ✓ Pedido {codigoOk} registrado — te llamamos por tu nombre
               </div>
             )}
             <button disabled={!datosOk || pidiendo} onClick={hacerPedido} style={{
               width: '100%', padding: '15px 0', borderRadius: 14, border: 'none',
-              background: (datosOk && !pidiendo) ? WABTN : '#E6E4EF',
-              color: datosOk ? '#FFF' : '#A6A3B8',
+              background: (datosOk && !pidiendo) ? WABTN : '#EADFCB',
+              color: datosOk ? '#FFF' : '#B5A390',
               fontSize: 14.5, fontWeight: 800,
               cursor: (datosOk && !pidiendo) ? 'pointer' : 'default',
               fontFamily: 'Inter, sans-serif',
-              boxShadow: (datosOk && !pidiendo) ? '0 12px 30px rgba(34,184,92,0.30)' : 'none',
+              boxShadow: (datosOk && !pidiendo) ? '0 12px 30px rgba(14,107,76,0.32)' : 'none',
             }}>
               {pidiendo
                 ? 'Registrando…'
