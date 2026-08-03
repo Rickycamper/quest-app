@@ -96,11 +96,17 @@ una compra: sin eso, los errores de configuración recién aparecen después de
 haberle cobrado a alguien.
 
 **Quest Café** (misma rama): SITIO INDEPENDIENTE de la cafetería. main.jsx
-detecta el hostname (`cafe.*` o `questcafe*`) o el path `/cafe` y monta SOLO
-CafeScreen — la app (feed, nav, auth) ni se ejecuta, así el café no afecta
-al site normal. Look de catálogo como la tienda (mismos design tokens),
-grilla de cards con foto/precio/stepper; el logo de Quest y el botón
-"Ir a la tienda" llevan a questhobbystore.com. El pedido sale por WhatsApp
+detecta el hostname (`cafe.*`, `coffee.*` o `questcafe*`) o el path `/cafe`
+y monta SOLO CafeScreen — la app (feed, nav, auth) ni se ejecuta.
+**Es un LANDING con movimiento, no una web-app**: splash de entrada (taza
+llenándose, CSS puro, una vez por sesión), hero gigante con CTAs "en
+tienda / para llevar" que setean el modo y bajan al menú, secciones con
+reveal al scrollear (IntersectionObserver, respeta prefers-reduced-motion),
+tarjeta de UBICACIÓN (dirección genérica — falta la real), menú en grilla
+con hover, sección "Así lo hacemos" con placeholders de video (imágenes de
+Unsplash — la CSP permite img-src *, videos externos NO pasarían), footer.
+La barra de pedido aparece solo cuando el carrito tiene algo. El logo de
+Quest lleva a questhobbystore.com. El pedido sale por WhatsApp
 al número del negocio con "para tomar en tienda / para llevar", items,
 nombre, teléfono, nota y total. Sin cobro online.
 **Cuentas en el café — SOLO STAFF**: los clientes NO tienen login (decisión
@@ -126,9 +132,9 @@ base — el navegador manda solo {id, qty}. WhatsApp sigue saliendo, ahora
 con el código. Si la migración no corrió, el cliente NO se rompe: el
 pedido sale por WhatsApp sin código (trampa conocida del proyecto).
 **Para activar el subdominio**: Vercel → proyecto → Settings → Domains →
-Add `cafe.questhobbystore.com` (el apex ya está en Vercel, se autoconfigura).
+Add `coffee.questhobbystore.com` (el apex ya está en Vercel, se autoconfigura).
 El QR (`public/cafe-qr.png`, también servido en /cafe-qr.png) apunta a
-https://cafe.questhobbystore.com — no imprimirlo hasta agregar el dominio.
+https://coffee.questhobbystore.com — no imprimirlo hasta agregar el dominio.
 Gestión de productos: pestaña **Cafetería** del Shop (solo admins),
 categoría `cafe` en `shop_products`, sin migración (columna de texto libre).
 El menú muestra todo lo que tenga precio > 0, sin lógica de stock.

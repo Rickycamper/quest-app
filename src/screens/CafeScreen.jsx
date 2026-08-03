@@ -74,6 +74,149 @@ const btnPrimario = (activo) => ({
   fontFamily: 'Inter, sans-serif',
 })
 
+// ── Paleta y piezas del sitio ────────────────────────────────────────────────
+// Los colores cálidos que ya veníamos usando, ahora como constantes con
+// nombre: el sitio entero se lee en clave café, no en clave tienda.
+const CREMA    = '#F5E9DC'
+const CARAMELO = '#D69E60'
+const BEBAS    = '"Bebas Neue", Inter, sans-serif'
+const FONDO    = 'radial-gradient(ellipse 90% 46% at 50% -6%, rgba(180,120,60,0.18) 0%, transparent 62%), #0C0907'
+
+const chipHeader = (border, bg, color = CREMA) => ({
+  fontSize: 11.5, fontWeight: 800, padding: '8px 11px', borderRadius: 999,
+  border: `1px solid ${border}`, background: bg, color,
+  cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
+})
+const btnQty = (mas, activo) => ({
+  flex: 1, height: 32, borderRadius: 9, cursor: 'pointer', lineHeight: 1, fontSize: 16,
+  border: `1px solid ${mas ? 'rgba(214,158,96,0.55)' : 'rgba(255,255,255,0.12)'}`,
+  background: mas ? 'rgba(214,158,96,0.14)' : 'rgba(255,255,255,0.05)',
+  color: activo ? CREMA : '#5A4F42',
+})
+
+// Imágenes genéricas hasta tener material propio (img-src * en la CSP las
+// permite; los VIDEOS externos no pasarían — por eso son placeholders).
+const VIDEOS = [
+  { titulo: 'El espresso perfecto',  img: 'https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?w=800&q=60&auto=format&fit=crop' },
+  { titulo: 'Arte latte en vivo',    img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=60&auto=format&fit=crop' },
+  { titulo: 'Del grano a tu taza',   img: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&q=60&auto=format&fit=crop' },
+]
+
+// Keyframes reales (inline styles no pueden declararlos). Un solo <style>.
+const CSS_CAFE = `
+@keyframes cafeLlenar { from { height: 12% } to { height: 82% } }
+@keyframes cafeVapor {
+  0%   { transform: translateY(4px) scaleX(1);   opacity: 0 }
+  35%  { opacity: 0.7 }
+  100% { transform: translateY(-16px) scaleX(1.6); opacity: 0 }
+}
+@keyframes cafeIrse { to { opacity: 0; visibility: hidden } }
+@keyframes cafeAparecer {
+  from { opacity: 0; transform: translateY(26px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+@keyframes cafeFlotar {
+  0%, 100% { transform: translateY(0) }
+  50%      { transform: translateY(-9px) }
+}
+@keyframes cafeSubir {
+  from { transform: translateY(100%) }
+  to   { transform: translateY(0) }
+}
+.cafe-rise { opacity: 0; animation: cafeAparecer 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.cafe-card { transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.2s ease; }
+@media (hover: hover) { .cafe-card:hover { transform: translateY(-4px) } }
+.cafe-zoom { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+@media (hover: hover) { .cafe-card:hover .cafe-zoom { transform: scale(1.06) } }
+@media (prefers-reduced-motion: reduce) {
+  .cafe-rise { animation: none; opacity: 1 }
+  .cafe-card, .cafe-zoom { transition: none }
+}
+`
+
+// ── Splash: la taza llenándose ───────────────────────────────────────────────
+// Puro CSS (nada que descargar): taza dibujada con bordes, "café" que sube
+// con cafeLlenar, vapor, y el overlay entero se desvanece solo. onFin
+// desmonta y marca la sesión para no repetirlo en cada vista.
+function SplashTaza({ onFin }) {
+  useEffect(() => {
+    const t = setTimeout(onFin, 2050)
+    return () => clearTimeout(t)
+  }, [onFin])
+  return (
+    <div aria-hidden style={{
+      position: 'fixed', inset: 0, zIndex: 100, background: '#0C0907',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20,
+      animation: 'cafeIrse 0.45s ease 1.55s both',
+    }}>
+      <div style={{ position: 'relative', width: 86, height: 74 }}>
+        {/* vapor */}
+        {[18, 38, 58].map((left, i) => (
+          <span key={i} style={{
+            position: 'absolute', top: -16, left, width: 3, height: 12, borderRadius: 3,
+            background: 'rgba(245,233,220,0.5)',
+            animation: `cafeVapor 1.3s ease-out ${0.35 + i * 0.22}s infinite`,
+          }} />
+        ))}
+        {/* taza */}
+        <div style={{
+          position: 'absolute', left: 0, bottom: 0, width: 66, height: 56,
+          border: `3px solid ${CREMA}`, borderRadius: '6px 6px 20px 20px',
+          overflow: 'hidden', background: 'rgba(255,255,255,0.03)',
+        }}>
+          <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0,
+            background: `linear-gradient(180deg, ${CARAMELO} 0%, #8A5A28 100%)`,
+            animation: 'cafeLlenar 1.15s cubic-bezier(0.3, 0, 0.4, 1) 0.15s both',
+          }} />
+        </div>
+        {/* asa */}
+        <div style={{
+          position: 'absolute', right: 0, bottom: 14, width: 20, height: 26,
+          border: `3px solid ${CREMA}`, borderLeft: 'none',
+          borderRadius: '0 12px 12px 0',
+        }} />
+        {/* plato */}
+        <div style={{
+          position: 'absolute', left: -6, bottom: -8, width: 78, height: 5,
+          borderRadius: 3, background: 'rgba(245,233,220,0.35)',
+        }} />
+      </div>
+      <div style={{ fontFamily: BEBAS, fontSize: 22, letterSpacing: '0.22em', color: CREMA, opacity: 0.9 }}>
+        QUEST CAFÉ
+      </div>
+    </div>
+  )
+}
+
+// ── Reveal al scrollear ──────────────────────────────────────────────────────
+// IntersectionObserver: cada sección/card entra con fade+subida la primera
+// vez que asoma. Con prefers-reduced-motion se muestra directo.
+function Reveal({ children, delay = 0 }) {
+  const ref = useRef(null)
+  const [visto, setVisto] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+
+  useEffect(() => {
+    if (visto || !ref.current) return
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setVisto(true); io.disconnect() }
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' })
+    io.observe(ref.current)
+    return () => io.disconnect()
+  }, [visto])
+
+  return (
+    <div ref={ref} style={{
+      opacity: visto ? 1 : 0,
+      transform: visto ? 'translateY(0)' : 'translateY(26px)',
+      transition: `opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
+    }}>
+      {children}
+    </div>
+  )
+}
+
 // ── Ingreso del EQUIPO (email + contraseña) ─────────────────────────────────
 // Sin códigos ni links: signInWithPassword no depende de plantillas de email
 // ni de redirects, así que funciona en el subdominio sin tocar el panel.
@@ -397,9 +540,17 @@ export default function CafeScreen() {
   const [perfil, setPerfil]   = useState(null)
   const [verLogin, setVerLogin] = useState(false)
   const [editor, setEditor]   = useState(null)        // null | {} (nuevo) | producto
-  const [verOrdenes, setVerOrdenes] = useState(false) // tablero staff
+  const [verOrdenes, setVerOrdenes] = useState(false)
   const [pidiendo, setPidiendo] = useState(false)
-  const [codigoOk, setCodigoOk] = useState(null)      // 'C-0012' tras registrar
+  const [codigoOk, setCodigoOk] = useState(null)
+
+  // Splash de entrada: la taza llenándose. Una vez por sesión de navegador —
+  // en el segundo pageview ya molestaría en vez de gustar.
+  const [cargando, setCargando] = useState(() => {
+    if (typeof window === 'undefined') return false
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false
+    try { return sessionStorage.getItem('cafe_splash') !== '1' } catch { return true }
+  })
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
@@ -412,12 +563,6 @@ export default function CafeScreen() {
     getProfile(session.user.id).then(setPerfil).catch(() => setPerfil(null))
   }, [session?.user?.id])
 
-  // Con perfil: precargar SOLO lo vacío — no pisar lo que la persona escribió
-  useEffect(() => {
-    if (perfil?.username) setNombre(n => n || perfil.username)
-    if (perfil?.phone)    setTel(t => t || perfil.phone)
-  }, [perfil?.username, perfil?.phone])
-
   const esStaff = !!(perfil?.is_owner || ['staff', 'admin'].includes(perfil?.role))
 
   const cargarMenu = () => {
@@ -429,8 +574,6 @@ export default function CafeScreen() {
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true })
       .then(({ data, error }) => {
-        // El staff ve también lo que no tiene precio (para terminar de cargarlo);
-        // el público solo lo publicable.
         if (!error) setItems(data ?? [])
         setLoading(false)
       })
@@ -450,8 +593,6 @@ export default function CafeScreen() {
   const cambiar = (id, d) =>
     setQty(q => ({ ...q, [id]: Math.max(0, Math.min(20, (q[id] ?? 0) + d)) }))
 
-  // Identidad mínima para poder avisarle: nombre + teléfono. La cuenta de
-  // Quest es un atajo que los precarga, no un requisito.
   const nombreOk = nombre.trim().length >= 2
   const telOk    = tel.replace(/\D/g, '').length >= 7
   const datosOk  = nombreOk && telOk
@@ -474,9 +615,6 @@ export default function CafeScreen() {
     if (pidiendo || !pedido.length || !datosOk) return
     setPidiendo(true)
     try { localStorage.setItem(DATOS_KEY, JSON.stringify({ nombre: nombre.trim(), tel: tel.trim() })) } catch {}
-
-    // 1) Registrar la orden — el tablero del equipo vive de esto. El precio
-    //    se recalcula en la base: solo viajan {id, qty}.
     let codigo = null
     try {
       const { data, error } = await supabase.rpc('place_cafe_order', {
@@ -487,11 +625,8 @@ export default function CafeScreen() {
         p_note:  nota.trim() || null,
       })
       if (!error) codigo = (Array.isArray(data) ? data[0] : data)?.code ?? null
-      // Si falló (ej. migración sin correr — trampa conocida del proyecto),
-      // NO se pierde el pedido: sigue saliendo por WhatsApp sin código.
+      // Si falló (migración sin correr), el pedido igual sale por WhatsApp.
     } catch {}
-
-    // 2) WhatsApp — el canal donde el equipo ya vive, ahora con el código.
     window.open(armarWA(codigo), '_blank')
     if (codigo) {
       setCodigoOk(codigo)
@@ -501,73 +636,151 @@ export default function CafeScreen() {
     setPidiendo(false)
   }
 
+  const irAlMenu = (m) => {
+    if (m) setModo(m)
+    document.getElementById('cafe-menu')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <div style={{
       minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-      background:
-        'radial-gradient(ellipse 90% 50% at 50% -8%, rgba(251,146,60,0.16) 0%, transparent 60%), ' + COLOR.background,
+      background: FONDO,
       fontFamily: 'Inter, sans-serif',
-      paddingTop: 'env(safe-area-inset-top, 0px)',
+      color: CREMA,
     }}>
-      {/* Header — el logo vuelve al website normal */}
+      <style>{CSS_CAFE}</style>
+      {cargando && <SplashTaza onFin={() => {
+        try { sessionStorage.setItem('cafe_splash', '1') } catch {}
+        setCargando(false)
+      }} />}
+
+      {/* ── Header fijo ── */}
       <div style={{
-        padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10,
-        flexShrink: 0, borderBottom: `1px solid ${COLOR.border}`,
-        position: 'sticky', top: 0, zIndex: 5,
-        background: 'rgba(10,10,10,0.85)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+        padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10,
+        position: 'sticky', top: 0, zIndex: 20,
+        background: 'rgba(12,9,7,0.78)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(214,158,96,0.14)',
+        paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
       }}>
         <a href={urlSitioPrincipal()} aria-label="Ir al sitio de Quest" style={{ display: 'flex', alignItems: 'center' }}>
-          <img src={questLogo} alt="Quest" style={{ height: 32, display: 'block' }} />
+          <img src={questLogo} alt="Quest" style={{ height: 30, display: 'block' }} />
         </a>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: '"Bebas Neue", Inter, sans-serif', fontSize: 21, letterSpacing: '0.06em', color: COLOR.text, lineHeight: 1 }}>
-            CAFÉ
-          </div>
-          <div style={{ fontSize: 10.5, color: COLOR.textSecondary, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {esStaff ? `Equipo · @${perfil?.username ?? ''}` : 'Pedí acá y retiralo en la barra'}
-          </div>
-        </div>
-
+        <span style={{ fontFamily: BEBAS, fontSize: 19, letterSpacing: '0.1em', color: CREMA, lineHeight: 1 }}>CAFÉ</span>
+        <span style={{ flex: 1 }} />
         {esStaff && (
-          <button onClick={() => setVerOrdenes(true)} style={{
-            fontSize: 11.5, fontWeight: 800, padding: '8px 11px', borderRadius: 999,
-            border: '1px solid rgba(96,165,250,0.55)', background: 'rgba(96,165,250,0.14)',
-            color: COLOR.text, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
-          }}>Órdenes</button>
+          <>
+            <button onClick={() => setVerOrdenes(true)} style={chipHeader('rgba(96,165,250,0.5)', 'rgba(96,165,250,0.12)')}>Órdenes</button>
+            <button onClick={() => setEditor({})} style={chipHeader('rgba(214,158,96,0.55)', 'rgba(214,158,96,0.13)')}>＋ Producto</button>
+            <button onClick={() => supabase.auth.signOut()} style={chipHeader('rgba(255,255,255,0.14)', 'transparent', '#8A7660')}>Salir</button>
+          </>
         )}
-        {esStaff && (
-          <button onClick={() => setEditor({})} style={{
-            fontSize: 11.5, fontWeight: 800, padding: '8px 11px', borderRadius: 999,
-            border: '1px solid rgba(251,146,60,0.55)', background: 'rgba(251,146,60,0.14)',
-            color: COLOR.text, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
-          }}>＋ Producto</button>
-        )}
-        {/* Los clientes NO tienen login: pedir no requiere cuenta. El botón
-            "Staff" es la única puerta, discreta a propósito. */}
-        {esStaff ? (
-          <button onClick={() => supabase.auth.signOut()} style={{
-            fontSize: 11.5, fontWeight: 700, padding: '8px 11px', borderRadius: 999,
-            border: `1px solid ${COLOR.borderStrong}`, background: COLOR.surface,
-            color: COLOR.textSecondary, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-          }}>Salir</button>
-        ) : (
-          <button onClick={() => setVerLogin(true)} aria-label="Acceso del equipo" style={{
-            fontSize: 10.5, fontWeight: 700, padding: '7px 10px', borderRadius: 999,
-            border: `1px solid ${COLOR.border}`, background: 'transparent',
-            color: COLOR.textQuaternary, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-          }}>Staff</button>
+        {!esStaff && (
+          <button onClick={() => setVerLogin(true)} aria-label="Acceso del equipo"
+                  style={chipHeader('rgba(255,255,255,0.10)', 'transparent', '#5A4F42')}>Staff</button>
         )}
       </div>
 
-      {/* Menú — grilla de cards como el catálogo de la tienda */}
-      <div style={{ flex: 1, padding: 16, maxWidth: 860, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-        {loading && <div style={{ textAlign: 'center', marginTop: 60 }}><Spinner /></div>}
+      {/* ── HERO ── */}
+      <section style={{
+        minHeight: 'calc(88dvh - 60px)', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+        padding: '40px 22px 30px', position: 'relative', overflow: 'hidden',
+      }}>
+        {/* halo cálido + granos flotando */}
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse 75% 55% at 50% 8%, rgba(214,158,96,0.20) 0%, transparent 62%)',
+        }} />
+        {['12%', '78%', '30%', '64%', '88%'].map((left, i) => (
+          <span key={i} aria-hidden style={{
+            position: 'absolute', left, top: `${18 + i * 14}%`, fontSize: 15 + (i % 3) * 6,
+            opacity: 0.13, animation: `cafeFlotar ${5.5 + i}s ease-in-out ${i * 0.8}s infinite`,
+          }}>☕</span>
+        ))}
+
+        <div className="cafe-rise" style={{ animationDelay: '0.05s', fontSize: 12, fontWeight: 700, letterSpacing: '0.32em', color: CARAMELO, marginBottom: 14 }}>
+          QUEST HOBBY STORE PRESENTA
+        </div>
+        <h1 className="cafe-rise" style={{
+          animationDelay: '0.15s', margin: 0,
+          fontFamily: BEBAS, fontWeight: 400,
+          fontSize: 'clamp(64px, 16vw, 150px)', lineHeight: 0.92,
+          letterSpacing: '0.02em', color: CREMA,
+          textShadow: '0 10px 60px rgba(214,158,96,0.25)',
+        }}>
+          QUEST<br />CAFÉ
+        </h1>
+        <p className="cafe-rise" style={{ animationDelay: '0.28s', margin: '18px 0 26px', fontSize: 'clamp(14px, 2.6vw, 17px)', color: '#B99F84', maxWidth: 430, lineHeight: 1.65 }}>
+          Café de verdad, en tu tienda de siempre. Pedí desde el celular
+          y te avisamos cuando esté listo.
+        </p>
+
+        {/* Directo al pedido: elegís cómo y bajás al menú */}
+        <div className="cafe-rise" style={{ animationDelay: '0.4s', display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button onClick={() => irAlMenu('tienda')} style={{
+            padding: '15px 26px', borderRadius: 999, border: 'none', cursor: 'pointer',
+            background: `linear-gradient(135deg, ${CARAMELO} 0%, #B4783C 100%)`,
+            color: '#1A0F06', fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+            boxShadow: '0 12px 34px rgba(214,158,96,0.35)',
+          }}>☕ Para tomar en tienda</button>
+          <button onClick={() => irAlMenu('llevar')} style={{
+            padding: '15px 26px', borderRadius: 999, cursor: 'pointer',
+            background: 'rgba(214,158,96,0.10)', border: `1.5px solid rgba(214,158,96,0.55)`,
+            color: CREMA, fontSize: 15, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+          }}>🥡 Para llevar</button>
+        </div>
+
+        <div aria-hidden style={{ position: 'absolute', bottom: 18, left: 0, right: 0, textAlign: 'center', animation: 'cafeFlotar 2.6s ease-in-out infinite', color: '#6B5B4A', fontSize: 20 }}>⌄</div>
+      </section>
+
+      {/* ── UBICACIÓN ── */}
+      <Reveal>
+        <section style={{ padding: '30px 22px 10px', maxWidth: 760, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+          <div style={{
+            display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap',
+            background: 'linear-gradient(140deg, rgba(214,158,96,0.10) 0%, rgba(214,158,96,0.03) 100%)',
+            border: '1px solid rgba(214,158,96,0.25)', borderRadius: 22, padding: '22px 24px',
+          }}>
+            <div style={{ fontSize: 40 }}>📍</div>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontFamily: BEBAS, fontSize: 26, letterSpacing: '0.05em', color: CREMA }}>ENCONTRANOS</div>
+              <div style={{ fontSize: 13.5, color: '#B99F84', lineHeight: 1.6, marginTop: 4 }}>
+                Dentro de <strong style={{ color: CREMA }}>Quest Hobby Store</strong> — venís por el café,
+                te quedás por las cartas. Horario de la tienda.
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <a href="https://www.google.com/maps/search/Quest+Hobby+Store+Panamá" target="_blank" rel="noreferrer" style={{
+                padding: '11px 16px', borderRadius: 999, textDecoration: 'none',
+                background: 'rgba(214,158,96,0.14)', border: '1px solid rgba(214,158,96,0.5)',
+                color: CREMA, fontSize: 12.5, fontWeight: 800,
+              }}>Cómo llegar ↗</a>
+              <a href={`https://wa.me/${STORE_WHATSAPP}`} target="_blank" rel="noreferrer" style={{
+                padding: '11px 16px', borderRadius: 999, textDecoration: 'none',
+                background: 'rgba(37,211,102,0.12)', border: '1px solid rgba(37,211,102,0.45)',
+                color: '#7CE3A5', fontSize: 12.5, fontWeight: 800,
+              }}>Escribinos</a>
+            </div>
+          </div>
+        </section>
+      </Reveal>
+
+      {/* ── MENÚ / PEDIDO ── */}
+      <section id="cafe-menu" style={{ padding: '44px 18px 10px', maxWidth: 860, margin: '0 auto', width: '100%', boxSizing: 'border-box', scrollMarginTop: 70 }}>
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: 22 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.3em', color: CARAMELO }}>HAZ TU PEDIDO</div>
+            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(38px, 7vw, 56px)', letterSpacing: '0.03em', color: CREMA }}>EL MENÚ</h2>
+          </div>
+        </Reveal>
+
+        {loading && <div style={{ textAlign: 'center', marginTop: 40 }}><Spinner /></div>}
 
         {!loading && visibles.length === 0 && (
-          <div style={{ textAlign: 'center', marginTop: 80, display: 'flex', flexDirection: 'column', gap: 8, padding: '0 26px' }}>
+          <div style={{ textAlign: 'center', margin: '46px 0 60px', display: 'flex', flexDirection: 'column', gap: 8, padding: '0 26px' }}>
             <span style={{ fontSize: 36 }}>☕</span>
-            <span style={{ fontSize: 15, fontWeight: 800, color: COLOR.text }}>El menú está en preparación</span>
-            <span style={{ fontSize: 13, color: COLOR.textTertiary, lineHeight: 1.6 }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: CREMA }}>El menú está en preparación</span>
+            <span style={{ fontSize: 13, color: '#8A7660', lineHeight: 1.6 }}>
               {esStaff
                 ? 'Tocá "＋ Producto" arriba para cargar el primero.'
                 : 'Muy pronto vas a poder pedir desde acá. Mientras tanto, acercate a la barra.'}
@@ -575,75 +788,117 @@ export default function CafeScreen() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, paddingBottom: pedido.length ? 40 : 0 }}>
-          {visibles.map(p => {
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: 13, paddingBottom: 26 }}>
+          {visibles.map((p, i) => {
             const n = qty[p.id] ?? 0
             const sinPrecio = precio(p) <= 0
             const enOferta = !sinPrecio && precio(p) < (Number(p.price) || 0)
             return (
-              <div key={p.id} style={{
-                background: COLOR.surface,
-                borderRadius: RADIUS.lg,
-                overflow: 'hidden',
-                border: `1px solid ${n > 0 ? 'rgba(251,146,60,0.55)' : COLOR.border}`,
-                boxShadow: `${ELEVATION.sm}, ${ELEVATION.innerLit}`,
-                display: 'flex', flexDirection: 'column',
-                transition: 'border-color 160ms ease',
-                position: 'relative',
-                opacity: sinPrecio ? 0.6 : 1,
-              }}>
-                {esStaff && (
-                  <button onClick={() => setEditor(p)} aria-label={`Editar ${p.name}`} style={{
-                    position: 'absolute', top: 7, right: 7, zIndex: 2,
-                    width: 30, height: 30, borderRadius: 9, border: '1px solid rgba(255,255,255,0.25)',
-                    background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
-                    color: '#FFF', fontSize: 13, cursor: 'pointer', lineHeight: 1,
-                  }}>✎</button>
-                )}
-                <div style={{ width: '100%', aspectRatio: '1 / 1', background: COLOR.surfaceRaised, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {p.image_url
-                    ? <img src={p.image_url} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                    : <span style={{ fontSize: 34 }}>☕</span>}
-                </div>
-                <div style={{ padding: '10px 11px 12px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: COLOR.text, lineHeight: 1.3, flex: 1 }}>{p.name}</div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
-                    {sinPrecio
-                      ? <span style={{ color: COLOR.amber, fontSize: 11, fontWeight: 700 }}>Sin precio — no se publica</span>
-                      : <>
-                          {enOferta && <span style={{ color: COLOR.textTertiary, textDecoration: 'line-through', fontSize: 11 }}>{fmt(p.price)}</span>}
-                          <span style={{ color: enOferta ? COLOR.green : COLOR.text, fontWeight: 800, fontSize: 14.5, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</span>
-                        </>}
-                  </div>
-                  {!sinPrecio && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                      <button onClick={() => cambiar(p.id, -1)} style={{
-                        flex: 1, height: 32, borderRadius: 9, border: `1px solid ${COLOR.borderStrong}`,
-                        background: COLOR.surfaceRaised, color: n > 0 ? COLOR.text : COLOR.textQuaternary,
-                        fontSize: 16, cursor: 'pointer', lineHeight: 1,
-                      }}>−</button>
-                      <span style={{ minWidth: 20, textAlign: 'center', fontSize: 14, fontWeight: 800, color: n > 0 ? COLOR.orange : COLOR.textQuaternary, fontVariantNumeric: 'tabular-nums' }}>{n}</span>
-                      <button onClick={() => cambiar(p.id, +1)} style={{
-                        flex: 1, height: 32, borderRadius: 9, border: '1px solid rgba(251,146,60,0.55)',
-                        background: 'rgba(251,146,60,0.14)', color: COLOR.text,
-                        fontSize: 16, cursor: 'pointer', lineHeight: 1,
-                      }}>+</button>
-                    </div>
+              <Reveal key={p.id} delay={Math.min(i * 55, 330)}>
+                <div className="cafe-card" style={{
+                  background: 'rgba(255,255,255,0.035)',
+                  borderRadius: 18, overflow: 'hidden',
+                  border: `1px solid ${n > 0 ? 'rgba(214,158,96,0.65)' : 'rgba(255,255,255,0.08)'}`,
+                  boxShadow: n > 0 ? '0 10px 34px rgba(214,158,96,0.16)' : '0 6px 22px rgba(0,0,0,0.35)',
+                  display: 'flex', flexDirection: 'column', position: 'relative',
+                  opacity: sinPrecio ? 0.6 : 1,
+                }}>
+                  {esStaff && (
+                    <button onClick={() => setEditor(p)} aria-label={`Editar ${p.name}`} style={{
+                      position: 'absolute', top: 8, right: 8, zIndex: 2,
+                      width: 30, height: 30, borderRadius: 9, border: '1px solid rgba(255,255,255,0.25)',
+                      background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+                      color: '#FFF', fontSize: 13, cursor: 'pointer', lineHeight: 1,
+                    }}>✎</button>
                   )}
+                  <div style={{ width: '100%', aspectRatio: '1 / 1', background: '#1B140E', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    {p.image_url
+                      ? <img src={p.image_url} alt="" loading="lazy" decoding="async" className="cafe-zoom" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      : <span style={{ fontSize: 36 }}>☕</span>}
+                  </div>
+                  <div style={{ padding: '11px 12px 13px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: CREMA, lineHeight: 1.3, flex: 1 }}>{p.name}</div>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
+                      {sinPrecio
+                        ? <span style={{ color: '#D6A560', fontSize: 11, fontWeight: 700 }}>Sin precio — no se publica</span>
+                        : <>
+                            {enOferta && <span style={{ color: '#6B5B4A', textDecoration: 'line-through', fontSize: 11 }}>{fmt(p.price)}</span>}
+                            <span style={{ color: CARAMELO, fontWeight: 800, fontSize: 15, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</span>
+                          </>}
+                    </div>
+                    {!sinPrecio && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <button onClick={() => cambiar(p.id, -1)} style={btnQty(false, n > 0)}>−</button>
+                        <span style={{ minWidth: 20, textAlign: 'center', fontSize: 14, fontWeight: 800, color: n > 0 ? CARAMELO : '#5A4F42', fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+                        <button onClick={() => cambiar(p.id, +1)} style={btnQty(true, true)}>+</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Reveal>
             )
           })}
         </div>
-      </div>
+      </section>
 
-      {/* Barra de pedido */}
-      {visibles.some(p => precio(p) > 0) && (
+      {/* ── ASÍ LO HACEMOS (placeholders de video) ── */}
+      <section style={{ padding: '40px 18px 30px', maxWidth: 860, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.3em', color: CARAMELO }}>DETRÁS DE LA BARRA</div>
+            <h2 style={{ margin: '6px 0 0', fontFamily: BEBAS, fontWeight: 400, fontSize: 'clamp(34px, 6vw, 48px)', letterSpacing: '0.03em', color: CREMA }}>ASÍ LO HACEMOS</h2>
+          </div>
+        </Reveal>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 13 }}>
+          {VIDEOS.map((v, i) => (
+            <Reveal key={v.titulo} delay={i * 90}>
+              <div className="cafe-card" style={{
+                position: 'relative', borderRadius: 18, overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.09)', aspectRatio: '16 / 10',
+                background: '#1B140E', cursor: 'default',
+              }}>
+                {/* Imagen genérica hasta que haya videos propios */}
+                <img src={v.img} alt="" loading="lazy" decoding="async" className="cafe-zoom"
+                     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.75 }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,7,5,0.88) 0%, rgba(10,7,5,0.05) 55%)' }} />
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -56%)',
+                  width: 52, height: 52, borderRadius: '50%',
+                  background: 'rgba(214,158,96,0.22)', border: '1.5px solid rgba(245,233,220,0.65)',
+                  backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ color: CREMA, fontSize: 18, marginLeft: 3 }}>▶</span>
+                </div>
+                <div style={{ position: 'absolute', left: 14, right: 14, bottom: 12 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: CREMA }}>{v.titulo}</div>
+                  <div style={{ fontSize: 11, color: '#B99F84', marginTop: 2 }}>Video muy pronto ☕</div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{ padding: '26px 22px calc(30px + env(safe-area-inset-bottom, 0px))', textAlign: 'center', borderTop: '1px solid rgba(214,158,96,0.12)', marginTop: 10 }}>
+        <a href={urlSitioPrincipal()} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+          <img src={questLogo} alt="Quest" style={{ height: 26 }} />
+          <span style={{ fontFamily: BEBAS, fontSize: 16, letterSpacing: '0.1em', color: '#8A7660' }}>CAFÉ</span>
+        </a>
+        <div style={{ fontSize: 11.5, color: '#5A4F42', marginTop: 8 }}>
+          Parte de Quest Hobby Store — <a href={urlSitioPrincipal()} style={{ color: '#8A7660' }}>ir a la tienda ↗</a>
+        </div>
+      </footer>
+
+      {/* ── Barra de pedido: aparece recién cuando hay algo en el carrito ── */}
+      {pedido.length > 0 && (
         <div style={{
-          position: 'sticky', bottom: 0, flexShrink: 0,
+          position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
           padding: '12px 16px calc(14px + env(safe-area-inset-bottom, 0px))',
-          background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-          borderTop: `1px solid ${COLOR.borderStrong}`,
+          background: 'rgba(12,9,7,0.94)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+          borderTop: '1px solid rgba(214,158,96,0.3)',
+          animation: 'cafeSubir 0.28s cubic-bezier(0.22, 1, 0.36, 1) both',
         }}>
           <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 9 }}>
             <div style={{ display: 'flex', gap: 7 }}>
@@ -653,14 +908,13 @@ export default function CafeScreen() {
               ].map(m => (
                 <button key={m.id} onClick={() => setModo(m.id)} style={{
                   flex: 1, padding: '10px 6px', borderRadius: 10, cursor: 'pointer',
-                  background: modo === m.id ? 'rgba(251,146,60,0.16)' : COLOR.surface,
-                  border: `1px solid ${modo === m.id ? 'rgba(251,146,60,0.6)' : COLOR.borderStrong}`,
-                  color: modo === m.id ? COLOR.text : COLOR.textSecondary,
+                  background: modo === m.id ? 'rgba(214,158,96,0.18)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${modo === m.id ? 'rgba(214,158,96,0.65)' : 'rgba(255,255,255,0.10)'}`,
+                  color: modo === m.id ? CREMA : '#8A7660',
                   fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
                 }}>{m.label}</button>
               ))}
             </div>
-
             <div style={{ display: 'flex', gap: 7 }}>
               <input value={nombre} onChange={e => setNombre(e.target.value.slice(0, 60))}
                      placeholder="Tu nombre" autoComplete="name" style={{ ...inputStyle, flex: 1 }} />
@@ -669,27 +923,24 @@ export default function CafeScreen() {
             </div>
             <input value={nota} onChange={e => setNota(e.target.value.slice(0, 120))}
                    placeholder="Nota (ej. sin azúcar)" style={inputStyle} />
-
             {codigoOk && (
-              <div style={{ textAlign: 'center', fontSize: 12.5, color: COLOR.green, fontWeight: 800 }}>
+              <div style={{ textAlign: 'center', fontSize: 12.5, color: '#7CE3A5', fontWeight: 800 }}>
                 ✓ Pedido {codigoOk} registrado — te llamamos por tu nombre
               </div>
             )}
-            <button disabled={pedido.length === 0 || !datosOk || pidiendo} onClick={hacerPedido} style={{
+            <button disabled={!datosOk || pidiendo} onClick={hacerPedido} style={{
               width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
-              background: (pedido.length && datosOk && !pidiendo) ? '#25D366' : COLOR.surfaceRaised,
-              color: (pedido.length && datosOk) ? '#FFF' : COLOR.textQuaternary,
+              background: (datosOk && !pidiendo) ? '#25D366' : 'rgba(255,255,255,0.06)',
+              color: datosOk ? '#FFF' : '#5A4F42',
               fontSize: 14.5, fontWeight: 800,
-              cursor: (pedido.length && datosOk && !pidiendo) ? 'pointer' : 'default',
+              cursor: (datosOk && !pidiendo) ? 'pointer' : 'default',
               fontFamily: 'Inter, sans-serif',
             }}>
               {pidiendo
                 ? 'Registrando…'
-                : !pedido.length
-                  ? 'Elegí algo del menú para pedir'
-                  : !datosOk
-                    ? `Poné ${[!nombreOk && 'tu nombre', !telOk && 'tu teléfono'].filter(Boolean).join(' y ')} para pedir`
-                    : `Pedir por WhatsApp · ${fmt(total)}`}
+                : !datosOk
+                  ? `Poné ${[!nombreOk && 'tu nombre', !telOk && 'tu teléfono'].filter(Boolean).join(' y ')} para pedir`
+                  : `Pedir por WhatsApp · ${pedido.reduce((a, p) => a + p.n, 0)} ítem${pedido.reduce((a, p) => a + p.n, 0) !== 1 ? 's' : ''} · ${fmt(total)}`}
             </button>
           </div>
         </div>

@@ -75,7 +75,7 @@ if (SENTRY_DSN && import.meta.env.PROD) {
 // el café no afecta al site normal. El logo de Quest lleva al website.
 const CafeScreen = lazy(() => import('./screens/CafeScreen'))
 const esCafe = window.location.pathname.replace(/\/+$/, '') === '/cafe'
-  || /^cafe\.|questcafe/i.test(window.location.hostname)
+  || /^cafe\.|^coffee\.|questcafe/i.test(window.location.hostname)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   esCafe
