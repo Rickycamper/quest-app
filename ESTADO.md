@@ -35,6 +35,34 @@ funciones responden OK en prod). Todo esto está vivo para los usuarios:
 - **Nav** con iconos estándar + etiquetas: Feed · Tienda · Crear · Trade ·
   Vida (d20).
 - **Desktop** se ve como website (header con navegación, sin barra inferior).
+- **Quest Café** — sitio INDEPENDIENTE en **coffee.questhobbystore.com**
+  (rama `cafe-only`, ya mergeada). `main.jsx` detecta el hostname
+  (`coffee.*` / `cafe.*` / `questcafe*`) o el path `/cafe` y monta SOLO
+  `CafeScreen`: la app —feed, nav, auth— ni se ejecuta, y al revés, el
+  resto del sitio no se entera del café.
+  · **Landing editorial** (naranja quemado + verde bosque sobre crema,
+    display Rammetto One autohospedada): splash de taza llenándose, hero a
+    sangre, secciones numeradas, cinta marquee, reveals al scrollear.
+  · **Menú por secciones** con iconos: 🦖🔥 caliente · 🧊 fríos ·
+    🫳✨ postres · 🧂 salados. Se guardan en `shop_products.subcategory`.
+  · **Ficha del producto**: ilustración SVG (taza o copa según sección, o
+    la foto propia si tiene), descripción, cantidad 01-04 y botón con el
+    total.
+  · **Rating** 1-5 estrellas SIN cuenta (guest_id de localStorage). Al
+    público solo se expone el promedio, por la vista
+    `cafe_product_ratings`; los votos crudos no son legibles.
+  · **Pedido** por WhatsApp al número del negocio, registrado en
+    `cafe_orders` con código `C-####`. Los precios los recalcula
+    `place_cafe_order()` en la base: el navegador manda solo {id, qty}.
+  · **Staff** entra con el botón "Staff" (email + contraseña de su cuenta
+    de Quest): tablero de Órdenes (nueva → lista → entregada) y alta/edición
+    de productos sin salir del café.
+  · Migraciones YA CORRIDAS en prod: `cafe_orders`, `cafe_description`,
+    `cafe_ratings`. QR en `public/cafe-qr.png` → coffee.questhobbystore.com.
+  · **Falta**: la dirección real en la tarjeta de ubicación (hoy es
+    genérica) y videos propios en "Así lo hacemos" (hay placeholders con
+    imágenes de Unsplash; **video externo NO pasa la CSP** — hay que
+    servirlo del mismo dominio o abrir `media-src`).
 
 ---
 
@@ -108,8 +136,16 @@ descuento. Sin credenciales el bloque de pago no aparece: es seguro publicar.
 
 ## 6. Ramas
 
-- **`main`** → producción.
-- **`paypal-checkout`** → ver sección 2.
+- **`main`** → producción. Ya incluye el café (merge de `cafe-only`).
+- **`cafe-only`** → rama del café, ya mergeada. Se puede borrar.
+- **`paypal-checkout`** → ver sección 2. Tiene TODO lo demás sin publicar:
+  PayPal, recorte 4:5 del feed, gestión de pedidos online, WhatsApp de la
+  tienda al número de negocio, envíos con aviso, fuentes autohospedadas,
+  auditoría de permisos. **Ojo al mergear**: `PAYPAL_ENV` está escrita
+  `sandox` — cualquier valor distinto de `live` apunta al sandbox, así que
+  si las variables quedan con scope Production, los clientes podrían
+  "comprar" con plata ficticia. Antes de mergear, o se corrige el valor o
+  se destilda Production en las cuatro variables de PayPal.
 - **`rebuild-oneui`** → rediseño visual estilo One UI **descartado** (quedó
   frío y genérico; se perdía la personalidad de la app). Se guarda por si
   sirve alguna pieza suelta.
