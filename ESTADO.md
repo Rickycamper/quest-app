@@ -99,8 +99,8 @@ haberle cobrado a alguien.
 detecta el hostname (`cafe.*`, `coffee.*` o `questcafe*`) o el path `/cafe`
 y monta SOLO CafeScreen — la app (feed, nav, auth) ni se ejecuta.
 **Es un LANDING con movimiento, no una web-app** — estética CLARA tipo app
-de café moderna (fondo papel #F5F3EE, cards VERDE profundo #173F2C con la
-PNG del producto flotando LIBRE arriba de la card, sombras suaves,
+de café moderna (fondo papel #F4F3F8, cards ÍNDIGO #332C6E (morado casi azul) con la
+bebida flotando al COSTADO derecho de la card asomando poco (ilustración SVG propia: taza para caliente, copa con hielo y sorbete para frío — se usa cuando el producto no tiene image_url), sombras suaves,
 esquinas 24px+; el logo blanco de Quest vive en un chip verde para leerse
 sobre claro): splash de entrada (taza
 llenándose, CSS puro, una vez por sesión), hero gigante con CTAs "en
