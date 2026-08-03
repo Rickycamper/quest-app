@@ -94,6 +94,16 @@ const btnQty = (mas, activo) => ({
   color: activo ? CREMA : '#5A4F42',
 })
 
+// Secciones del menú, con sus iconos (pedidos así, con humor: el godzilla
+// escupiendo fuego para lo caliente). Se guardan en shop_products.subcategory
+// — la columna ya existía (la usan los accesorios), cero migración.
+const SECCIONES_CAFE = [
+  { id: 'caliente', titulo: 'CAFÉ CALIENTE', icono: '🦖🔥' },
+  { id: 'frio',     titulo: 'FRÍOS',         icono: '🧊'   },
+  { id: 'postre',   titulo: 'POSTRES',       icono: '🫳✨' },
+  { id: 'salado',   titulo: 'SALADOS',       icono: '🧂'   },
+]
+
 // Imágenes genéricas hasta tener material propio (img-src * en la CSP las
 // permite; los VIDEOS externos no pasarían — por eso son placeholders).
 const VIDEOS = [
@@ -282,6 +292,7 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
   const [oferta, setOferta]   = useState(producto?.sale_price ?? '')
   const [foto, setFoto]       = useState(producto?.image_url ?? '')
   const [orden, setOrden]     = useState(producto?.sort_order ?? 0)
+  const [seccion, setSeccion] = useState(producto?.subcategory ?? 'caliente')
   const [busy, setBusy]       = useState(false)
   const [err, setErr]         = useState('')
   const [confirmar, setConfirmar] = useState(false)
@@ -312,6 +323,7 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
         sale_price: parseFloat(oferta) > 0 ? parseFloat(oferta) : null,
         image_url: foto.trim() || null,
         sort_order: parseInt(orden) || 0,
+        subcategory: seccion,
       }
       const fila = esNuevo
         ? await upsertShopProduct({
@@ -370,6 +382,22 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
           </div>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
                  onChange={e => subirFoto(e.target.files?.[0])} />
+        </div>
+
+        {/* Sección del menú — dónde aparece la card */}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: COLOR.textSecondary, marginBottom: 6 }}>SECCIÓN DEL MENÚ</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {SECCIONES_CAFE.map(sc => (
+              <button key={sc.id} onClick={() => setSeccion(sc.id)} style={{
+                padding: '8px 11px', borderRadius: 999, cursor: 'pointer',
+                background: seccion === sc.id ? 'rgba(214,158,96,0.16)' : COLOR.surface,
+                border: `1px solid ${seccion === sc.id ? 'rgba(214,158,96,0.6)' : COLOR.borderStrong}`,
+                color: seccion === sc.id ? '#FFF' : COLOR.textSecondary,
+                fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+              }}>{sc.icono} {sc.titulo}</button>
+            ))}
+          </div>
         </div>
 
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: COLOR.textSecondary }}>
@@ -568,7 +596,7 @@ export default function CafeScreen() {
   const cargarMenu = () => {
     supabase
       .from('shop_products')
-      .select('id, name, price, sale_price, image_url, sort_order, active')
+      .select('id, name, price, sale_price, image_url, sort_order, active, subcategory')
       .eq('category', 'cafe')
       .eq('active', true)   // sin esto, los "ocultados" (soft delete) seguirían saliendo
       .order('sort_order', { ascending: true })
@@ -583,6 +611,14 @@ export default function CafeScreen() {
   const visibles = useMemo(
     () => esStaff ? items : items.filter(p => precio(p) > 0),
     [items, esStaff])
+
+  // Agrupado por sección. Lo sin clasificar cae en 'otros' — visible igual,
+  // así nada desaparece mientras el staff termina de asignar secciones.
+  const grupos = useMemo(() => {
+    const por = { caliente: [], frio: [], postre: [], salado: [], otros: [] }
+    for (const p of visibles) (por[p.subcategory] ?? por.otros).push(p)
+    return por
+  }, [visibles])
 
   const pedido = useMemo(() =>
     visibles.filter(p => (qty[p.id] ?? 0) > 0 && precio(p) > 0)
@@ -635,6 +671,56 @@ export default function CafeScreen() {
     }
     setPidiendo(false)
   }
+
+const tarjeta = (p, i) => {
+            const n = qty[p.id] ?? 0
+            const sinPrecio = precio(p) <= 0
+            const enOferta = !sinPrecio && precio(p) < (Number(p.price) || 0)
+            return (
+              <Reveal key={p.id} delay={Math.min(i * 55, 330)}>
+                <div className="cafe-card" style={{
+                  background: 'rgba(255,255,255,0.035)',
+                  borderRadius: 18, overflow: 'hidden',
+                  border: `1px solid ${n > 0 ? 'rgba(214,158,96,0.65)' : 'rgba(255,255,255,0.08)'}`,
+                  boxShadow: n > 0 ? '0 10px 34px rgba(214,158,96,0.16)' : '0 6px 22px rgba(0,0,0,0.35)',
+                  display: 'flex', flexDirection: 'column', position: 'relative',
+                  opacity: sinPrecio ? 0.6 : 1,
+                }}>
+                  {esStaff && (
+                    <button onClick={() => setEditor(p)} aria-label={`Editar ${p.name}`} style={{
+                      position: 'absolute', top: 8, right: 8, zIndex: 2,
+                      width: 30, height: 30, borderRadius: 9, border: '1px solid rgba(255,255,255,0.25)',
+                      background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+                      color: '#FFF', fontSize: 13, cursor: 'pointer', lineHeight: 1,
+                    }}>✎</button>
+                  )}
+                  <div style={{ width: '100%', aspectRatio: '1 / 1', background: '#1B140E', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    {p.image_url
+                      ? <img src={p.image_url} alt="" loading="lazy" decoding="async" className="cafe-zoom" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      : <span style={{ fontSize: 36 }}>☕</span>}
+                  </div>
+                  <div style={{ padding: '11px 12px 13px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: CREMA, lineHeight: 1.3, flex: 1 }}>{p.name}</div>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
+                      {sinPrecio
+                        ? <span style={{ color: '#D6A560', fontSize: 11, fontWeight: 700 }}>Sin precio — no se publica</span>
+                        : <>
+                            {enOferta && <span style={{ color: '#6B5B4A', textDecoration: 'line-through', fontSize: 11 }}>{fmt(p.price)}</span>}
+                            <span style={{ color: CARAMELO, fontWeight: 800, fontSize: 15, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</span>
+                          </>}
+                    </div>
+                    {!sinPrecio && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <button onClick={() => cambiar(p.id, -1)} style={btnQty(false, n > 0)}>−</button>
+                        <span style={{ minWidth: 20, textAlign: 'center', fontSize: 14, fontWeight: 800, color: n > 0 ? CARAMELO : '#5A4F42', fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+                        <button onClick={() => cambiar(p.id, +1)} style={btnQty(true, true)}>+</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Reveal>
+            )
+          }
 
   const irAlMenu = (m) => {
     if (m) setModo(m)
@@ -788,57 +874,24 @@ export default function CafeScreen() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: 13, paddingBottom: 26 }}>
-          {visibles.map((p, i) => {
-            const n = qty[p.id] ?? 0
-            const sinPrecio = precio(p) <= 0
-            const enOferta = !sinPrecio && precio(p) < (Number(p.price) || 0)
-            return (
-              <Reveal key={p.id} delay={Math.min(i * 55, 330)}>
-                <div className="cafe-card" style={{
-                  background: 'rgba(255,255,255,0.035)',
-                  borderRadius: 18, overflow: 'hidden',
-                  border: `1px solid ${n > 0 ? 'rgba(214,158,96,0.65)' : 'rgba(255,255,255,0.08)'}`,
-                  boxShadow: n > 0 ? '0 10px 34px rgba(214,158,96,0.16)' : '0 6px 22px rgba(0,0,0,0.35)',
-                  display: 'flex', flexDirection: 'column', position: 'relative',
-                  opacity: sinPrecio ? 0.6 : 1,
-                }}>
-                  {esStaff && (
-                    <button onClick={() => setEditor(p)} aria-label={`Editar ${p.name}`} style={{
-                      position: 'absolute', top: 8, right: 8, zIndex: 2,
-                      width: 30, height: 30, borderRadius: 9, border: '1px solid rgba(255,255,255,0.25)',
-                      background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
-                      color: '#FFF', fontSize: 13, cursor: 'pointer', lineHeight: 1,
-                    }}>✎</button>
-                  )}
-                  <div style={{ width: '100%', aspectRatio: '1 / 1', background: '#1B140E', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {p.image_url
-                      ? <img src={p.image_url} alt="" loading="lazy" decoding="async" className="cafe-zoom" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      : <span style={{ fontSize: 36 }}>☕</span>}
-                  </div>
-                  <div style={{ padding: '11px 12px 13px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: CREMA, lineHeight: 1.3, flex: 1 }}>{p.name}</div>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
-                      {sinPrecio
-                        ? <span style={{ color: '#D6A560', fontSize: 11, fontWeight: 700 }}>Sin precio — no se publica</span>
-                        : <>
-                            {enOferta && <span style={{ color: '#6B5B4A', textDecoration: 'line-through', fontSize: 11 }}>{fmt(p.price)}</span>}
-                            <span style={{ color: CARAMELO, fontWeight: 800, fontSize: 15, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</span>
-                          </>}
-                    </div>
-                    {!sinPrecio && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        <button onClick={() => cambiar(p.id, -1)} style={btnQty(false, n > 0)}>−</button>
-                        <span style={{ minWidth: 20, textAlign: 'center', fontSize: 14, fontWeight: 800, color: n > 0 ? CARAMELO : '#5A4F42', fontVariantNumeric: 'tabular-nums' }}>{n}</span>
-                        <button onClick={() => cambiar(p.id, +1)} style={btnQty(true, true)}>+</button>
-                      </div>
-                    )}
-                  </div>
+        {[...SECCIONES_CAFE, { id: 'otros', titulo: 'MÁS DEL MENÚ', icono: '☕' }].map(sec => {
+          const lista = grupos[sec.id]
+          if (!lista?.length) return null
+          return (
+            <div key={sec.id} style={{ marginBottom: 34 }}>
+              <Reveal>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11, margin: '2px 2px 14px' }}>
+                  <span aria-hidden style={{ fontSize: 26, display: 'inline-block', animation: 'cafeFlotar 4.5s ease-in-out infinite' }}>{sec.icono}</span>
+                  <h3 style={{ margin: 0, fontFamily: BEBAS, fontWeight: 400, fontSize: 27, letterSpacing: '0.06em', color: CREMA }}>{sec.titulo}</h3>
+                  <span aria-hidden style={{ flex: 1, height: 1, background: 'rgba(214,158,96,0.22)' }} />
                 </div>
               </Reveal>
-            )
-          })}
-        </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: 13 }}>
+                {lista.map((p, i) => tarjeta(p, i))}
+              </div>
+            </div>
+          )
+        })}
       </section>
 
       {/* ── ASÍ LO HACEMOS (placeholders de video) ── */}
