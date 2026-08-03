@@ -1225,16 +1225,20 @@ export default function CafeScreen() {
         </div>
 
         {/* flecha dibujada, como el "SEE WHAT'S INSIDE" de la referencia */}
-        <div aria-hidden style={{
+        {/* La flecha lleva al menú: era decorativa y pedía a gritos ser
+            clickeable — es el único "siguiente paso" del hero. */}
+        <button onClick={() => irAlMenu()} style={{
           position: 'absolute', left: 24, bottom: 22, display: 'flex', alignItems: 'center', gap: 10,
           fontSize: 10.5, fontWeight: 800, letterSpacing: '0.24em', opacity: 0.85,
+          background: 'none', border: 'none', cursor: 'pointer', color: CREMA_UI,
+          fontFamily: 'Inter, sans-serif', padding: 0,
         }}>
           <svg width="26" height="34" viewBox="0 0 26 34" fill="none" style={{ animation: 'cafeFlecha 2.4s ease-in-out infinite' }}>
             <path d="M13 2c-9 6-13 14-6 22" stroke={CREMA_UI} strokeWidth="2" strokeLinecap="round" />
             <path d="M3 20l4 6 7-3" stroke={CREMA_UI} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           MIRÁ EL MENÚ
-        </div>
+        </button>
       </section>
 
       <Cinta texto="RECIÉN MOLIDO" bg={TINTA} />
