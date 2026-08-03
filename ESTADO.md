@@ -113,8 +113,14 @@ Tocar una card abre la FICHA del producto (clon de la referencia): PNG
 grande flotando con sombra en el piso, nombre, descripción
 (shop_products.description — `20260730_cafe_description.sql`; el cliente
 tolera que la columna no exista y reintenta sin ella), selector de
-cantidad 01/02/03/04 con triangulito, y botón verde con bolsita mostrando
-el TOTAL. No se agrega de un toque: se entra, se elige cantidad, se
+cantidad 01/02/03/04 con triangulito, y botón con bolsita mostrando el
+TOTAL. **Rating**: promedio con estrellas arriba de cada card y en la
+ficha, donde cualquiera puede votar 1-5 SIN cuenta (`cafe_ratings` +
+`rate_cafe_product`, `20260730_cafe_ratings.sql`; un voto por bebida por
+persona vía el guest_id de localStorage, volver a votar reemplaza). Al
+público solo se expone el AGREGADO por la vista `cafe_product_ratings`;
+los votos individuales no se leen desde el cliente. Sin la migración las
+cards dicen "Sin puntuar" y no se rompe nada. No se agrega de un toque: se entra, se elige cantidad, se
 agrega. La barra de pedido aparece solo cuando el carrito tiene algo. El logo de
 Quest lleva a questhobbystore.com. El pedido sale por WhatsApp
 al número del negocio con "para tomar en tienda / para llevar", items,

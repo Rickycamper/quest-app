@@ -17,7 +17,7 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect, useMemo, useRef } from 'react'
 import {
-  supabase, getProfile,
+  supabase, getProfile, getChatGuestIdentity,
   upsertShopProduct, updateShopProduct, deleteShopProduct, uploadPostImage,
 } from '../lib/supabase'
 import { STORE_WHATSAPP } from '../lib/constants'
@@ -202,6 +202,43 @@ const CSS_CAFE = `
   .cafe-card, .cafe-zoom { transition: none }
 }
 `
+
+// ── Estrellas ────────────────────────────────────────────────────────────────
+// `valor` puede ser fraccionario para MOSTRAR (4.5 → cuatro llenas y media).
+// Con onRate se vuelve interactivo: tocar la enésima estrella vota n.
+function Estrellas({ valor = 0, size = 15, onRate, color = '#F5A524' }) {
+  const [hover, setHover] = useState(0)
+  const mostrado = hover || valor
+  return (
+    <div style={{ display: 'inline-flex', gap: size * 0.14, alignItems: 'center' }}
+         onMouseLeave={() => setHover(0)}>
+      {[1, 2, 3, 4, 5].map(i => {
+        const llena = mostrado >= i - 0.25
+        const media = !llena && mostrado >= i - 0.75
+        const estrella = (
+          <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+            <defs>
+              <linearGradient id={`med${i}-${size}`}>
+                <stop offset="50%" stopColor={color} />
+                <stop offset="50%" stopColor="rgba(0,0,0,0.16)" />
+              </linearGradient>
+            </defs>
+            <path d="M12 2.6l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.45 6.2 20.5l1.1-6.45-4.7-4.6 6.5-.95L12 2.6z"
+                  fill={llena ? color : media ? `url(#med${i}-${size})` : 'rgba(0,0,0,0.16)'} />
+          </svg>
+        )
+        return onRate ? (
+          <button key={i} onClick={(e) => { e.stopPropagation(); onRate(i) }}
+                  onMouseEnter={() => setHover(i)}
+                  aria-label={`Puntuar con ${i} estrella${i > 1 ? 's' : ''}`}
+                  style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', lineHeight: 0 }}>
+            {estrella}
+          </button>
+        ) : <span key={i} style={{ lineHeight: 0 }}>{estrella}</span>
+      })}
+    </div>
+  )
+}
 
 // ── Splash: la taza llenándose (claro) ───────────────────────────────────────
 function SplashTaza({ onFin }) {
@@ -490,7 +527,10 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
 // después nombre, descripción, y el selector de cantidad 01 02 03 04 con el
 // triangulito debajo del elegido. El botón verde con la bolsita muestra el
 // TOTAL de esa cantidad, no el precio unitario.
-function ProductoSheet({ producto, cantidadActual, onAgregar, onClose }) {
+function ProductoSheet({ producto, cantidadActual, rating, onVotar, onAgregar, onClose }) {
+  const [miVoto, setMiVoto] = useState(() => {
+    try { return Number(localStorage.getItem(`cafe_voto_${producto.id}`)) || 0 } catch { return 0 }
+  })
   const [n, setN] = useState(Math.min(4, Math.max(1, cantidadActual || 1)))
   const unit = precio(producto)
   const enOferta = unit < (Number(producto.price) || 0)
@@ -545,11 +585,41 @@ function ProductoSheet({ producto, cantidadActual, onAgregar, onClose }) {
         <h2 style={{ margin: 0, fontSize: 'clamp(26px, 6.4vw, 34px)', fontWeight: 800, color: VIOLETA, lineHeight: 1.15 }}>
           {producto.name}
         </h2>
+        {/* Rating: promedio arriba y, debajo, las estrellas para votar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 10, flexWrap: 'wrap' }}>
+          <Estrellas valor={rating?.promedio ?? 0} size={19} />
+          <span style={{ fontSize: 14, fontWeight: 800, color: TINTA, fontVariantNumeric: 'tabular-nums' }}>
+            {rating?.votos ? rating.promedio : '—'}
+          </span>
+          <span style={{ fontSize: 12.5, color: GRIS }}>
+            {rating?.votos
+              ? `${rating.votos} ${rating.votos === 1 ? 'voto' : 'votos'}`
+              : 'Todavía sin puntuar'}
+          </span>
+        </div>
+
         {producto.description && (
-          <p style={{ margin: '12px 0 0', fontSize: 15, color: GRIS, lineHeight: 1.65 }}>
+          <p style={{ margin: '14px 0 0', fontSize: 15, color: GRIS, lineHeight: 1.65 }}>
             {producto.description}
           </p>
         )}
+
+        {/* Votar — cualquiera puede, sin cuenta */}
+        <div style={{
+          marginTop: 20, padding: '14px 16px', borderRadius: 18,
+          background: BLANCO, border: `1px solid ${LINEA}`,
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: 1, minWidth: 130 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: TINTA }}>
+              {miVoto ? '¡Gracias por puntuar!' : '¿Qué te pareció?'}
+            </div>
+            <div style={{ fontSize: 11.5, color: GRIS, marginTop: 2 }}>
+              {miVoto ? 'Podés cambiar tu voto cuando quieras.' : 'Tocá las estrellas — no hace falta cuenta.'}
+            </div>
+          </div>
+          <Estrellas valor={miVoto} size={26} onRate={(n) => { setMiVoto(n); onVotar(n) }} />
+        </div>
 
         {/* Cantidad — 01 02 03 04 con el triangulito debajo */}
         <div style={{ marginTop: 30 }}>
@@ -755,6 +825,7 @@ export default function CafeScreen() {
   const [pidiendo, setPidiendo] = useState(false)
   const [codigoOk, setCodigoOk] = useState(null)
   const [fichaDe, setFichaDe] = useState(null)   // producto abierto en la ficha
+  const [ratings, setRatings] = useState({})     // { productId: { promedio, votos } }
 
   const [cargando, setCargando] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -795,6 +866,28 @@ export default function CafeScreen() {
     setLoading(false)
   }
   useEffect(() => { cargarMenu() }, [])
+
+  // Ratings: vista pública con SOLO el agregado. Si la migración no corrió,
+  // no pasa nada — las cards simplemente no muestran estrellas.
+  const cargarRatings = () => {
+    supabase.from('cafe_product_ratings').select('product_id, promedio, votos')
+      .then(({ data, error }) => {
+        if (error || !data) return
+        setRatings(Object.fromEntries(data.map(r => [r.product_id, { promedio: Number(r.promedio), votos: Number(r.votos) }])))
+      })
+  }
+  useEffect(cargarRatings, [])
+
+  const votar = async (productoId, estrellas) => {
+    const { guestId } = getChatGuestIdentity()
+    const { data, error } = await supabase.rpc('rate_cafe_product', {
+      p_product_id: productoId, p_stars: estrellas, p_guest_id: guestId,
+    })
+    if (error) return
+    const fila = Array.isArray(data) ? data[0] : data
+    if (fila) setRatings(prev => ({ ...prev, [productoId]: { promedio: Number(fila.promedio), votos: Number(fila.votos) } }))
+    try { localStorage.setItem(`cafe_voto_${productoId}`, String(estrellas)) } catch {}
+  }
 
   const visibles = useMemo(
     () => esStaff ? items : items.filter(p => precio(p) > 0),
@@ -908,6 +1001,20 @@ export default function CafeScreen() {
                     filter: 'drop-shadow(0 14px 22px rgba(51,44,110,0.40))',
                   }} />
                 : <IlustracionBebida tipo={tipoBebida(p)} size={108} />}
+            </div>
+
+            {/* Rating arriba a la izquierda, como la referencia */}
+            <div style={{
+              position: 'absolute', top: 12, left: 13,
+              display: 'flex', alignItems: 'center', gap: 4,
+              fontSize: 12.5, fontWeight: 800, color: '#FFF',
+            }}>
+              {ratings[p.id]?.votos
+                ? <>
+                    <Estrellas valor={ratings[p.id].promedio} size={13} />
+                    <span style={{ fontVariantNumeric: 'tabular-nums' }}>{ratings[p.id].promedio}</span>
+                  </>
+                : <span style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>Sin puntuar</span>}
             </div>
 
             {esStaff && (
@@ -1241,6 +1348,8 @@ export default function CafeScreen() {
         <ProductoSheet
           producto={fichaDe}
           cantidadActual={qty[fichaDe.id] ?? 0}
+          rating={ratings[fichaDe.id]}
+          onVotar={(n) => votar(fichaDe.id, n)}
           onAgregar={(n) => setQty(q => ({ ...q, [fichaDe.id]: n }))}
           onClose={() => setFichaDe(null)}
         />
