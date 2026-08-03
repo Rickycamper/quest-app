@@ -276,6 +276,7 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
   const [foto, setFoto]       = useState(producto?.image_url ?? '')
   const [orden, setOrden]     = useState(producto?.sort_order ?? 0)
   const [seccion, setSeccion] = useState(producto?.subcategory ?? 'caliente')
+  const [desc, setDesc]       = useState(producto?.description ?? '')
   const [busy, setBusy]       = useState(false)
   const [err, setErr]         = useState('')
   const [confirmar, setConfirmar] = useState(false)
@@ -305,14 +306,21 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
         image_url: foto.trim() || null,
         sort_order: parseInt(orden) || 0,
         subcategory: seccion,
+        description: desc.trim() || null,
       }
-      const fila = esNuevo
-        ? await upsertShopProduct({
-            ...campos,
-            sku: `CAFE-${Date.now()}`,
-            category: 'cafe', game: null, active: true,
-          })
-        : await updateShopProduct(producto.id, campos)
+      const guardarCon = (c) => esNuevo
+        ? upsertShopProduct({ ...c, sku: `CAFE-${Date.now()}`, category: 'cafe', game: null, active: true })
+        : updateShopProduct(producto.id, c)
+
+      let fila
+      try {
+        fila = await guardarCon(campos)
+      } catch (e2) {
+        // Migración de `description` sin correr: se guarda el resto igual.
+        if (!/description/i.test(e2?.message || '')) throw e2
+        const { description, ...resto } = campos
+        fila = await guardarCon(resto)
+      }
       onGuardado?.(fila)
       onClose()
     } catch (e) { setErr(e?.message || 'No se pudo guardar') }
@@ -345,6 +353,10 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
           <input type="number" min="0" step="0.25" placeholder="Oferta (opcional)" value={oferta}
                  onChange={e => setOferta(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
         </div>
+
+        <textarea placeholder="Descripción (se ve al abrir el producto)" value={desc}
+                  onChange={e => setDesc(e.target.value.slice(0, 400))}
+                  style={{ ...inputStyle, minHeight: 74, resize: 'none', lineHeight: 1.5 }} />
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ width: 54, height: 54, borderRadius: 14, overflow: 'hidden', background: '#F1EEE6', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${LINEA}` }}>
@@ -402,6 +414,133 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
             {confirmar ? '¿Seguro? Toca de nuevo para ocultarlo' : 'Ocultar del menú'}
           </button>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── Ficha del producto (clon de la referencia) ──────────────────────────────
+// Se abre al tocar una card. El PNG del producto flota GRANDE y fuera de
+// todo recuadro (con una sombra elíptica abajo que lo despega del papel),
+// después nombre, descripción, y el selector de cantidad 01 02 03 04 con el
+// triangulito debajo del elegido. El botón verde con la bolsita muestra el
+// TOTAL de esa cantidad, no el precio unitario.
+function ProductoSheet({ producto, cantidadActual, onAgregar, onClose }) {
+  const [n, setN] = useState(Math.min(4, Math.max(1, cantidadActual || 1)))
+  const unit = precio(producto)
+  const enOferta = unit < (Number(producto.price) || 0)
+
+  // Cerrar con Escape — es una pantalla, no un popup cualquiera.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 60, background: PAPEL,
+      display: 'flex', flexDirection: 'column', overflowY: 'auto',
+      fontFamily: 'Inter, sans-serif',
+      animation: 'cafeSubir 0.3s cubic-bezier(0.22, 1, 0.36, 1) both',
+    }}>
+      {/* Volver */}
+      <div style={{ padding: 'calc(16px + env(safe-area-inset-top, 0px)) 20px 0', flexShrink: 0 }}>
+        <button onClick={onClose} aria-label="Volver" style={{
+          width: 40, height: 40, borderRadius: 14, cursor: 'pointer',
+          background: BLANCO, border: `1px solid ${LINEA}`, color: TINTA,
+          fontSize: 20, lineHeight: 1, boxShadow: '0 6px 16px rgba(23,63,44,0.08)',
+        }}>‹</button>
+      </div>
+
+      {/* PNG flotando, sin recuadro */}
+      <div style={{ position: 'relative', padding: '18px 24px 6px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', width: 'min(74vw, 290px)', aspectRatio: '1 / 1' }}>
+          {producto.image_url
+            ? <img src={producto.image_url} alt="" style={{
+                width: '100%', height: '100%', objectFit: 'contain', display: 'block',
+                filter: 'drop-shadow(0 26px 34px rgba(23,63,44,0.28))',
+                animation: 'cafeFlotar 5.5s ease-in-out infinite',
+              }} />
+            : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 110, animation: 'cafeFlotar 5.5s ease-in-out infinite' }}>☕</div>}
+          {/* sombra en el piso — lo despega del papel */}
+          <div aria-hidden style={{
+            position: 'absolute', bottom: -6, left: '18%', right: '18%', height: 16,
+            borderRadius: '50%', background: 'rgba(23,63,44,0.16)', filter: 'blur(9px)',
+          }} />
+        </div>
+      </div>
+
+      {/* Texto */}
+      <div style={{ padding: '20px 24px 0', maxWidth: 620, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+        <h2 style={{ margin: 0, fontSize: 'clamp(26px, 6.4vw, 34px)', fontWeight: 800, color: VERDE, lineHeight: 1.15 }}>
+          {producto.name}
+        </h2>
+        {producto.description && (
+          <p style={{ margin: '12px 0 0', fontSize: 15, color: GRIS, lineHeight: 1.65 }}>
+            {producto.description}
+          </p>
+        )}
+
+        {/* Cantidad — 01 02 03 04 con el triangulito debajo */}
+        <div style={{ marginTop: 30 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: VERDE, marginBottom: 12 }}>Cantidad</div>
+          <div style={{ display: 'flex', gap: 22, alignItems: 'flex-end' }}>
+            {[1, 2, 3, 4].map(v => {
+              const activo = n === v
+              return (
+                <button key={v} onClick={() => setN(v)} aria-label={`Cantidad ${v}`} style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  fontFamily: 'Inter, sans-serif',
+                }}>
+                  <span style={{
+                    fontSize: activo ? 30 : 20,
+                    fontWeight: activo ? 800 : 600,
+                    color: activo ? VERDE : '#B4BDB6',
+                    fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                    transition: 'font-size 0.18s ease, color 0.18s ease',
+                  }}>{String(v).padStart(2, '0')}</span>
+                  <span aria-hidden style={{
+                    fontSize: 10, color: VERDE, lineHeight: 1,
+                    opacity: activo ? 1 : 0, transition: 'opacity 0.18s ease',
+                  }}>▲</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Agregar — bolsita + total */}
+      <div style={{
+        marginTop: 'auto', padding: '24px 24px calc(26px + env(safe-area-inset-bottom, 0px))',
+        maxWidth: 620, width: '100%', margin: '0 auto', boxSizing: 'border-box',
+        display: 'flex', alignItems: 'center', gap: 14,
+      }}>
+        <div style={{ flex: 1 }}>
+          {enOferta && (
+            <div style={{ fontSize: 13, color: '#B4BDB6', textDecoration: 'line-through' }}>
+              {fmt(Number(producto.price) * n)}
+            </div>
+          )}
+          <div style={{ fontSize: 12.5, color: GRIS }}>
+            {n} × {fmt(unit)}
+          </div>
+        </div>
+        <button onClick={() => { onAgregar(n); onClose() }} style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '18px 26px', borderRadius: 22, border: 'none', cursor: 'pointer',
+          background: VERDE, color: '#FFF',
+          fontSize: 18, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+          boxShadow: '0 16px 34px rgba(23,63,44,0.32)',
+        }}>
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 8h14l-1 12H6L5 8z" />
+            <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+          </svg>
+          {fmt(unit * n)}
+        </button>
       </div>
     </div>
   )
@@ -546,6 +685,7 @@ export default function CafeScreen() {
   const [verOrdenes, setVerOrdenes] = useState(false)
   const [pidiendo, setPidiendo] = useState(false)
   const [codigoOk, setCodigoOk] = useState(null)
+  const [fichaDe, setFichaDe] = useState(null)   // producto abierto en la ficha
 
   const [cargando, setCargando] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -566,20 +706,26 @@ export default function CafeScreen() {
 
   const esStaff = !!(perfil?.is_owner || ['staff', 'admin'].includes(perfil?.role))
 
-  const cargarMenu = () => {
-    supabase
+  const cargarMenu = async () => {
+    const base = 'id, name, price, sale_price, image_url, sort_order, active, subcategory'
+    const pedir = (cols) => supabase
       .from('shop_products')
-      .select('id, name, price, sale_price, image_url, sort_order, active, subcategory')
+      .select(cols)
       .eq('category', 'cafe')
       .eq('active', true)
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true })
-      .then(({ data, error }) => {
-        if (!error) setItems(data ?? [])
-        setLoading(false)
-      })
+
+    // `description` puede no existir todavía (migración sin correr): si el
+    // select falla por eso, se reintenta sin ella y el menú anda igual.
+    let { data, error } = await pedir(base + ', description')
+    if (error && /description/i.test(error.message || '')) {
+      ({ data, error } = await pedir(base))
+    }
+    if (!error) setItems(data ?? [])
+    setLoading(false)
   }
-  useEffect(cargarMenu, [])
+  useEffect(() => { cargarMenu() }, [])
 
   const visibles = useMemo(
     () => esStaff ? items : items.filter(p => precio(p) > 0),
@@ -651,39 +797,59 @@ export default function CafeScreen() {
     document.getElementById(`cafe-sec-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   // ── Card estilo referencia: verde profundo, foto FLOTANDO arriba ──
+  // Card estilo referencia: PNG flotando LIBRE arriba (sin recuadro), card
+  // verde con nombre y precio, y botón + abajo a la derecha. Tocar la card
+  // abre la ficha para elegir cantidad — no se agrega de un toque.
   const tarjeta = (p, i) => {
     const n = qty[p.id] ?? 0
     const sinPrecio = precio(p) <= 0
     const enOferta = !sinPrecio && precio(p) < (Number(p.price) || 0)
     return (
       <Reveal key={p.id} delay={Math.min(i * 55, 330)}>
-        <div className="cafe-card" style={{ paddingTop: 46 }}>
+        <div
+          className="cafe-card"
+          onClick={() => !sinPrecio && setFichaDe(p)}
+          role={sinPrecio ? undefined : 'button'}
+          tabIndex={sinPrecio ? undefined : 0}
+          onKeyDown={(e) => { if (!sinPrecio && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setFichaDe(p) } }}
+          style={{ paddingTop: 54, cursor: sinPrecio ? 'default' : 'pointer', outline: 'none' }}
+        >
           <div style={{
             position: 'relative',
             background: n > 0
               ? `linear-gradient(160deg, ${VERDE2} 0%, ${VERDE} 100%)`
               : `linear-gradient(160deg, ${VERDE} 0%, #10301F 100%)`,
             borderRadius: 26,
-            padding: '74px 14px 14px',
+            padding: '62px 15px 16px',
             boxShadow: n > 0 ? '0 22px 48px rgba(23,63,44,0.30)' : SOMBRA,
-            display: 'flex', flexDirection: 'column', gap: 8,
+            display: 'flex', flexDirection: 'column', gap: 5,
             opacity: sinPrecio ? 0.65 : 1,
           }}>
-            {/* Foto flotando, saliéndose de la card (como la referencia) */}
+            {/* PNG flotando libre, saliéndose de la card */}
             <div style={{
-              position: 'absolute', top: -42, left: '50%', transform: 'translateX(-50%)',
-              width: 96, height: 96, borderRadius: '50%', overflow: 'hidden',
-              background: BLANCO, border: `5px solid ${PAPEL}`,
-              boxShadow: '0 16px 30px rgba(23,63,44,0.28)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'absolute', top: -54, left: '50%', transform: 'translateX(-50%)',
+              width: 118, height: 118, pointerEvents: 'none',
             }}>
               {p.image_url
-                ? <img src={p.image_url} alt="" loading="lazy" decoding="async" className="cafe-zoom" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                : <span style={{ fontSize: 40 }}>☕</span>}
+                ? <img src={p.image_url} alt="" loading="lazy" decoding="async" className="cafe-zoom" style={{
+                    width: '100%', height: '100%', objectFit: 'contain', display: 'block',
+                    filter: 'drop-shadow(0 14px 20px rgba(23,63,44,0.34))',
+                  }} />
+                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 62 }}>☕</div>}
             </div>
 
+            {/* Contador de lo que ya está en el pedido */}
+            {n > 0 && (
+              <div style={{
+                position: 'absolute', top: 12, left: 12,
+                background: '#FFF', color: VERDE, borderRadius: 999,
+                padding: '3px 10px', fontSize: 12, fontWeight: 800,
+                fontVariantNumeric: 'tabular-nums',
+              }}>{n} en tu pedido</div>
+            )}
+
             {esStaff && (
-              <button onClick={() => setEditor(p)} aria-label={`Editar ${p.name}`} style={{
+              <button onClick={(e) => { e.stopPropagation(); setEditor(p) }} aria-label={`Editar ${p.name}`} style={{
                 position: 'absolute', top: 10, right: 10,
                 width: 30, height: 30, borderRadius: 10, border: '1px solid rgba(255,255,255,0.3)',
                 background: 'rgba(255,255,255,0.14)', color: '#FFF', fontSize: 13,
@@ -691,30 +857,27 @@ export default function CafeScreen() {
               }}>✎</button>
             )}
 
-            <div style={{ fontSize: 13.5, fontWeight: 800, color: '#FFF', lineHeight: 1.3, textAlign: 'center', minHeight: 35 }}>{p.name}</div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'baseline', justifyContent: 'center' }}>
-              {sinPrecio
-                ? <span style={{ color: '#FFD98A', fontSize: 11, fontWeight: 700 }}>Sin precio — no se publica</span>
-                : <>
-                    {enOferta && <span style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'line-through', fontSize: 11.5 }}>{fmt(p.price)}</span>}
-                    <span style={{ color: '#FFF', fontWeight: 800, fontSize: 17, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</span>
-                  </>}
-            </div>
-            {!sinPrecio && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 2 }}>
-                <button onClick={() => cambiar(p.id, -1)} style={{
-                  flex: 1, height: 34, borderRadius: 11, border: 'none', cursor: 'pointer',
-                  background: 'rgba(255,255,255,0.13)', color: n > 0 ? '#FFF' : 'rgba(255,255,255,0.4)',
-                  fontSize: 17, lineHeight: 1,
-                }}>−</button>
-                <span style={{ minWidth: 22, textAlign: 'center', fontSize: 15, fontWeight: 800, color: '#FFF', fontVariantNumeric: 'tabular-nums' }}>{n}</span>
-                <button onClick={() => cambiar(p.id, +1)} style={{
-                  flex: 1, height: 34, borderRadius: 11, border: 'none', cursor: 'pointer',
-                  background: '#FFFFFF', color: VERDE,
-                  fontSize: 17, fontWeight: 800, lineHeight: 1,
-                }}>+</button>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#FFF', lineHeight: 1.3, minHeight: 36 }}>{p.name}</div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {sinPrecio
+                  ? <span style={{ color: '#FFD98A', fontSize: 11, fontWeight: 700 }}>Sin precio — no se publica</span>
+                  : <>
+                      {enOferta && <div style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'line-through', fontSize: 11.5 }}>{fmt(p.price)}</div>}
+                      <div style={{ color: '#FFF', fontWeight: 800, fontSize: 19, fontVariantNumeric: 'tabular-nums' }}>{fmt(precio(p))}</div>
+                    </>}
               </div>
-            )}
+              {!sinPrecio && (
+                <div aria-hidden style={{
+                  width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+                  background: '#FFF', color: VERDE,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 21, fontWeight: 800, lineHeight: 1,
+                  boxShadow: '0 6px 14px rgba(0,0,0,0.18)',
+                }}>+</div>
+              )}
+            </div>
           </div>
         </div>
       </Reveal>
@@ -896,7 +1059,7 @@ export default function CafeScreen() {
                 <span aria-hidden style={{ flex: 1, height: 1, background: LINEA }} />
               </div>
             </Reveal>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '4px 14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px 14px' }}>
               {grupos[sec.id].map((p, i) => tarjeta(p, i))}
             </div>
           </div>
@@ -1011,6 +1174,14 @@ export default function CafeScreen() {
         </div>
       )}
 
+      {fichaDe && (
+        <ProductoSheet
+          producto={fichaDe}
+          cantidadActual={qty[fichaDe.id] ?? 0}
+          onAgregar={(n) => setQty(q => ({ ...q, [fichaDe.id]: n }))}
+          onClose={() => setFichaDe(null)}
+        />
+      )}
       {verLogin && <StaffLoginSheet onClose={() => setVerLogin(false)} />}
       {verOrdenes && <OrdersSheet onClose={() => setVerOrdenes(false)} />}
       {editor !== null && (

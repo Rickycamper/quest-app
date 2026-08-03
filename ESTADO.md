@@ -100,7 +100,7 @@ detecta el hostname (`cafe.*`, `coffee.*` o `questcafe*`) o el path `/cafe`
 y monta SOLO CafeScreen — la app (feed, nav, auth) ni se ejecuta.
 **Es un LANDING con movimiento, no una web-app** — estética CLARA tipo app
 de café moderna (fondo papel #F5F3EE, cards VERDE profundo #173F2C con la
-foto del producto flotando en círculo arriba de la card, sombras suaves,
+PNG del producto flotando LIBRE arriba de la card, sombras suaves,
 esquinas 24px+; el logo blanco de Quest vive en un chip verde para leerse
 sobre claro): splash de entrada (taza
 llenándose, CSS puro, una vez por sesión), hero gigante con CTAs "en
@@ -109,7 +109,13 @@ reveal al scrollear (IntersectionObserver, respeta prefers-reduced-motion),
 tarjeta de UBICACIÓN (dirección genérica — falta la real), menú en grilla
 con hover, sección "Así lo hacemos" con placeholders de video (imágenes de
 Unsplash — la CSP permite img-src *, videos externos NO pasarían), footer.
-La barra de pedido aparece solo cuando el carrito tiene algo. El logo de
+Tocar una card abre la FICHA del producto (clon de la referencia): PNG
+grande flotando con sombra en el piso, nombre, descripción
+(shop_products.description — `20260730_cafe_description.sql`; el cliente
+tolera que la columna no exista y reintenta sin ella), selector de
+cantidad 01/02/03/04 con triangulito, y botón verde con bolsita mostrando
+el TOTAL. No se agrega de un toque: se entra, se elige cantidad, se
+agrega. La barra de pedido aparece solo cuando el carrito tiene algo. El logo de
 Quest lleva a questhobbystore.com. El pedido sale por WhatsApp
 al número del negocio con "para tomar en tienda / para llevar", items,
 nombre, teléfono, nota y total. Sin cobro online.
