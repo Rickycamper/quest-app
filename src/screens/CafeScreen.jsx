@@ -26,6 +26,17 @@ import questLogo from '../assets/quest-logo-sm.png'
 
 const fmt = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+// Cambio de leche: adicional de las bebidas que la llevan (has_milk). No son
+// productos del menú — se eligen adentro de la bebida. El precio depende del
+// tamaño: 8oz paga menos que los vasos grandes. Los MISMOS valores están en
+// place_cafe_order(), que es quien decide el precio de verdad.
+const EXTRAS_LECHE = [
+  { id: 'normal',   label: 'Normal',            precio: () => 0 },
+  { id: 'deslac',   label: 'Deslactosada',      precio: (t) => (t === '8oz' ? 0.50 : 0.75) },
+  { id: 'vegetal',  label: 'Almendra o avena',  precio: (t) => (t === '8oz' ? 0.60 : 0.80) },
+]
+const extraPorId = (id) => EXTRAS_LECHE.find(e => e.id === id) ?? EXTRAS_LECHE[0]
+
 // Tamaños. Se guardan en shop_products.variants como
 // [{label:'8oz', price:2.5}, {label:'12oz', price:3}]. Si un producto no
 // tiene variantes (un brownie, una empanada), se usa su precio suelto.
@@ -118,7 +129,6 @@ const SECCIONES_CAFE = [
   { id: 'frio',     titulo: 'FRÍOS',         icono: '🧊'   },
   { id: 'postre',   titulo: 'POSTRES',       icono: '🫳✨' },
   { id: 'salado',   titulo: 'SALADOS',       icono: '🧂'   },
-  { id: 'extra',    titulo: 'EXTRAS',        icono: '🥛'   },
 ]
 
 // Ilustración de relleno mientras el equipo sube sus fotos. Es SVG propio
@@ -610,10 +620,13 @@ function ProductoSheet({ producto, cantidadDe, rating, onVotar, onAgregar, onClo
   })
   const vs = variantes(producto)
   const [tam, setTam] = useState(vs ? vs[0].label : null)
-  const [n, setN] = useState(Math.min(4, Math.max(1, cantidadDe(tam) || 1)))
-  // Al cambiar de tamaño, la cantidad refleja lo que ya haya de ESE tamaño.
-  useEffect(() => { setN(Math.min(4, Math.max(1, cantidadDe(tam) || 1))) }, [tam])
-  const unit = precioVariante(producto, tam)
+  const [leche, setLeche] = useState('normal')
+  const [n, setN] = useState(Math.min(4, Math.max(1, cantidadDe(tam, 'normal') || 1)))
+  // Al cambiar tamaño o leche, la cantidad refleja lo que ya haya de ESA
+  // combinación: cada variante es una línea distinta del pedido.
+  useEffect(() => { setN(Math.min(4, Math.max(1, cantidadDe(tam, leche) || 1))) }, [tam, leche])
+  const recargo = producto.has_milk ? extraPorId(leche).precio(tam) : 0
+  const unit = precioVariante(producto, tam) + recargo
   const enOferta = !vs && unit < (Number(producto.price) || 0)
 
   // Cerrar con Escape — es una pantalla, no un popup cualquiera.
@@ -729,6 +742,32 @@ function ProductoSheet({ producto, cantidadDe, rating, onVotar, onAgregar, onClo
           </div>
         )}
 
+        {/* Cambio de leche — solo en las bebidas que la llevan */}
+        {producto.has_milk && (
+          <div style={{ marginTop: 24 }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: NARANJA, marginBottom: 10 }}>Leche</div>
+            <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+              {EXTRAS_LECHE.map(e => {
+                const activo = leche === e.id
+                const rec = e.precio(tam)
+                return (
+                  <button key={e.id} onClick={() => setLeche(e.id)} style={{
+                    padding: '11px 16px', borderRadius: 999, cursor: 'pointer',
+                    background: activo ? NARANJA : BLANCO,
+                    border: `1.5px solid ${activo ? NARANJA : LINEA}`,
+                    color: activo ? '#FFF' : GRIS,
+                    fontSize: 13, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                    display: 'flex', alignItems: 'baseline', gap: 6,
+                  }}>
+                    {e.label}
+                    {rec > 0 && <span style={{ fontSize: 11, opacity: 0.85 }}>+{fmt(rec)}</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Cantidad — 01 02 03 04 con el triangulito debajo */}
         <div style={{ marginTop: 30 }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: NARANJA, marginBottom: 12 }}>Cantidad</div>
@@ -772,10 +811,10 @@ function ProductoSheet({ producto, cantidadDe, rating, onVotar, onAgregar, onClo
             </div>
           )}
           <div style={{ fontSize: 12.5, color: GRIS }}>
-            {n} × {fmt(unit)}{tam ? ` · ${tam}` : ''}
+            {n} × {fmt(unit)}{tam ? ` · ${tam}` : ''}{recargo > 0 ? ` · ${extraPorId(leche).label.toLowerCase()}` : ''}
           </div>
         </div>
-        <button onClick={() => { onAgregar(n, tam); onClose() }} style={{
+        <button onClick={() => { onAgregar(n, tam, leche); onClose() }} style={{
           display: 'flex', alignItems: 'center', gap: 12,
           padding: '18px 26px', borderRadius: 22, border: 'none', cursor: 'pointer',
           background: NARANJA, color: '#FFF',
@@ -956,7 +995,7 @@ export default function CafeScreen() {
 
   const cargarMenu = async () => {
     const base = 'id, name, price, sale_price, image_url, sort_order, active, subcategory'
-    const extra = ', description, variants'
+    const extra = ', description, variants, has_milk'
     const pedir = (cols) => supabase
       .from('shop_products')
       .select(cols)
@@ -970,7 +1009,7 @@ export default function CafeScreen() {
     // description y variants pueden no existir todavía (migración sin
     // correr): si el select falla por eso, se reintenta sin ellas.
     let { data, error } = await pedir(base + extra)
-    if (error && /description|variants/i.test(error.message || '')) {
+    if (error && /description|variants|has_milk/i.test(error.message || '')) {
       ({ data, error } = await pedir(base))
     }
     if (!error) setItems(data ?? [])
@@ -1006,25 +1045,29 @@ export default function CafeScreen() {
 
   // Agrupado por sección; lo sin clasificar cae en 'otros'.
   const grupos = useMemo(() => {
-    const por = { caliente: [], frio: [], postre: [], salado: [], extra: [], otros: [] }
+    const por = { caliente: [], frio: [], postre: [], salado: [], otros: [] }
     for (const p of visibles) (por[p.subcategory] ?? por.otros).push(p)
     return por
   }, [visibles])
 
   // El carrito se indexa por producto|tamaño: un mismo café puede estar
   // pedido en 8oz y en 12oz a la vez, y son líneas distintas.
-  const clave = (id, label) => `${id}|${label ?? ''}`
+  const clave = (id, label, extra) => `${id}|${label ?? ''}|${extra ?? 'normal'}`
 
   const pedido = useMemo(() => {
     const out = []
     for (const [k, n] of Object.entries(qty)) {
       if (!n) continue
-      const [pid, label] = k.split('|')
+      const [pid, label, extraId] = k.split('|')
       const p = visibles.find(x => x.id === pid)
       if (!p) continue
-      const unit = precioVariante(p, label || undefined)
+      const ex = extraPorId(extraId)
+      const unit = precioVariante(p, label || undefined) + (p.has_milk ? ex.precio(label) : 0)
       if (unit <= 0) continue
-      out.push({ ...p, key: k, label: label || null, n, unit, sub: unit * n })
+      out.push({
+        ...p, key: k, label: label || null, n, unit, sub: unit * n,
+        extraId: ex.id, extraLabel: ex.id === 'normal' ? null : ex.label,
+      })
     }
     return out
   }, [visibles, qty])
@@ -1043,7 +1086,7 @@ export default function CafeScreen() {
     const lineas = [
       `☕ *PEDIDO QUEST CAFÉ${codigo ? ` ${codigo}` : ''}* — ${modo === 'llevar' ? 'PARA LLEVAR 🥡' : 'PARA TOMAR EN TIENDA'}`,
       '',
-      ...pedido.map(p => `· ${p.n}× ${p.name}${p.label ? ` (${p.label})` : ''} — ${fmt(p.sub)}`),
+      ...pedido.map(p => `· ${p.n}× ${p.name}${p.label ? ` (${p.label})` : ''}${p.extraLabel ? ` · leche ${p.extraLabel.toLowerCase()}` : ''} — ${fmt(p.sub)}`),
       '',
       `*Total: ${fmt(total)}*`,
       nombre.trim() ? `Nombre: ${nombre.trim()}` : null,
@@ -1060,7 +1103,7 @@ export default function CafeScreen() {
     let codigo = null
     try {
       const { data, error } = await supabase.rpc('place_cafe_order', {
-        p_items: pedido.map(p => ({ id: p.id, qty: p.n, variant: p.label })),
+        p_items: pedido.map(p => ({ id: p.id, qty: p.n, variant: p.label, extra: p.extraId })),
         p_modo:  modo,
         p_name:  nombre.trim(),
         p_phone: tel.trim(),
@@ -1522,10 +1565,10 @@ export default function CafeScreen() {
       {fichaDe && (
         <ProductoSheet
           producto={fichaDe}
-          cantidadDe={(label) => qty[clave(fichaDe.id, label)] ?? 0}
+          cantidadDe={(label, extra) => qty[clave(fichaDe.id, label, extra)] ?? 0}
           rating={ratings[fichaDe.id]}
           onVotar={(n) => votar(fichaDe.id, n)}
-          onAgregar={(n, label) => setQty(q => ({ ...q, [clave(fichaDe.id, label)]: n }))}
+          onAgregar={(n, label, extra) => setQty(q => ({ ...q, [clave(fichaDe.id, label, extra)]: n }))}
           onClose={() => setFichaDe(null)}
         />
       )}
