@@ -437,7 +437,7 @@ function StaffLoginSheet({ onClose }) {
       <div style={sheetBox} onClick={e => e.stopPropagation()}>
         <div style={{ fontSize: 15.5, fontWeight: 800, color: TINTA }}>Acceso del equipo</div>
         <div style={{ fontSize: 12.5, color: GRIS, lineHeight: 1.5 }}>
-          Ingresá con el email y la contraseña de tu cuenta de Quest.
+          Ingresa con el email y la contraseña de tu cuenta de Quest.
         </div>
         <input type="email" autoComplete="email" placeholder="Email" value={email}
                onChange={e => setEmail(e.target.value)} style={inputStyle}
@@ -482,8 +482,8 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
   const guardar = async () => {
     if (busy) return
     const p = parseFloat(precio_)
-    if (!nombre.trim()) { setErr('Poné el nombre'); return }
-    if (!p || p <= 0)   { setErr('Poné un precio mayor a 0'); return }
+    if (!nombre.trim()) { setErr('Pon el nombre'); return }
+    if (!p || p <= 0)   { setErr('Pon un precio mayor a 0'); return }
     setBusy(true); setErr('')
     try {
       const campos = {
@@ -557,7 +557,7 @@ function EditorSheet({ producto, onClose, onGuardado, onBorrado }) {
               background: '#F3EADA', color: TINTA, fontSize: 12, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'Inter, sans-serif',
             }}>{busy ? 'Subiendo…' : '📷 Subir foto'}</button>
-            <input placeholder="…o pegá una URL de imagen" value={foto}
+            <input placeholder="…o pega una URL de imagen" value={foto}
                    onChange={e => setFoto(e.target.value)} style={{ ...inputStyle, padding: '7px 10px', fontSize: 11.5 }} />
           </div>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
@@ -709,7 +709,7 @@ function ProductoSheet({ producto, cantidadDe, rating, onVotar, onAgregar, onClo
               {miVoto ? '¡Gracias por puntuar!' : '¿Qué te pareció?'}
             </div>
             <div style={{ fontSize: 11.5, color: GRIS, marginTop: 2 }}>
-              {miVoto ? 'Podés cambiar tu voto cuando quieras.' : 'Tocá las estrellas — no hace falta cuenta.'}
+              {miVoto ? 'Puedes cambiar tu voto cuando quieras.' : 'Toca las estrellas — no hace falta cuenta.'}
             </div>
           </div>
           <Estrellas valor={miVoto} size={26} onRate={(n) => { setMiVoto(n); onVotar(n) }} />
@@ -1318,7 +1318,7 @@ export default function CafeScreen() {
             opacity: 0.92,
           }}>
             Cafeína de verdad para el día. Entre tu momento chill y birrias,
-            pedí desde tu celular y seguí en lo tuyo — te avisamos cuando
+            pide desde tu celular y sigue en lo tuyo — te avisamos cuando
             esté ready.
           </p>
 
@@ -1349,7 +1349,7 @@ export default function CafeScreen() {
             <path d="M13 2c-9 6-13 14-6 22" stroke={CREMA_UI} strokeWidth="2" strokeLinecap="round" />
             <path d="M3 20l4 6 7-3" stroke={CREMA_UI} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          MIRÁ EL MENÚ
+          MIRA EL MENÚ
         </button>
       </section>
 
@@ -1366,8 +1366,8 @@ export default function CafeScreen() {
               fontSize: 'clamp(34px, 9vw, 66px)', lineHeight: 0.95, letterSpacing: '-0.01em',
             }}>ENCONTRANOS</h2>
             <p style={{ margin: '14px 0 22px', fontSize: 15, lineHeight: 1.65, maxWidth: 420, opacity: 0.92 }}>
-              Dentro de <strong>Quest Hobby Store</strong>. Venís por el café,
-              te quedás por las cartas — o al revés.
+              Dentro de <strong>Quest Hobby Store</strong>. Vienes por el café,
+              te quedas por las cartas — o al revés.
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <a href="https://www.google.com/maps/search/Quest+Hobby+Store+Panamá" target="_blank" rel="noreferrer" style={{
@@ -1424,8 +1424,8 @@ export default function CafeScreen() {
             <span style={{ fontSize: 15, fontWeight: 800, color: TINTA }}>El menú está en preparación</span>
             <span style={{ fontSize: 13, color: GRIS, lineHeight: 1.6 }}>
               {esStaff
-                ? 'Tocá "＋ Producto" arriba para cargar el primero.'
-                : 'Muy pronto vas a poder pedir desde acá. Mientras tanto, acercate a la barra.'}
+                ? 'Toca "＋ Producto" arriba para cargar el primero.'
+                : 'Muy pronto vas a poder pedir desde acá. Mientras tanto, acércate a la barra.'}
             </span>
           </div>
         )}
@@ -1555,7 +1555,7 @@ export default function CafeScreen() {
               {pidiendo
                 ? 'Registrando…'
                 : !datosOk
-                  ? `Poné ${[!nombreOk && 'tu nombre', !telOk && 'tu teléfono'].filter(Boolean).join(' y ')} para pedir`
+                  ? `Pon ${[!nombreOk && 'tu nombre', !telOk && 'tu teléfono'].filter(Boolean).join(' y ')} para pedir`
                   : `Pedir por WhatsApp · ${pedido.reduce((a, p) => a + p.n, 0)} ítem${pedido.reduce((a, p) => a + p.n, 0) !== 1 ? 's' : ''} · ${fmt(total)}`}
             </button>
           </div>
