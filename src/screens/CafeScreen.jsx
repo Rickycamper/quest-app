@@ -72,18 +72,18 @@ const leerDatosGuardados = () => {
 }
 
 // ── Paleta clara ─────────────────────────────────────────────────────────────
-const PAPEL    = '#FAF3E7'  // fondo general
-const CREMA_UI = '#FAF3E7'  // mismo crema, para texto sobre bloques oscuros
+const PAPEL    = '#F6E9CE'  // fondo general (crema de la marca)
+const CREMA_UI = '#F6E9CE'  // mismo crema, para texto sobre bloques oscuros
 const BLANCO  = '#FFFFFF'
 const TINTA   = '#2C1E15'   // texto principal
 const GRIS    = '#8A7461'   // texto secundario
 const LINEA   = '#EADFCB'   // bordes suaves
 // Paleta de la referencia: naranja quemado + verde bosque sobre crema.
-const NARANJA  = '#E8551F'  // color de marca — cards, títulos, CTA
-const NARANJA2 = '#FF6E38'  // más claro, degradé de la card activa
-const NARANJA3 = '#C6410F'  // extremo oscuro del degradé
-const VERDE    = '#0E6B4C'  // verde bosque — acentos, textos chicos, acción
-const WABTN   = '#0E6B4C'   // acción principal — el verde de la paleta
+const NARANJA  = '#DD3D26'  // rojo de marca — cards, títulos, CTA
+const NARANJA2 = '#EF5B40'  // más claro, degradé de la card activa
+const NARANJA3 = '#B02A16'  // extremo oscuro del degradé
+const VERDE    = '#3B358E'  // índigo de marca — acentos, bloques, acción
+const WABTN   = '#3B358E'   // acción principal — el índigo de la paleta
 // Display del sitio: Rammetto One (Google Fonts, OFL) autohospedada en
 // index.html. Redonda y pesadísima — es la que le da el carácter editorial.
 const DISPLAY = '"Rammetto One", "Bebas Neue", Inter, sans-serif'
@@ -397,6 +397,95 @@ function Reveal({ children, delay = 0 }) {
       transition: `opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
     }}>
       {children}
+    </div>
+  )
+}
+
+// ── Zona de delivery ─────────────────────────────────────────────────────────
+// Mapa SIN librerías: la CSP de este proyecto bloquea scripts de terceros
+// (Google Maps, Leaflet por CDN), pero img-src es abierto — así que se
+// arman 3×3 teselas de OpenStreetMap como <img> y la matemática Mercator
+// se hace acá (~30 líneas). El círculo de la zona y los pines van en %,
+// para que el mapa escale con el ancho sin recalcular nada.
+const Z_MAPA = 15
+const MUNDO = 256 * (2 ** Z_MAPA)
+const aPxX = (lng) => (lng + 180) / 360 * MUNDO
+const aPxY = (lat) => {
+  const st = Math.sin(lat * Math.PI / 180)
+  return (0.5 - Math.log((1 + st) / (1 - st)) / (4 * Math.PI)) * MUNDO
+}
+const aLng = (x) => x / MUNDO * 360 - 180
+const aLat = (y) => Math.atan(Math.sinh(Math.PI * (1 - 2 * y / MUNDO))) * 180 / Math.PI
+
+// Distancia haversine en metros. La MISMA cuenta corre en place_cafe_order():
+// el navegador solo propone; la base decide si el punto entra en la zona.
+function distanciaM(a, b) {
+  const r = Math.PI / 180
+  const h = Math.sin((b.lat - a.lat) * r / 2) ** 2 +
+            Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin((b.lng - a.lng) * r / 2) ** 2
+  return 2 * 6371000 * Math.asin(Math.sqrt(h))
+}
+
+function MapaZona({ cafe, radio, punto, onPunto }) {
+  const txc = Math.floor(aPxX(cafe.lng) / 256)
+  const tyc = Math.floor(aPxY(cafe.lat) / 256)
+  const origenX = (txc - 1) * 256, origenY = (tyc - 1) * 256   // esquina del grid 3×3
+  const pct = (v) => `${(v / 768 * 100).toFixed(3)}%`
+  const posX = (lng) => aPxX(lng) - origenX
+  const posY = (lat) => aPxY(lat) - origenY
+
+  // metros por pixel a este zoom y latitud → diámetro del círculo en px de grid
+  const mpp = 156543.03392 * Math.cos(cafe.lat * Math.PI / 180) / (2 ** Z_MAPA)
+  const diám = (radio * 2) / mpp
+
+  const alTocar = (e) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const gx = (e.clientX - r.left) / r.width * 768
+    const gy = (e.clientY - r.top) / r.height * 768
+    onPunto({ lat: aLat(origenY + gy), lng: aLng(origenX + gx) })
+  }
+
+  return (
+    <div onClick={alTocar} role="button" aria-label="Marcar mi ubicación en el mapa" style={{
+      position: 'relative', width: '100%', aspectRatio: '1 / 1', maxHeight: 300,
+      borderRadius: 16, overflow: 'hidden', cursor: 'crosshair',
+      border: `1px solid ${LINEA}`, background: '#DDD',
+    }}>
+      {/* teselas */}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexWrap: 'wrap' }}>
+        {[-1, 0, 1].flatMap(dy => [-1, 0, 1].map(dx => (
+          <img key={`${dx},${dy}`} alt=""
+               src={`https://tile.openstreetmap.org/${Z_MAPA}/${txc + dx}/${tyc + dy}.png`}
+               style={{ width: '33.3334%', height: '33.3334%', display: 'block', objectFit: 'cover' }} />
+        )))}
+      </div>
+      {/* círculo de la zona */}
+      <div aria-hidden style={{
+        position: 'absolute', width: pct(diám), height: pct(diám),
+        left: pct(posX(cafe.lng)), top: pct(posY(cafe.lat)),
+        transform: 'translate(-50%, -50%)', borderRadius: '50%',
+        background: 'rgba(59,53,142,0.14)', border: '2px solid rgba(59,53,142,0.65)',
+        pointerEvents: 'none',
+      }} />
+      {/* el café */}
+      <div aria-hidden style={{
+        position: 'absolute', left: pct(posX(cafe.lng)), top: pct(posY(cafe.lat)),
+        transform: 'translate(-50%, -100%)', fontSize: 26, pointerEvents: 'none',
+        filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.4))',
+      }}>☕</div>
+      {/* el cliente */}
+      {punto && (
+        <div aria-hidden style={{
+          position: 'absolute',
+          left: pct(Math.max(10, Math.min(758, posX(punto.lng)))),
+          top: pct(Math.max(10, Math.min(758, posY(punto.lat)))),
+          transform: 'translate(-50%, -100%)', fontSize: 26, pointerEvents: 'none',
+          filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.4))',
+        }}>📍</div>
+      )}
+      <span style={{ position: 'absolute', right: 4, bottom: 2, fontSize: 8.5, color: '#333', background: 'rgba(255,255,255,0.7)', padding: '1px 4px', borderRadius: 3 }}>
+        © OpenStreetMap
+      </span>
     </div>
   )
 }
@@ -919,7 +1008,7 @@ function OrdersSheet({ onClose }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 15, fontWeight: 900, color: TINTA, fontFamily: 'SF Mono, Menlo, monospace' }}>{o.code}</span>
                 <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.08em', color: st.color }}>{st.label}</span>
-                <span style={{ fontSize: 10.5, color: GRIS }}>{o.modo === 'llevar' ? '🥡 llevar' : '☕ en tienda'}</span>
+                <span style={{ fontSize: 10.5, color: GRIS }}>{o.modo === 'delivery' ? '🛵 delivery' : o.modo === 'llevar' ? '🥡 llevar' : '☕ en tienda'}</span>
                 <span style={{ flex: 1 }} />
                 <span style={{ fontSize: 11, color: GRIS }}>{hora}</span>
               </div>
@@ -932,6 +1021,15 @@ function OrdersSheet({ onClose }) {
               <div style={{ fontSize: 11.5, color: GRIS }}>
                 {o.customer_name || 'Sin nombre'}{o.customer_phone ? ` · ${o.customer_phone}` : ''}
                 {o.note && <span style={{ display: 'block', color: '#B45309' }}>Nota: {o.note}</span>}
+                {o.modo === 'delivery' && o.delivery_address && (
+                  <span style={{ display: 'block', color: TINTA, fontWeight: 700 }}>
+                    🛵 {o.delivery_address}
+                    {o.delivery_lat != null && (
+                      <> · <a href={`https://maps.google.com/?q=${o.delivery_lat},${o.delivery_lng}`}
+                             target="_blank" rel="noreferrer" style={{ color: VERDE }}>ver mapa ↗</a></>
+                    )}
+                  </span>
+                )}
               </div>
 
               {o.status === 'nueva' && (
@@ -970,6 +1068,13 @@ export default function CafeScreen() {
   const [editor, setEditor]   = useState(null)
   const [verOrdenes, setVerOrdenes] = useState(false)
   const [pidiendo, setPidiendo] = useState(false)
+  // Delivery: configuración que vive en la base (cafe_settings) para que el
+  // staff la prenda y apague sin redeploy. Si la tabla no existe todavía
+  // (migración sin correr), settings queda null y el delivery ni aparece.
+  const [ajustes, setAjustes] = useState(null)
+  const [puntoUser, setPuntoUser] = useState(null)   // {lat,lng} del cliente
+  const [direccion, setDireccion] = useState('')
+  const [errUbic, setErrUbic] = useState('')
   const [codigoOk, setCodigoOk] = useState(null)
   const [fichaDe, setFichaDe] = useState(null)   // producto abierto en la ficha
   const [ratings, setRatings] = useState({})     // { productId: { promedio, votos } }
@@ -1016,6 +1121,27 @@ export default function CafeScreen() {
     setLoading(false)
   }
   useEffect(() => { cargarMenu() }, [])
+
+  useEffect(() => {
+    supabase.from('cafe_settings').select('*').eq('id', 1).maybeSingle()
+      .then(({ data, error }) => { if (!error && data) setAjustes(data) })
+  }, [])
+
+  const deliveryDisponible = !!ajustes?.delivery_enabled
+  const cafeCoords = ajustes ? { lat: Number(ajustes.lat), lng: Number(ajustes.lng) } : null
+  const radioM = Number(ajustes?.radius_m) || 1000
+  const distancia = (puntoUser && cafeCoords) ? distanciaM(cafeCoords, puntoUser) : null
+  const dentroZona = distancia != null && distancia <= radioM
+
+  const usarMiUbicacion = () => {
+    setErrUbic('')
+    if (!navigator.geolocation) { setErrUbic('Tu navegador no comparte ubicación — toca el mapa.'); return }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setPuntoUser({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => setErrUbic('No pudimos obtener tu ubicación — toca el mapa donde estás.'),
+      { enableHighAccuracy: true, timeout: 8000 }
+    )
+  }
 
   // Ratings: vista pública con SOLO el agregado. Si la migración no corrió,
   // no pasa nada — las cards simplemente no muestran estrellas.
@@ -1080,11 +1206,13 @@ export default function CafeScreen() {
 
   const nombreOk = nombre.trim().length >= 2
   const telOk    = tel.replace(/\D/g, '').length >= 7
-  const datosOk  = nombreOk && telOk
+  const esDelivery = modo === 'delivery'
+  const deliveryOk = !esDelivery || (dentroZona && direccion.trim().length >= 5)
+  const datosOk  = nombreOk && telOk && deliveryOk
 
   const armarWA = (codigo) => {
     const lineas = [
-      `☕ *PEDIDO QUEST CAFÉ${codigo ? ` ${codigo}` : ''}* — ${modo === 'llevar' ? 'PARA LLEVAR 🥡' : 'PARA TOMAR EN TIENDA'}`,
+      `☕ *PEDIDO QUEST CAFÉ${codigo ? ` ${codigo}` : ''}* — ${modo === 'delivery' ? 'DELIVERY 🛵' : modo === 'llevar' ? 'PARA LLEVAR 🥡' : 'PARA TOMAR EN TIENDA'}`,
       '',
       ...pedido.map(p => `· ${p.n}× ${p.name}${p.label ? ` (${p.label})` : ''}${p.extraLabel ? ` · leche ${p.extraLabel.toLowerCase()}` : ''} — ${fmt(p.sub)}`),
       '',
@@ -1092,6 +1220,8 @@ export default function CafeScreen() {
       nombre.trim() ? `Nombre: ${nombre.trim()}` : null,
       tel.trim()    ? `Tel: ${tel.trim()}`       : null,
       nota.trim()   ? `Nota: ${nota.trim()}`     : null,
+      esDelivery && direccion.trim() ? `Dirección: ${direccion.trim()}` : null,
+      esDelivery && puntoUser ? `Mapa: https://maps.google.com/?q=${puntoUser.lat.toFixed(6)},${puntoUser.lng.toFixed(6)}` : null,
     ].filter(v => v !== null)
     return `https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(lineas.join('\n'))}`
   }
@@ -1102,13 +1232,19 @@ export default function CafeScreen() {
     try { localStorage.setItem(DATOS_KEY, JSON.stringify({ nombre: nombre.trim(), tel: tel.trim() })) } catch {}
     let codigo = null
     try {
-      const { data, error } = await supabase.rpc('place_cafe_order', {
+      const args = {
         p_items: pedido.map(p => ({ id: p.id, qty: p.n, variant: p.label, extra: p.extraId })),
         p_modo:  modo,
         p_name:  nombre.trim(),
         p_phone: tel.trim(),
         p_note:  nota.trim() || null,
-      })
+      }
+      if (esDelivery) {
+        args.p_address = direccion.trim()
+        args.p_lat = puntoUser?.lat ?? null
+        args.p_lng = puntoUser?.lng ?? null
+      }
+      const { data, error } = await supabase.rpc('place_cafe_order', args)
       if (!error) codigo = (Array.isArray(data) ? data[0] : data)?.code ?? null
     } catch {}
     window.open(armarWA(codigo), '_blank')
@@ -1266,6 +1402,19 @@ export default function CafeScreen() {
         <span style={{ flex: 1 }} />
         {esStaff && (
           <>
+            {ajustes && (
+              <button
+                onClick={async () => {
+                  const nuevo = !ajustes.delivery_enabled
+                  const { data, error } = await supabase.from('cafe_settings')
+                    .update({ delivery_enabled: nuevo }).eq('id', 1).select().single()
+                  if (!error && data) setAjustes(data)
+                }}
+                title="Prender o apagar el delivery"
+                style={chipHeader(false)}>
+                🛵 {ajustes.delivery_enabled ? 'ON' : 'OFF'}
+              </button>
+            )}
             <button onClick={() => setVerOrdenes(true)} style={chipHeader(true)}>Órdenes</button>
             <button onClick={() => setEditor({})} style={chipHeader()}>＋ Producto</button>
             <button onClick={() => supabase.auth.signOut()} style={chipHeader()}>Salir</button>
@@ -1518,8 +1667,10 @@ export default function CafeScreen() {
           <div style={{ maxWidth: 880, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 9 }}>
             <div style={{ display: 'flex', gap: 7 }}>
               {[
-                { id: 'tienda', label: '☕ Para tomar en tienda' },
-                { id: 'llevar', label: '🥡 Para llevar' },
+                { id: 'tienda', label: '☕ En tienda' },
+                { id: 'llevar', label: '🥡 Llevar' },
+                // Solo si el staff lo tiene prendido (cafe_settings)
+                ...(deliveryDisponible ? [{ id: 'delivery', label: '🛵 Delivery' }] : []),
               ].map(m => (
                 <button key={m.id} onClick={() => setModo(m.id)} style={{
                   flex: 1, padding: '10px 6px', borderRadius: 11, cursor: 'pointer',
@@ -1530,6 +1681,32 @@ export default function CafeScreen() {
                 }}>{m.label}</button>
               ))}
             </div>
+            {esDelivery && cafeCoords && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <MapaZona cafe={cafeCoords} radio={radioM} punto={puntoUser}
+                          onPunto={(pt) => { setPuntoUser(pt); setErrUbic('') }} />
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button onClick={usarMiUbicacion} style={{
+                    padding: '9px 13px', borderRadius: 999, cursor: 'pointer',
+                    background: VERDE, border: 'none', color: '#FFF',
+                    fontSize: 12, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+                  }}>📍 Usar mi ubicación</button>
+                  <span style={{ flex: 1, minWidth: 150, fontSize: 12, fontWeight: 700,
+                    color: puntoUser ? (dentroZona ? VERDE : '#C0392B') : GRIS }}>
+                    {puntoUser
+                      ? (dentroZona
+                          ? `✓ Estás a ${Math.round(distancia)} m — te llega`
+                          : `✕ Estás a ${(distancia / 1000).toFixed(1)} km — fuera de la zona de ${(radioM / 1000).toFixed(0)} km`)
+                      : 'Toca el mapa donde estás, o usa tu ubicación.'}
+                  </span>
+                </div>
+                {errUbic && <div style={{ fontSize: 12, color: '#C0392B' }}>{errUbic}</div>}
+                <input value={direccion} onChange={e => setDireccion(e.target.value.slice(0, 160))}
+                       placeholder="Dirección exacta y referencia (edificio, piso, portón…)"
+                       style={inputStyle} />
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: 7 }}>
               <input value={nombre} onChange={e => setNombre(e.target.value.slice(0, 60))}
                      placeholder="Tu nombre" autoComplete="name" style={{ ...inputStyle, flex: 1 }} />
@@ -1550,12 +1727,18 @@ export default function CafeScreen() {
               fontSize: 14.5, fontWeight: 800,
               cursor: (datosOk && !pidiendo) ? 'pointer' : 'default',
               fontFamily: 'Inter, sans-serif',
-              boxShadow: (datosOk && !pidiendo) ? '0 12px 30px rgba(14,107,76,0.32)' : 'none',
+              boxShadow: (datosOk && !pidiendo) ? '0 12px 30px rgba(59,53,142,0.32)' : 'none',
             }}>
               {pidiendo
                 ? 'Registrando…'
                 : !datosOk
-                  ? `Pon ${[!nombreOk && 'tu nombre', !telOk && 'tu teléfono'].filter(Boolean).join(' y ')} para pedir`
+                  ? (!deliveryOk
+                      ? (!puntoUser
+                          ? 'Marca tu ubicación en el mapa para pedir'
+                          : !dentroZona
+                            ? `Estás fuera de la zona de delivery (${(radioM / 1000).toFixed(0)} km)`
+                            : 'Escribe tu dirección para el delivery')
+                      : `Pon ${[!nombreOk && 'tu nombre', !telOk && 'tu teléfono'].filter(Boolean).join(' y ')} para pedir`)
                   : `Pedir por WhatsApp · ${pedido.reduce((a, p) => a + p.n, 0)} ítem${pedido.reduce((a, p) => a + p.n, 0) !== 1 ? 's' : ''} · ${fmt(total)}`}
             </button>
           </div>
