@@ -58,7 +58,20 @@ funciones responden OK en prod). Todo esto está vivo para los usuarios:
     de Quest): tablero de Órdenes (nueva → lista → entregada) y alta/edición
     de productos sin salir del café.
   · Migraciones YA CORRIDAS en prod: `cafe_orders`, `cafe_description`,
-    `cafe_ratings`. QR en `public/cafe-qr.png` → coffee.questhobbystore.com.
+    `cafe_ratings`, `cafe_menu_real` (carta con tamaños en
+    `shop_products.variants`), `cafe_leches` (cambio de leche como
+    adicional, `has_milk`), `cafe_delivery` (ver abajo).
+  · **Paleta definitiva** (dada por el dueño): crema #F6E9CE, rojo #DD3D26,
+    índigo #3B358E. Copy en tuteo panameño, NO voseo.
+  · **Delivery en radio de 1 km**: `cafe_settings` (interruptor + coords +
+    radio, staff lo prende/apaga con el chip 🛵 del header). Mapa SIN
+    librerías (CSP bloquea scripts externos; son teselas OSM como <img> +
+    Mercator propio). El cliente marca su punto tocando el mapa o por
+    geolocation; place_cafe_order() revalida radio y switch EN LA BASE.
+    **⚠️ Las coordenadas del local son un PLACEHOLDER (Ciudad de Panamá)**
+    — hay que correr `UPDATE public.cafe_settings SET lat=…, lng=… WHERE
+    id=1;` con el pin real. Hasta entonces el círculo de 1 km está mal
+    centrado. QR en `public/cafe-qr.png` → coffee.questhobbystore.com.
   · **Falta**: la dirección real en la tarjeta de ubicación (hoy es
     genérica) y videos propios en "Así lo hacemos" (hay placeholders con
     imágenes de Unsplash; **video externo NO pasa la CSP** — hay que
