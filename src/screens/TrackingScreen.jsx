@@ -228,6 +228,11 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, onEdit
             </div>
             <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 2 }}>
               {pkg.origin_branch} → {pkg.destination_branch}
+              {pkg.created_at && (
+                <span style={{ color: '#4B5563' }}>
+                  {'  ·  '}creado el {new Date(pkg.created_at).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </span>
+              )}
             </div>
             <div style={{ fontSize: 11, color: '#374151' }}>
               De: <span style={{ color: '#9CA3AF' }}>{pkg.sender?.username ?? '—'}</span>
