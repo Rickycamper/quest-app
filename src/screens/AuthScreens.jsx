@@ -2,7 +2,7 @@
 // QUEST — Auth Screens
 // ─────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react'
-import { signInWithEmail, signUpWithEmail, signInWithDiscord, sendOtpCode, verifyOtpCode, supabase } from '../lib/supabase'
+import { signInWithEmail, signUpWithEmail, signInWithDiscord, supabase } from '../lib/supabase'
 import { EyeIcon, DiscordIcon, MailIcon } from '../components/Icons'
 
 // Map raw Supabase OAuth error strings to friendly Spanish messages.
@@ -44,43 +44,6 @@ export function OpeningScreen({ onSignIn, onSignUp, onGuest, oauthError }) {
   // oauthError is already translated by App.jsx before being passed here
   const errMsg = oauthError ?? null
   const inApp  = isInAppBrowser()
-
-  // ── Email OTP code fallback ───────────────────────────────────────────
-  // Shown inline INSIDE the Discord-error banner. Two phases:
-  //   1) user types email → we send a 6-digit code
-  //   2) user types the code → we verify, session is created instantly
-  // Bypasses PKCE/OAuth entirely so users stuck in Discord-PKCE-hell get in.
-  const [mlEmail,    setMlEmail]    = useState('')
-  const [mlCode,     setMlCode]     = useState('')
-  const [mlSending,  setMlSending]  = useState(false)
-  const [mlVerifying,setMlVerifying]= useState(false)
-  const [mlSent,     setMlSent]     = useState(false)  // entered phase 2
-  const [mlError,    setMlError]    = useState('')
-
-  const handleSendOtpCode = async () => {
-    if (!mlEmail.trim()) { setMlError('Escribí tu email primero.'); return }
-    setMlSending(true); setMlError('')
-    try {
-      await sendOtpCode(mlEmail)
-      setMlSent(true)
-    } catch (e) {
-      setMlError(e.message || 'No se pudo enviar el código.')
-    }
-    setMlSending(false)
-  }
-
-  const handleVerifyOtpCode = async () => {
-    if (!mlCode.trim()) { setMlError('Escribí el código que recibiste.'); return }
-    setMlVerifying(true); setMlError('')
-    try {
-      await verifyOtpCode(mlEmail, mlCode)
-      // onAuthStateChange will pick up SIGNED_IN and move the user into the app.
-      // We don't need to navigate manually — App.jsx handles routing on session.
-    } catch (e) {
-      setMlError(e.message || 'No se pudo verificar el código.')
-    }
-    setMlVerifying(false)
-  }
 
   return (
     <div style={{
@@ -131,7 +94,7 @@ export function OpeningScreen({ onSignIn, onSignUp, onGuest, oauthError }) {
           </div>
         )}
 
-        {/* OAuth error banner — now bundles the magic-link recovery flow.
+        {/* OAuth error banner — ofrece dos salidas simples: reintentar Discord o entrar con email.
             The most common Discord failure is a PKCE exchange that never
             recovers (in-app browser context switch, iOS Safari ITP, etc.).
             Retrying Discord usually fails the same way. Magic link bypasses
@@ -144,129 +107,22 @@ export function OpeningScreen({ onSignIn, onSignUp, onGuest, oauthError }) {
           }}>
             ⚠️ {errMsg}
 
-            {/* Phase 1 — request a 6-digit code by email */}
-            {!mlSent && (
-              <div style={{
-                marginTop: 12, paddingTop: 12,
-                borderTop: '1px solid rgba(255,255,255,0.07)',
+            <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+              <button onClick={signInWithDiscord} style={{
+                flex: 1, padding: '9px', borderRadius: 8, border: 'none',
+                background: 'rgba(88,101,242,0.18)', color: '#A5B4FC',
+                fontSize: 12, fontWeight: 700, cursor: 'pointer',
               }}>
-                <div style={{ fontSize: 12, color: '#FED7D7', fontWeight: 600, marginBottom: 8 }}>
-                  Recibí un código de 6 dígitos al email:
-                </div>
-                <input
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  value={mlEmail}
-                  onChange={e => setMlEmail(e.target.value)}
-                  placeholder="tu@email.com"
-                  style={{
-                    width: '100%', padding: '9px 12px', borderRadius: 8,
-                    background: '#1A1A1A', border: '1px solid #2A2A2A',
-                    color: '#FFF', fontSize: 13,
-                    outline: 'none', boxSizing: 'border-box',
-                    marginBottom: 8,
-                  }}
-                />
-                {mlError && (
-                  <div style={{ fontSize: 11, color: '#FCA5A5', marginBottom: 8 }}>
-                    {mlError}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button
-                    onClick={handleSendOtpCode}
-                    disabled={mlSending || !mlEmail.trim()}
-                    style={{
-                      flex: 1, padding: '8px', borderRadius: 8, border: 'none',
-                      background: (mlSending || !mlEmail.trim()) ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
-                      color: (mlSending || !mlEmail.trim()) ? '#6B7280' : '#111111',
-                      fontSize: 12, fontWeight: 800,
-                      cursor: (mlSending || !mlEmail.trim()) ? 'default' : 'pointer',
-                    }}
-                  >
-                    {mlSending ? 'Enviando…' : '📩 Enviar código'}
-                  </button>
-                  <button
-                    onClick={signInWithDiscord}
-                    style={{
-                      padding: '8px 12px', borderRadius: 8, border: 'none',
-                      background: 'rgba(88,101,242,0.18)', color: '#A5B4FC',
-                      fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Reintentar
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Phase 2 — user types the 6-digit code they received */}
-            {mlSent && (
-              <div style={{
-                marginTop: 12, paddingTop: 12,
-                borderTop: '1px solid rgba(255,255,255,0.07)',
+                Reintentar con Discord
+              </button>
+              <button onClick={onSignIn} style={{
+                flex: 1, padding: '9px', borderRadius: 8, border: 'none',
+                background: '#FFFFFF', color: '#111111',
+                fontSize: 12, fontWeight: 800, cursor: 'pointer',
               }}>
-                <div style={{ fontSize: 12, color: '#FED7D7', fontWeight: 600, marginBottom: 6 }}>
-                  Te enviamos un código a <strong style={{ color: '#FFF' }}>{mlEmail}</strong>
-                </div>
-                <div style={{ fontSize: 10.5, color: '#9CA3AF', lineHeight: 1.5, marginBottom: 10 }}>
-                  Revisá tu email (también spam) — escribilo acá:
-                </div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  pattern="[0-9]*"
-                  maxLength={6}
-                  value={mlCode}
-                  onChange={e => setMlCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="123456"
-                  style={{
-                    width: '100%', padding: '10px 12px', borderRadius: 8,
-                    background: '#1A1A1A', border: '1px solid #2A2A2A',
-                    color: '#FFF', fontSize: 18, fontWeight: 800,
-                    letterSpacing: '0.4em', textAlign: 'center',
-                    fontFamily: 'monospace',
-                    outline: 'none', boxSizing: 'border-box',
-                    marginBottom: 8,
-                  }}
-                />
-                {mlError && (
-                  <div style={{ fontSize: 11, color: '#FCA5A5', marginBottom: 8 }}>
-                    {mlError}
-                  </div>
-                )}
-                <button
-                  onClick={handleVerifyOtpCode}
-                  disabled={mlVerifying || mlCode.length !== 6}
-                  style={{
-                    width: '100%', padding: '10px', borderRadius: 8, border: 'none',
-                    background: (mlVerifying || mlCode.length !== 6) ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
-                    color: (mlVerifying || mlCode.length !== 6) ? '#6B7280' : '#111111',
-                    fontSize: 13, fontWeight: 800,
-                    cursor: (mlVerifying || mlCode.length !== 6) ? 'default' : 'pointer',
-                    marginBottom: 6,
-                  }}
-                >
-                  {mlVerifying ? 'Verificando…' : 'Entrar →'}
-                </button>
-                <button
-                  onClick={() => { setMlSent(false); setMlCode(''); setMlError('') }}
-                  style={{
-                    width: '100%', padding: '7px', borderRadius: 8,
-                    background: 'transparent', border: 'none',
-                    color: '#9CA3AF', fontSize: 11, fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  No me llegó — enviar de nuevo
-                </button>
-              </div>
-            )}
+                Entrar con email
+              </button>
+            </div>
           </div>
         )}
 
@@ -517,40 +373,7 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
   const [errorType,     setErrorType]     = useState('')
   const [resendLoading, setResendLoading] = useState(false)
   const [resendSent,    setResendSent]    = useState(false)
-  // Email OTP code fallback — for users whose Discord OAuth keeps failing.
-  // Two-phase: send a code → user types the 6-digit code → verifyOtp creates
-  // the session directly (no PKCE, no redirect, no link to click).
-  const [magicMode,      setMagicMode]      = useState(false)
-  const [magicSending,   setMagicSending]   = useState(false)
-  const [magicVerifying, setMagicVerifying] = useState(false)
-  const [magicSent,      setMagicSent]      = useState(false)
-  const [magicCode,      setMagicCode]      = useState('')
-  const [magicError,     setMagicError]     = useState('')
   const { fieldProps: loginFieldProps } = useFormFocus()
-
-  const handleSendOtpCode = async () => {
-    if (!email.trim()) { setMagicError('Ingresá tu email primero.'); return }
-    setMagicSending(true); setMagicError('')
-    try {
-      await sendOtpCode(email)
-      setMagicSent(true)
-    } catch (e) {
-      setMagicError(e.message || 'No se pudo enviar el código. Intentá de nuevo.')
-    }
-    setMagicSending(false)
-  }
-
-  const handleVerifyOtpCode = async () => {
-    if (!magicCode.trim()) { setMagicError('Escribí el código recibido.'); return }
-    setMagicVerifying(true); setMagicError('')
-    try {
-      await verifyOtpCode(email, magicCode)
-      // onAuthStateChange handles SIGNED_IN — App.jsx will route into the app.
-    } catch (e) {
-      setMagicError(e.message || 'No se pudo verificar el código.')
-    }
-    setMagicVerifying(false)
-  }
 
   const oauthErrMsg = friendlyOAuthError(oauthError)
 
@@ -566,28 +389,12 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
         setError('Confirmá tu email primero — revisá tu bandeja de entrada.')
         setErrorType('email_not_confirmed')
       } else if (e.message?.includes('Invalid login credentials') || e.message?.includes('invalid_credentials')) {
-        // ── Discord-only users have no password — when they try email login
-        // they hit this branch. Instead of just showing "wrong credentials"
-        // (confusing, they're sure their email is correct), we *automatically*
-        // send them a 6-digit code so they can get in without setting up a
-        // password. Reduces support load: the recovery path is one tap.
-        if (email.trim()) {
-          try {
-            await sendOtpCode(email)
-            setMagicSent(true)
-            setMagicMode(true)
-            setError('')
-            setErrorType('')
-          } catch (otpErr) {
-            // OTP failed too (e.g. user genuinely doesn't exist) — fall
-            // back to the original "invalid credentials" message.
-            setError(otpErr.message?.includes('No encontramos')
-              ? 'No existe una cuenta con ese email.'
-              : 'Email o contraseña incorrectos.')
-          }
-        } else {
-          setError('Email o contraseña incorrectos.')
-        }
+        // Antes, acá se mandaba AUTOMÁTICAMENTE un código por email y se
+        // metía al usuario en la pantalla de código — que encima aceptaba 6
+        // dígitos cuando el email traía 8. Cualquier error de tipeo en la
+        // contraseña dejaba a la persona atrapada. Ahora: un mensaje normal.
+        setError('Email o contraseña incorrectos.')
+        setErrorType('invalid_credentials')
       } else {
         setError(e.message || 'No se pudo iniciar sesión.')
       }
@@ -645,6 +452,11 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
         {error && (
           <div style={{ ...errorBox, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span>{error}</span>
+            {errorType === 'invalid_credentials' && (
+              <span style={{ fontSize: 12, color: '#B91C1C', opacity: 0.85, lineHeight: 1.5 }}>
+                ¿Te registraste con Discord? Entrá con Discord, o creá una contraseña desde «Forgot password?».
+              </span>
+            )}
             {errorType === 'email_not_confirmed' && !resendSent && (
               <button
                 onClick={handleResend}
@@ -749,220 +561,6 @@ export function LoginScreen({ onBack, onSignUp, onForgot, oauthError }) {
         }}>
           ¿Ya tenés cuenta con email? Entrá primero con tu email y vinculá Discord desde tu perfil.
         </div>
-
-        {/* Magic link fallback — for users whose Discord OAuth keeps failing
-            (PKCE flow can break in WhatsApp/Instagram in-app browsers, iOS
-            Safari ITP, etc.). They receive a clickable link in their email
-            that logs them in directly, bypassing OAuth entirely.            */}
-        {/* Code-by-email entry — promoted from a small text link to a real
-            CTA card so users actually notice it. Most "I can't log in" cases
-            are solved with this; we want it discoverable. */}
-        {!magicMode && !magicSent && (
-          <button
-            onClick={() => { setMagicMode(true); setMagicError('') }}
-            style={{
-              width: '100%', marginBottom: 16,
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '14px 16px', borderRadius: 14,
-              background: 'linear-gradient(135deg, rgba(167,139,250,0.10) 0%, rgba(96,165,250,0.10) 100%)',
-              border: '1.5px solid rgba(167,139,250,0.35)',
-              cursor: 'pointer', textAlign: 'left',
-              transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms',
-              boxShadow: '0 4px 14px -4px rgba(167,139,250,0.18)',
-              fontFamily: 'Inter, sans-serif',
-            }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 20px -4px rgba(167,139,250,0.28)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 4px 14px -4px rgba(167,139,250,0.18)'}
-            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
-            onMouseUp  ={e => e.currentTarget.style.transform = 'scale(1)'}
-            onTouchStart={e => e.currentTarget.style.transform = 'scale(0.98)'}
-            onTouchEnd  ={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <div style={{
-              width: 42, height: 42, borderRadius: 11,
-              background: 'linear-gradient(135deg, #A78BFA 0%, #60A5FA 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, flexShrink: 0,
-              boxShadow: '0 4px 12px -2px rgba(167,139,250,0.5)',
-            }}>⚡</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#111111', marginBottom: 2 }}>
-                Entrar sin contraseña
-              </div>
-              <div style={{ fontSize: 11.5, color: '#4B5563', lineHeight: 1.4 }}>
-                Te mandamos un código al email y entrás en 5 segundos.
-              </div>
-            </div>
-            <span style={{ fontSize: 16, color: '#A78BFA', fontWeight: 700, flexShrink: 0 }}>→</span>
-          </button>
-        )}
-
-        {/* Phase 1 — request 6-digit code (expanded card after CTA tap). */}
-        {magicMode && !magicSent && (
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(167,139,250,0.10) 0%, rgba(96,165,250,0.10) 100%)',
-            border: '1.5px solid rgba(167,139,250,0.35)',
-            borderRadius: 14, padding: '16px',
-            marginBottom: 16, animation: 'fadeUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            boxShadow: '0 4px 14px -4px rgba(167,139,250,0.18)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: 'linear-gradient(135deg, #A78BFA 0%, #60A5FA 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 18, flexShrink: 0,
-                boxShadow: '0 4px 10px -2px rgba(167,139,250,0.5)',
-              }}>⚡</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#111111' }}>
-                  Entrar sin contraseña
-                </div>
-                <div style={{ fontSize: 11, color: '#6B7280', lineHeight: 1.4 }}>
-                  {email ? `Te mandamos un código a tu email` : 'Escribí tu email arriba primero'}
-                </div>
-              </div>
-            </div>
-            {magicError && (
-              <div style={{
-                fontSize: 11.5, color: '#B91C1C',
-                background: 'rgba(239,68,68,0.10)',
-                border: '1px solid rgba(239,68,68,0.22)',
-                borderRadius: 9, padding: '8px 11px', marginBottom: 10,
-              }}>
-                ⚠️ {magicError}
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button
-                onClick={handleSendOtpCode}
-                disabled={magicSending || !email}
-                style={{
-                  flex: 1, padding: '12px', borderRadius: 10, border: 'none',
-                  background: (magicSending || !email)
-                    ? '#E5E7EB'
-                    : 'linear-gradient(135deg, #A78BFA 0%, #60A5FA 100%)',
-                  color: (magicSending || !email) ? '#9CA3AF' : '#FFFFFF',
-                  fontSize: 13, fontWeight: 800,
-                  cursor: (magicSending || !email) ? 'default' : 'pointer',
-                  boxShadow: (magicSending || !email)
-                    ? 'none'
-                    : '0 4px 12px -2px rgba(167,139,250,0.5)',
-                  fontFamily: 'Inter, sans-serif',
-                }}
-              >
-                {magicSending ? 'Enviando…' : '📩 Enviame el código'}
-              </button>
-              <button
-                onClick={() => { setMagicMode(false); setMagicError('') }}
-                style={{
-                  padding: '12px 14px', borderRadius: 10,
-                  background: 'transparent', border: '1px solid #E5E7EB',
-                  color: '#6B7280', fontSize: 12, fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Phase 2 — user types the 6-digit code, we verify */}
-        {magicSent && (
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(74,222,128,0.12) 0%, rgba(96,165,250,0.10) 100%)',
-            border: '1.5px solid rgba(74,222,128,0.35)',
-            borderRadius: 14, padding: '18px 16px 14px',
-            marginBottom: 16,
-            animation: 'fadeUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            boxShadow: '0 6px 18px -4px rgba(74,222,128,0.22)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 11,
-                background: 'linear-gradient(135deg, #4ADE80 0%, #60A5FA 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 20, flexShrink: 0,
-                boxShadow: '0 4px 12px -2px rgba(74,222,128,0.5)',
-              }}>📩</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#065F46' }}>
-                  ¡Código enviado!
-                </div>
-                <div style={{ fontSize: 11, color: '#047857', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  Revisá <strong>{email}</strong> (también spam)
-                </div>
-              </div>
-            </div>
-
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#065F46', letterSpacing: '0.08em', marginBottom: 6 }}>
-              ESCRIBÍ EL CÓDIGO DE 6 DÍGITOS:
-            </div>
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="[0-9]*"
-              maxLength={6}
-              value={magicCode}
-              onChange={e => setMagicCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="• • • • • •"
-              autoFocus
-              style={{
-                width: '100%', padding: '14px', borderRadius: 12,
-                background: '#FFFFFF', border: '2px solid rgba(74,222,128,0.4)',
-                color: '#111', fontSize: 26, fontWeight: 900,
-                letterSpacing: '0.5em', textAlign: 'center',
-                fontFamily: 'monospace',
-                outline: 'none', boxSizing: 'border-box',
-                marginBottom: 10,
-                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)',
-              }}
-            />
-            {magicError && (
-              <div style={{
-                fontSize: 11.5, color: '#B91C1C',
-                background: 'rgba(239,68,68,0.10)',
-                border: '1px solid rgba(239,68,68,0.22)',
-                borderRadius: 9, padding: '8px 11px', marginBottom: 10,
-              }}>
-                ⚠️ {magicError}
-              </div>
-            )}
-            <button
-              onClick={handleVerifyOtpCode}
-              disabled={magicVerifying || magicCode.length !== 6}
-              style={{
-                width: '100%', padding: '13px', borderRadius: 11, border: 'none',
-                background: (magicVerifying || magicCode.length !== 6)
-                  ? '#E5E7EB'
-                  : 'linear-gradient(135deg, #4ADE80 0%, #60A5FA 100%)',
-                color: (magicVerifying || magicCode.length !== 6) ? '#9CA3AF' : '#FFFFFF',
-                fontSize: 15, fontWeight: 800,
-                cursor: (magicVerifying || magicCode.length !== 6) ? 'default' : 'pointer',
-                boxShadow: (magicVerifying || magicCode.length !== 6)
-                  ? 'none'
-                  : '0 4px 14px -2px rgba(74,222,128,0.5)',
-                marginBottom: 6,
-                fontFamily: 'Inter, sans-serif',
-              }}
-            >
-              {magicVerifying ? 'Entrando…' : 'Entrar →'}
-            </button>
-            <button
-              onClick={() => { setMagicSent(false); setMagicCode(''); setMagicError('') }}
-              style={{
-                width: '100%', padding: '8px',
-                background: 'transparent', border: 'none',
-                color: '#059669', fontSize: 12, fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              No me llegó — enviar de nuevo
-            </button>
-          </div>
-        )}
 
         <div style={{ textAlign: 'center', fontSize: 13, color: '#6B7280' }}>
           Don't have an account?{' '}
