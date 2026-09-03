@@ -102,11 +102,11 @@ function ProgressBar({ status }) {
 
 // ── Step labels ───────────────────────────────
 const STEP_LABELS = {
-  pending_confirmation: 'Pendiente de aprobación',
-  received_origin:      'Recibido en tienda',
-  in_transit:           'En tránsito a sucursal',
-  pending_arrival:      'Pendiente de confirmación',
-  arrived:              'Llegó a sucursal destino',
+  pending_confirmation: 'Por confirmar',
+  received_origin:      'Entregado en tienda',
+  in_transit:           'En tránsito',
+  pending_arrival:      'En tránsito',
+  arrived:              'Listo para retirar',
   delivered:            'Retirado',
 }
 
@@ -251,7 +251,7 @@ function PackageCard({ pkg, isStaff, onStatusUpdate, onDismiss, onDelete, onEdit
             const done = i <= (cs.step ?? 0)
             return (
               <div key={s} style={{ flex: 1, textAlign: 'center', fontSize: 8, color: done ? 'rgba(255,255,255,0.5)' : '#2A2A2A', fontWeight: 600, lineHeight: 1.2, padding: '0 2px' }}>
-                {(STEP_LABELS[s] ?? s).split(' ').slice(0, 2).join(' ')}
+                {STEP_LABELS[s] ?? s}
               </div>
             )
           })}
@@ -1061,7 +1061,7 @@ export default function TrackingScreen({ profile, isStaff, onNewPackage, refresh
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <PkgIcon status={s} size={16} color="#555555" />
                   </div>
-                  <div style={{ fontSize: 8, color: '#4B5563', marginTop: 3, lineHeight: 1.2 }}>{STEP_LABELS[s].split(' ').slice(0,2).join(' ')}</div>
+                  <div style={{ fontSize: 9, color: '#4B5563', marginTop: 3, lineHeight: 1.2 }}>{STEP_LABELS[s]}</div>
                 </div>
                 {i < PKG_STEPS.length - 1 && <div style={{ flex: 1, height: 1, background: '#1F1F1F' }} />}
               </div>

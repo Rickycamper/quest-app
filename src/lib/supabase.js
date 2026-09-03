@@ -1805,25 +1805,27 @@ export async function createPackage({ originBranch, destinationBranch, recipient
 }
 
 const PKG_NOTIFS = {
+  // Mismas 3 etapas que ve el cliente en el tracking: entregado → en tránsito
+  // → listo para retirar. (pending_arrival queda solo por paquetes viejos.)
   received_origin: {
     type: 'new_package',
-    title: '📦 Paquete recibido en tienda',
-    body:  (code) => `Tu paquete #${code} fue recibido y confirmado en la sucursal origen.`,
+    title: '📦 Entregado en tienda',
+    body:  (code) => `Tu paquete #${code} ya está en la tienda. Siguiente paso: en tránsito.`,
   },
   in_transit: {
     type: 'new_package',
-    title: '🚚 Paquete en tránsito',
-    body:  (code) => `El paquete #${code} salió de la sucursal origen y está en camino.`,
+    title: '🚚 En tránsito',
+    body:  (code) => `El paquete #${code} va en camino a la sucursal destino.`,
   },
   pending_arrival: {
     type: 'new_package',
-    title: '📍 Paquete llegó a sucursal destino',
-    body:  (code) => `El paquete #${code} llegó a la sucursal destino. Pendiente de confirmación del admin.`,
+    title: '🚚 En tránsito',
+    body:  (code) => `El paquete #${code} está por llegar a la sucursal destino.`,
   },
   arrived: {
     type: 'package_arrived',
-    title: '✅ Paquete confirmado en sucursal',
-    body:  (code) => `El paquete #${code} fue confirmado en la sucursal destino. ¡Ya podés retirarlo!`,
+    title: '✅ Listo para retirar',
+    body:  (code) => `El paquete #${code} ya está en la sucursal destino. ¡Pasa a retirarlo!`,
   },
   delivered: {
     type: 'package_arrived',

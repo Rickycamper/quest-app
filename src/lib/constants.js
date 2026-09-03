@@ -70,21 +70,29 @@ export const CARD_STATUS = {
   sell:  { label: 'Vendo',  color: '#F97316', bg: 'rgba(249,115,22,0.12)',  border: 'rgba(249,115,22,0.25)'  },
 }
 
+// Tracking en 3 PASOS (antes eran 6 y la gente se confundía):
+//   Entregado en tienda → En tránsito → Listo para retirar    (+ Retirado = fin)
+//
+// Los dos estados intermedios de confirmación (pending_confirmation y
+// pending_arrival) siguen existiendo en la base por los paquetes viejos, pero
+// ya NO son pasos visibles: "por confirmar" se ve como antes del paso 1, y
+// "pendiente de llegada" se ve como todavía en tránsito. El equipo salta
+// directo de En tránsito a Listo para retirar.
 export const PKG_STATUS = {
-  pending_confirmation: { label: 'Pendiente de aprobación', color: '#6B7280', bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.2)', step: 0,
-                          adminLabel: 'Confirmar recepción de paquete',      adminNext: 'received_origin' },
-  received_origin:      { label: 'Recibido en tienda origen', color: '#888888', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.1)',  step: 1,
-                          adminLabel: 'Enviar en tránsito',                  adminNext: 'in_transit' },
-  in_transit:           { label: 'En tránsito',               color: '#AAAAAA', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.12)', step: 2,
-                          adminLabel: 'Reportar llegada a sucursal destino', adminNext: 'pending_arrival' },
-  pending_arrival:      { label: 'Pendiente de confirmar',    color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.3)',  step: 3,
-                          adminLabel: 'Confirmar llegada a sucursal',        adminNext: 'arrived' },
-  arrived:              { label: 'Llegó a sucursal',          color: '#4ADE80', bg: 'rgba(74,222,128,0.1)',  border: 'rgba(74,222,128,0.25)', step: 4,
+  pending_confirmation: { label: 'Por confirmar en tienda', color: '#6B7280', bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.2)', step: -1,
+                          adminLabel: 'Confirmar: entregado en tienda',      adminNext: 'received_origin' },
+  received_origin:      { label: 'Entregado en tienda',     color: '#888888', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.1)',  step: 0,
+                          adminLabel: 'Enviar a sucursal destino',           adminNext: 'in_transit' },
+  in_transit:           { label: 'En tránsito',             color: '#AAAAAA', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.12)', step: 1,
+                          adminLabel: 'Llegó: marcar listo para retirar',    adminNext: 'arrived' },
+  pending_arrival:      { label: 'En tránsito',             color: '#AAAAAA', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.12)', step: 1,
+                          adminLabel: 'Llegó: marcar listo para retirar',    adminNext: 'arrived' },
+  arrived:              { label: 'Listo para retirar',      color: '#4ADE80', bg: 'rgba(74,222,128,0.1)',  border: 'rgba(74,222,128,0.25)', step: 2,
                           adminLabel: 'Confirmar retiro',                    adminNext: 'delivered' },
-  delivered:            { label: 'Retirado',                  color: '#FFFFFF', bg: 'rgba(255,255,255,0.1)',  border: 'rgba(255,255,255,0.22)', step: 5,
+  delivered:            { label: 'Retirado',                color: '#FFFFFF', bg: 'rgba(255,255,255,0.1)',  border: 'rgba(255,255,255,0.22)', step: 3,
                           adminLabel: null,                                  adminNext: null },
 }
-export const PKG_STEPS = ['pending_confirmation', 'received_origin', 'in_transit', 'pending_arrival', 'arrived', 'delivered']
+export const PKG_STEPS = ['received_origin', 'in_transit', 'arrived']
 
 export const ROLE_CONFIG = {
   client:  { label: 'MEMBER',  color: '#9CA3AF', bg: 'rgba(156,163,175,0.1)', border: 'rgba(156,163,175,0.2)'  },
