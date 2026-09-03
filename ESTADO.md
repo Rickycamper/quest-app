@@ -34,6 +34,11 @@ funciones responden OK en prod). Todo esto está vivo para los usuarios:
   incluidos.
 - **Nav** con iconos estándar + etiquetas: Feed · Tienda · Crear · Trade ·
   Vida (d20).
+- **Tracking en 3 pasos** (ago 2026): Entregado en tienda → En tránsito →
+  Listo para retirar (+ Retirado = fin). Los estados `pending_confirmation`
+  y `pending_arrival` siguen en la base por paquetes viejos pero ya no son
+  pasos visibles; el equipo salta de En tránsito a Listo para retirar. Cada
+  card muestra "creado el <fecha>".
 - **Desktop** se ve como website (header con navegación, sin barra inferior).
 - **Quest Café** — sitio INDEPENDIENTE en **coffee.questhobbystore.com**
   (rama `cafe-only`, ya mergeada). `main.jsx` detecta el hostname
