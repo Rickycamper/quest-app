@@ -144,6 +144,16 @@ descuento. Sin credenciales el bloque de pago no aparece: es seguro publicar.
   columna no existía. Ahora solo se manda si tiene valor, con reintento.
 - **Voz "paso turno"** (Life Counter): iOS reemplaza el transcript, no lo
   acumula. Se reinicia el reconocedor tras cada acierto.
+- **La gente no podía entrar (ago 2026)**: al equivocar la contraseña, el
+  login mandaba AUTOMÁTICAMENTE un código OTP por email y metía al usuario
+  en una pantalla de código que aceptaba 6 dígitos cuando Supabase manda 8.
+  Por decisión del dueño se ELIMINARON todas las rutas de código por email
+  (auto-envío, tarjeta "Entrar sin contraseña", fallback del banner de
+  Discord). Login = email+contraseña, Discord, o reset por link. **No
+  reintroducir OTP.** `sendOtpCode/verifyOtpCode` quedan en supabase.js
+  sin usar.
+- **Tracking sin sesión** tiraba "Cannot read properties of null (reading
+  'user')": `getMyPackages()` no verificaba la sesión. Ahora devuelve [].
 
 ---
 
