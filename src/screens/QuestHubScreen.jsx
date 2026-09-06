@@ -86,13 +86,13 @@ const BRANCH_INFO = {
     address: 'David, Chiriquí, Panamá',
     hours:   'Lun–Sáb 10am–7pm · Dom 11am–5pm',
     mapsUrl: 'https://maps.google.com/?q=Quest+Hobby+Store+David+Panama',
-    phone:   '+507 6000-0001',
+    phone:   '+507 6613-0548',
   },
   Chitre: {
     address: 'Chitré, Herrera, Panamá',
     hours:   'Lun–Sáb 10am–7pm · Dom 11am–5pm',
     mapsUrl: 'https://maps.google.com/?q=Quest+Hobby+Store+Chitre+Panama',
-    phone:   '+507 6000-0002',
+    phone:   '+507 6613-0548',
   },
 }
 
@@ -212,7 +212,15 @@ function SucursalesView({ onBack }) {
             ].map(({ icon, text }) => (
               <div key={icon} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <Icon id={icon} size={13} color="#4B5563" />
-                <span style={{ fontSize: 12, color: '#6B7280' }}>{text}</span>
+                {icon === 'phone'
+                  // El teléfono abre WhatsApp: un número que no se puede tocar
+                  // en una app es un número que nadie usa.
+                  ? <a href={`https://wa.me/${text.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+                       onClick={e => e.stopPropagation()}
+                       style={{ fontSize: 12, color: bs.color, fontWeight: 700, textDecoration: 'none' }}>
+                      {text} · WhatsApp
+                    </a>
+                  : <span style={{ fontSize: 12, color: '#6B7280' }}>{text}</span>}
               </div>
             ))}
 
