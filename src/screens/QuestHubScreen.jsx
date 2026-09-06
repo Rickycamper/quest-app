@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────
 import { useState, useEffect } from 'react'
 import questLogo from '../assets/quest-logo-sm.png'
+import { FEATURES } from '../lib/features'
 import { BRANCH_STYLES, GAME_STYLES } from '../lib/constants'
 import { getPointsHistory, redeemPoints, getMembershipUsageSummary, getMyStats, getMyMatchHistory, resetMyMatches } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -180,13 +181,14 @@ function SucursalesView({ onBack }) {
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 32px' }}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: '#4B5563', lineHeight: 1.5 }}>
-          Encuéntranos en nuestras sucursales de David y Chitré.
+          {FEATURES.sucursalPanama
+            ? 'Encuéntranos en nuestras 3 sucursales en Panamá.'
+            : 'Encuéntranos en nuestras sucursales de David y Chitré.'}
         </div>
       </div>
 
-      {/* Panamá se sacó de acá a pedido del dueño (sep 2026): no hay que
-          mandar gente a esa sucursal. El tracking la sigue usando. */}
-      {['David', 'Chitre'].map(branch => {
+      {/* Panamá está apagada por FEATURES.sucursalPanama (ver lib/features.js). */}
+      {[...(FEATURES.sucursalPanama ? ['Panama'] : []), 'David', 'Chitre'].map(branch => {
         const bs   = BRANCH_STYLES[branch]
         const info = BRANCH_INFO[branch]
         return (
@@ -1813,9 +1815,28 @@ const TILES = [
     border:  'rgba(251,146,60,0.2)',
     enabled: true,
   },
-  // Membresía y Folder se sacaron del Hub a pedido del dueño (sep 2026):
-  // nadie los usaba. Las pantallas siguen en el código (MembresiaView,
-  // FolderScreen) por si vuelven; solo se quitó la puerta de entrada.
+  {
+    id:      'membresia',
+    feature: 'membresia',            // apagado — ver lib/features.js
+    icon:    'gem',
+    label:   'Membresía',
+    desc:    'Planes y beneficios',
+    color:   '#A78BFA',
+    bg:      'rgba(167,139,250,0.08)',
+    border:  'rgba(167,139,250,0.2)',
+    enabled: true,
+  },
+  {
+    id:      'folder',
+    feature: 'folder',               // apagado — ver lib/features.js
+    icon:    'folder',
+    label:   'Folder',
+    desc:    'Tu colección',
+    color:   '#34D399',
+    bg:      'rgba(52,211,153,0.08)',
+    border:  'rgba(52,211,153,0.2)',
+    enabled: true,
+  },
   {
     id:      'record',
     icon:    'chart',
@@ -1826,8 +1847,17 @@ const TILES = [
     border:  'rgba(74,222,128,0.2)',
     enabled: true,
   },
-  // Mis Decks también se sacó (sep 2026), mismo motivo que Membresía y
-  // Folder. DecksView sigue en el código.
+  {
+    id:      'decks',
+    feature: 'decks',                // apagado — ver lib/features.js
+    icon:    'deck',
+    label:   'Mis Decks',
+    desc:    'Guardá tus decks',
+    color:   '#FB923C',
+    bg:      'rgba(251,146,60,0.08)',
+    border:  'rgba(251,146,60,0.2)',
+    enabled: true,
+  },
 ]
 
 // ── Main component ────────────────────────────
@@ -1844,10 +1874,12 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
     id: 'livestream', icon: 'live', label: 'Transmisión', desc: 'Stream en vivo',
     color: '#FB7185', bg: 'rgba(244,63,94,0.08)', border: 'rgba(244,63,94,0.22)', enabled: true,
   }
+  // Un tile con `feature` solo aparece si su flag está prendido
+  // (lib/features.js). Así lo apagado se retoma cambiando un booleano.
   const tiles = [
     ...(canLive ? [LIVE_TILE] : []),
-    ...(canStream ? [STREAM_TILE] : []),
-    ...TILES,
+    ...(canStream && FEATURES.liveStream ? [STREAM_TILE] : []),
+    ...TILES.filter(t => !t.feature || FEATURES[t.feature]),
   ]
 
   const handleTile = (tile) => {

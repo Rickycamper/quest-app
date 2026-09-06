@@ -149,6 +149,7 @@ class ErrorBoundary extends Component {
 }
 
 import { acceptTerms, subscribeToPush, supabase, getActiveLiveStream } from './lib/supabase'
+import { FEATURES } from './lib/features'
 import { BottomNav, NotifBell } from './components/Nav'
 import { ShieldIcon, SearchIcon, DiamondIcon, ChatIcon } from './components/Icons'
 // NotificationPanel + OnboardingModal + FeatureTour lazy-loaded — none shows on first render
@@ -507,6 +508,7 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   // Transmisión EN VIVO: detectar si hay una activa (banner para todos).
   // Fetch al montar + poll cada 30s + al volver al foreground.
   useEffect(() => {
+    if (!FEATURES.liveStream) return   // apagado — ver lib/features.js
     let alive = true
     const check = () => { getActiveLiveStream().then(l => { if (alive) setLiveStream(l ?? null) }).catch(() => {}) }
     check()
@@ -694,7 +696,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           onOpenLive={() => { setShowHub(false); setShowLive(true) }}
           onOpenLiveStream={() => { setShowHub(false); setShowLiveStream(true) }}
           canLive={false}
-          canStream={isOwner || isStaff}
+          canStream={FEATURES.liveStream && (isOwner || isStaff)}
           onBattleNow={() => { setShowHub(false); setVsUser(null); setShowMatchModal(true) }}
           onOpenTracking={() => { setShowHub(false); setShowTracking(true) }}
           onOpenFolder={() => { setShowHub(false); setActiveTab('folder'); setVisitedTabs(prev => { const n = new Set(prev); n.add('folder'); return n }) }}
@@ -753,7 +755,7 @@ const needsTerms = profile && !profile.terms_accepted_at
       )}
 
       {/* Banner 🔴 EN VIVO — visible para todos cuando hay transmisión activa */}
-      {liveStream && !showLiveStream && !showHub && (
+      {FEATURES.liveStream && liveStream && !showLiveStream && !showHub && (
         <button
           onClick={() => setShowLiveStream(true)}
           style={{

@@ -178,3 +178,22 @@ descuento. Sin credenciales el bloque de pago no aparece: es seguro publicar.
   frío y genérico; se perdía la personalidad de la app). Se guarda por si
   sirve alguna pieza suelta.
 - `redesign`, `claude/*` → viejas, ignorar.
+
+---
+
+## 7. Funciones APAGADAS (retomables en un minuto)
+
+El dueño pidió sacar de la app lo que nadie usaba o no funcionaba (sep 2026).
+**No se borró código.** Cada una está detrás de un interruptor en
+`src/lib/features.js`; para retomarla, se pone su flag en `true`, build, push.
+
+| flag | qué prende | dónde vive el código |
+|---|---|---|
+| `membresia` | tile "Membresía" en el Q Hub | `MembresiaView` en QuestHubScreen |
+| `folder` | tile "Folder · Tu colección" | `FolderScreen` + tab `folder` en App |
+| `decks` | tile "Mis Decks" | `DecksView` en QuestHubScreen |
+| `liveStream` | "Transmisión en vivo": tile del equipo, banner "● EN VIVO" y polling cada 30s | `LiveStreamScreen`, `getActiveLiveStream` |
+| `sucursalPanama` | tarjeta de la sucursal Panamá en "Sucursales" | `SucursalesView` + `BRANCH_INFO.Panama` |
+
+Ojo: `sucursalPanama` NO toca el tracking — Panamá sigue siendo origen/destino
+válido de envíos, por pedido explícito del dueño.
