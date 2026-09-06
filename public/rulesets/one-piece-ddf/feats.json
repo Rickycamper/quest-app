@@ -1,0 +1,447 @@
+[
+  {
+    "id": "alert",
+    "name": "Alert",
+    "prerequisite": null,
+    "text": "Always on the lookout for danger, you gain the following benefits:\n\n* You can’t be surprised while you are conscious.\n* You gain a +5 bonus to initiative.\n* Other creatures don’t gain advantage on attack rolls against you as a result of being unseen by you.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "athlete",
+    "name": "Athlete",
+    "prerequisite": null,
+    "text": "You have undergone extensive physical training to gain the following benefits:\n\n* Increase your Strength or Dexterity score by 1, to a maximum of 20.\n* When you are prone, standing up uses only 5 feet of your movement.\n* Climbing doesn’t halve your speed.\n* You can make a running long jump or a running high jump after moving only 5 feet on foot, rather than 10 feet.",
+    "abilityScoreIncrease": {
+      "choiceFrom": {
+        "options": [
+          "str",
+          "dex"
+        ],
+        "count": 1,
+        "amount": 1
+      }
+    },
+    "grantsHaki": false
+  },
+  {
+    "id": "big-eater",
+    "name": "Big Eater",
+    "prerequisite": null,
+    "text": "Your stomach has expanded far beyond the size of any ordinary stomach to gain the following benefits:\n* Increase your Constitution score by 1, to a maximum of 20.\n* You can now recover injuries by consuming large quantities of food. For every 10 lbs of food you consume, you recover 1 hit point. If you are at full hit points, you instead gain temporary hit points for every 10 lbs of food you consume, up to a maximum of your character level.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "burglar",
+    "name": "Burglar",
+    "prerequisite": null,
+    "text": "You pride yourself on your quickness and your close study of certain clandestine activities. You gain the following benefits:\n\n* Increase your Dexterity score by 1, to a maximum of 20.\n* You gain proficiency with thieves’ tools. If you are already proficient with them, you add double your proficiency bonus to checks you make with them.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "color-of-armament-training",
+    "name": "Color of Armament Training",
+    "prerequisite": "Constitution 11 or higher*",
+    "text": "*Prerequisite: Constitution 11 or higher*\n\nYou gain one Uncommon Armament Haki advancement feature, assuming you meet the other prerequisites listed by it in Chapter 7.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": true
+  },
+  {
+    "id": "color-of-observation-training",
+    "name": "Color of Observation Training",
+    "prerequisite": "Wisdom 11 or higher*",
+    "text": "*Prerequisite: Wisdom 11 or higher*\n\nYou gain one Uncommon Observation Haki advancement feature, assuming you meet the other prerequisites listed by it in Chapter 7.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": true
+  },
+  {
+    "id": "color-of-the-supreme-king-training",
+    "name": "Color of the Supreme King Training",
+    "prerequisite": "Charisma 11 or higher, DM permission*",
+    "text": "*Prerequisite: Charisma 11 or higher, DM permission*\nYou gain one Uncommon Supreme King Haki advancement feature, assuming you meet the other prerequisites listed by it in Chapter 7 and were born with the ability to use this type of haki.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": true
+  },
+  {
+    "id": "defensive-duelist",
+    "name": "Defensive Duelist",
+    "prerequisite": "Dexterity 13 or higher*",
+    "text": "*Prerequisite: Dexterity 13 or higher*\n\nWhen you are wielding a finesse weapon with which you are proficient and another creature hits you with a melee attack, you can use your reaction to add your proficiency bonus to your AC for that attack, potentially causing the attack to miss you.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "devil-fruit-training",
+    "name": "Devil Fruit Training",
+    "prerequisite": "Devil Fruit user",
+    "text": "Prerequisite: Devil Fruit user\n\nYou gain one Uncommon Devil Fruit advancement feature listed in Chapter 7.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "dial-expert",
+    "name": "Dial Expert",
+    "prerequisite": null,
+    "text": "Through studying and locating the various Dials found on the Sky Islands, you gain the following benefits:\n* Increase your Intelligence score by 1, to a maximum of 20.\n* You gain proficiency in using all Dials. \n* You find two Simple Dials of your choice that have mysteriously fallen from a Sky Island.\n* You can immediately identify and understand the properties of any dial you find.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "spellcaster-disruptor",
+    "name": "Spellcaster Disruptor",
+    "prerequisite": null,
+    "text": "You have practiced techniques useful in melee combat against tinkerers and other spell users, gaining the following benefits:\n\n* When a creature within 5 feet of you casts a spell, you can use your reaction to make a melee weapon attack against that creature.\n* When you damage a creature that is concentrating on a spell, that creature has disadvantage on the saving throw it makes to maintain its concentration.\n* You have advantage on saving throws against spells cast by creatures within 5 feet of you.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "dungeon-delver",
+    "name": "Dungeon Delver",
+    "prerequisite": null,
+    "text": "Alert to the hidden traps and secret doors found in many dungeons, you gain the following benefits:\n\n* When you roll a Hit Die to regain hit points, the minimum number of hit points you regain from the roll equals twice your Constitution modifier (minimum of 2).\n* You have advantage on Wisdom (Perception) and Intelligence (Investigation) checks made to detect the presence of secret doors.\n* You have advantage on saving throws made to avoid or resist traps.\n* You have resistance to the damage dealt by traps.\n* You can search for traps while travelling at a normal pace, instead of only at a slow pace.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "durable",
+    "name": "Durable",
+    "prerequisite": null,
+    "text": "Hardy and resilient, you gain the following benefits:\n\n* Increase your Constitution score by 1, to a maximum of 20.\n* When you roll a Hit Die to regain hit points, the minimum number of hit points you regain from the roll equals twice your Constitution modifier (minimum of 2).",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "elemental-adept",
+    "name": "Elemental Adept",
+    "prerequisite": "The ability to cast at least one spell*",
+    "text": "*Prerequisite: The ability to cast at least one spell*\n\nWhen you gain this feat, choose one of the following damage types: acid, cold, fire, lightning, or thunder. Spells you cast ignore resistance to damage of the chosen type. In addition, when you roll damage for a spell you cast that deals damage of that type, you can treat any 1 on a damage die as a 2.\n\nYou can select this feat multiple times. Each time you do so, you must choose a different damage type.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "fell-handed",
+    "name": "Fell Handed",
+    "prerequisite": null,
+    "text": "You master the handaxe, battleaxe, greataxe, warhammer, and maul. You gain the following benefits when using any of them:\n\n* You gain a +1 bonus to attack rolls you make with the weapon.\n* Whenever you have advantage on a melee attack roll you make with the weapon and hit, you can knock the target prone if the lower of the two d20 rolls would also hit the target.\n* Whenever you have disadvantage on a melee attack roll you make with the weapon, the target takes bludgeoning damage equal to your Strength modifier (minimum of 0) if the attack misses but the higher of the two d20 rolls would have hit.\n* If you use the Help action to aid an ally’s melee attack while you’re wielding the weapon, you knock the target’s shield aside momentarily. In addition to the ally gaining advantage on the attack roll, the ally gains a +2 bonus to the roll if the target is using a shield.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "friend-of-the-sea",
+    "name": "Friend of the Sea",
+    "prerequisite": "Fish-man or Merfolk*",
+    "text": "*Prerequisite: Fish-man or Merfolk*\n\nYour friendship with sea creatures mystically deepens thanks to your racial abilities. You gain the following benefits:\n\n* You gain proficiency in the Animal Handling skill. If you’re already proficient in it, your proficiency bonus is doubled for any check you make with it.\n* You learn the speak with animals spell and can cast it at will, without expending a spell slot. You also learn the animal friendship spell, and you can cast it once with this feat, without expending a spell slot. You regain the ability to cast it in this way when you finish a long rest. You can only target and speak with beasts that have an innate swimming speed with these spells, not including Sea Kings. Intelligence is your spellcasting ability for these spells.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "grappler",
+    "name": "Grappler",
+    "prerequisite": "Strength 13 or higher*",
+    "text": "*Prerequisite: Strength 13 or higher*\n\nYou’ve developed the skills necessary to hold your own in close-quarters grappling. You gain the following benefits:\n\n* You have advantage on attack rolls against a creature you are grappling.\n* You can use your action to try to pin a creature grappled by you. To do so, make another grapple check. If you succeed, you and the creatures are both restrained until the grapple ends.\n* Creatures that are one size larger than you don’t automatically succeed on checks to escape your grapple.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "great-weapon-master",
+    "name": "Great Weapon Master",
+    "prerequisite": null,
+    "text": "You've learnt to use your weapon's momentum to power your strikes. You gain the following benefits:\n\n* On your turn, when you score a critical hit with a melee weapon or reduce a creature to 0 hit points with one, you can make one melee weapon attack as a bonus action.\n* Before you make a melee attack with a heavy weapon that you are proficient with, you can choose to take a - 5 penalty to the attack roll. If the attack hits, you add +10 to the attack’s damage.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "heavy-thrower",
+    "name": "Heavy Thrower",
+    "prerequisite": "Strength 20 or higher*",
+    "text": "*Prerequisite: Strength 20 or higher*\n\nYou become a much better thrower, gaining the following:\n\n* You gain +1 to attack rolls with thrown weapons.\n\n* You are now proficient with throwing cannon balls, and they gain the thrown property when you hold one. The cannon ball's range becomes 20/60 when you throw it. You can only throw one cannon ball per turn this way.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "heavily-armored",
+    "name": "Heavily Armored",
+    "prerequisite": "Proficiency with medium armor*",
+    "text": "*Prerequisite: Proficiency with medium armor*\n\nYou have trained to master the use of heavy armor, gaining the following benefits:\n\n* Increase your Strength score by 1, to a maximum of 20.\n* You gain proficiency with heavy armor.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "heavy-armor-master",
+    "name": "Heavy Armor Master",
+    "prerequisite": "Proficiency with heavy armor*",
+    "text": "*Prerequisite: Proficiency with heavy armor*\n\nYou can use your armor to deflect strikes that would kill others. You gain the following benefits:\n\n* Increase your Strength score by 1, to a maximum of 20.\n* While you are wearing heavy armor, bludgeoning, piercing, and slashing damage that you take are reduced by 3.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "lightly-armored",
+    "name": "Lightly Armored",
+    "prerequisite": null,
+    "text": "You have trained to master the use of light armor, gaining the following benefits:\n\n* Increase your Strength or Dexterity score by 1, to a maximum of 20.\n* You gain proficiency with light armor.",
+    "abilityScoreIncrease": {
+      "choiceFrom": {
+        "options": [
+          "str",
+          "dex"
+        ],
+        "count": 1,
+        "amount": 1
+      }
+    },
+    "grantsHaki": false
+  },
+  {
+    "id": "linguist-pongelyphs",
+    "name": "Linguist (Pongelyphs)",
+    "prerequisite": "Archaeologist, DM Permission*",
+    "text": "*Prerequisite: Archaeologist, DM Permission*\n\nYou have studied ancient languages and codes, gaining the following benefits:\n\n* Increase your Intelligence score by 1, to a maximum of 20.\n* You learn the language of the Poneglyphs\n* You can ably create written ciphers. Others can’t decipher a code you create unless you teach them, they succeed on an Intelligence check (DC equal to your Intelligence score + your proficiency bonus), or they use an ability to decipher it.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "lucky",
+    "name": "Lucky",
+    "prerequisite": null,
+    "text": "You have inexplicable luck that seems to kick in at just the right moment.\n\nYou have 3 luck points. Whenever you make an attack roll, an ability check, or a saving throw, you can spend one luck point to roll an additional d20. You can choose to spend one of your luck points after you roll the die, but before the outcome is determined. You choose which of the d20s is used for the attack roll, ability check, or saving throw.\n\nYou can also spend one luck point when an attack roll is made against you. Roll a d20 and then choose whether the attack uses the attacker's roll or yours.\n\nIf more than one creature spends a luck point to influence the outcome of a roll, the points cancel each other out; no additional dice are rolled.\n\nYou regain your expended luck points when you finish a long rest.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "master-of-disguise",
+    "name": "Master of Disguise",
+    "prerequisite": null,
+    "text": "You have honed your ability to shape your personality and to read the personalities of others. You gain the following benefits:\n\n* Increase your Charisma score by 1, to a maximum of 20.\n* You gain proficiency with the disguise kit. If you are already proficient with it, you add double your proficiency bonus to checks you make with it.\n* If you spend 1 hour observing a creature, you can then spend 8 hours crafting a disguise you can quickly don to mimic that creature. Making the disguise requires a disguise kit. You must make checks as normal to disguise yourself, but you can assume the disguise as an action.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "medium-armor-master",
+    "name": "Medium Armor Master",
+    "prerequisite": "Proficiency with medium armor*",
+    "text": "*Prerequisite: Proficiency with medium armor*\n\nYou have practiced moving in medium armor to gain the following benefits:\n\n* Wearing medium armor doesn’t impose disadvantage on your Dexterity (Stealth) checks.\n* When you wear medium armor, you can add 3, rather than 2, to your AC if you have a Dexterity of 16 or higher.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "mobile",
+    "name": "Mobile",
+    "prerequisite": null,
+    "text": "You are exceptionally speedy and agile. You gain the following benefits:\n\n* Your speed increases by 10 feet.\n* When you use the Dash action, difficult terrain doesn’t cost you extra movement on that turn.\n* When you make a melee attack against a creature, you don’t provoke opportunity attacks from that creature for the rest of the turn, whether you hit or not.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "moderately-armorered",
+    "name": "Moderately Armorered",
+    "prerequisite": "Proficiency with light armor*",
+    "text": "*Prerequisite: Proficiency with light armor*\n\nYou have trained to master the use of medium armor and shields, gaining the following benefits:\n\n* Increase your Strength or Dexterity score by 1, to a maximum of 20.\n* You gain proficiency with medium armor and shields.",
+    "abilityScoreIncrease": {
+      "choiceFrom": {
+        "options": [
+          "str",
+          "dex"
+        ],
+        "count": 1,
+        "amount": 1
+      }
+    },
+    "grantsHaki": false
+  },
+  {
+    "id": "mounted-combatant",
+    "name": "Mounted Combatant",
+    "prerequisite": null,
+    "text": "You are a dangerous foe to face while mounted. While you are mounted and aren’t incapacitated, you gain the following benefits:\n\n* You have advantage on melee attack rolls against any unmounted creature that is smaller than your mount.\n* You can force an attack targeted at your mount to target you instead.\n* If your mount is subjected to an effect that allows it to make a Dexterity saving throw to take only half damage, it instead takes no damage if it succeeds on the saving throw, and only half damage if it fails.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "mysterious-power",
+    "name": "Mysterious Power",
+    "prerequisite": null,
+    "text": "Choose a class from this system.\n\nYou learn two cantrips of your choice from that class’s spell list in chapter 8.\n\nIn addition, choose one 1st-level spell from that same list. You learn that spell and can cast it at its lowest level. Once you cast it, you must finish a long rest before you can cast it again.\n\nYour spellcasting ability for these spells depends on the class you choose (e.g. Intelligence for tinkerer).",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "polearm-master",
+    "name": "Polearm Master",
+    "prerequisite": null,
+    "text": "You can keep your enemies at bay with reach weapons. You gain the following benefits:\n\n* When you take the Attack action and attack with only a glaive, halberd, or quarterstaff, you can use a bonus action to make a melee attack with the opposite end of the weapon. The weapon’s damage die for this attack is a d4, and the attack deals bludgeoning damage.\n* While you are wielding a glaive, halberd, pike, or quarterstaff, other creatures provoke an opportunity attack from you when they enter your reach.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "resilient",
+    "name": "Resilient",
+    "prerequisite": null,
+    "text": "Choose one ability score. You gain the following benefits:\n\n* Increase the chosen ability score by 1, to a maximum of 20.\n* You gain proficiency in saving throws using the chosen ability.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "samurai-warrior",
+    "name": "Samurai Warrior",
+    "prerequisite": null,
+    "text": "The katana is a difficult blade to use, but you have spent countless hours mastering it. You gain the following benefits:\n\n* You gain a +1 bonus to attack rolls you make with a katana.\n* You can deliver a decisive critical strike or sweep when you attack enemies that turn their back on you. When you hit with an opportunity attack using a katana, the target must succeed on a Strength saving throw (DC 8 + your proficiency bonus + your Dexterity modifier) or be knocked prone.\n* You may attempt to disarm your target with a decisive strike at their weapon or another object of your choice that it's holding. When you attack and hit with a katana, the target must succeed on a Strength saving throw (DC 8 + your proficiency bonus + your Dexterity modifier) or have the chosen item knocked down and dropped at its feet. You cannot use this ability again until you complete a Short or Long Rest.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "savage-attacker",
+    "name": "Savage Attacker",
+    "prerequisite": null,
+    "text": "Once per turn when you roll damage for a melee weapon attack, you can reroll the weapon’s damage dice and use either total.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "sentinel",
+    "name": "Sentinel",
+    "prerequisite": null,
+    "text": "You have mastered techniques to take advantage of every drop in any enemy’s guard, gaining the following benefits:\n\n* When you hit a creature with an opportunity attack, the creature’s speed becomes 0 for the rest of the turn.\n* Creatures within 5 feet of you provoke opportunity attacks from you even if they take the Disengage action before leaving your reach.\n* When a creature within 5 feet of you makes an attack against a target other than you (and that target doesn’t have this feat), you can use your reaction to make a melee weapon attack against the attacking creature.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "sharkskin",
+    "name": "Sharkskin",
+    "prerequisite": "Fish-man*",
+    "text": "*Prerequisite: Fish-man*\n\nDue to your fish-man features and rough skin, you are difficult to touch without getting injured. You gain the following benefits:\n\n* Increase your Constitution score by 1, up to a maximum of 20.\n* Your rough skin deals 1d6 piercing damage to any creature grappling you or any creature grappled by you.\n* You gain proficiency in the Intimidation skill. If you’re already proficient in it, your proficiency bonus is doubled for any check you make with it.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "sharpshooter",
+    "name": "Sharpshooter",
+    "prerequisite": null,
+    "text": "You have mastered ranged weapons and can make shots that others find impossible. You gain the following benefits:\n\n* Attacking at long range doesn't impose disadvantage on your ranged weapon attack rolls.\n* Your ranged weapon attacks ignore half cover and three-quarters cover.\n* Before you make an attack with a ranged weapon that you are proficient with, you can choose to take a -5 penalty to the attack roll. If the attack hits, you add +10 to the attack’s damage.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "sentinel-gunner",
+    "name": "Sentinel Gunner",
+    "prerequisite": null,
+    "text": "You have a quick hand and keen eye when employing firearms, granting you the following benefits:\n\n* Increase your Dexterity score by 1, to a maximum of 20.\n* You gain proficiency with all firearms.\n* You ignore the loading property of firearms.\n* Being within 5 feet of a hostile creature doesn't impose disadvantage on your ranged attack rolls.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "shield-master",
+    "name": "Shield Master",
+    "prerequisite": null,
+    "text": "You use shields not just for protection but also for offense. You gain the following benefits while you are wielding a shield.\n\n* If you take the Attack action on your turn, you can use a bonus action to try to shove a creature within 5 feet of you with your shield.\n* If you aren’t incapacitated, you can add your shield’s AC bonus to any Dexterity saving throw you make against a spell or other harmful effect that targets only you.\n* If you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you can use your reaction to take no damage if you succeed on the saving throw, interposing your shield between yourself and the source of the effect.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "skilled",
+    "name": "Skilled",
+    "prerequisite": null,
+    "text": "You gain proficiency in any combination of three skills or tools of your choice.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "skulker",
+    "name": "Skulker",
+    "prerequisite": "Dexterity 13 or higher*",
+    "text": "*Prerequisite: Dexterity 13 or higher*\n\nYou are expert at slinking through shadows. You gain the following benefits:\n\n* You can try to hide when you are lightly obscured from the creature from which you are hiding.\n* When you are hidden from a creature and miss it with a ranged weapon attack, making the attack doesn't reveal your position.\n* Dim light doesn’t impose disadvantage on your Wisdom (Perception) checks relying on sight.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "sling-king",
+    "name": "Sling King",
+    "prerequisite": null,
+    "text": "Your sling skills have grown, and you gain these benefits:\n\n* You gain a +1 bonus to attack rolls you make with a sling.\n* When you use a sling, its damage die changes from a d4 to a d6, and from a d8 to a d10 when wielded with two hands. (This benefit has no effect if another feature has already improved the weapon’s die.)\n* Your maximum range with slings now also count as your minimum.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "spell-sniper",
+    "name": "Spell Sniper",
+    "prerequisite": "The ability to cast at least one spell*",
+    "text": "*Prerequisite: The ability to cast at least one spell*\n\nYou have learned techniques to enhance your attacks with certain kinds of spells, gaining the following benefits:\n\n* When you cast a spell that requires you to make an attack roll, the spell’s range is doubled.\n* Your ranged spell attacks ignore half cover and three-quarters cover.\n* You learn one cantrip that requires an attack roll. Choose the cantrip from the bard, cleric, druid, sorcerer, warlock, or wizard spell list. Your spellcasting ability for this cantrip depends on the spell list you chose from: Charisma for bard, sorcerer, or warlock; Wisdom for cleric or druid; or Intelligence for wizard.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "super-cyborg-upgrade",
+    "name": "Super Cyborg Upgrade",
+    "prerequisite": "Cyborg*",
+    "text": "*Prerequisite: Cyborg*\n\nWhen you take this feat, you can install four additional cyborg upgrades of your choice.\n\nYou can select this feat multiple times. Each time you do so, you must choose different upgrades.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "tavern-brawler",
+    "name": "Tavern Brawler",
+    "prerequisite": null,
+    "text": "Accustomed to rough-and-tumble fighting using whatever weapons happen to be at hand, you gain the following benefits:\n\n* Increase your Strength or Constitution score by 1, to a maximum of 20.\n* You are proficient with improvised weapons and unarmed strikes.\n* Your unarmed strike uses a d4 for damage.\n* When you hit a creature with an unarmed strike or an improvised weapon on your turn, you can use a bonus action to attempt to grapple the target.",
+    "abilityScoreIncrease": {
+      "choiceFrom": {
+        "options": [
+          "str",
+          "con"
+        ],
+        "count": 1,
+        "amount": 1
+      }
+    },
+    "grantsHaki": false
+  },
+  {
+    "id": "tough",
+    "name": "Tough",
+    "prerequisite": null,
+    "text": "Your hit point maximum increases by an amount equal to twice your level when you gain this feat. Whenever you gain a level thereafter, your hit point maximum increases by an additional 2 hit points.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "two-weapon-style",
+    "name": "Two-Weapon Style",
+    "prerequisite": null,
+    "text": "You master fighting with two weapons, gaining the following benefits:\n\n* You gain a +1 bonus to AC while you are wielding a separate melee weapon in each hand.\n* You can use two-weapon fighting even when the one-handed melee weapons you are wielding aren’t light.\n* You can draw or stow two one-handed weapons when you would normally be able to draw or stow only one.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "three-weapon-style",
+    "name": "Three-Weapon Style",
+    "prerequisite": "Two-Weapon Style*",
+    "text": "*Prerequisite: Two-Weapon Style*\n\nYou master fighting with three weapons, gaining the following benefits:\n\n* Your Two-Weapon Style bonus to AC increases to +2.\n* You can hold an additional offhand weapon with another appendage or with your mouth, and it doesn't have to be light. You can't make attacks with it.\n* Choose one one-handed weapon you are proficienct with held in either hand during your turn, you may combine attacks made with that weapon with your third weapon to increase the chosen weapon's damage dice by one stage for the remainder of your turn. For example, a d4 damage die made with the weapon would become a d6 to hit, a d6 would become a d8, a d8 would become a d10, and a d10 would become a d12. The maximum the damage dice can increase to is a d12.\n* You can draw or stow three one-handed weapons when you would normally be able to draw or stow only one.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "war-caster",
+    "name": "War Caster",
+    "prerequisite": "The ability to cast at least one spell*",
+    "text": "*Prerequisite: The ability to cast at least one spell*\n\nYou have practiced casting spells in the midst of combat, learning techniques that grant you the following benefits:\n\n* You have advantage on Constitution saving throws that you make to maintain your concentration on a spell when you take damage.\n* You can perform the somatic components of spells even when you have weapons or a shield in one or both hands.\n* When a hostile creature’s movement provokes an opportunity attack from you, you can use your reaction to cast a spell at the creature, rather than making an opportunity attack. The spell must have a casting time of 1 action and must target only that creature.",
+    "abilityScoreIncrease": {},
+    "grantsHaki": false
+  },
+  {
+    "id": "weapon-master",
+    "name": "Weapon Master",
+    "prerequisite": null,
+    "text": "You have practiced extensively with a variety of weapons, gaining the following benefits:\n\n* Increase your Strength or Dexterity score by 1, to a maximum of 20.\n* You gain proficiency with four weapons of your choice.",
+    "abilityScoreIncrease": {
+      "choiceFrom": {
+        "options": [
+          "str",
+          "dex"
+        ],
+        "count": 1,
+        "amount": 1
+      }
+    },
+    "grantsHaki": false
+  }
+]

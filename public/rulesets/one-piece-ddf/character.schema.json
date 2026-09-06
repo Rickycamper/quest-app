@@ -1,0 +1,734 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://questhobbystore.com/schemas/character.v1.json",
+  "title": "Character",
+  "description": "Personaje guardado. Solo elecciones y estado; todo lo derivado (modificadores, CA, PV maximos, CD de salvacion, features por nivel) se calcula en runtime cruzando estas elecciones con el ruleset.",
+  "type": "object",
+  "required": [
+    "id",
+    "schemaVersion",
+    "rulesetId",
+    "name",
+    "level",
+    "abilityScores",
+    "classes"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "rulesetId": {
+      "type": "string",
+      "default": "one-piece-ddf"
+    },
+    "rulesetVersion": {
+      "type": "string"
+    },
+    "ownerId": {
+      "type": "string",
+      "description": "usuario Quest dueño del personaje"
+    },
+    "campaignId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "mesa a la que pertenece; da acceso de lectura al DM"
+    },
+    "visibility": {
+      "enum": [
+        "private",
+        "campaign",
+        "public"
+      ],
+      "default": "campaign"
+    },
+    "name": {
+      "type": "string"
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "experiencePoints": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "alignment": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "inspirationOrPrestige": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "race": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subraceId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "choices": {
+          "type": "object",
+          "description": "elecciones abiertas del rasgo racial (ej. Human Variant: 2 stats + skill + feat)"
+        }
+      }
+    },
+    "classes": {
+      "type": "array",
+      "minItems": 1,
+      "description": "multiclase: una entrada por clase",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "level"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "level": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "subclassId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "choices": {
+            "type": "object",
+            "description": "fighting style, invocaciones, estudios, features con opciones, etc."
+          }
+        }
+      }
+    },
+    "backgroundId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "crewRoleId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "crew": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "faction": {
+          "enum": [
+            "pirate",
+            "marine",
+            "revolutionary",
+            "other",
+            null
+          ]
+        },
+        "bounty": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "recompensa en Belly"
+        },
+        "dream": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "abilityScores": {
+      "type": "object",
+      "description": "valores BASE elegidos por el jugador; los bonos de raza, ASI y feats se aplican encima al calcular",
+      "required": [
+        "str",
+        "dex",
+        "con",
+        "int",
+        "wis",
+        "cha"
+      ],
+      "properties": {
+        "str": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "dex": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "con": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "int": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "wis": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "cha": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        }
+      }
+    },
+    "abilityScoreImprovements": {
+      "type": "array",
+      "description": "una entrada por cada ASI tomado (nivel 4/8/12/16/19 y equivalentes)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "classId": {
+            "type": "string"
+          },
+          "level": {
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "abilityScore",
+              "feat"
+            ]
+          },
+          "increases": {
+            "type": "object"
+          },
+          "featId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "proficiencies": {
+      "type": "object",
+      "properties": {
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expertise": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "savingThrowOverrides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "featIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "haki": {
+      "type": "object",
+      "description": "Haki NO depende del nivel: son advancements que el DM otorga en Spirit Surge Events. Se guarda el registro de lo otorgado.",
+      "properties": {
+        "unlockedColors": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "color-of-armament",
+              "color-of-observation",
+              "color-of-the-supreme-king"
+            ]
+          }
+        },
+        "advancements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "colorId": {
+                "type": "string"
+              },
+              "advancementId": {
+                "type": "string"
+              },
+              "rarity": {
+                "enum": [
+                  "Uncommon",
+                  "Rare",
+                  "Very Rare",
+                  "Legendary"
+                ]
+              },
+              "grantedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "grantedBy": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "DM que lo otorgo"
+              },
+              "note": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "que Spirit Surge lo gano"
+              }
+            }
+          }
+        }
+      }
+    },
+    "devilFruit": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Hoja de fruta: se construye con los pasos del capitulo 7. Puede salir del catalogo o ser 100% custom del DM.",
+      "properties": {
+        "catalogId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "meaning": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "enum": [
+            "Paramecia",
+            "Zoan",
+            "Logia"
+          ]
+        },
+        "subtype": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Body Enhancer / Standard Zoan / Gaseous Logia / ..."
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "solo Zoan"
+        },
+        "rarity": {
+          "enum": [
+            "Uncommon",
+            "Rare",
+            "Very Rare",
+            "Legendary"
+          ]
+        },
+        "appearance": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "damageType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resistances": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "immunities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "weaknesses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "spellcastingAbility": {
+          "enum": [
+            "str",
+            "dex",
+            "con",
+            "int",
+            "wis",
+            "cha",
+            null
+          ]
+        },
+        "charges": {
+          "type": "object",
+          "properties": {
+            "max": {
+              "type": "integer"
+            },
+            "current": {
+              "type": "integer"
+            },
+            "recharge": {
+              "enum": [
+                "short-rest",
+                "long-rest",
+                "dawn"
+              ]
+            }
+          }
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              },
+              "cost": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "spells": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "level": {
+                "type": "integer"
+              },
+              "source": {
+                "enum": [
+                  "srd",
+                  "custom",
+                  "homebrew"
+                ]
+              }
+            }
+          }
+        },
+        "advancements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "advancementId": {
+                "type": "string"
+              },
+              "rarity": {
+                "type": "string"
+              },
+              "grantedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        },
+        "awakening": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "unlocked": {
+              "type": "boolean"
+            },
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "text": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "zoanForms": {
+          "type": "array",
+          "description": "Beast Shape / Hybrid Form",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "equipment": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "refId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "id en weapons/armor/gear; null si es custom"
+              },
+              "name": {
+                "type": "string"
+              },
+              "quantity": {
+                "type": "integer"
+              },
+              "equipped": {
+                "type": "boolean"
+              },
+              "attuned": {
+                "type": "boolean"
+              },
+              "notes": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "belly": {
+          "type": "integer",
+          "description": "dinero en ฿"
+        },
+        "meito": {
+          "type": "array",
+          "description": "espadas nombradas y su grado",
+          "items": {
+            "type": "object"
+          }
+        },
+        "dials": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "combatState": {
+      "type": "object",
+      "description": "estado vivo de sesion: lo unico que cambia turno a turno",
+      "properties": {
+        "currentHp": {
+          "type": "integer"
+        },
+        "temporaryHp": {
+          "type": "integer"
+        },
+        "maxHpOverride": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "hitDiceRemaining": {
+          "type": "object"
+        },
+        "deathSaves": {
+          "type": "object",
+          "properties": {
+            "successes": {
+              "type": "integer",
+              "maximum": 3
+            },
+            "failures": {
+              "type": "integer",
+              "maximum": 3
+            }
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exhaustion": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "resources": {
+          "type": "object",
+          "description": "contadores con nombre: fury, ki, spellSlots, charges de fruta, usos de features"
+        },
+        "concentratingOn": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "spellcasting": {
+      "type": "object",
+      "properties": {
+        "preparedSpellIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "knownSpellIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "slotsExpended": {
+          "type": "object"
+        }
+      }
+    },
+    "roleplay": {
+      "type": "object",
+      "properties": {
+        "personalityTraits": {
+          "type": "string"
+        },
+        "ideals": {
+          "type": "string"
+        },
+        "bonds": {
+          "type": "string"
+        },
+        "flaws": {
+          "type": "string"
+        },
+        "backstory": {
+          "type": "string"
+        },
+        "appearance": {
+          "type": "string"
+        },
+        "portraitUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "age": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "height": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "weight": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

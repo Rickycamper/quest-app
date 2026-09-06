@@ -22,6 +22,7 @@ const EditProfileScreen     = lazy(() => import('./screens/EditProfileScreen'))
 const RankingsScreen        = lazy(() => import('./screens/RankingsScreen'))
 const FolderScreen          = lazy(() => import('./screens/FolderScreen'))
 const TrackingScreen        = lazy(() => import('./screens/TrackingScreen'))
+const RollPlayerScreen      = lazy(() => import('./screens/RollPlayerScreen'))
 const CreatePackageModal    = lazy(() => import('./screens/TrackingScreen').then(m => ({ default: m.CreatePackageModal })))
 const CreatePostModal       = lazy(() => import('./screens/CreatePostModal'))
 const ClaimModal            = lazy(() => import('./screens/ClaimModal'))
@@ -432,6 +433,7 @@ function MainApp({ initialTab, openTournamentId, openLeagueId, openUsername, lcI
   const [showMatchModal,    setShowMatchModal]    = useState(false)
   const [showPackageCreate, setShowPackageCreate] = useState(false)
   const [showTracking,      setShowTracking]      = useState(false)
+  const [showRollPlayer,    setShowRollPlayer]    = useState(false)
   const [packageRefreshKey, setPackageRefreshKey] = useState(0)
   const [showAuction,       setShowAuction]       = useState(false)
   const [showHub,           setShowHub]           = useState(false)
@@ -699,6 +701,7 @@ const needsTerms = profile && !profile.terms_accepted_at
           canStream={FEATURES.liveStream && (isOwner || isStaff)}
           onBattleNow={() => { setShowHub(false); setVsUser(null); setShowMatchModal(true) }}
           onOpenTracking={() => { setShowHub(false); setShowTracking(true) }}
+          onOpenRollPlayer={() => { setShowHub(false); setShowRollPlayer(true) }}
           onOpenFolder={() => { setShowHub(false); setActiveTab('folder'); setVisitedTabs(prev => { const n = new Set(prev); n.add('folder'); return n }) }}
           onOpenProfile={() => { setShowHub(false); handleOwnProfile() }}
           onOpenShop={() => { setShowHub(false); setActiveTab('shop'); setVisitedTabs(prev => { const n = new Set(prev); n.add('shop'); return n }) }}
@@ -735,6 +738,19 @@ const needsTerms = profile && !profile.terms_accepted_at
           )}
           <div style={{ flex: 1, overflowY: 'auto' }}>
             <TrackingScreen profile={profile} isStaff={isStaff} onNewPackage={() => setShowPackageCreate(true)} refreshKey={packageRefreshKey} />
+          </div>
+        </div>
+      )}
+      {showRollPlayer && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 200, background: '#0A0A0A', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)', animation: 'slideUp 0.22s ease' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px 12px', background: '#0D0D0D', borderBottom: '1px solid #1A1A1A', flexShrink: 0 }}>
+            <button onClick={() => setShowRollPlayer(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, padding: '0 2px' }}>←</button>
+            <span style={{ fontSize: 17, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>🎲 Roll Player</span>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
+            <Suspense fallback={<div style={{ padding: 24, color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>Cargando…</div>}>
+              <RollPlayerScreen onClose={() => setShowRollPlayer(false)} />
+            </Suspense>
           </div>
         </div>
       )}

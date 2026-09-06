@@ -1,0 +1,187 @@
+{
+  "rulesetId": "one-piece-ddf",
+  "rulesetVersion": "3.0.0",
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-06",
+  "baseSystem": "dnd-5e",
+  "source": {
+    "id": "one-piece-ddf",
+    "name": "Dungeons and Devil Fruits",
+    "subtitle": "One Piece Player's Handbook (D&D 5e Homebrew)",
+    "author": "oneworldhd",
+    "source": "https://homebrewery.naturalcrit.com/share/ItlMSW6ztZTm",
+    "baseSystem": "dnd-5e",
+    "currency": {
+      "name": "Belly",
+      "symbol": "฿"
+    },
+    "pages": 217
+  },
+  "contents": {
+    "races": 10,
+    "subraces": 16,
+    "classes": 11,
+    "subclasses": 38,
+    "classFeatures": 131,
+    "backgrounds": 23,
+    "crewRoles": 9,
+    "feats": 50,
+    "hakiAdvancements": 73,
+    "devilFruitAdvancements": 19,
+    "devilFruitCatalog": 224,
+    "weapons": 46,
+    "armor": 13,
+    "gear": 171,
+    "customSpells": 11,
+    "referenceSections": 1058
+  },
+  "files": [
+    {
+      "file": "core.json",
+      "count": null,
+      "bytes": 43037,
+      "sha256": "1189ed34b34c8099"
+    },
+    {
+      "file": "races.json",
+      "count": 10,
+      "bytes": 55637,
+      "sha256": "3c106a4c5bf95a74"
+    },
+    {
+      "file": "classes.json",
+      "count": 11,
+      "bytes": 444896,
+      "sha256": "75db9428aec012b5"
+    },
+    {
+      "file": "backgrounds.json",
+      "count": 23,
+      "bytes": 81365,
+      "sha256": "acf5fe8cb7726c2f"
+    },
+    {
+      "file": "crew_roles.json",
+      "count": 9,
+      "bytes": 14917,
+      "sha256": "3a8ff583dff20bce"
+    },
+    {
+      "file": "crew_meta.json",
+      "count": null,
+      "bytes": 11398,
+      "sha256": "de1876ac224fd82c"
+    },
+    {
+      "file": "character_dreams.json",
+      "count": 20,
+      "bytes": 1019,
+      "sha256": "5acd244a0c1280e1"
+    },
+    {
+      "file": "armor.json",
+      "count": 13,
+      "bytes": 2692,
+      "sha256": "572bd41d247039b5"
+    },
+    {
+      "file": "weapons.json",
+      "count": 46,
+      "bytes": 10001,
+      "sha256": "cec2cbbb3933b677"
+    },
+    {
+      "file": "gear.json",
+      "count": 171,
+      "bytes": 21222,
+      "sha256": "1d496b5b8a398cac"
+    },
+    {
+      "file": "special_equipment.json",
+      "count": null,
+      "bytes": 55880,
+      "sha256": "424608e8ac6bc1b8"
+    },
+    {
+      "file": "wealth_and_expenses.json",
+      "count": null,
+      "bytes": 15364,
+      "sha256": "455e9058c70ca04d"
+    },
+    {
+      "file": "feats.json",
+      "count": 50,
+      "bytes": 30652,
+      "sha256": "0988fcc3a853334c"
+    },
+    {
+      "file": "multiclassing.json",
+      "count": null,
+      "bytes": 14764,
+      "sha256": "f11268c348f9165b"
+    },
+    {
+      "file": "haki.json",
+      "count": null,
+      "bytes": 115956,
+      "sha256": "76b39838c5488f42"
+    },
+    {
+      "file": "devil_fruits.json",
+      "count": null,
+      "bytes": 88577,
+      "sha256": "339b6a710b87b32f"
+    },
+    {
+      "file": "devil_fruit_catalog.json",
+      "count": 224,
+      "bytes": 41452,
+      "sha256": "fb353806e3ee73b0"
+    },
+    {
+      "file": "spell_lists.json",
+      "count": null,
+      "bytes": 34192,
+      "sha256": "537374417813f5c5"
+    },
+    {
+      "file": "custom_spells.json",
+      "count": 11,
+      "bytes": 15935,
+      "sha256": "470be0577bd7ad96"
+    },
+    {
+      "file": "reference.json",
+      "count": 10,
+      "bytes": 1383179,
+      "sha256": "418a77c792b3bedd"
+    }
+  ],
+  "knownSourceTypos": [
+    {
+      "where": "Fishman traits",
+      "in_source": "consitution",
+      "read_as": "constitution"
+    },
+    {
+      "where": "Skald progression table",
+      "in_source": "Skalid Verse",
+      "read_as": "Skaldic Verse"
+    },
+    {
+      "where": "ch5 heading",
+      "in_source": "Mounts and Vehciles",
+      "read_as": "Mounts and Vehicles"
+    }
+  ],
+  "externalDependencies": [
+    {
+      "what": "Hechizos 5e estandar",
+      "why": "El capitulo 8 lista los hechizos por nombre; el texto de cada hechizo NO esta en este manual. La app necesita una base de hechizos 5e aparte (el SRD 5.1 esta bajo CC-BY-4.0 y cubre buena parte, pero no los de Xanathar/Tasha que el manual cita)."
+    },
+    {
+      "what": "Reglas base 5e",
+      "why": "Combate, descansos, condiciones y estados vienen de 5e; el manual solo indica los cambios."
+    }
+  ]
+}

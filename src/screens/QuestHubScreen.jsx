@@ -10,7 +10,7 @@ import { getPointsHistory, redeemPoints, getMembershipUsageSummary, getMyStats, 
 import { useAuth } from '../context/AuthContext'
 import { useConfirm } from '../components/Confirm'
 import { useToast } from '../components/Toast'
-import { RotateCcw, Swords } from 'lucide-react'
+import { RotateCcw, Swords, Dices } from 'lucide-react'
 import { SAWizardHat, SAGem, SACrown, SATruck, SALock, SABolt, SAGavel, SAFlag, SACircleCheck, SAFire, SADungeon } from '../components/Icons'
 import GameIcon from '../components/GameIcon'
 import Avatar from '../components/Avatar'
@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 
 const HUB_ICON_MAP = {
+  'dice':     Dices,
   'map-pin':  MapPin,
   'pin':      MapPin,
   'gavel':    Gavel,
@@ -1838,6 +1839,16 @@ const TILES = [
     enabled: true,
   },
   {
+    id:      'rollplayer',
+    icon:    'dice',
+    label:   'Roll Player',
+    desc:    'Personajes de rol · homebrew',
+    color:   '#A78BFA',
+    bg:      'rgba(167,139,250,0.08)',
+    border:  'rgba(167,139,250,0.2)',
+    enabled: true,
+  },
+  {
     id:      'record',
     icon:    'chart',
     label:   'Battle Stats',
@@ -1861,7 +1872,7 @@ const TILES = [
 ]
 
 // ── Main component ────────────────────────────
-export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenShop, onOpenRanking, onOpenMyOrders, onOpenLive, onOpenLiveStream, onBattleNow, profile, canLive = false, canStream = false, initialView = null }) {
+export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCounter, onOpenFolder, onOpenProfile, onOpenTracking, onOpenRollPlayer, onOpenShop, onOpenRanking, onOpenMyOrders, onOpenLive, onOpenLiveStream, onBattleNow, profile, canLive = false, canStream = false, initialView = null }) {
   const [view, setView] = useState(initialView) // null | 'sucursales' | 'membresia' | 'qpoints'
 
   // Tile LIVE — sorteo en vivo (sorteos de grupos). Visible para todos.
@@ -1890,6 +1901,7 @@ export default function QuestHubScreen({ onClose, onOpenAuction, onOpenLifeCount
     if (tile.id === 'lifecounter') { onOpenLifeCounter(); onClose(); return }
     if (tile.id === 'folder')      { onOpenFolder?.(); onClose(); return }
     if (tile.id === 'tracking')    { onOpenTracking?.(); onClose(); return }
+    if (tile.id === 'rollplayer')  { onOpenRollPlayer?.(); onClose(); return }
     if (tile.id === 'shop')        { onOpenShop?.(); onClose(); return }
     if (tile.id === 'ranking')     { onOpenRanking?.(); onClose(); return }
     if (tile.id === 'pedidos')     { onOpenMyOrders?.(); onClose(); return }

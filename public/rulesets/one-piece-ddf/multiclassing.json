@@ -1,0 +1,418 @@
+{
+  "description": "Because these One Piece themed classes haven't been thoroughly tested and balanced for multiclassing, it is possible that multiclassing may break some of the game balance in a campaign. If you still insist on doing so, here are the the rules, prerequisites, and proficiencies you will gain from multiclassing using classes in this pdf.",
+  "sections": [
+    {
+      "name": "Prerequisites",
+      "text": "To qualify for a new class, you must meet the ability score prerequisites for both your current class and your new one, as shown in the Multiclassing Prerequisites table. For example, a bruiser who decides to multiclass into the skald class must have both Strength and Charisma scores of 13 or higher. Without the full training that a beginning character receives, you must be a quick study in your new class, having a natural aptitude that is reflected by higher-than-average ability scores.\n\n##### Multiclassing Prerequisites\n| Class | Ability Score Minimum |\n|:----:|:-------------|\n| Bruiser  | Strength 13 and Constitutiton 13 |\n| Chemist | Wisdom 13 |\n| Devilforged | Charisma 13 |\n| Hybrid | Charisma 13 |\n| Marksman | Dexterity 13 and Wisdom 13 |\n| Martial Artist  | Dexterity 13 and Wisdom 13 |\n| Priest | Wisdom 13 |\n| Rogue | Dexterity 13 |\n| Skald | Charisma 13 |\n| Tinkerer | Intelligence 13 |\n| Warrior | Strength 13 or Dexterity 13 |",
+      "tables": [
+        {
+          "header": [
+            "Class",
+            "Ability Score Minimum"
+          ],
+          "rows": [
+            [
+              "Bruiser",
+              "Strength 13 and Constitutiton 13"
+            ],
+            [
+              "Chemist",
+              "Wisdom 13"
+            ],
+            [
+              "Devilforged",
+              "Charisma 13"
+            ],
+            [
+              "Hybrid",
+              "Charisma 13"
+            ],
+            [
+              "Marksman",
+              "Dexterity 13 and Wisdom 13"
+            ],
+            [
+              "Martial Artist",
+              "Dexterity 13 and Wisdom 13"
+            ],
+            [
+              "Priest",
+              "Wisdom 13"
+            ],
+            [
+              "Rogue",
+              "Dexterity 13"
+            ],
+            [
+              "Skald",
+              "Charisma 13"
+            ],
+            [
+              "Tinkerer",
+              "Intelligence 13"
+            ],
+            [
+              "Warrior",
+              "Strength 13 or Dexterity 13"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Experience Points",
+      "text": "The experience point cost to gain a level is always based on your total character level, as shown in the Character Advancement table, not your level in a particular class.",
+      "tables": []
+    },
+    {
+      "name": "Hit Points and Hit Dice",
+      "text": "You gain the hit points from your new class as described for levels after 1st. You gain the 1st-level hit points for a class only when you are a 1st-level character.\n\nYou add together the Hit Dice granted by all your classes to form your pool of Hit Dice. If the Hit Dice are the same die type, you can simply pool them together.",
+      "tables": []
+    },
+    {
+      "name": "Proficiency Bonus",
+      "text": "Your proficiency bonus is always based on your total character level, not your level in a particular class.",
+      "tables": []
+    },
+    {
+      "name": "Proficiencies",
+      "text": "When you gain your first level in a class other than your initial class, you gain only some of new class's starting proficiencies, as shown in the Multiclassing Proficiencies table.\n\n##### Multiclassing Proficiencies\n| Class | Ability Score Minimum |\n|:----:|:-------------|\n| Bruiser  | Simple Weapons |\n| Chemist | Light armor, medium armor, shields |\n| Devilforged | Light armor, simple weapons, one tool of your choice |\n| Hybrid | - |\n| Marksman | Light armor, medium armor, shields, simple weapons, martial weapons, one skill from the class's skill list |\n| Martial Artist  | Simple weapons, shortswords |\n| Priest | Light armor, medium armor, shields |\n| Rogue | Light armor, one skill from the class's skill list, thieves' tools |\n| Skald | Light armor, one skill of your choice, one musical instrument of your choice |\n| Tinkerer | - |\n| Warrior | Light armor, medium armor, shields, simple weapons, martial weapons |",
+      "tables": [
+        {
+          "header": [
+            "Class",
+            "Ability Score Minimum"
+          ],
+          "rows": [
+            [
+              "Bruiser",
+              "Simple Weapons"
+            ],
+            [
+              "Chemist",
+              "Light armor, medium armor, shields"
+            ],
+            [
+              "Devilforged",
+              "Light armor, simple weapons, one tool of your choice"
+            ],
+            [
+              "Hybrid",
+              "-"
+            ],
+            [
+              "Marksman",
+              "Light armor, medium armor, shields, simple weapons, martial weapons, one skill from the class's skill list"
+            ],
+            [
+              "Martial Artist",
+              "Simple weapons, shortswords"
+            ],
+            [
+              "Priest",
+              "Light armor, medium armor, shields"
+            ],
+            [
+              "Rogue",
+              "Light armor, one skill from the class's skill list, thieves' tools"
+            ],
+            [
+              "Skald",
+              "Light armor, one skill of your choice, one musical instrument of your choice"
+            ],
+            [
+              "Tinkerer",
+              "-"
+            ],
+            [
+              "Warrior",
+              "Light armor, medium armor, shields, simple weapons, martial weapons"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Class Features",
+      "text": "When you gain a new level in a class, you get its features for that level. You don't, however, receive the class's starting equipment, and a few features have additional rules when you're multiclassing: Channel Divinity, Extra Attack, Unarmored Defense, and Spellcasting.",
+      "tables": []
+    },
+    {
+      "name": "Channel Divinity",
+      "text": "If you already have the Channel Divinity feature and gain a level in a class that also grants the feature, you gain the Channel Divinity effects granted by that class, but getting the feature again doesn't give you an additional use of it. You gain additional uses only when you reach a class level that explicitly grants them to you.",
+      "tables": []
+    },
+    {
+      "name": "Extra Attack",
+      "text": "If you gain the Extra Attack class feature from more than one class, the features don't add together. You can't make more than two attacks with this feature unless it says you do (as the warrior's version of Extra Attack does).",
+      "tables": []
+    },
+    {
+      "name": "Unarmored Defense",
+      "text": "If you already have the Unarmored Defense feature, you can't gain it again from another class.",
+      "tables": []
+    },
+    {
+      "name": "Spellcasting",
+      "text": "Your capacity for spellcasting depends partly on your combined levels in all your spellcasting classes and partly on your individual levels in those classes. Once you have the Spellcasting feature from more than one class, use the rules below. If you multiclass but have the Spellcasting feature from only one class, you follow the rules as described in that class.\n\n**Spells Known and Prepared.** You determine what spells you know and can prepare for each class individually, as if you were a single-classed member of that class. \n\nEach spell you know and prepare is associated with one of your classes, and you use the spellcasting ability of that class when you cast the spell. Similarly, a spellcasting focus, such as a holy symbol, can be used only for the spells from the class associated with that focus.\n\n**Spell Slots.** You determine your available spell slots by adding together all your levels in the priest, skald, and tinkerer classes. Use this total to determine your spell slots by consulting the Multiclass Spellcaster table.\n\nIf you have more than one spellcasting class, this table might give you spell slots of a level that is higher than the spells you know or can prepare. You can use those slots, but only to cast your lower-level spells. If a lower-level spell that you cast, like burning hands, has an enhanced effect when cast using a higher-level slot, you can use the enhanced effect, even though you don't have any spells of that higher level.\n\n##### Multiclass Spellcaster: Spell Slots per Spell Level\n| Level | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th | 8th | 9th |\n|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n| 1st | 2 | — | — | — | — | — | — | — | — |\n| 2nd | 3 | — | — | — | — | — | — | — | — |\n| 3rd | 4 | 2 | — | — | — | — | — | — | — |\n| 4th | 4 | 3 | — | — | — | — | — | — | — |\n| 5th | 4 | 3 | 2 | — | — | — | — | — | — |\n| 6th | 4 | 3 | 3 | — | — | — | — | — | — |\n| 7th | 4 | 3 | 3 | 1 | — | — | — | — | — |\n| 8th | 4 | 3 | 3 | 2 | — | — | — | — | — |\n| 9th | 4 | 3 | 3 | 3 | 1 | — | — | — | — |\n| 10th | 4 | 3 | 3 | 3 | 2 | — | — | — | — |\n| 11th | 4 | 3 | 3 | 3 | 2 | 1 | — | — | — |\n| 12th | 4 | 3 | 3 | 3 | 2 | 1 | — | — | — |\n| 13th | 4 | 3 | 3 | 3 | 2 | 1 | 1 | — | — |\n| 14th | 4 | 3 | 3 | 3 | 2 | 1 | 1 | — | — |\n| 15th | 4 | 3 | 3 | 3 | 2 | 1 | 1 | 1 | — |\n| 16th | 4 | 3 | 3 | 3 | 2 | 1 | 1 | 1 | — |\n| 17th | 4 | 3 | 3 | 3 | 2 | 1 | 1 | 1 | 1 |\n| 18th | 4 | 3 | 3 | 3 | 3 | 1 | 1 | 1 | 1 |\n| 19th | 4 | 3 | 3 | 3 | 3 | 2 | 1 | 1 | 1 |\n| 20th | 4 | 3 | 3 | 3 | 3 | 2 | 2 | 1 | 1 |",
+      "tables": [
+        {
+          "header": [
+            "Level",
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th",
+            "8th",
+            "9th"
+          ],
+          "rows": [
+            [
+              "1st",
+              "2",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "2nd",
+              "3",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "3rd",
+              "4",
+              "2",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "4th",
+              "4",
+              "3",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "5th",
+              "4",
+              "3",
+              "2",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "6th",
+              "4",
+              "3",
+              "3",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "7th",
+              "4",
+              "3",
+              "3",
+              "1",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "8th",
+              "4",
+              "3",
+              "3",
+              "2",
+              "—",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "9th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "1",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "10th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "2",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "11th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "2",
+              "1",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "12th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "2",
+              "1",
+              "—",
+              "—",
+              "—"
+            ],
+            [
+              "13th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "2",
+              "1",
+              "1",
+              "—",
+              "—"
+            ],
+            [
+              "14th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "2",
+              "1",
+              "1",
+              "—",
+              "—"
+            ],
+            [
+              "15th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "2",
+              "1",
+              "1",
+              "1",
+              "—"
+            ],
+            [
+              "16th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "2",
+              "1",
+              "1",
+              "1",
+              "—"
+            ],
+            [
+              "17th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "2",
+              "1",
+              "1",
+              "1",
+              "1"
+            ],
+            [
+              "18th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "3",
+              "1",
+              "1",
+              "1",
+              "1"
+            ],
+            [
+              "19th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "3",
+              "2",
+              "1",
+              "1",
+              "1"
+            ],
+            [
+              "20th",
+              "4",
+              "3",
+              "3",
+              "3",
+              "3",
+              "2",
+              "2",
+              "1",
+              "1"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
