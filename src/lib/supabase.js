@@ -3738,3 +3738,61 @@ export async function getSeasonSnapshot(seasonId, game, branch, limit = 50) {
     rank:   r.rank,
   }))
 }
+
+// ── Torneos por CSV + reclamo de nombres ──────────────────────────────────────
+// Ver supabase/migrations/20260905_torneos_csv.sql. Los nombres del CSV no
+// coinciden con los usuarios: el equipo importa, la gente reclama su nombre,
+// y desde ahí cada CSV nuevo la reconoce solo.
+export async function importTournamentCsv({ game, branch, tournamentName, playedOn, rows }) {
+  const { data, error } = await supabase.rpc('import_tournament_csv', {
+    p_game: game, p_branch: branch, p_tournament_name: tournamentName,
+    p_played_on: playedOn, p_rows: rows,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function getUnclaimedNames(game) {
+  const { data, error } = await supabase
+    .from('unclaimed_import_names')
+    .select('game, name_norm, raw_name, results, best_position, last_played')
+    .eq('game', game)
+    .order('results', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function claimPlayerName(game, nameNorm) {
+  const { data, error } = await supabase.rpc('claim_player_name', { p_game: game, p_name_norm: nameNorm })
+  if (error) throw error
+  return data
+}
+
+export async function getMyAliases() {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return []
+  const { data, error } = await supabase
+    .from('player_aliases')
+    .select('id, game, raw_name, created_at')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+// Equipo: últimos nombres reclamados (para revertir si alguien reclamó uno ajeno)
+export async function getRecentAliases() {
+  const { data, error } = await supabase
+    .from('player_aliases')
+    .select('id, game, raw_name, created_at, profiles:user_id ( username )')
+    .order('created_at', { ascending: false })
+    .limit(60)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function revokePlayerAlias(aliasId) {
+  const { data, error } = await supabase.rpc('revoke_player_alias', { p_alias_id: aliasId })
+  if (error) throw error
+  return data
+}
