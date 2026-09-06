@@ -33,14 +33,14 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
           <button onClick={onBack} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: 0 }}>‹</button>
           <Portrait name={ch.name} url={ch.roleplay?.portraitUrl} size={58} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: DISPLAY, fontSize: 28, lineHeight: 1, letterSpacing: '0.03em', color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</div>
-            <div style={{ fontFamily: DISPLAY, fontSize: 13, letterSpacing: '0.1em', color: C.gold, marginTop: 3, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</div>
+            <div style={{ fontSize: 12.5, color: C.sub, marginTop: 2 }}>
               {d.race?.name}{d.sub ? ` · ${d.sub.name}` : ''} · {def?.name ?? '—'} {primary?.level ?? 1}
               {primary?.subclassId ? ` · ${def?.subclasses?.find(s => s.id === primary.subclassId)?.name ?? ''}` : ''}
             </div>
             <div style={{ fontSize: 10.5, color: saving ? C.warn : C.faint, marginTop: 2 }}>{saving ? 'guardando…' : 'guardado'}{ch.crew?.name ? ` · ${ch.crew.name}` : ''}</div>
           </div>
-          <button onClick={onOpenRules} title="Manual" style={{ background: C.goldBg, border: `1px solid ${C.goldDim}`, borderRadius: 4, color: C.gold, cursor: 'pointer', fontFamily: DISPLAY, fontSize: 13, letterSpacing: '0.08em', padding: '7px 9px' }}>📖 REGLAS</button>
+          <Chip small onClick={onOpenRules}>Reglas</Chip>
         </div>
         <div style={{ marginTop: 10 }}>
           <Tabs items={TABS} value={tab} onChange={setTab} />
@@ -66,9 +66,9 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
               <SectionTitle>Puntos de golpe</SectionTitle>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, textAlign: 'center' }}>
                 {[['Actual', hpActual, hpActual <= d.maxHp / 4 ? C.bad : C.text], ['Máx', d.maxHp, C.sub], ['Temp', cs.temporaryHp || 0, cs.temporaryHp > 0 ? C.ok : C.faint]].map(([l, v, col]) => (
-                  <div key={l} style={{ background: '#0C0B09', border: `1px solid ${C.border}`, borderRadius: 4, padding: '6px 4px' }}>
-                    <div style={{ fontFamily: DISPLAY, fontSize: 30, lineHeight: 1, color: col }}>{v}</div>
-                    <div style={{ fontFamily: DISPLAY, fontSize: 10.5, letterSpacing: '0.12em', color: C.dim, marginTop: 3 }}>{l.toUpperCase()}</div>
+                  <div key={l} style={{ background: C.card2, border: `1px solid ${C.border}`, borderRadius: 12, padding: '8px 4px' }}>
+                    <div style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.1, color: col, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+                    <div style={{ ...label, marginBottom: 0, marginTop: 3 }}>{l}</div>
                   </div>
                 ))}
               </div>
@@ -193,7 +193,7 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
             <div style={{ ...card, borderColor: ch.devilFruit ? 'rgba(245,158,11,0.45)' : C.border }}>
               <div style={label}>Fruta del diablo</div>
               {!ch.devilFruit ? (
-                <button onClick={() => setModal({ t: 'fruta' })} style={btn('secondary', { width: '100%' })}>🍈 Comer una fruta</button>
+                <button onClick={() => setModal({ t: 'fruta' })} style={btn('secondary', { width: '100%' })}>Comer una fruta</button>
               ) : (
                 <>
                   <div style={{ fontSize: 17, fontWeight: 900, color: C.gold }}>{ch.devilFruit.name}</div>
@@ -275,7 +275,7 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
 
       {/* Barra de acciones */}
       <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 250, padding: '10px 16px calc(14px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(180deg, rgba(10,10,10,0) 0%, #0A0A0A 30%)', display: 'flex', gap: 8, justifyContent: 'center' }}>
-        <button onClick={() => setModal({ t: 'levelup' })} style={btn('primary', { maxWidth: 420, flex: 1 })}>⬆ Subir a nivel {d.level + 1}</button>
+        <button onClick={() => setModal({ t: 'levelup' })} style={btn('primary', { maxWidth: 420, flex: 1 })}>Subir a nivel {d.level + 1}</button>
       </div>
 
       {/* ═══ Modales ═══ */}
@@ -297,8 +297,8 @@ function Row({ name, sub, value, prof, exp, raw }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderBottom: `1px solid ${C.border}` }}>
       <span style={{ width: 9, height: 9, borderRadius: '50%', background: exp ? C.gold : prof ? C.acc : 'transparent', border: `1.5px solid ${exp ? C.gold : prof ? C.acc : C.border2}`, flexShrink: 0, boxShadow: prof ? `0 0 6px ${exp ? C.gold : C.acc}66` : 'none' }} />
-      <span style={{ flex: 1, fontSize: 12, color: prof ? C.text : C.sub, fontWeight: prof ? 700 : 500 }}>{name}{sub && <span style={{ fontFamily: DISPLAY, color: C.faint, fontSize: 10, letterSpacing: '0.08em', marginLeft: 5 }}>{sub}</span>}</span>
-      <span style={{ minWidth: 30, textAlign: 'center', padding: '1px 5px', borderRadius: 3, background: '#0C0B09', border: `1px solid ${C.border}`, fontFamily: DISPLAY, fontSize: 14, color: C.text }}>{raw ? value : fmtMod(value)}</span>
+      <span style={{ flex: 1, fontSize: 12, color: prof ? C.text : C.sub, fontWeight: prof ? 600 : 500 }}>{name}{sub && <span style={{ color: C.faint, fontSize: 9.5, marginLeft: 5 }}>{sub}</span>}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{raw ? value : fmtMod(value)}</span>
     </div>
   )
 }

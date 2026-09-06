@@ -59,14 +59,14 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
   const scores = finalScores(rs, ch)
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 300, background: TEXTURA, display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
+    <div style={{ position: 'absolute', inset: 0, zIndex: 300, background: C.bg, display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
       {/* Cabecera con progreso */}
       <div style={{ padding: '12px 16px 10px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={paso > 1 ? () => setPaso(p => p - 1) : onClose} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>‹</button>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: DISPLAY, fontSize: 12, letterSpacing: '0.16em', color: C.gold }}>PASO {paso} DE {PASOS.length - 1}</div>
-            <div style={{ fontFamily: DISPLAY, fontSize: 26, lineHeight: 1, letterSpacing: '0.03em', color: C.text }}>{PASOS[paso]}</div>
+            <div style={label}>Paso {paso} de {PASOS.length - 1}</div>
+            <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em', color: C.text }}>{PASOS[paso]}</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 20, cursor: 'pointer' }}>✕</button>
         </div>
@@ -80,7 +80,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
         {paso === 1 && (
           <>
             <div style={{ ...card, marginBottom: 12, borderColor: C.accBorder, background: C.accBg }}>
-              <div style={{ fontSize: 11, color: C.acc2, fontWeight: 800 }}>{rs.meta.emoji} {rs.meta.name}</div>
+              <div style={{ fontSize: 12.5, color: C.text, fontWeight: 600 }}>{rs.meta.name}</div>
               <div style={{ fontSize: 11.5, color: C.sub, marginTop: 2 }}>{rs.meta.subtitle} · por {rs.meta.author} · v{rs.meta.version}</div>
             </div>
             <div style={label}>Nombre del personaje</div>
@@ -93,10 +93,10 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                 return (
                   <button key={r.id} onClick={() => up({ race: { id: r.id, subraceId: null, choices: {} } })} style={{ ...card, textAlign: 'left', cursor: 'pointer', borderColor: on ? C.accBorder : C.border, background: on ? C.accBg : C.card, fontFamily: FONT }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                      <span style={{ fontFamily: DISPLAY, fontSize: 20, letterSpacing: '0.04em', color: C.text }}>{r.name}{r.optional && <span style={{ fontSize: 11, color: C.warn, marginLeft: 8 }}>OPCIONAL</span>}</span>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: C.text }}>{r.name}{r.optional && <span style={{ fontSize: 10, color: C.warn, marginLeft: 8, fontWeight: 700 }}>OPCIONAL</span>}</span>
                       <span style={{ fontSize: 11, color: C.dim }}>{r.size} · {Object.entries(r.speed ?? {}).map(([k, v]) => `${k} ${v}`).join(' / ')}</span>
                     </div>
-                    <div style={{ fontFamily: DISPLAY, fontSize: 12.5, letterSpacing: '0.08em', color: C.gold, marginTop: 4 }}>{asi || 'Bonos según subraza'}</div>
+                    <div style={{ fontSize: 11.5, color: C.acc, marginTop: 3 }}>{asi || 'Bonos según subraza'}</div>
                     {on && <div style={{ marginTop: 8 }}><Md text={texto(r.description).split('\n\n')[0]} size={12} /></div>}
                   </button>
                 )
@@ -157,7 +157,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                 return (
                   <button key={k.id} onClick={() => elegirClase(k)} style={{ ...card, textAlign: 'left', cursor: 'pointer', borderColor: on ? C.accBorder : C.border, background: on ? C.accBg : C.card, fontFamily: FONT }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                      <span style={{ fontFamily: DISPLAY, fontSize: 20, letterSpacing: '0.04em', color: C.text }}>{k.name}</span>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: C.text }}>{k.name}</span>
                       <span style={{ fontSize: 11, color: C.dim }}>d{hitDie(k)} · {(k.proficiencies?.savingThrows ?? []).map(s => ABILITY_ES[abilityId(s)]?.slice(0, 3) ?? s).join(' + ')}</span>
                     </div>
                     <div style={{ fontSize: 12, color: C.sub, marginTop: 4, lineHeight: 1.5 }}>{(texto(k.flavor) || texto(k.description)).split('\n')[0].slice(0, 160)}…</div>
@@ -241,7 +241,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                 const on = ch.backgroundId === b.id
                 return (
                   <button key={b.id} onClick={() => up({ backgroundId: b.id })} style={{ ...card, textAlign: 'left', cursor: 'pointer', borderColor: on ? C.accBorder : C.border, background: on ? C.accBg : C.card, fontFamily: FONT }}>
-                    <div style={{ fontFamily: DISPLAY, fontSize: 19, letterSpacing: '0.04em', color: C.text }}>{b.name}</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: C.text }}>{b.name}</div>
                     <div style={{ fontSize: 11.5, color: C.acc2, marginTop: 2 }}>{b.skillProficiencies}{b.feature?.name ? ` · ${b.feature.name}` : ''}</div>
                     {on && <div style={{ marginTop: 8 }}><Md text={texto(b.feature?.text)} size={12} /></div>}
                   </button>
@@ -287,7 +287,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                   <>
                     {expr && <div style={{ fontSize: 12.5, color: C.sub, marginBottom: 8 }}>Tirada de la clase: <strong style={{ color: C.text }}>{expr}</strong></div>}
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      {expr && <button onClick={() => up(c => ({ equipment: { ...c.equipment, belly: rollWealth(expr) ?? 0 } }))} style={btn('secondary')}>🎲 Tirar</button>}
+                      {expr && <button onClick={() => up(c => ({ equipment: { ...c.equipment, belly: rollWealth(expr) ?? 0 } }))} style={btn('secondary')}>Tirar</button>}
                       <input type="number" min={0} value={ch.equipment.belly || ''} onChange={e => up(c => ({ equipment: { ...c.equipment, belly: Math.max(0, Number(e.target.value) || 0) } }))} placeholder="o escribí el monto" style={{ ...field, flex: 1 }} />
                     </div>
                     <div style={{ fontSize: 18, fontWeight: 900, color: C.gold, marginTop: 10 }}>{fmtBelly(ch.equipment.belly)}</div>
@@ -304,8 +304,8 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
           return (
             <>
               <div style={{ ...card, borderColor: C.accBorder, background: C.accBg, marginBottom: 12 }}>
-                <div style={{ fontFamily: DISPLAY, fontSize: 32, lineHeight: 1, letterSpacing: '0.03em', color: C.text }}>{ch.name}</div>
-                <div style={{ fontFamily: DISPLAY, fontSize: 13, letterSpacing: '0.1em', color: C.gold, marginTop: 4, textTransform: 'uppercase' }}>{race?.name}{sub ? ` (${sub.name})` : ''} · {clase?.name} nivel 1 · {bg?.name}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: C.text }}>{ch.name}</div>
+                <div style={{ fontSize: 13, color: C.sub, marginTop: 2 }}>{race?.name}{sub ? ` (${sub.name})` : ''} · {clase?.name} nivel 1 · {bg?.name}</div>
                 {ch.crew.name && <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{ch.crew.name}{ch.crewRoleId ? ` · ${rs.byId.crewRole[ch.crewRoleId]?.name}` : ''}</div>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
@@ -333,8 +333,8 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '10px 16px calc(14px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(180deg, rgba(10,10,10,0) 0%, #0A0A0A 30%)', display: 'flex', gap: 8 }}>
         {paso > 1 && <button onClick={() => setPaso(p => p - 1)} style={btn('ghost', { flex: '0 0 auto' })}>Atrás</button>}
         {paso < 6
-          ? <button onClick={() => ok && setPaso(p => p + 1)} disabled={!ok} style={btn('primary', { flex: 1, opacity: ok ? 1 : 0.45 })}>Siguiente →</button>
-          : <button onClick={guardar} style={btn('primary', { flex: 1 })}>✓ Crear personaje</button>}
+          ? <button onClick={() => ok && setPaso(p => p + 1)} disabled={!ok} style={btn('primary', { flex: 1, opacity: ok ? 1 : 0.45 })}>Siguiente</button>
+          : <button onClick={guardar} style={btn('primary', { flex: 1 })}>Crear personaje</button>}
       </div>
     </div>
   )
