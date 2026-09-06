@@ -101,7 +101,9 @@ export const ROLE_CONFIG = {
   admin:   { label: 'ADMIN',   color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.25)'  },
 }
 
-export const RANKING_PTS = { 1: 3, 2: 2, 3: 1 }
+// Puntos por puesto: SOLO el top 4 suma (1°=4, 2°=3, 3°=2, 4°=1). El resto no.
+// La misma regla vive en la base como ranking_pts() — si cambia, cambiar ambas.
+export const RANKING_PTS = { 1: 4, 2: 3, 3: 2, 4: 1 }
 
 export const NOTIF_CONFIG = {
   new_package:        { color: '#60A5FA', bg: 'rgba(96,165,250,0.1)',  border: 'rgba(96,165,250,0.2)'  },
