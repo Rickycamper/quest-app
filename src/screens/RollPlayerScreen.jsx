@@ -50,31 +50,30 @@ export default function RollPlayerScreen({ onClose }) {
 
   const items = estado?.items ?? []
   return (
-    <div style={{ fontFamily: FONT, padding: '14px 16px 40px', minHeight: '100%', background: TEXTURA }}>
-      <div style={{ ...card, borderTop: `3px solid ${C.acc}`, marginBottom: 14 }}>
-        <div style={{ fontFamily: DISPLAY, fontSize: 13, letterSpacing: '0.18em', color: C.gold }}>ROLL PLAYER</div>
-        <div style={{ fontFamily: DISPLAY, fontSize: 34, lineHeight: 1, letterSpacing: '0.03em', color: C.text, marginTop: 2 }}>Tus personajes</div>
+    <div style={{ fontFamily: FONT, padding: '14px 16px 40px' }}>
+      <div style={{ ...card, marginBottom: 14 }}>
+        <div style={label}>Roll Player</div>
+        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: C.text }}>Tus personajes</div>
         <div style={{ fontSize: 12.5, color: C.sub, marginTop: 4, lineHeight: 1.5 }}>Creá y llevá tu hoja de personaje de los homebrews de Quest. Puntos de vida, condiciones, Haki, fruta, equipo — todo en el celular, en la mesa.</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
           <button onClick={() => rs && setVista('nuevo')} disabled={!rs} style={btn('primary', { opacity: rs ? 1 : 0.5 })}>+ Nuevo personaje</button>
-          <button onClick={() => setReglas(true)} disabled={!rs} style={btn('secondary')}>📖 Leer el manual</button>
+          <button onClick={() => setReglas(true)} disabled={!rs} style={btn('secondary')}>Leer el manual</button>
         </div>
         {rsErr && <div style={{ color: C.bad, fontSize: 12, marginTop: 8 }}>{rsErr}</div>}
       </div>
 
       {estado?.mode === 'local' && (
         <div style={{ fontSize: 11.5, color: C.dim, marginBottom: 12, lineHeight: 1.5 }}>
-          {estado.uid ? '⚠️ No se pudo leer la nube; mostrando lo guardado en este dispositivo.' : '💾 Sin sesión: tus personajes se guardan solo en este dispositivo. Iniciá sesión para tenerlos en tu cuenta.'}
+          {estado.uid ? 'No se pudo leer la nube; mostrando lo guardado en este dispositivo.' : 'Sin sesión: tus personajes se guardan solo en este dispositivo. Iniciá sesión para tenerlos en tu cuenta.'}
         </div>
       )}
       {estado?.mode === 'cloud' && (estado.local ?? []).length > 0 && (
-        <button onClick={subirLocales} style={btn('secondary', { width: '100%', marginBottom: 12 })}>☁️ Subir {estado.local.length} personaje(s) de este dispositivo a tu cuenta</button>
+        <button onClick={subirLocales} style={btn('secondary', { width: '100%', marginBottom: 12 })}>Subir {estado.local.length} personaje(s) de este dispositivo a tu cuenta</button>
       )}
 
       {estado && items.length === 0 && (
         <div style={{ ...card, textAlign: 'center', padding: 28 }}>
-          <div style={{ fontSize: 40 }}>🎲</div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: C.text, marginTop: 6 }}>Todavía no tenés personajes</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Todavía no tenés personajes</div>
           <div style={{ fontSize: 12.5, color: C.dim, marginTop: 4 }}>Creá el primero en cinco pasos.</div>
         </div>
       )}
@@ -83,11 +82,11 @@ export default function RollPlayerScreen({ onClose }) {
         let resumen = ''
         try { if (rs && ch.rulesetId === rs.meta.id) { const d = derive(rs, ch); resumen = `${d.race?.name ?? ''} · ${d.primary?.name ?? ''} ${d.level} · PV ${d.currentHp}/${d.maxHp} · CA ${d.ac.value}` } } catch {}
         return (
-          <button key={ch.id} onClick={() => { setActual(ch); setVista('hoja') }} style={{ ...card, width: '100%', textAlign: 'left', cursor: 'pointer', marginBottom: 10, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 12, borderLeft: `3px solid ${C.acc}` }}>
+          <button key={ch.id} onClick={() => { setActual(ch); setVista('hoja') }} style={{ ...card, width: '100%', textAlign: 'left', cursor: 'pointer', marginBottom: 10, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 12, }}>
             <Portrait name={ch.name} url={ch.roleplay?.portraitUrl} size={50} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: DISPLAY, fontSize: 22, lineHeight: 1.05, letterSpacing: '0.03em', color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name || 'Sin nombre'}</div>
-              <div style={{ fontFamily: DISPLAY, fontSize: 12, letterSpacing: '0.1em', color: C.gold, marginTop: 3, textTransform: 'uppercase' }}>{resumen || meta?.name}</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name || 'Sin nombre'}</div>
+              <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{resumen || meta?.name}</div>
             </div>
             <span style={{ color: C.faint }}>›</span>
           </button>
