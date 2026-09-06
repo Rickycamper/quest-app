@@ -1,0 +1,360 @@
+{
+  "system": {
+    "id": "one-piece-ddf",
+    "name": "Dungeons and Devil Fruits",
+    "subtitle": "One Piece Player's Handbook (D&D 5e Homebrew)",
+    "author": "oneworldhd",
+    "source": "https://homebrewery.naturalcrit.com/share/ItlMSW6ztZTm",
+    "baseSystem": "dnd-5e",
+    "currency": {
+      "name": "Belly",
+      "symbol": "฿"
+    },
+    "pages": 217
+  },
+  "abilities": [
+    {
+      "id": "str",
+      "name": "Strength"
+    },
+    {
+      "id": "dex",
+      "name": "Dexterity"
+    },
+    {
+      "id": "con",
+      "name": "Constitution"
+    },
+    {
+      "id": "int",
+      "name": "Intelligence"
+    },
+    {
+      "id": "wis",
+      "name": "Wisdom"
+    },
+    {
+      "id": "cha",
+      "name": "Charisma"
+    }
+  ],
+  "skills": [
+    {
+      "id": "acrobatics",
+      "name": "Acrobatics"
+    },
+    {
+      "id": "animal-handling",
+      "name": "Animal Handling"
+    },
+    {
+      "id": "arcana",
+      "name": "Arcana"
+    },
+    {
+      "id": "athletics",
+      "name": "Athletics"
+    },
+    {
+      "id": "deception",
+      "name": "Deception"
+    },
+    {
+      "id": "history",
+      "name": "History"
+    },
+    {
+      "id": "insight",
+      "name": "Insight"
+    },
+    {
+      "id": "intimidation",
+      "name": "Intimidation"
+    },
+    {
+      "id": "investigation",
+      "name": "Investigation"
+    },
+    {
+      "id": "medicine",
+      "name": "Medicine"
+    },
+    {
+      "id": "nature",
+      "name": "Nature"
+    },
+    {
+      "id": "perception",
+      "name": "Perception"
+    },
+    {
+      "id": "performance",
+      "name": "Performance"
+    },
+    {
+      "id": "persuasion",
+      "name": "Persuasion"
+    },
+    {
+      "id": "religion",
+      "name": "Religion"
+    },
+    {
+      "id": "sleight-of-hand",
+      "name": "Sleight of Hand"
+    },
+    {
+      "id": "stealth",
+      "name": "Stealth"
+    },
+    {
+      "id": "survival",
+      "name": "Survival"
+    }
+  ],
+  "abilityModifierTable": [
+    {
+      "min": 1,
+      "max": 1,
+      "modifier": -5
+    },
+    {
+      "min": 2,
+      "max": 3,
+      "modifier": -4
+    },
+    {
+      "min": 4,
+      "max": 5,
+      "modifier": -3
+    },
+    {
+      "min": 6,
+      "max": 7,
+      "modifier": -2
+    },
+    {
+      "min": 8,
+      "max": 9,
+      "modifier": -1
+    },
+    {
+      "min": 10,
+      "max": 11,
+      "modifier": 0
+    },
+    {
+      "min": 12,
+      "max": 13,
+      "modifier": 1
+    },
+    {
+      "min": 14,
+      "max": 15,
+      "modifier": 2
+    },
+    {
+      "min": 16,
+      "max": 17,
+      "modifier": 3
+    },
+    {
+      "min": 18,
+      "max": 19,
+      "modifier": 4
+    },
+    {
+      "min": 20,
+      "max": 21,
+      "modifier": 5
+    },
+    {
+      "min": 22,
+      "max": 23,
+      "modifier": 6
+    },
+    {
+      "min": 24,
+      "max": 25,
+      "modifier": 7
+    },
+    {
+      "min": 26,
+      "max": 27,
+      "modifier": 8
+    },
+    {
+      "min": 28,
+      "max": 29,
+      "modifier": 9
+    },
+    {
+      "min": 30,
+      "max": 30,
+      "modifier": 10
+    }
+  ],
+  "advancement": [
+    {
+      "xp": 0,
+      "level": 1,
+      "proficiencyBonus": 2
+    },
+    {
+      "xp": 300,
+      "level": 2,
+      "proficiencyBonus": 2
+    },
+    {
+      "xp": 900,
+      "level": 3,
+      "proficiencyBonus": 2
+    },
+    {
+      "xp": 2700,
+      "level": 4,
+      "proficiencyBonus": 2
+    },
+    {
+      "xp": 6500,
+      "level": 5,
+      "proficiencyBonus": 3
+    },
+    {
+      "xp": 14000,
+      "level": 6,
+      "proficiencyBonus": 3
+    },
+    {
+      "xp": 23000,
+      "level": 7,
+      "proficiencyBonus": 3
+    },
+    {
+      "xp": 34000,
+      "level": 8,
+      "proficiencyBonus": 3
+    },
+    {
+      "xp": 48000,
+      "level": 9,
+      "proficiencyBonus": 4
+    },
+    {
+      "xp": 64000,
+      "level": 10,
+      "proficiencyBonus": 4
+    },
+    {
+      "xp": 85000,
+      "level": 11,
+      "proficiencyBonus": 4
+    },
+    {
+      "xp": 100000,
+      "level": 12,
+      "proficiencyBonus": 4
+    },
+    {
+      "xp": 120000,
+      "level": 13,
+      "proficiencyBonus": 5
+    },
+    {
+      "xp": 140000,
+      "level": 14,
+      "proficiencyBonus": 5
+    },
+    {
+      "xp": 165000,
+      "level": 15,
+      "proficiencyBonus": 5
+    },
+    {
+      "xp": 195000,
+      "level": 16,
+      "proficiencyBonus": 5
+    },
+    {
+      "xp": 225000,
+      "level": 17,
+      "proficiencyBonus": 6
+    },
+    {
+      "xp": 265000,
+      "level": 18,
+      "proficiencyBonus": 6
+    },
+    {
+      "xp": 305000,
+      "level": 19,
+      "proficiencyBonus": 6
+    },
+    {
+      "xp": 355000,
+      "level": 20,
+      "proficiencyBonus": 6
+    }
+  ],
+  "characterCreationSteps": [
+    {
+      "name": "1. Choosing Your Race",
+      "text": "Races in the One Piece world are very unique and each exhibit many different abilities and defining traits. Deciding your race can be pretty important to describing your character's appearance and abilities, as well as occasionally defining their goals. Humans are easily the most common race to find when exploring the planet, although you may sometimes find individuals or communities of non-humans living in different areas, typically away from humans.\n\nIf you are unsure of which race to go with, Human can be an easy choice. However, races such as Fishmen, Merfolk, Minks, Sky Tribesman, Kuja, Dwarves, and others are all possible races to choose from. More information on these races are listed in **Chapter 2.**",
+      "sub": []
+    },
+    {
+      "name": "2. Choosing Your Class",
+      "text": "Each character should specialize in a field while sailing the seas with their crew. A class will determine your prominent talents and skills, allowing your character to hone and grow their abilities throughout the adventure. For example, a Warrior may focus mainly on fighting while tinkerers can be useful in performing specifics tasks outside of combat that may benefit the group, such as navigating. While having an all-around useful character is important, sometimes it doesn't hurt to have a character that tends to be extremely good at only one thing, so long as they benefit the group and feel fun to play. A well-rounded party can make the journey far more enjoyable in the long-run.\n\nPut some time into deciding what you want your character's role to be in the crew. Maybe discuss it with others in the group to see what would work best for everyone. However, make sure to choose something you will have fun with and appreciate. Once you have a general idea for what your class will be, pick from the classes listed in **Chapter 3.**",
+      "sub": []
+    },
+    {
+      "name": "3. Determining Your Ability Scores",
+      "text": "The six abilities that are prevalent in every D&D campaign and determine your character's skills are: **Strength, Dexterity, Constitution, Intelligence, Wisdom, and Charisma.** When you calculate the number of each ability score, you will need to list them on your character sheet.\n\nThe Dungeons and Dragons 5th Editions rules should list how you can determine your Ability Scores. However, I will also explain this process here. Using the **Standard Array** method, you can take the numbers **15, 14, 13, 12, 10, 8** and assign each number to a different Ability Score. \n\nYou may also choose to **Roll for your Ability Scores** by rolling a d6 dice four times and recording the sum of the three highest rolls. Repeat this process five more times until you have written down six total sums. Then, allocate each of these six numbers to individual Ability Scores of your choice. As an example, you may end up with the six numbers 17, 11, 13, 9, 12, 14 after rolling. You might decide you want strength to be your highest Ability Score, so you would put 17 for your Strength Score. Then you would fill in your other Ability Scores accordingly.\n\nLastly, one other way you can decide Ability Scores is through using **Point Buy**. You can easily find a free Point Buy Caculator online. It is of course always up to the DM to decide what method is used to determine Ability Scores for the party. Once you have calculated your ability scores, you will make changes to them according to your racial feats.",
+      "sub": [
+        {
+          "name": "Ability Scores and Modifiers",
+          "text": "| Ability Score | Modifier |\n|---|---|\n| 1 | -5 |\n| 2 - 3 | -4 |\n| 4 - 5 | -3 |\n| 6 - 7 | -2 |\n| 8 - 9 | -1 |\n| 10 - 11 | 0 |\n| 12 - 13 | +1 |\n| 14 - 15 | +2 |\n| 16 - 17 | +3 |\n| 18 - 19 | +4 |\n| 20 - 21 | +5 |\n| 22 - 23 | +6 |\n| 24 - 25 | +7 |\n| 26 - 27 | +8 |\n| 28 - 29 | +9 |\n| 30 | +10 |"
+        }
+      ]
+    },
+    {
+      "name": "3.5. Beginning With a Devil Fruit, Haki, or Character Feat (Optional)",
+      "text": "If your DM allows for it, your character might've already learned how to use basic haki, learned a character feat, or eaten a Devil Fruit prior to the start of their journey in this campaign. This would mean you gain a Haki ability or random Devil Fruit power at the very beginning of the adventure and cannot consume another Devil Fruit ever again. Of course, this also means you will never be able to swim again. This may make the start of the adventure far easier than normal, but things should even out in difficulty later on.\n\nIf you are able to use this rule and start with a Devil Fruit or Haki, you may roll on the \"Uncommon\" Devil Fruit Table in **Chapter 7**. Once you have rolled your power, you are stuck with it, good or bad. If you instead start with Haki, you gain an \"Uncommon\" Haki Advancement feat of your choice in Chapter 7. If you are starting at later levels or right on the grand line, your DM may allow you to roll on the \"Rare\" Devil Fruit table instead and choose up to a \"Rare\" Haki Advancement feat. Lastly, if neither Haki or a Devil Fruit fits your taste, you may start with a Character Feat in **Chapter 6**. This can technically be done at any point in character creation, but make sure you meet any prerequisites needed for advancements and feats. Make sure to write down the name and abilities of your Devil Fruit as well as your Haki abilities somewhere on your character sheet or use separate handout provided by your DM.",
+      "sub": []
+    },
+    {
+      "name": "4. Describing Your Character",
+      "text": "First, hopefully you've already decided on a name for your character. If not, try to think of something you like the sound of. If you can't think of anything, feel free to look up D&D name generators online. Then, start to really develop their personality and appearance in your head.\n\nAfter you have a concept in mind, you want to start writing and organizing these ideas onto your character sheet. Try to find what **Alignment** best fits them and their morals. Then, start to think up some defining **Personality Traits**. Once your mark those down on your character sheet, start getting into their **Ideals, Bonds, and Flaws**. These will provide a guideline on how you plan on roleplaying and making decisions with your character.\n\nNow you want to decide on your characters **Background**. Your background will provide you with tools and knowledge gained from how you've lived your life prior to the start of the campaign. This will affect how those who recognize you interact with you, how you're treated by the general public, and what your occupation is or was. A DM may provide you with custom backgrounds for this adventure, but feel free to choose from the ones listed in **Chapter 4.**",
+      "sub": [
+        {
+          "name": "Race, Devil Fruit, and Ability Scores",
+          "text": "It is important to take into consideration how your race and Ability Scores can impact your character's appearance and personality. Some One Piece races may be noticeably taller than others, some may be tinier on average, and some may have very distinguishable traits. \n\nAdditionally, if you are a Devil Fruit user, you may have certain physical features or personality traits that match the nature or properties of your power. For example, a user of the Moku Moku no mi (Smoke Logia) might be a huge chain smoker who tends to dress in white or gray colored clothing. A user of the Neko Neko no mi, Model: Lion (Zoan) could dress up in flashy golden clothing and consider themselves royalty. If your character ate a Devil Fruit before being introduced to the party, consider incorporating how you got the power and how it impacts your daily life into your background. It is up to you how you want to incorporate the theme of your Devil Fruit into your character.\n\nFurthermore, your final ability scores may also factor into your appearance and attitude. Here are some examples:\n\nA character with high strength may appear physically intimidating and bulky, with defined muscles and a towering figure. With low strength, they might appear scrawny or flabby.\n\nA character with high dexterity may appear incredibly quick and versatile when moving around, with a potentially more lean appearance. With low dexterity, they may be heavier or move a bit slower than others.\n\nA character with high constitution may appear noticeably healthy and sturdy. With low constitution, they may look a tad bit sickly or pale.\n\nA character with high intelligence may appear more structured or knowledgeable when talking to others, perhaps having several books or scrolls in their possession. With low intelligence, they may speak noticeably slow, sometimes having a dumbfounded look on their face when hearing complicated explanations.\n\nA character with high wisdom may appear more aware of their surroundings and have a grasp on the deeper meaning of interactions in their daily lives. With low wisdom, a character may seem aloof or carefree to others.\n\nA character with high charisma will most likely stand out in public and most social situations, having the ability to influence the attitudes and thoughts of others through interacting with them. With low charisma, a character may be more easily ignored or feel slightly more difficult to agree with in conversations."
+        }
+      ]
+    },
+    {
+      "name": "5. Getting Equipped",
+      "text": "Class and background will typically decide what equipment your character starts with. Your equipment includes weapons, armor, tools, trinkets, clothing, and other gear. Look at Chapter 5 to record this information on your character sheet. \n\nAlternatively, you may choose to purchase your starting equipment instead. You will start with a set number of **Belly** (฿) to spend on equipment, based on the value given to you by your class.\n\nFurther information on starting gold based on class is detailed in **Chapter 5**. Weapons in the One Piece world include various types of firearms such as pistols, rifles, and occasionally very high-tech weaponry such as laser beams. The most common weapons you will find are guns like flintlocks, and swords such as cutlasses and sabers. Much higher firepower weapons such as cannons are common, but are typically only used on ships or in fortresses.\n\n**Melee Weapons** require that you roll a 1d20 and add your strength or dexterity modifier as well as your **Proficiency Bonus** to the roll to hit. This modifier is also usually added on top of the damage roll. Melee weapons tend to use strength modifiers, but occasionally allow you to use other modifiers depending on your weapon or class.\n\n**Ranged Weapons** require that you roll a 1d20 and add your strength or dexterity modifier as well as your **Proficiency Bonus** to the roll to hit. This modifier is also usually added on top of the damage roll. Ranged weapons tend to use dexterity modifiers, but occasionally allow you to use other modifiers depending on your weapon or class.\n\nTraditional armor is used far less in the One Piece world often due to how inconvenient it can be for mobility, but it can still be rarely utilized by very tanky pirates. For this reason, it might be wise to reflavor these items for certain characters by instead using durable clothing or body armor that can be used underneath clothing as a substitute. Shields are not used quite as often either, but can still be found and used by very defensive-style duelists. \n\n**Armor Class** without armor is normally equal to 10 + Dexterity Modifier. Certain classes might change how this is calculated. Additionally, wearing armor or using shields will alter the Base or Modifier value of your AC.\n\n*Be sure to write down all of these values on your character sheet for easy access and to remember them for combat encounters.*",
+      "sub": []
+    },
+    {
+      "name": "6. Wrapping Up Session 0",
+      "text": "If you are playing with a large group, it is sometimes a good idea to get everyone together a week or so before the first official campaign session to discuss character setup. This is usually called Session 0. With the help of your Dungeon Master and fellow players, try to decide how you want your characters to mesh together. Does everyone in the party/crew know each other before the campaign starts? Does your backstory include any of the other player characters or NPCs? How will your character's background and current occupation fit into the crew's goals and the story? These are all important questions to ask yourselves and especially the DM.",
+      "sub": [
+        {
+          "name": "Character Advancement",
+          "text": "| Experience Points | Level | Proficiency Bonus |\n|---|---|---|\n| 0 | 1 | +2 |\n| 300 | 2 | +2 |\n| 900 | 3 | +2 |\n| 2,700 | 4 | +2 |\n| 6,500 | 5 | +3 |\n| 14,000 | 6 | +3 |\n| 23,000 | 7 | +3 |\n| 34,000 | 8 | +3 |\n| 48,000 | 9 | +4 |\n| 64,000 | 10 | +4 |\n| 85,000 | 11 | +4 |\n| 100,000 | 12 | +4 |\n| 120,000 | 13 | +5 |\n| 140,000 | 14 | +5 |\n| 165,000 | 15 | +5 |\n| 195,000 | 16 | +5 |\n| 225,000 | 17 | +6 |\n| 265,000 | 18 | +6 |\n| 305,000 | 19 | +6 |\n| 355,000 | 20 | +6 |"
+        }
+      ]
+    },
+    {
+      "name": "level tiers during the adventure",
+      "text": "During the journey, the DM may decide to structure the pacing and level advancement throughout the adventure to give the feeling of progression to players. By deciding level tiers for certain areas in the world, it will be easy to balance enemies and NPCs in ways that align with player progression.\n\nThe **first tier** (levels 1-4) will be for very early exploration throughout the seas outside of the Grand Line, including the North Blue, East Blue, South Blue, and West Blue. It would be wise to start in one of these seas, preferably a fair distance away from *Reverse Mountain* and the Grand Line. Player characters will be fairly weak at this tier, and will only encounter minor enemies and challenges until they reach the Grand Line.\n\nThe **second tier** (levels 5-10) will be where most of the first half of the campaign takes place, in a portion of the Grand Line called \"Paradise\". This will be where many mid-tier pirates and powerful members of the navy reside. The sea and various islands will be difficult to traverse, with sea monsters and extreme weather conditions constantly bombarding your travel at random. Surviving to the end of Paradise should prove to be a challenge and feel like an amazing accomplishment upon completing the end. However, the next two stages should feel far more threatening.\n\nThe **third tier** (levels 11-15) is where players will start facing extremely overwhelming challenges. Making your way into the second half of the Grand Line, called the New World, the party should be facing unimaginably powerful pirate crews called the Yonko (or Four Emperors). The weather and islands here are even more threatening than the first half of the grand line, enough for a majority of crews to perish upon initially reaching this area. This will be the stage where characters start training, conducting espionage on the Yonko, and collecting Road Poneglyphs.\n\nThe **final tier** (levels 16-20) is the last stretch of the journey. At this legendary tier, characters should be able to stand up to Yonko pirate crews and marine admirals. Most fights will be overwhelmingly large-scale and epic, involving hundreds or thousands of pirates in huge wars and battles across the end of the New World. Once several Yonko have fallen and Road Poneglyphs are copied down, the crew can make their way to the One Piece to become pirate kings/queens and complete the adventure.",
+      "sub": []
+    }
+  ],
+  "levelTiers": "During the journey, the DM may decide to structure the pacing and level advancement throughout the adventure to give the feeling of progression to players. By deciding level tiers for certain areas in the world, it will be easy to balance enemies and NPCs in ways that align with player progression.\n\nThe **first tier** (levels 1-4) will be for very early exploration throughout the seas outside of the Grand Line, including the North Blue, East Blue, South Blue, and West Blue. It would be wise to start in one of these seas, preferably a fair distance away from *Reverse Mountain* and the Grand Line. Player characters will be fairly weak at this tier, and will only encounter minor enemies and challenges until they reach the Grand Line.\n\nThe **second tier** (levels 5-10) will be where most of the first half of the campaign takes place, in a portion of the Grand Line called \"Paradise\". This will be where many mid-tier pirates and powerful members of the navy reside. The sea and various islands will be difficult to traverse, with sea monsters and extreme weather conditions constantly bombarding your travel at random. Surviving to the end of Paradise should prove to be a challenge and feel like an amazing accomplishment upon completing the end. However, the next two stages should feel far more threatening.\n\nThe **third tier** (levels 11-15) is where players will start facing extremely overwhelming challenges. Making your way into the second half of the Grand Line, called the New World, the party should be facing unimaginably powerful pirate crews called the Yonko (or Four Emperors). The weather and islands here are even more threatening than the first half of the grand line, enough for a majority of crews to perish upon initially reaching this area. This will be the stage where characters start training, conducting espionage on the Yonko, and collecting Road Poneglyphs.\n\nThe **final tier** (levels 16-20) is the last stretch of the journey. At this legendary tier, characters should be able to stand up to Yonko pirate crews and marine admirals. Most fights will be overwhelmingly large-scale and epic, involving hundreds or thousands of pirates in huge wars and battles across the end of the New World. Once several Yonko have fallen and Road Poneglyphs are copied down, the crew can make their way to the One Piece to become pirate kings/queens and complete the adventure.",
+  "changesFrom5e": "This written guide serves as a means to more easily run a One Piece tabletop RPG using Dungeons and Dragons 5th Edition as a framework. Much of this guide will include near-identical rules and mechanics to the base D&D books. However, many changes, small or large, had to occur to fit in newer mechanics such as Devil Fruits, Haki, new items, etc. For example, Druids were practically deleted to make room for Zoan-type Devil Fruit users. \n\nMore detailed explanations on changes and additions made in this guide are listed below:\n\n#### Version 1.0.0 Changes\n\n* Many buffs were applied to player races, classes, and advancement features. These buffs were made to compensate for newer mechanics such as devil fruits, special items, and magic items potentially throwing off the balance of combat and resources. Players who managed to access these new resources early on will be much stronger than they would be in base 5e. \n\n* Challenge Rating rules for monsters and enemies may need to be adjusted to match player buffs. Monsters written in the Dungeons and Devil Fruits Dungeon Master's guide will hopefully provide enough insight and design ideas to further help compensate for these player buffs. I think this is a positive as well DMs will be able to swarm their players with low-strength enemies more easily without risking killing them, which much better suits a One Piece campaign. Very high CR enemies should still serve as an adequate threat to players if they get too cocky.\n\n* Character creation has been left largely the same in Chapter 1, with the option to allow players to start with a Devil Fruit, Haki, or a Character Feat to give them a strength boost early on. Standard 5th Edition character sheets can still be used, although additional pages or handouts detailing Haki or Devil Fruit powers and advancements may be needed.\n\n* Level & Adventure Tiers give a bit more description for how to run longer camapigns in this One Piece-themed world.\n\n* Every race aside from humans has been swapped out for One Piece races, each detailed in Chapter 2. Because some races in One Piece are naturally powerful or mechanically \"different\" from most balanced races in 5e, certain races have been listed as \"optional\". This means the DM needs to give players permission in order to use those races. I knew people might be unhappy if I left out these more powerful races, so that is why I included them in spite of their difficult-to-balance nature.\n\n* Certain classes in Chapter 3 have been altered or sort of re-skinned to fit the theme of One Piece better. \n\n* Barbarians have been completely swapped out for \"Bruisers\", which better represents the abundance of brawler types in One Piece who either don't use weapons or hold basic club-like weapons (e.g. Luffy, Garp, Kaido, etc.) This was heavily inspired by the Pugilist Class by Benjamin Huffman, which more or less combines monks with barbarians. Hopefully after initial testing, this class will feel fun and balanced to use.\n\n* Martial Artists are Monks with Tasha's Cauldron of Everything (TCoE) changes applied. Subclasses for this class were inspired by original monk subclasses, but combined together to better match the various forms of martial arts in the One Piece world.\n\n* Warriors are basically just fighters. Much like Martial Artists, minor buffs and additional changes were applied from various official books. Subclasses here include a Haki focus, cursed sword styles, and a number of One Piece-themed fighting styles.\n\n* Marksmen are also just rogues with changes made to proficiencies, flavor, and replacing perception-based class features with Observation Haki features. The subclasses here resemble rogue subclasses, but place an emphasis on proficiency with different varieties of weapons and powers added to fit one One Piece world.\n\n* Tinkerers are a technology-based casters that replace wizards. Because \"magic\" in One Piece is instead explained as technology, devil fruit powers, haki, spiritual powers, paranormal phenomenon, or simply random wacky occurences, casters as a whole have been changed to meet this theme. Tinkerers are wizards who replace \"magic\" with fictional science and technology which better suits the One Piece world.\n\n* Skalds are sea-themed bards with largely the same toolset and abilities. Most of the class-based changes made were very minor and really just made for flavor.\n\n* Same as skalds, priests are virtually the exact same as clerics. Because clerics are best at dealing with undead, I originally wanted to repurpose their Channel Divinity to be more universal, perhaps turning \"spirits\" instead of undead. But I figured I would leave it up to the DM to explain how undead can be incorporated in the world via Devil Fruits and science in the One Piece world to make priests still feel useful as a class.\n\n* In chapter 4, character backgrounds have been changed a bit and new backgrounds have been added. Pirate Prestige and Crew Roles are optional mechanics which give players a wider variety of tools they can use to provide utility to their crew. A table for character dreams was also provided.\n\n* In chapter 5, metal coin currency was replaced with Belly (฿), except on some islands where exceptions are made, and conversion rules were included. \n\n* Certain weapons and armor have been replaced with One Piece-themed gear. Additional guns and melee weapons have also been included.\n* Standard equipment and special equipment tables now include One Piece themed gear that players can find and use throughout the campaign to strengthen their characters and abilities. Players can also create or upgrade certain equipment using crafting rules or class and races features.\n* Multiclassing rules and features in chapter 6 are still similar to base 5e, but have been altered to match the changes made to classes. New One Piece-themed character features are also provided.\n* In chapter 7, which is practically brand new, there are now rules on using Haki and Devil Fruits. To allow for more DM control over how players acquire these abilities, they are largely treated as rare magic items characters have to work hard to get their hands on. Even then, with items such as devil fruits, there is significant risk in trying to find a strong devil fruit power. Because these mechanics aren't tied to character level for the most part, the DM can decide at what points in the story to hand out advancement features or devil fruits to avoid balance nightmares. Alternatively, using random tables and generation can be used if balance isn't a huge concern.\n\n#### Version 1.1.0 Changes\n\n* Minor formatting and spelling fixes as well some very small balance adjustments to classes.\n\n#### Version 2.0.0 Changes\n\n* Pdf now includes new world map.\n* Improved Table of Contents page.\n* Plenty of new visuals and reformatting.\n* Complete overhaul to \"Races\" section and the addition of the \"Giant Human Variant\". New Visuals Added.\n* Complete overhaul to \"Class\" section and the addition of Chemist, Hybrid, and Rogue. New Visuals Added.\n* Added more to \"Crew Roles\" as well as new visuals.\n* Several balance changes to every section.\n* Hopefully fixed more of the problems with pages getting cut off.\n\n#### Version 2.1.0 Changes\n\n* Fixed many issues with sections of the page cutting off.\n* Corrects and typos to many parts of the book.\n* Some balance changes and additions.\n\n#### Version 2.2.0 Changes\n\n* Some major balance changes to races, classes, and haki.\n* Giant human and Kuja subraces are no longer marked as \"Optional\". Human giant is now Medium, and has reworked traits\n* Cyborg fuel price has been reduced.\n* Longneck tribesman has been added as a subrace to Yokai Tribesman.\n* Tonattas have been reworked and nerfed.\n* Bruiser's Thrill of the Fight no longer applies disadvantage on Dexterity saving throw (buff)\n* Marksman now gain Expert Reload at 4th level since they would only be able to attack once with firearms when using multiattack without it. Gunslinger no longer gets a bonus action hide after using Quickdraw. (change)\n* Martial Artists have been massively buffed and adjusted to fall in line with the One DND Monk changes (buff)\n* King's infusion no longer has \"except permanent infusion\" included in its description. It now instead requires that the one using king's infusion must be holding the weapon for the effects of king's infusion to be active.\n* Several haki abilities have been adjusted.\n* Several spelling and grammatical errors have been corrected.\n* Martial Artist Six Power's Shave has been limited to being used a number of times equal to proficiency bonus, unless a ki point is expended.\n* Sky Islander can now use Air Glide once per Short or Long Rest, instead of just a Long Rest.\n* Changed \"duel of death\" name to \"Lock-On\" for marksmen.\n* Specified only female merfolk grow legs at age 30.\n\n#### Version 3.0.0 Changes\n\n* Added the new Devilforged Class in Chapter 3.\n* Added the Heavy Thrower feat to Chapter 6, which allows player characters to throw cannon balls.\n* Added Chapter 8: Spell Lists, which includes a spell list for each class in the book as well as some custom spells for a One Piece campaign setting. The Mysterious Power feat has been changed to match this.\n* Changed the Awakening abilities of the example Doku Doku no Mi, Gura Gura no Mi, Hie Hie no Mi, and Mera Mera no Mi, to instead use the custom spells provided in Chapter 8.\n* Many water-based spells have been removed or replaced by new custom spells to fix potential issues with devil fruits getting hard countered by instant water summoning. Merfolk have also been adjusted to reflect these changes.\n* Fixed Bruiser's Focused frenzy redundancy.\n* Changed Sky Islander's Air Glide ability name to Protection of the Clouds.\n* Additional proficiencies have been given to each fish-man subclass. A new fish-man subclass has been added, named the Smelt-Whiting Fish-man.\n* Added specification that Chemists cannot use devil fruit powers while in their monster mutation form. Also made changes to monster mutation, making it so that genetics chemists cannot swim or fly until specified levels.\n* Removed Concentration requirement for Marksman Lock-On feature. Many additional buffs to marksman ability, and Sniper's Scoping range increased.\n* Added Understanding and Appraising Devil Fruits as well as Training Surges and Tutors to Chapter 7.\n* Completely reworked Haki and Devil Fruit advancements in Chapter 7, adding a number of new features and replaced many old features. Notably, Awakenings and many Legendary advancements have been massively improved.\n* Added Optional Rule: Long Rest Recharge to Devil Fruit creation.\n* Revised firearms in Chapter 5. This affects some class proficiencies and starting equipment involving firearms. Also changed the Faster Loading feat to remove the loading property of firearms.\n* Linked the [Devil Fruit Encyclopedia](https://homebrewery.naturalcrit.com/share/24DkobVl8IGZ).\n* Fixed typos, grammar, and other inconsistencies.",
+  "houseRules": "If you are running a campaign with these rules, it is important to understand the rules of 5th Edition. I would highly recommend using the [Player's Handbook](https://dnd.wizards.com/products/rpg_playershandbook) and [Dungeon Master's Guide](https://dnd.wizards.com/products/dungeon-masters-guide) in conjunction with the rules in this book. Most of the rules from 5e will apply to this campaign setting in this rulebook, only because they are the easiest to understand for most people. The only things that will be different are the races, classes, some spells, items, and a few other rules. Take what you want from the 5e rules and add them to your own game if a rule isn't covered in this book!\n\nMany of the standard rules will apply from the 5e rulebooks such as: \n* Spells, class mechanics, leveling, ability scores, character sheets, and skills work similarly with some modifications.\n* Combat mechanics will function pretty much the same.\n* Classes and races have been changed or overhauled to fit the One Piece theme.\n* New player feats will be added and some will be slightly changed.\n* Mages and magic are treated a bit different in this world and can be explained through science, spiritual skills, and elemental powers people naturally use. \n* Most supernatural phenomenon are explained by devil fruits and haki, which serve as a potential supplement for magic items.",
+  "world": "The map below gives a basic outline and potential roadmap for you to use for your own adventure. This section will also brief players who are new to the geography or nature of the One Piece world. You can either use the islands, factions, kingdoms, and objectives established in the main series. Or you could opt to make an entirely separate alternate universe with new factions, islands, and kingdoms custom tailored for your group's adventure. \n\nAlternatively, you could use a mix of both types of settings, giving homage to certain locations, groups, and characters with your own spin while creating several new islands, allies, and villains for the group to meet. However you choose to run your campaign, using this world map will give you and your players an idea of a path to take to move forward toward adventure and the One Piece.\n\n### The Four Blue Seas\n\nThere are several different seas in the One Piece world. \n\n**North Blue.** A sea in which many legendary pirates and factions were birthed. The North Blue contains many great kingdoms, as well as once being ruled by the Vinsmoke family, and mostly ocean with smaller islands and some continents.\n\n**East Blue.** Considered the weakest of all the seas. The East Blue contains mostly ocean with many small islands and some continents.\n\n**South Blue.** A sea that, similar to the North Blue, was the home of many famous pirates. The South Blue contains many great kingdoms and mostly ocean with smaller islands and some continents.\n\n**West Blue.** A sea riddled with crime, being ruled by various mafia organizations that run a strong Underworld. The West blue contains mostly ocean with smaller islands.\n\n### The Grand Line\n\nThe Grand Line attracts an unsurmountable number of pirates and adventurers, both powerful and weak, to its seas. Many fail to even reach this sea, struggling to navigate its treacherous waters, extreme weather conditions, and powerful rival pirate crews or Marine forces. This sea also requires special tools to navigate. \"Log Pose\" compasses, for example, must be used to properly navigate and point ships to the next island since the sea's abnormal magnetic fields do not allow for ordinary compasses to be used. Moreover, Log Poses only allow for a limited and linear path to be taken because it will only point to one location at a time once it adjusts to the magnetic field of a nearby island.\n\n#### Reverse Mountain and Red Line\nReaching the grand line from the four blue seas requires travel by ship up through the Reverse mountain, which will carry any ship up with its powerful current and down into a single steep river into the Grand Line. This is a one-way trip, however, and a ship cannot pass back up through the reverse mountain once they've arrived in the Grand Line due to the powerful currents.\n\nAlternatively, one could reach the grand line by traveling across the calm belt. However, the calm belt is incredibly difficult to traverse due to reasons specified below, and is primarily crossed only by the Marines. One last way one could theoretically reach the Grand Line is by traveling across the Red Line itself, which is a massive land formation that is virtually impossible to cross for an ordinary person by foot, to loop around the calm belt and into central portion.\n\n#### Calm Belt\nThis calm strip of sea that rests on both outer borders on each side of the Grand Line, contains many islands and creatures within it. However, despite its name, crossing the Calm Belt can prove to be instantly fatal to even the most powerful of pirate crews. Due to the complete absence of ocean currents and winds throughout the Calm Belt, there are very few ships that can effectively move through it. Additionally, a near-infinite number of Sea Kings and other sea monsters make the Calm Belt their home and will immediately destroy any suspecting ship or creature attempting to move over it. \n\nOnly a select few ships manufactured by the Marines or special Kingdoms will dare to cross the Calm Belt using seastone technology or sea monster guides to bypass the dangers it presents.\n\n#### Paradise\n\nThe first half of the Grand Line, often referred to as \"paradise\" when compared to the latter half of the Grand Line. Despite its name, this sea is notably dangerous and will eliminate most newbie pirates that attempt to explore it. Paradise contains many small continents and islands with extreme weather conditions, many of which never change in season, temperature, or climate. Each piece of land may contain villages, cities, kingdoms, or countries.  Weather conditions all across Paradise are often lethal to crews without gifted navigators and sturdy ships. \n\nThe Marines, warlords, armies, and established pirate crews will all defend their territories here or attack anyone unfamiliar on sight. Additionally, Sea Monsters and legendary beasts can be found commonly in the oceans or on islands within paradise that can easily threaten to annihilate any unsuspecting ship or traveler.\n\n#### New World\n\nBoth the latter half of the Grand Line and the final frontier, this is the place where the strongest of the strong reside. It is also the deadliest sea, forcing even the most experienced of crews and ships into submission with its ruthless and completely unpredictable weather, hostile climates on many islands, and other supernatural threats that may randomly appear at a moments notice.  Much like Paradise, there are many small continents and islands that are spread out across the sea. \n\nLegendary pirate crews rule over their own massive territories, earning their captains the title \"Emperor\" or \"Yonko\". Each compete for territory and resources, with some even aiming for the title of \"Pirate King\". Territory of the Emperor crews may encompass a massive range of kingdoms, countries, or large sections of ocean. It is often said to survive here, one must align with a Yonko crew or inevitably war against them. There are typically four of these emperors, though that number may change depending on the circumstances and balance of power in the New World. Even the Navy is often afraid of exploring these seas or challenging the mighty Yonko, as more than one Yonko alliance or fleet forming an alliance against them could threaten the entire World Government.\n\n#### Final Island\n\n*To avoid massive spoilers, this section will intentionally be left vague.*\n\nThis legendary place rests at the very end of the Grand Line, within the final stretch of the New World. Within this mysterious location exists a colossal treasure that has had most pirates searching for decades to find. It also contains all the mysteries of the past, which will be useful to those searching for the truth of the world. The nature or exact contents of this location are still left open to interpretation, though any DM running their game can allow their players to reach this place by special means specific to their own adventure and world. The name of this island itself can be changed to fit a different plot or storyline for each world.\n\nHowever one chooses to run this location, it will most likely be reached at the very end of a campaign and will allow players to access the One Piece in some way. Perhaps it can act as a gateway to the treasure. It could be an underwater city which rises to the sky to carry the players to the treasure. It could even itself be a weapon of some sort that has the capacity to destroy the planet. Because the mystery of the One Piece and Raftel has not been revealed yet (as of 2022), it is fair to insert your own spin on what it could be that players find here."
+}

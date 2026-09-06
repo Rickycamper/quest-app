@@ -1,0 +1,525 @@
+{
+  "dials": {
+    "name": "Dials",
+    "description": "Dials are mysterious devices made from sea shells that each hold a unique power. They are normally found throughout the sky islands, and often vary in size and power. \n\nSome are used for completing simple tasks such as cooking, refrigeration, or blowing air, while others can be used to enhance weapons or deal devastating amounts of damage to enemies.\n\nCommon dials are easy to come by when exploring sky island. However, it may be difficult to discover more rare and powerful dials on your own. Purchasing or trading to attain special rare dials is one way to gather them, but they may not be available in many shops. Therefore, finding them in dungeons or well-guarded fortresses might be the only way to get a rare dial that you want.",
+    "sections": [
+      {
+        "name": "Finding a Simple Dial",
+        "text": "Searching for the more simple dials is easy when you're traveling through the sky islands, especially along the shorelines. Finding dials, especially rare ones, outside of any sky islands is incredibly difficult. \n\nWhen searching along shorelines throughout the sky islands, such as the shore of the White-White Sea, a DC 15 Intelligence (Investigation) check may be rolled for every 24 hours spent searching to see if a character locates a Simple Dial shell. If a character is proficient in using Dials, they make this check with advantage.\n\nIf a character succeeds on finding a simple dial, have them roll a d20 and use the Simple Dial Table below to determine which dial they receive."
+      },
+      {
+        "name": "Finding a Rare Dial",
+        "text": "Rare dials are far more difficult to find than ordinary dials. They are often larger, store massive amounts of energy, and are used in warfare and advanced machinery. In order to find a rare dial, it may be required to search sky island ruins or dungeons to discover such powerful dials. \n\nIf a character does find a way to locate a rare dial, the DM may choose to roll a d20 on the Rare Dial Table or pick from it when giving it to the character."
+      },
+      {
+        "name": "Using a Dial",
+        "text": "Each type of dial has a special ability that may be more useful or powerful than others depending on the desired outcome. Dials work by sapping power from a source of energy, impact, or element, then pushing a button on the shell to expel everything built up within the dial to perform any type of task."
+      },
+      {
+        "name": "Simple Dial Table",
+        "text": "| d20 | Simple Dial |\n|---|---|\n| 1-4 | Breath Dial |\n| 5-7 | Flavor Dial |\n| 8 | Freeze Dial |\n| 9 | Heat Dial |\n| 10-12 | Lamp Dial |\n| 13-15 | Milky Dial |\n| 16 | Thunder Dial |\n| 17-18 | Tone Dial |\n| 19 | Vision Dial |\n| 20 | Water Dial |"
+      },
+      {
+        "name": "Rare Dial Table",
+        "text": "| d20 | Rare Dial |\n|---|---|\n| 1-2 | Axe Dial |\n| 3-4 | Ball Dial |\n| 5 | Eisen Dial |\n| 6-8 | Flash Dial |\n| 9-10 | Flame Dial |\n| 11 | Impact Dial |\n| 12 | Jet Dial |\n| 13-17 | Large Simple Dial (Roll on simple dial table) |\n| 18 | Reject Dial |\n| 19-20 | Storm Dial |\n\nSimple dials tend to have less overwhelming or dangerous abilities, and absorb less from their designated energy source on average. Rare dials are often incredibly effective in combat, and some have the power to devastate both their user and any foe from the amount of power they can expel in an instant. \n\nBeing proficient in dials allows you to add your proficiency bonus to any check or attack roll when using a dial. Dial effects for both simple and rare dials are listed below.\n\n**Breath Dial.** By storing air, gases, or wind currents, breath dials have the ability to emit anything it absorbs as a gust of energy. Simple breath dials have 5 charges. By expending a charge from this dial as a bonus action, you can absorb up to a 5-foot cube of any gas or wind. By pressing the button on the dial as an action, you can expel up to a 5-foot cube of any stored gas in a space within 5 feet of you. For example, if you absorbed poisonous gas, you may fill up any 5-foot square of space within 5 feet of you with this poisonous gas you as an action. Any creature in the space being filled with gas must succeed on a DC 10 Strength (Athletics) check or be pushed out of the space away from the dial. Objects less than 10 pounds are also pushed out of the space automatically. Simple breath dials can store up to 25 cubic feet of gas, and regain up to 1d4+1 expended charges daily at dawn.\n\nLarge Breath Dials (rare) have 10 charges and can store up to 50 cubic feet of gas. Additionally, they regain 1d6+4 expended charges daily at dawn instead. You can also use a large breath dial to power a standard waver, reducing the cost of building a waver by 80%.\n\n**Flavor Dial.** Similar to breath dials, flavor dials specialize in storing gases and scents. This includes explosive gas or foul odors. However, flavor dials aren't capable of emitting strong gusts that can push things away. Simple flavor dials have 5 charges. By expending a charge from this dial as a bonus action, you can absorb up to a 5-foot cube of any gas or scent. By pressing the button on the dial as an action, you can expel up to a 5-foot cube of any stored gas in a space within 5 feet of you. Simple flavor dials can store up to 25 cubic feet of gas, and regain up to 1d4+1 expended charges daily at dawn.\n\nLarge Flavor Dials (rare) have 10 charges and can store up to 50 cubic feet of gas. Additionally, they regain 1d6+4 expended charges daily at dawn instead.\n\n**Freeze Dial.** By absorbing freezing substances or gases, freeze dials can be used to chill and cool off anything by expelling cold elemental energy. Simple freeze dials have 5 charges. By expending a charge from this dial as a bonus action, you may sap cold energy from any 5-foot cube of material or gas that is 0° C (32° F) or less in temperature, such as ice, snow, or frigid air by placing it within 5 feet of the source. To use this dial, as an action, you can place or hold the dial in a 5-foot square, then press the button on it to keep that space at freezing or cool temperatures for up to 24 hours for every 5-foot cube of stored cold energy released. This can be used for freezers or refrigerators. Alternatively, you can release all the cold energy stored in a freeze dial to make an attack. As an action, you can make a melee attack against a creature and release the cold energy within the dial to deal 1 cold damage for every 5-foot cube of cold energy expelled. Simple freeze dials can store up to 25 cubic feet of cold energy, and regain up to 1d4+1 expended charges daily at dawn.\n\nLarge Freeze Dials (rare) have 10 charges and can store up to 50 cubic feet of cold energy. Additionally, they regain 1d6+4 expended charges daily at dawn instead.\n\n**Heat Dial.** By absorbing hot substances or gases, heat dials can be used to heat up anything by expelling hot elemental energy. Simple heat dials have 5 charges. By expending a charge from this dial as a bonus action, you may sap heat energy from any 5-foot cube of material or gas that is 100° C (212° F) or more in temperature, such as fire, magma, or burning gas by placing it within 5 feet of the source. To use this dial, as an action, you can place or hold the dial in a 5-foot square, then press the button on it to keep that space at burning or boiling temperatures for up to 24 hours for every 5-foot cube of stored cold energy released. This can be used for ovens or heaters. Alternatively, you can release all the heat energy stored in a heat dial to make an attack. As an action, you can make a melee attack against a creature and release the heat energy within the dial to deal 1 fire damage for every 5-foot cube of heat energy expelled. Simple heat dials can store up to 25 cubic feet of heat energy, and regain up to 1d4+1 expended charges daily at dawn.\n\nLarge Heat Dials (rare) have 10 charges and can store up to 50 cubic feet of heat energy. Additionally, they regain 1d6+4 expended charges daily at dawn instead.\n\n**Lamp Dial.** By absorbing light from any source, a lamp dial can emit bright light for an extended period of time. Simple lamp dials have 5 charges. By expending a charge from this dial as a bonus action, you may absorb up to an hour worth of light or sunlight, for each charge spent, into this dial by holding it or placing it within range of the source without interruption. To use this dial, as an action, you can press the button on the dial to continuously shed bright light in a 20-foot radius and dim light for an additional 20 feet from the dial for a duration equal to the amount of stored light in hours. Simple lamp dials can store up to 5 hours worth of consistent light, and regain up to 1d4+1 expended charges daily at dawn.\n\nLarge Lamp Dials (rare) have 10 charges and can store up to 10 hours worth of light. Additionally, they regain 1d6+4 expended charges daily at dawn instead.\n\n**Milky Dial.** This dial only works in extremely high altitudes, such as any location in the sky islands. By absorbing giant chunks of clouds into a milky dial, you can release pathways or blocks of cloud from the dial. Simple milky dials have 5 charges. By expending a charge from this dial as a bonus action, you may absorb any 5-foot cube of island or sea clouds by placing it within 5 feet of the source. To use this dial, as an action, you can place or hold the dial in a 5-foot square, then press the button on it to release a 5-foot cube of island or water cloud stored, depending on the type of clouds absorbed, within 5 feet of the dial once at the beginning of every round. Each 5-foot cube of this cloud has 1 HP and AC 6, and will float slowly in any direction it is expelled or pushed, up to 5 feet per round. Simple milky dials can store up to 25 cubic feet of cloud, and regain up to 1d4+1 expended charges daily at dawn.\n\nLarge Milky Dials (rare) have 10 charges and can store up to 50 cubic feet of cloud. Additionally, they regain 1d6+4 expended charges daily at dawn instead.\n\n**Thunder Dial.** By absorbing electric elemental energy from a material or current, thunder dials can be used as an electric power source to anything by channeling stored electricity. Simple thunder dials have 5 charges. By expending a charge from this dial as a bonus action, you may sap electric energy from any 5-foot cube of material or current that is releasing or channeling electricity, such as a lightning rod, active wiring, or generator, by placing it within 5 feet of the source. To use this dial, as an action, you can place or hold the dial in a 5-foot square, then press the button on it to channel electricity into one nearby device for up to 24 hours for every 5-foot cube of electric energy stored being released. This can be used for simple machines such as a fan or light bulb. Alternatively, you can release all the electric energy stored in a heat dial to make an attack. As an action, you can make a melee attack against a creature and release the electricity within the dial to deal 1 lightning damage for every 5-foot cube of electric energy expelled. Simple thunder dials can store up to 25 cubic feet of electric energy, and regain up to 1d4+1 expended charges daily at dawn.\n\nLarge Thunder Dials (rare) have 10 charges and can store up to 50 cubic feet of electric energy. Additionally, they regain 1d6+4 expended charges daily at dawn instead.\n\n**Tone Dial.** This dial can store sounds or spoken messages to replay them out loud at a later time when activated. Simple tone dials have 5 charges. By expending any number of charges from this dial as a bonus action, you can record up to 10 seconds for each charge spent of any sound or spoken message. As an action, you can press the button on the dial to play any stored noise or message, which can be heard up 120 feet away from the dial depending on the volume. Additionally, stored messages can be replayed or looped for up to an hour each day, or can be erased in up to 10 second segments as an action. Simple tone dials can store up to 50 seconds of sound or speaking, and regain up to 1d4+1 expended charges daily at dawn.\n\nLarge Tone Dials (rare) have 10 charges and can store up to 100 seconds of sound, which can be replayed or looped infinitely. Additionally, they regain 1d6+4 expended charges daily at dawn instead.\n\n**Vision Dial.** By capturing and absorbing visible colored light in an area, vision dials can capture photos and print them onto paper or parchment. Simple vision dials have 5 charges. By expending a charge from this dial as a bonus action, you can capture a single photo in one direction. As an action, you can press the button on the dial to print the stored image onto a piece of paper or parchment and delete the stored photo data on the dial. Simple vision dials can store up to 5 individual photos at a time, and regain up to 1d4+1 expended charges daily at dawn.\n\nLarge Vision Dials (rare) can record videos for up to 10 seconds for every 2 charges spent, have 10 charges, and can store up to 10 photos or videos at a time. Videos can be played back on a projector created by the large vision dial, and can have individual frames printed out. Photos and videos can also continue to be stored without getting deleted after being printed. Additionally, they regain 1d6+4 expended charges daily at dawn instead.\n\n**Water Dial.** This dial can absorb and store any type of water or liquid and then release it when activated. Simple water dials have 5 charges. By expending a charge from this dial as a bonus action, you may absorb any 5-foot cube of water or liquid by placing it within 5 feet of the source. To use this dial, as an action, you can place or hold the dial in a 5-foot square, then press the button on it to release and pour up to 5 cubic feet of stored liquid, within a space up to 5 feet of the dial once at the beginning of every round. This liquid can be stored in containers, or poured over surfaces or even fires to put them out. Simple water dials can store up to 25 cubic feet of liquid, and regain up to 1d4+1 expended charges daily at dawn.\n\nLarge Water Dials (rare) have 10 charges and can store up to 50 cubic feet of liquid. Additionally, they regain 1d6+4 expended charges daily at dawn instead.\n\n**Axe Dial (Rare).** Are incredibly powerful damage-dealing dials that can amplify the effects of attacks. They can be attached to your body or combined with any weapon to amplify its effects. By passively absorbing and storing sharpness from a blade, weight from a blunt weapon, strength from the user's fists and legs, etc. an axe dial will greatly enhance any attack made with a weapon it is attached to. The are three different types of axe dials, each type increasing in both strength and rarity. \n\nA +1 axe dial (*uncommon*) will give any weapon, including your unarmed strikes, a +1 bonus to attack and damage rolls when attached.\n\nA +2 axe dial (*rare*) will give any weapon, including your unarmed strikes, a +2 bonus to attack and damage rolls when attached.\n\nA +3 axe dial (*very rare*) will give any weapon, including your unarmed strikes, a +3 bonus to attack and damage rolls when attached.\n\nIn order to attach an axe dial to a weapon or body part, the user must spend time during a short or long rest properly fitting and attaching it to the desired weapon. A weapon can only receive the benefits from one dial at a time, and the effects of separate dials on a single weapon do not stack. Furthermore, axe dials do not stack with innate weapon bonus stats, and can only increase a weapon's innate bonuses up to a total +3 for attack or damage rolls. However, axe dial bonuses do stack with bonuses from character feats and abilities. For example, a +3 supreme grade meito would receive no benefits from an axe dial and a +2 great grade meito would only increase to a +3 bonus to attack and damage rolls for the weapon if it had a +3 axe dial attached to it.\n\n**Ball Dial (Rare).** This dial is almost identical to the large milky dial (use the description from *Milky Dial.*), except when segments of solid cloud are produced from this dial, they become floating 5-foot diameter balls that can be attached to eachother without breaking. They each have 1 HP and AC 6, and can be pushed up to 30 feet in any direction as a ranged attack, popping on impact with the first thing they touch. Additionally, when a cloud ball is destroyed or popped, it will produce a random effect. Roll a d100 on the wild magic surge table (D&D standard 5th edition rules) to determine the effect, and have the effect target and damage the creature closest to the ball or the ball itself after popping. If the rolled effect grants sorcery points or doesn't have an applicable effect, re-roll on the table instead.\n\n**Eisen Dial (Rare).** The eisen dial is considered one of the strongest types of dials. This dial is almost identical to the simple milky dial (use the description from *Milky Dial.*), except when segments of solid cloud are produced from this dial, they are as thick and durable as iron. They have 30 HP and AC 20 per 5-foot cube released, and will shatter into metallic dust when destroyed. Additionally, by releasing a 5-foot cube of stored cloud, you may transform it into an iron simple melee weapon of choice that you can use. If you are proficient with rare dials, you are also proficient with the created weapon. This weapon lasts for 1 hour, or until it is dispelled as a bonus action, in which it will crumble into metallic dust afterwards.\n\n**Flash Dial (Rare).** This dial is very similar to a lamp dial, but instead releases stored light in a powerful flash that can blind enemies. Flash dials have 5 charges. By expending a charge from this dial as a bonus action, you may absorb up to an hour worth of light or sunlight, for each charge spent, into this dial by holding it or placing it within range of the source without interruption for the desired amount of time. To use this dial, as an action, you can press the button on the dial while holding it to release an hour worth of stored light in a powerful instant flash of blinding light. Each creature aside from the user within 30 feet of the dial has to make a DC 15 Constitution saving throw or become blinded until the end of their next turn. Flash dials can store up to 5 hours worth of consistent light, and regain up to 1d4+1 expended charges daily at dawn.\n\n**Flame Dial (Rare).** By absorbing flames or burning materials, flame dials can be used to release scorching bursts or beams of fire. Flame dials have 5 charges. By expending a charge from this dial as a bonus action, you may sap fire from any 5-foot cube of fire, magma, or burning material by placing it within 5 feet of the source. To use this dial, as an action, you can release a burst of flames from the dial, one ray for every stored 5-foot cube of fire released, and hurl them at targets within 120 feet. Make a ranged attack for each burst of flame created. On a hit, the target takes 2d6 fire damage. Flame dials can store up to 25 cubic feet of fire, and regain up to 1d4+1 expended charges daily at dawn.\n\n**Impact Dial (Rare).** By absorbing an instance of damage or force from an incoming attack, you can store and later release the force in a devastating burst of concentrated energy. Impact dials have 5 charges. When the user is individually targeted by an attack, spell, or damaging effect, they can use the impact dial to absorb the damage or a portion of it by expending charges as a reaction. Roll a d10 for every charge spent, and reduce the damage of the attack, spell, or effect by the number rolled and store that amount inside of the dial as part of that same reaction. The number stored cannot be more than the total amount of damage rolled by the attack, spell, or effect targeting the user of the dial. Additionally, if the damage rolled by the attack, spell, or effect is reduced to 0, it is nullified and has no effect. \n\nTo release the stored damage as a concentrated shock wave, the user can spend an action to make a melee attack against a target with the dial, deciding how much stored damage to expend. On a hit, the target takes a number of force damage equal to the expended damage. Whether the attack hits or misses, the user of the dial will be damaged by half of the expended force damage (rounded down) as recoil in force damage as well. Impact dials can store up to 30 force damage at once, and regain up to 1d4+1 expended charges daily at dawn. If the stored force damage reaches its cap, any carryover damage that cant be absorbed when attempting to nullify an attack is still dealt to the user and isn't reduced.\n\n**Jet Dial (Rare).** By storing powerful gusts or wind currents, jet dials have the ability to emit anything it absorbs as a gust of energy. Jet dials have 5 charges. By expending a charge from this dial as a bonus action, you can absorb up to a 5-foot cube of any strong wind or gas. By pressing the button on the dial as a bonus action, you can expel at least one 5-foot cube of stored wind to launch you 30 feet x every 5-foot cube of stored wind released in any direction. Jet dials can store up to 25 cubic feet of wind, and regain up to 1d4+1 expended charges daily at dawn. Additionally, attaching a jet dial to a waver will double its speed.\n\n**Reject Dial (Rare).** Reject dials are one of the strongest and hard to find dials among even the rarest dials. However, reject dials are also incredibly dangerous to use, with the recoil being able to potentially kill anyone who uses them. This dial is almost identical to the impact dial (use the description from *Impact Dial.*), except it has 10 charges, can store up to 60 force damage, and regains 1d6+4 expended charges daily at dawn.\n\n**Storm Dial (Rare).** This dial is almost identical to the simple milky dial (use the description from *Milky Dial.*), except when segments of solid cloud are produced from this dial, they come in the form of condensed chunks of powerful storm clouds. Every 5-foot cube of storm cloud can be passed through, though it is considered Difficult Terrain. Any creature that ends its turn inside a created storm cloud must make a DC 15 Strength saving throw or take 2d6 bludgeoning damage from the harsh maelstrom of wind inside the cloud. Additionally, at the start of each round, each 5-foot cube of storm cloud will target the closest creature within 30 feet and deal 1d6 lightning damage to it. Storm clouds only last for 1 minute after being created, in which they return to being an ordinary island or sea cloud after."
+      }
+    ],
+    "tables": [
+      {
+        "header": [
+          "d20",
+          "Simple Dial"
+        ],
+        "rows": [
+          [
+            "1-4",
+            "Breath Dial"
+          ],
+          [
+            "5-7",
+            "Flavor Dial"
+          ],
+          [
+            "8",
+            "Freeze Dial"
+          ],
+          [
+            "9",
+            "Heat Dial"
+          ],
+          [
+            "10-12",
+            "Lamp Dial"
+          ],
+          [
+            "13-15",
+            "Milky Dial"
+          ],
+          [
+            "16",
+            "Thunder Dial"
+          ],
+          [
+            "17-18",
+            "Tone Dial"
+          ],
+          [
+            "19",
+            "Vision Dial"
+          ],
+          [
+            "20",
+            "Water Dial"
+          ]
+        ]
+      },
+      {
+        "header": [
+          "d20",
+          "Rare Dial"
+        ],
+        "rows": [
+          [
+            "1-2",
+            "Axe Dial"
+          ],
+          [
+            "3-4",
+            "Ball Dial"
+          ],
+          [
+            "5",
+            "Eisen Dial"
+          ],
+          [
+            "6-8",
+            "Flash Dial"
+          ],
+          [
+            "9-10",
+            "Flame Dial"
+          ],
+          [
+            "11",
+            "Impact Dial"
+          ],
+          [
+            "12",
+            "Jet Dial"
+          ],
+          [
+            "13-17",
+            "Large Simple Dial (Roll on simple dial table)"
+          ],
+          [
+            "18",
+            "Reject Dial"
+          ],
+          [
+            "19-20",
+            "Storm Dial"
+          ]
+        ]
+      }
+    ]
+  },
+  "pop-greens": {
+    "name": "Pop Greens",
+    "description": "Pop greens are special seeds that have the power to instantly grow into full plants that produce a desired spell effect. Pop greens can be imbued with various effects or spells by a skilled herbalist, allowing them to be used as soon as they are planted in dirt or soil. Creating a pop green requires having a Herbalism Kit, supplies, a nearby spellcaster, and being proficient in the Nature or Arcana skills. \n\nAdditionally, they can only be created during extended periods of downtime, such as when traveling by boat to a new location in clear weather or spending time on a peaceful island.",
+    "sections": [
+      {
+        "name": "Creating a Pop Green",
+        "text": "A pop green is made by placing the energy from any spell and the material components required into a special seed. Creating a pop green can take a specific amount of time and money related to the strength and level of the Pop Green the characters wants to imbue into the seed, as shown on the table below. Additionally, the character creating the pop green must have proficiency in the Nature or Arcana skills and provide any material components required by the spell being put into the pop green. Moreover, at least one character making the pop green or assisting in the creation process must have the spell prepared, or it must be among the character's known spells, in order to create the pop green.\n\nIf the scribed spell is a cantrip, the version on the scroll works as if the caster were 1st Level."
+      },
+      {
+        "name": "Pop Green Cost",
+        "text": "| Spell Level | Time | Cost |\n|---|---|---|\n| Cantrip | 1 day | ฿150,000 |\n\nPop greens are occasionally found on various islands or sold in black markets. They can be sold to certain rich buyers for a price equal to the material cost on the table above. Their cost in the black market often equals 120% of their cost on the Pop Green Cost Table."
+      },
+      {
+        "name": "Using a Pop Green",
+        "text": "When a character possesses a pop green, he or she can use at any time by planting it in a patch of dirt, soil, or sediment nearby. The pop green can be planted as an action, bonus action, or reaction (depending on the spell) within 5 feet of the user. It can also be thrown or fired by a sling as an action up to 30 feet away from the user into a nearby patch of soil. When the pop green is planted, it will begin casting the spell stored inside of it, no material components required. \n\nThe plant created will begin casting the spell from itself. For example, if the plant created from a pop green has cone of cold stored in it, it will cast it immediately after the action the user made to plant it, blasting the 60-foot cone from itself and damaging all enemies in the range depending on the direction the user wants it to aim the spell. After the spell is finished being casted or concentrated on, it will wither and die. \n\nIf the plant casts a spell, such as time stop, that can only target the caster, it will instead target the creature that planted it if they are within 30 feet of the plant. Otherwise, the plant will target itself with the spell before withering and dying. If the spell requires a target, the person who planted the pop green can verbally command it to choose the desired targets. Additionally, if the spell has a casting time longer than an action, the plant will remain alive and actively cast the spell until it is casted. Also, if the spell requires concentration, the plant will remain alive and attempt to concentrate on the spell until the duration ends or concentration is lost. Once the spell is no longer being concentrated on or is finished casting, the plant instantly withers and dies.\n\nWhile the plant remains alive, its stats are as follows (Treat cantrips as 1st-level spells when determining these stats). It is a large plant, its HP is equal to 5 x Spell Level (Minimum 5), its AC is equal to 10 + Spell Level (Minimum 10), it has vulnerability to fire damage, and its Constitution save bonus for keeping concentration is equal to the Spell Level. The plant's appearance depends on the type of spell stored by it. For example, if it has the fireball spell stored, it may have a reddish-orange patterned appearance, a bazooka-shaped stem, and flame-shaped leaves. The plant may also cast or create the spell effect by emitting magical effects from its stalk or mouth, or by attacking with segments of its body.\n\nThe spell casted by the plant has an Attack Bonus and Save DC depending on the level of the spell stored by the plant, shown on the table below."
+      },
+      {
+        "name": "Pop Green Spellcasting",
+        "text": "| Spell Level | Save DC | Attack Bonus |\n|---|---|---|\n| Cantrip | 13 | +5 |"
+      },
+      {
+        "name": "Pop Green Complications",
+        "text": "If the creature planting the pop green is a spellcaster that already knows how to cast the spell being stored by the pop green, planting it will always work without fail.\n\nHowever, if the creature planting the pop green doesn't already know how to cast the spell being stored by it, there is a chance that the pop green will fail to grow and will die before it casts the spell successfully. In this case, the creature planting it must make an Intelligence (Nature) or Intelligence (Arcana) check to determine whether they plant it successfully or not. The DC equals 10 + the spell's level. On a failed check, the plant dies and has no other effect."
+      }
+    ],
+    "tables": [
+      {
+        "header": [
+          "Spell Level",
+          "Time",
+          "Cost"
+        ],
+        "rows": [
+          [
+            "Cantrip",
+            "1 day",
+            "฿150,000"
+          ]
+        ]
+      },
+      {
+        "header": [
+          "Spell Level",
+          "Save DC",
+          "Attack Bonus"
+        ],
+        "rows": [
+          [
+            "Cantrip",
+            "13",
+            "+5"
+          ]
+        ]
+      }
+    ]
+  },
+  "stars": {
+    "name": "Stars",
+    "description": "Stars are special types of ammo that deal additional damage compared to ordinary ammo or have some form of additional effect when fired. These can be crafted by a tinkerer or marksman, or found and purchased throughout the adventure. \n\nCrafting a star requires any type of appropriate artisan's tools (such as mason's tools or smith's tools), proficiency in the Arcana or Sleight of Hand skills, and proficiency in at least one type of ranged weapon. The rarity, cost, and time it takes to make a batch of 5 for each type of star is listed in the Star Cost Table. Machine gun ammo, sniper rifle ammo, and bazooka ammo require double the time and money to make. Sling bullets require half the time and money to make.",
+    "sections": [
+      {
+        "name": "Star Batch Cost",
+        "text": "| Star Type | Time | Cost |\n|---|---|---|\n| Uncommon | 1 workweek | ฿1,000,000 |\n\nEach batch of stars created from the table above comes with 5 of the desired type of ammo. Once a star is used or fired, it cannot be used again. If a star misses a target after being fired, it has no effect and becomes useless."
+      },
+      {
+        "name": "Types of Stars",
+        "text": "Individual batches of stars can come in many forms, depending on their rarity. Below are the different types of stars you can create.\n\n**Metallic Star.** This type of star is much heavier and more destructive than ordinary ammo. Uncommon metallic stars have a +1 to attack and damage rolls when fired, rare metallic stars have a +2 to attack and damage rolls when fired, and very rare metallic stars have a +3 to attack and damage rolls when fired. Additionally, targets that are medium or smaller that are hit by a metallic star must succeed on a Strength save against a DC equal to 10 + (attack/damage bonus of the star x 2), or be knocked prone.\n\n**Flame Star.** A flame star ignites mid-air, igniting anything it hits on contact. Uncommon flame stars deal an addition 1d6 fire damage when fired, rare flame stars deal an additional 2d6 fire damage when fired, and very flame metallic stars deal an additional 3d6 fire damage when fired.\n\n**Smoke Star.** This star creates a sphere of smoke centered on a point within range on impact with a target. An uncommon smoke star creates a sphere radius of 10 feet, a rare smoke star creates a sphere radius of 20 feet, and a very rare smoke star creates a sphere radius of 30 feet. The sphere spreads around corners, and its area is heavily obscured. It lasts for 1 minute or until a wind of moderate or greater speed (at least 10 miles per hour) disperses it.\n\n**Cactus Star.** This star explodes upon hitting a target, piercing nearby targets with flying spikes. If this star hits a target, it will damage all creatures within 5 feet of the target for 1d4 piercing damage if it is uncommon. If it is rare, it will damage all creatures within 5 feet of the target for 2d4 piercing damage. If it is very rare, it will damage all creatures within 5 feet of the target for 3d4 piercing damage.\n\n**Terror Star.** When this star hits a target, a terrifying vision appears in front of them. Until the end of their next turn, they are frightened of you for the duration. If it is a rare terror star, they also take 1d4 additional psychic damage. If it is a very rare terror star, they take 2d4 additional psychic damage instead."
+      }
+    ],
+    "tables": [
+      {
+        "header": [
+          "Star Type",
+          "Time",
+          "Cost"
+        ],
+        "rows": [
+          [
+            "Uncommon",
+            "1 workweek",
+            "฿1,000,000"
+          ]
+        ]
+      }
+    ]
+  },
+  "meito": {
+    "name": "Meito",
+    "description": "A meito is a world-class blade of exceptional quality. These blades were made by some of the best craftsmen in the world, and come in many shapes and sizes. They are far superior to regular blades, and have the power to slice through just about any material.\n\nThere are a limited number of meito in the world, and each can sell for several hundreds of millions of Belly (฿) or more depending on the rarity. Finding these swords, or even individuals who will sell these swords, should be incredibly difficult to accomplish for ordinary pirates. The four grades of meito and the number of each in existence are listed in the table below.",
+    "sections": [
+      {
+        "name": "Meito Grades",
+        "text": "| Grade | Number of Blades |\n|---|---|\n| Regular | Unknown |\n| Skillful | 50 |\n| Great | 21 |\n| Supreme | 12 |"
+      },
+      {
+        "name": "Regular Grade",
+        "text": "Regular grade meito are the lowest classification for a meito blade, but are still exceptional in quality and sharpness compared to ordinary blades. Any weapon considered a regular grade meito will typically have a +1 bonus to Attack rolls."
+      },
+      {
+        "name": "Skillful Grade",
+        "text": "With only 50 skillful grade blades in existence, this classification of meito are known to be extremely light, sharp, and powerful. Attuning to a skillful grade meito may also grant the user special abilities or bonuses while using the weapon. Any weapon considered a skillful grade meito will usually have a +1 bonus to Attack and Damage rolls."
+      },
+      {
+        "name": "Great Grade",
+        "text": "Known to be the second rarest grade of meito with only 21 in existence, great grade meito are only a slight bit weaker than supreme grade meito. Despite this, they are still some of the few strongest swords in the world. Attuning to a great grade meito may also grant the user special abilities or bonuses while using the weapon. Any weapon considered a great grade meito will typically have a +2 bonus to Attack and Damage rolls."
+      },
+      {
+        "name": "Supreme Grade",
+        "text": "Being the rarest grade of meito in the world, supreme grade meito are 12 of the strongest blades ever crafted. This grade of meito has the ability to slice through mountains like butter if wielded by a capable user. Attuning to a supreme grade meito may also grant the user special abilities or bonuses while using the weapon. Any weapon considered a supreme grade meito will always have a +3 bonus to Attack and Damage rolls."
+      },
+      {
+        "name": "Black Blade",
+        "text": "Any meito or weapon that has become black in color through long-term use officially becomes a black blade. Black blades are considered indestructible, and can never be destroyed under any circumstance. Additionally, if a meito is less than supreme grade and becomes a black blade, it automatically advances up a grade in strength, gaining higher stats. Black blades may also come with additional powerful effects or boons, such as the ability to deal extra necrotic damage when rolling a critical hit. If a user of a meito turns their blade into a black blade, feel free to use the table below to determine what bonus the black blade gains. Gaining the effects of special bonuses requires the user to attune to the blade."
+      },
+      {
+        "name": "Cursed Blade",
+        "text": "Cursed blades, such as kitetsu swords, are known to bring doom and misfortune to its user over time. However, if tamed, cursed blades can be extraordinarily fearsome in battle. Every cursed blade comes with a downside to being used recklessly, and each cursed blade may have a more crippling effect than the last depending on how high the grade is. When the user of a cursed blade attunes to it, they must succeed on a contested charisma check against the cursed blade (charisma bonus of the blade is decided by DM). \n\nIf the user loses the contest, they will attune to the blade and gain a random form of indefinite madness (Standard D&D 5th Edition Rules). If the user wins the contest, they may attune to the blade regularly. After attuning, the only way to end the attunement is to use a remove curse spell. While attuned, the user will gain access to a special ability while using the blade (feel free to roll on the table below to decide the ability). However, there may also be a severe drawback equivalent to the benefit the sword offers. For example, a cursed blade may deal an additional 2d6 necrotic damage to a target on a hit, but will deal 1d6 force damage to its owner every time an attack misses."
+      },
+      {
+        "name": "Special Blade Bonuses",
+        "text": "| d10 | Bonus |\n|---|---|\n| 1 | Deals radiant damage and emits 20 feet of bright sunlight. |\n| 2 | Deals necrotic damage and creates a 20-foot radius of darkness that lightly obscures the area. |\n| 3 | Creatures cannot heal for 1 minute when damaged. |\n| 4 | Deals an additional 2d6 elemental damage. |\n| 5 | Ignores resistance to the weapon's damage type. |\n| 6 | Removes a creature's limb when you roll a 20. |\n| 7 | Heals you for damage dealt when you roll a 20. |\n| 8 | Blade's reach extends by 5 feet. |\n| 9 | Deals additional 1d6 damage for every size larger than you a target is. |\n| 10 | Deals double damage against structures. |"
+      }
+    ],
+    "tables": [
+      {
+        "header": [
+          "Grade",
+          "Number of Blades"
+        ],
+        "rows": [
+          [
+            "Regular",
+            "Unknown"
+          ],
+          [
+            "Skillful",
+            "50"
+          ],
+          [
+            "Great",
+            "21"
+          ],
+          [
+            "Supreme",
+            "12"
+          ]
+        ]
+      },
+      {
+        "header": [
+          "d10",
+          "Bonus"
+        ],
+        "rows": [
+          [
+            "1",
+            "Deals radiant damage and emits 20 feet of bright sunlight."
+          ],
+          [
+            "2",
+            "Deals necrotic damage and creates a 20-foot radius of darkness that lightly obscures the area."
+          ],
+          [
+            "3",
+            "Creatures cannot heal for 1 minute when damaged."
+          ],
+          [
+            "4",
+            "Deals an additional 2d6 elemental damage."
+          ],
+          [
+            "5",
+            "Ignores resistance to the weapon's damage type."
+          ],
+          [
+            "6",
+            "Removes a creature's limb when you roll a 20."
+          ],
+          [
+            "7",
+            "Heals you for damage dealt when you roll a 20."
+          ],
+          [
+            "8",
+            "Blade's reach extends by 5 feet."
+          ],
+          [
+            "9",
+            "Deals additional 1d6 damage for every size larger than you a target is."
+          ],
+          [
+            "10",
+            "Deals double damage against structures."
+          ]
+        ]
+      }
+    ]
+  },
+  "underworld-marketplace": {
+    "name": "Underworld Marketplace",
+    "description": "The Underworld is a colossal crime syndicate that is known to carry smuggled goods and trade them off to bidders in underground auctions or markets. Its main operations are found on the Grand Line, and many different types of pirates, nobles, and notorious figures bid for extremely rare (and often very illegal) goods and services they wouldn't be able to purchase elsewhere.\n\nSome towns may have underworld marketplaces and black markets readily available and easy to find for wealthy buyers, while other locations may attempt to hide their dealings away from officials. Goods sold in these auction houses and marketplaces may include extremely rare or exotic items such as devil fruits, powerful weapons, and legendary materials. Sometimes this auction houses also commit more horrific crimes such as capturing non-human races, selling slaves, or auctioning away weapons of mass destruction.\n\nThe price of a good depends on its rarity, as listed in the table below. Because items are often auctioned away in these markets instead of being regularly sold, it may be possible that a bidder will need to pay more (or very rarely less) than the standard asking price for more popular items.\n\nCommon items are easy to find in these markets, if their price is high enough to warrant being auctioned. Uncommon items are less common, and typically these markets will only have 1d8 uncommon items in each marketplace. Rare items are also pretty hard to attain, with only 1d6 possibly existing in each marketplace that sells them. Very rare items are among the hardest to find, with a 25% chance of there being any very rare items in the marketplace to begin with, in which case there may be 1d4 of these types of items. Lastly, legendary items are almost never sold in auction houses or underworld marketplaces. However, there is a 10% chance a single legendary item will be offered by a high-ranking underworld broker or official. In this case, it will likely be sold for an extraordinarily high price, or be given away in some high-stakes competition.",
+    "sections": [
+      {
+        "name": "Underworld Smuggled Goods",
+        "text": "Various types of rare items are available in the Underworld Markets. As shown on the table, some of these items have different types of rarity.\n\n**Slaves.** Slaves are commonly sold at many exclusive underworld auction houses. Common slaves may include captured low-level pirates, commoners, and animals. Rare or Legendary slaves may include more exotic non-human races, such as merfolk or fish-men. \n\n**Rare Supplies.** These supplies are nearly impossible for ordinary citizens to buy, as they are typically extracted from materials that are illegal or difficult to find. For example, Adam Wood is a type of Very Rare wood that can be used to build top-tier ships. However, this wood can only be bought through the underworld market due to how difficult it is to find or purchase normally.\n\n**Devil Fruit.** Devil fruits are among some of the rarest items in the world. However, some random devil fruits may be sold in underworld auctions. If a Very Rare devil fruit is being sold, its powers are unknown and must be rolled on the Devil Fruit Table (Chapter 7) only after being eaten."
+      },
+      {
+        "name": "Underworld Marketplace",
+        "text": "| Item | Rarity | Minimum Cost |\n|---|---|---|\n| Black Supreme Grade Meito | Legendary | >฿500,000,000 |\n| Cursed Meito | - | Half of meito type cost |\n| Den Den Mushi | Rare | >฿5,000,000 |\n| Den Den Mushi Variant | Very Rare | >฿10,000,000 |\n| Devil Fruit | Uncommon-Rare | >฿10,000,000 |\n| Devil Fruit | Very Rare | >฿100,000,000 |\n| Devil Fruit | Legendary | >฿1,000,000,000 |\n| Devil Fruit Encyclopedia | Legendary | >฿1,000,000,000 |\n| Eternal Pose | Uncommon | >฿1,000,000 |\n| Eternal Pose | Rare | >฿5,000,000 |\n| Eternal Pose | Very Rare | >฿50,000,000 |\n| Great Grade Meito | Rare | >฿50,000,000 |\n| Illegal Weapons | Uncommon | >฿2,000,000 |\n| Illegal Weapons | Rare | >฿5,000,000 |\n| Illegal Weapons | Very Rare | >฿50,000,000 |\n| Illegal Weapons | Legendary | >฿500,000,000 |\n| Rare Dial | Uncommon | >฿5,000,000 |\n| Rare Equipment | Common | >฿1,000,000 |\n| Rare Equipment | Uncommon | >฿5,000,000 |\n| Rare Equipment | Rare | >฿50,000,000 |\n| Rare Equipment | Very Rare | >฿100,000,000 |\n| Rare Equipment | Legendary | >฿500,000,000 |\n| Rare Supplies (200,000 lbs.) | Uncommon | >฿5,000,000 |\n| Rare Supplies (200,000 lbs.) | Rare | >฿20,000,000 |\n| Rare Supplies (200,000 lbs.) | Very Rare | >฿200,000,000 |\n| Regular Grade Meito | Common | >฿1,000,000 |\n| Simple Dial | Common | >฿500,000 |\n| Slave | Common | >฿500,000 |\n| Slave | Uncommon | >฿1,000,000 |\n| Slave | Rare | >฿5,000,000 |\n| Slave | Very Rare | >฿50,000,000 |\n| Slave | Legendary | >฿500,000,000 |\n| Skillful Grade Meito | Uncommon | >฿5,000,000 |\n| Supreme Grade Meito | Very Rare | >฿100,000,000 |\n\nIf a Devil Fruit being sold or auctioned is Legendary in rarity, its powers will be known and stated by the seller before the bidding begins. These devil fruits are among the strongest, and typically come in the form of a powerful Logia, Mythical Zoan, or rare paramecia type.\n\n**Meito.** Details about Meito blades are listed earlier in this chapter. A cursed meito will be sold for half the minimum cost initially, though it will not be stated that the sword is cursed.\n\n**Dials.** Detials about different types of dials are listed earlier in this chapter. The strongest dials may have a starting price many times higher than the minimum cost of rare dials.\n\n**Illegal Weapons.** Illegal weapons are often weapons of mass destruction and arms deemed to be so dangerous that they have been deemed highly illegal to use. Being banned by the World Government, having these weapons in your possession is punishable by death. Uncommon illegal weapons have the potential to wipe out an average-sized house. Rare illegal weapons have the potential to wipe out an entire block of buildings. Very rare illegal weapons have the potential to wipe out a small village. Legendary illegal weapons have the ability to destroy a large town. To determine the deadliness and effects of a type of illegal weapon, have it work similarly to a pop green or spell scroll of the same rarity. \n\nAn uncommon illegal weapon may have the effect of a Fireball spell, a rare illegal weapon may have the effect of a Cloudkill spell, a very rare illegal weapon may have the effect of a Fire Storm spell, and a legendary illegal weapon may have the effect of an Earthquake or Meteor Swarm Spell. Each weapon may differ in use and intensity, and some may be far more catastrophic than even the deadliest known spells if the DM allows it. They may also work similar to expendable magic items in standard 5th Edition D&D rules, such as a Necklace of Fireballs.\n\n**Rare Equipment.** Certain types of equipment, such as armor, guns, rings, or other types of gear are considered so rare and expensive that they are only occasionally sold in underworld auctions or markets. This equipment being sold may include items similar to +1 Armor, magic rings, or vicious weapons.\n\n**Devil Fruit Encyclopedia.** These books are among some of the rarest items in the world, with only a few ever being printed. Devil Fruit Encyclopedias can be used to automatically identify most types of Devil Fruit and give basic information on its appearance and powers. When observing a Devil Fruit with this book, you or the DM may view the official [Devil Fruit Encyclopedia](https://homebrewery.naturalcrit.com/share/24DkobVl8IGZ) to identify its name and properties without needing to consume it.\n\n**Eternal Pose.** Eternal Poses are special log poses that always point toward a particular island. This makes finding that specific island very easy, and getting lost is almost impossible. The rarity of the eternal pose depends on how legendary the location is."
+      }
+    ],
+    "tables": [
+      {
+        "header": [
+          "Item",
+          "Rarity",
+          "Minimum Cost"
+        ],
+        "rows": [
+          [
+            "Black Supreme Grade Meito",
+            "Legendary",
+            ">฿500,000,000"
+          ],
+          [
+            "Cursed Meito",
+            "-",
+            "Half of meito type cost"
+          ],
+          [
+            "Den Den Mushi",
+            "Rare",
+            ">฿5,000,000"
+          ],
+          [
+            "Den Den Mushi Variant",
+            "Very Rare",
+            ">฿10,000,000"
+          ],
+          [
+            "Devil Fruit",
+            "Uncommon-Rare",
+            ">฿10,000,000"
+          ],
+          [
+            "Devil Fruit",
+            "Very Rare",
+            ">฿100,000,000"
+          ],
+          [
+            "Devil Fruit",
+            "Legendary",
+            ">฿1,000,000,000"
+          ],
+          [
+            "Devil Fruit Encyclopedia",
+            "Legendary",
+            ">฿1,000,000,000"
+          ],
+          [
+            "Eternal Pose",
+            "Uncommon",
+            ">฿1,000,000"
+          ],
+          [
+            "Eternal Pose",
+            "Rare",
+            ">฿5,000,000"
+          ],
+          [
+            "Eternal Pose",
+            "Very Rare",
+            ">฿50,000,000"
+          ],
+          [
+            "Great Grade Meito",
+            "Rare",
+            ">฿50,000,000"
+          ],
+          [
+            "Illegal Weapons",
+            "Uncommon",
+            ">฿2,000,000"
+          ],
+          [
+            "Illegal Weapons",
+            "Rare",
+            ">฿5,000,000"
+          ],
+          [
+            "Illegal Weapons",
+            "Very Rare",
+            ">฿50,000,000"
+          ],
+          [
+            "Illegal Weapons",
+            "Legendary",
+            ">฿500,000,000"
+          ],
+          [
+            "Rare Dial",
+            "Uncommon",
+            ">฿5,000,000"
+          ],
+          [
+            "Rare Equipment",
+            "Common",
+            ">฿1,000,000"
+          ],
+          [
+            "Rare Equipment",
+            "Uncommon",
+            ">฿5,000,000"
+          ],
+          [
+            "Rare Equipment",
+            "Rare",
+            ">฿50,000,000"
+          ],
+          [
+            "Rare Equipment",
+            "Very Rare",
+            ">฿100,000,000"
+          ],
+          [
+            "Rare Equipment",
+            "Legendary",
+            ">฿500,000,000"
+          ],
+          [
+            "Rare Supplies (200,000 lbs.)",
+            "Uncommon",
+            ">฿5,000,000"
+          ],
+          [
+            "Rare Supplies (200,000 lbs.)",
+            "Rare",
+            ">฿20,000,000"
+          ],
+          [
+            "Rare Supplies (200,000 lbs.)",
+            "Very Rare",
+            ">฿200,000,000"
+          ],
+          [
+            "Regular Grade Meito",
+            "Common",
+            ">฿1,000,000"
+          ],
+          [
+            "Simple Dial",
+            "Common",
+            ">฿500,000"
+          ],
+          [
+            "Slave",
+            "Common",
+            ">฿500,000"
+          ],
+          [
+            "Slave",
+            "Uncommon",
+            ">฿1,000,000"
+          ],
+          [
+            "Slave",
+            "Rare",
+            ">฿5,000,000"
+          ],
+          [
+            "Slave",
+            "Very Rare",
+            ">฿50,000,000"
+          ],
+          [
+            "Slave",
+            "Legendary",
+            ">฿500,000,000"
+          ],
+          [
+            "Skillful Grade Meito",
+            "Uncommon",
+            ">฿5,000,000"
+          ],
+          [
+            "Supreme Grade Meito",
+            "Very Rare",
+            ">฿100,000,000"
+          ]
+        ]
+      }
+    ]
+  },
+  "den-den-mushi": {
+    "name": "Den Den Mushi",
+    "description": "Den Den Mushi are a species of telepathic snails that can be used for vocal communication, similar to telephones. Den Den Mushi are often modified by people to have dials, receivers, and other accessories built into to their shells and bodies, allowing for humans and other creatures to utilize their telepathy and use them for long distance communication with other modified Den Den Mushi.\n\nSome Den Den Mushi are modified to serve as makeshift telephones, some are modifed to serve as cameras, or other transmission devices. Very rare Den Den Mushi devices may be used for other specific purposes, such as intercepting other Den Den Mushi. Additionally, some may be modified and painted to resemble their owners.\n\n**Standard Den Den Mushi.** The most commonly used Den Den Mushi have telepathic abilities that allow them to serve as telephones. When two Den Den Mushi connect to each other, any sound that plays into one will be transmitted and sent over to the other and be perfectly replicated by the receiving Den Den Mushi, and vice versa. This is essentially the same as calling someone with a telephone. There may be limitations to the signal range of most Den Den Mushi, aside from few rare ones that have nearly unlimited range.\n\n**Baby Den Den Mushi.** Are much smaller audio-based Den Den Mushi that can be concealed in clothing to avoid detection. However, this comes at the cost of having a weaker signal range.\n\n**Black Den Den Mushi.** Is a Den Den Mushi that intercepts and listens into other audio-based Den Den Mushi communicating, being able to save any messages they record and memorize them for playback. These are often used by government agents and the marines.\n\n**White Den Den Mushi.** Is a very special type of Den Den Mushi that prevents any nearby Black Den Den Mushi from eavesdropping. These are incredibly rare, and are typically used by Revolutionary agents.\n\n**Visual Den Den Mushi.** Are Den Den Mushi that record and relay visual information in order to play it back later in the form of photographs or videos. These Den Den Mushi can capture photos or record videos and then project them back onto screens by using their powerful flashing eyes for others to see. In other words, they often serve as both cameras and image or video projectors.\n\n**Special Den Den Mushi.** Are the rarest variety of Den Den Mushi reserved for top world officials. These are used to relay emergency messages to other Den Den Mushi. For example, a Golden Den Den Mushi can be used to send an emergency signal to a Silver Den Den Mushi, which will order a Buster Call assault onto an island or location.",
+    "sections": [],
+    "tables": []
+  }
+}

@@ -233,3 +233,39 @@ Trampas: un torneo con mismo juego+nombre+fecha no se importa dos veces
 (`norm_name`: sin acentos/mayúsculas). Si `ranking_claims.position` tiene un
 CHECK acotado, el CSV grande falla — la verificación al final del SQL lo
 muestra.
+
+---
+
+## 9. Roll Player — personajes de rol (sep 2026)
+
+Tile "Roll Player" en el Q Hub → `RollPlayerScreen`. Creador de personajes
+estilo D&D Beyond para los homebrews de Quest. Arranca con **Dungeons and
+Devil Fruits** (One Piece · D&D 5e, autor oneworldhd).
+
+- **Datos**: `public/rulesets/<id>/*.json` (motor + `reference.json` con el
+  manual entero). Formato descrito en `public/rulesets/one-piece-ddf/README.md`.
+  Agregar otro homebrew = otra carpeta + una entrada en
+  `src/rollplayer/rulesets.js`. Nada del motor sabe de One Piece.
+- **Motor** (`src/rollplayer/engine.js`): implementa `derived_rules.json` —
+  modificadores, bono de competencia, PV (max del dado a nivel 1, promedio
+  después), CA como el MAYOR entre 10+DES / armadura / Unarmored Defense /
+  Soul Armor (nunca suma), salvaciones, destrezas, rasgos activos por nivel,
+  CD de conjuros y de Haki. El personaje guarda SOLO elecciones y estado.
+- **Asistente**: ruleset → nombre+raza(+subraza, Human Variant con sus
+  elecciones) → clase + destrezas → puntuaciones (point buy 27 / array /
+  manual) → trasfondo + tripulación + sueño → equipo + Belly (tirada de la
+  clase) → resumen.
+- **Hoja viva**: PV con daño/curación, PV temporales, salvaciones de muerte,
+  condiciones, agotamiento, descanso largo; rasgos expandibles con el texto
+  del manual; Haki (colores + avances por rareza, con nota del Spirit Surge)
+  y Fruta (catálogo de 224 o custom, cargas, habilidades); inventario con
+  equipar armadura (afecta CA) y Belly; historia con sugerencias del
+  trasfondo. **Subir de nivel**: PV, subclase cuando toca, ASI o feat.
+- **Guardado** (`src/rollplayer/storage.js`): con sesión en `rp_characters`
+  (jsonb, RLS dueño), sin sesión en localStorage; botón para subir los
+  locales a la cuenta. Migración: `20260906_roll_player.sql`.
+- **Manual**: visor con búsqueda sobre `reference.json` (1.3 MB, carga
+  perezosa al abrirlo).
+- **Pendiente / a decidir**: los hechizos 5e estándar solo están por nombre
+  (el manual no trae el texto; hace falta el SRD aparte). Permiso del autor
+  del homebrew antes de promocionarlo como feature pública (ver README).

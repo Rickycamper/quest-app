@@ -1,0 +1,1547 @@
+{
+  "chemist": {
+    "cantrips": {
+      "spells": [
+        "Control Flames",
+        "Create Bonfire",
+        "Druidcraft",
+        "Frostbite",
+        "Guidance",
+        "Gust",
+        "Infestation",
+        "Magic Stone",
+        "Mending",
+        "Mold Earth",
+        "Poison Spray",
+        "Primal Savagery",
+        "Produce Flame",
+        "Resistance",
+        "Shillelagh",
+        "Thorn Whip",
+        "Thunderclap"
+      ],
+      "custom": []
+    },
+    "1": {
+      "spells": [
+        "Absorb Elements",
+        "Animal Friendship",
+        "Beast Bond",
+        "Charm Person",
+        "Create or Destroy Water",
+        "Cure Wounds",
+        "Detect Magic",
+        "Detect Poison and Disease",
+        "Earth Tremor",
+        "Entangle",
+        "Faerie Fire",
+        "Fog Cloud",
+        "Goodberry",
+        "Healing Word",
+        "Ice Knife",
+        "Jump",
+        "Longstrider",
+        "Protection from Evil and Good",
+        "Purify Food and Drink",
+        "Snare",
+        "Speak with Animals",
+        "Thunderwave"
+      ],
+      "custom": []
+    },
+    "2": {
+      "spells": [
+        "Air Bubble",
+        "Animal Messenger",
+        "Barkskin",
+        "Beast Sense",
+        "Continual Flame",
+        "Darkvision",
+        "Dust Devil",
+        "Earthbind",
+        "Enhance Ability",
+        "Enlarge/Reduce",
+        "Find Traps",
+        "Flame Blade",
+        "Flaming Sphere",
+        "Gust of Wind",
+        "Healing Spirit",
+        "Heat Metal",
+        "Hold Person",
+        "Lesser Restoration",
+        "Locate Animals or Plants",
+        "Locate Object",
+        "Moonbeam",
+        "Pass Without Trace",
+        "Protection from Poison",
+        "Skywrite",
+        "Spike Growth",
+        "Summon beast",
+        "Warding Wind",
+        "Wither and Bloom"
+      ],
+      "custom": []
+    },
+    "3": {
+      "spells": [
+        "Aura of Vitality",
+        "Call Lightning",
+        "Conjure Animals",
+        "Daylight",
+        "Dispel Magic",
+        "Elemental Weapon",
+        "Erupting Earth",
+        "Feign Death",
+        "Flame Arrows",
+        "Meld into Stone",
+        "Plant Growth",
+        "Protection from Energy",
+        "Revivify",
+        "Sleet Storm",
+        "Soap Bubble",
+        "Speak with Plants",
+        "Summon fey",
+        "Slime Wave",
+        "Wall of Goo",
+        "Water Breathing",
+        "Water Walk",
+        "Wind Wall"
+      ],
+      "custom": [
+        "Soap Bubble",
+        "Slime Wave",
+        "Wall of Goo"
+      ]
+    },
+    "4": {
+      "spells": [
+        "Blight",
+        "Charm Monster",
+        "Confusion",
+        "Conjure Minor Elementals",
+        "Conjure Woodland Beings",
+        "Control Water",
+        "Divination",
+        "Dominate Beast",
+        "Elemental Bane",
+        "Fire Shield",
+        "Freedom of Movement",
+        "Giant Insect",
+        "Grasping Vine",
+        "Hallucinatory Terrain",
+        "Ice Storm",
+        "Locate Creature",
+        "Polymorph",
+        "Stone Shape",
+        "Summon Elemental",
+        "Swamp Sphere",
+        "Wall of Fire"
+      ],
+      "custom": [
+        "Swamp Sphere"
+      ]
+    },
+    "5": {
+      "spells": [
+        "Antilife Shell",
+        "Awaken",
+        "Cone of Cold",
+        "Conjure Elemental",
+        "Contagion",
+        "Control Winds",
+        "Geas",
+        "Greater Restoration",
+        "Insect Plague",
+        "Mass Cure Wounds",
+        "Planar Binding",
+        "Scrying",
+        "Summon Draconic Spirit",
+        "Transmute Rock",
+        "Wall of Stone",
+        "Wrath of Nature"
+      ],
+      "custom": []
+    },
+    "6": {
+      "spells": [
+        "Bones of the Earth",
+        "Conjure Fey",
+        "Find the Path",
+        "Flesh to Stone",
+        "Heal",
+        "Heroes' Feast",
+        "Investiture of Flame",
+        "Investiture of Ice",
+        "Investiture of Stone",
+        "Investiture of Wind",
+        "Move Earth",
+        "Primordial Wind",
+        "Sunbeam",
+        "Wall of Thorns",
+        "Wind Walk"
+      ],
+      "custom": []
+    },
+    "7": {
+      "spells": [
+        "Draconic Transformation",
+        "Fire Storm",
+        "Mirage Arcane",
+        "Regenerate",
+        "Reverse Gravity",
+        "Symbol",
+        "Whirlwind"
+      ],
+      "custom": []
+    },
+    "8": {
+      "spells": [
+        "Animal Shapes",
+        "Antipathy/Sympathy",
+        "Control Weather",
+        "Earthquake",
+        "Feeblemind",
+        "Incendiary Cloud",
+        "Poison Giant: Hell's Judgement",
+        "Slime Tsunami",
+        "Sunburst"
+      ],
+      "custom": [
+        "Poison Giant: Hell's Judgement",
+        "Slime Tsunami"
+      ]
+    },
+    "9": {
+      "spells": [
+        "Foresight",
+        "Ice Age",
+        "Locate Devil Fruit Power",
+        "Shapechange",
+        "Storm of Vengeance",
+        "True Resurrection"
+      ],
+      "custom": [
+        "Ice Age",
+        "Locate Devil Fruit Power"
+      ]
+    }
+  },
+  "devilforged": {
+    "cantrips": {
+      "spells": [
+        "Blade Ward",
+        "Booming Blade",
+        "Chill Touch",
+        "Create Bonfire",
+        "Eldritch Blast",
+        "Friends",
+        "Frostbite",
+        "Green-Flame Blade",
+        "Infestation",
+        "Lightning Lure",
+        "Mage Hand",
+        "Magic Stone",
+        "Mind Sliver",
+        "Minor Illusion",
+        "Poison Spray",
+        "Prestidigitation",
+        "Sword Burst",
+        "Thunderclap",
+        "Toll the Dead",
+        "True Strike"
+      ],
+      "custom": []
+    },
+    "1": {
+      "spells": [
+        "Armor of Agathys",
+        "Arms of Hadar",
+        "Cause Fear",
+        "Charm Person",
+        "Distort Value",
+        "Expeditious Retreat",
+        "Hellish Rebuke",
+        "Hex",
+        "Illusory Script",
+        "Protection from Evil and Good",
+        "Witch Bolt"
+      ],
+      "custom": []
+    },
+    "2": {
+      "spells": [
+        "Borrowed Knowledge",
+        "Cloud of Daggers",
+        "Crown of Madness",
+        "Darkness",
+        "Earthbind",
+        "Enthrall",
+        "Flock of Familiars",
+        "Hold Person",
+        "Invisibility",
+        "Mind Spike",
+        "Mirror Image",
+        "Misty Step",
+        "Ray of Enfeeblement",
+        "Shadow Blade",
+        "Shatter",
+        "Spider Climb",
+        "Suggestion"
+      ],
+      "custom": []
+    },
+    "3": {
+      "spells": [
+        "Counterspell",
+        "Dispel",
+        "Enemies Abound",
+        "Fear",
+        "Fly",
+        "Gaseous Form",
+        "Hunger of Hadar",
+        "Hypnotic Pattern",
+        "Incite Greed",
+        "Intellect Fortress",
+        "Magic Circle",
+        "Major Image",
+        "Remove Curse",
+        "Spirit Shroud",
+        "Summon Fey",
+        "Summon Lesser Demons",
+        "Summon Shadowspawn",
+        "Summon Undead",
+        "Thunder Step",
+        "Vampiric Touch"
+      ],
+      "custom": []
+    },
+    "4": {
+      "spells": [
+        "Banishment",
+        "Blight",
+        "Charm Monster",
+        "Dimension Door",
+        "Elemental Bane",
+        "Galder's Speedy Courier",
+        "Hallucinatory Terrain",
+        "Raulothim's Psychic Lance",
+        "Shadow of Moil",
+        "Sickening Radiance",
+        "Summon Aberration",
+        "Summon Greater Demon"
+      ],
+      "custom": []
+    },
+    "5": {
+      "spells": [
+        "Danse Macabre",
+        "Dream",
+        "Enervation",
+        "Far Step",
+        "Great Heaven Splitter",
+        "Hold Monster",
+        "Infernal Calling",
+        "Mislead",
+        "Negative Energy Flood",
+        "Planar Binding",
+        "Scrying",
+        "Synaptic Static",
+        "Wall of Light"
+      ],
+      "custom": [
+        "Great Heaven Splitter"
+      ]
+    },
+    "6": {
+      "spells": [
+        "Circle of Death",
+        "Conjure Fey",
+        "Create Undead",
+        "Eyebite",
+        "Flesh to Stone",
+        "Investiture of Flame",
+        "Investiture of Ice",
+        "Investiture of Stone",
+        "Investiture of Wind",
+        "Mass Suggestion",
+        "Mental Prison",
+        "Scatter",
+        "Soul Cage",
+        "Summon Fiend",
+        "Tasha's Otherworldly Guise",
+        "True Seeing"
+      ],
+      "custom": []
+    },
+    "7": {
+      "spells": [
+        "Crown of Stars",
+        "Finger of Death",
+        "Forcecage",
+        "Power Word: Pain"
+      ],
+      "custom": []
+    },
+    "8": {
+      "spells": [
+        "Dominate Monster",
+        "Feeblemind",
+        "Glibness",
+        "Maddening Darkness",
+        "Power Word: Stun"
+      ],
+      "custom": []
+    },
+    "9": {
+      "spells": [
+        "Blade of Disaster",
+        "Foresight",
+        "Imprisonment",
+        "Locate Devil Fruit Power",
+        "Power Word: Kill",
+        "Psychic Scream",
+        "Shapechange",
+        "True Polymorph",
+        "Weird"
+      ],
+      "custom": [
+        "Locate Devil Fruit Power"
+      ]
+    }
+  },
+  "hybrid": {
+    "cantrips": {
+      "spells": [
+        "Acid Splash",
+        "Blade Ward",
+        "Booming Blade",
+        "Chill Touch",
+        "Control Flames",
+        "Create Bonfire",
+        "Dancing Lights",
+        "Fire Bolt",
+        "Friends",
+        "Frostbite",
+        "Green-Flame Blade",
+        "Gust",
+        "Infestation",
+        "Light",
+        "Lightning Lure",
+        "Mage Hand",
+        "Mending",
+        "Message",
+        "Mind Sliver",
+        "Minor Illusion",
+        "Mold Earth",
+        "Poison Spray",
+        "Prestidigitation",
+        "Ray of Frost",
+        "Shocking Grasp",
+        "Sword Burst",
+        "Thunderclap",
+        "True Strike"
+      ],
+      "custom": []
+    },
+    "1": {
+      "spells": [
+        "Absorb Elements",
+        "Burning Hands",
+        "Catapult",
+        "Chaos Bolt",
+        "Charm Person",
+        "Chromatic Orb",
+        "Color Spray",
+        "Detect Magic",
+        "Disguise Self",
+        "Earth Tremor",
+        "Expeditious Retreat",
+        "False Life",
+        "Featherfall",
+        "Fog Cloud",
+        "Grease",
+        "Ice Knife",
+        "Jump",
+        "Mage Armor",
+        "Magic Missile",
+        "Ray of Sickness",
+        "Shield",
+        "Silent Image",
+        "Silvery Barbs",
+        "Sleep",
+        "Tasha's Caustic Brew",
+        "Thunderwave",
+        "Witch Bolt"
+      ],
+      "custom": []
+    },
+    "2": {
+      "spells": [
+        "Aganazzar's Scorcher",
+        "Air Bubble",
+        "Alter Self",
+        "Blindness/Deafness",
+        "Blur",
+        "Cloud of Daggers",
+        "Crown of Madness",
+        "Darkness",
+        "Detect Thoughts",
+        "Dragon's Breath",
+        "Dust Devil",
+        "Earthbind",
+        "Enhance Ability",
+        "Enlarge/Reduce",
+        "Flame Blade",
+        "Flaming Sphere",
+        "Gust of Wind",
+        "Hold Person",
+        "Invisibility",
+        "Kinetic Jaunt",
+        "Knock",
+        "Levitate",
+        "Magic Weapon",
+        "Maximillian's Earthen Grasp",
+        "Ice Spike",
+        "Mirror Image",
+        "Misty Step",
+        "Nathair's Mischief",
+        "Phantasmal Force",
+        "Pyrotechnics",
+        "Rime's Binding Ice",
+        "Scorching Ray",
+        "See Invisibility",
+        "Shadow Blade",
+        "Shatter",
+        "Snilloc's Snowball Storm",
+        "Suggestion",
+        "Tasha's Mind Whip",
+        "Vortex Warp",
+        "Warding Wind",
+        "Web",
+        "Wither and Bloom"
+      ],
+      "custom": []
+    },
+    "3": {
+      "spells": [
+        "Ashardalon's Stride",
+        "Blink",
+        "Catnap",
+        "Clairvoyance",
+        "Counterspell",
+        "Daylight",
+        "Dispel Magic",
+        "Enemies Abound",
+        "Erupting Earth",
+        "Fear",
+        "Fireball",
+        "Flame Arrows",
+        "Fly",
+        "Gaseous Form",
+        "Haste",
+        "Hypnotic Pattern",
+        "Incite Greed",
+        "Intellect Fortress",
+        "Lightning Bolt",
+        "Major Image",
+        "Melf's Minute Meteors",
+        "Protection from Energy",
+        "Sleet Storm",
+        "Slow",
+        "Soap Bubble",
+        "Stinking Cloud",
+        "Thunder Step",
+        "Vampiric Touch",
+        "Slime Wave",
+        "Wall of Goo",
+        "Water Breathing",
+        "Water Walk"
+      ],
+      "custom": [
+        "Soap Bubble",
+        "Slime Wave",
+        "Wall of Goo"
+      ]
+    },
+    "4": {
+      "spells": [
+        "Blight",
+        "Charm Monster",
+        "Confusion",
+        "Dominate Beast",
+        "Fire Shield",
+        "Greater Invisibility",
+        "Ice Storm",
+        "Polymorph",
+        "Raulothim's Psychic Lance",
+        "Sickening Radiance",
+        "Stoneskin",
+        "Storm Sphere",
+        "Vitriolic Sphere",
+        "Wall of Fire",
+        "Swamp Sphere"
+      ],
+      "custom": [
+        "Swamp Sphere"
+      ]
+    },
+    "5": {
+      "spells": [
+        "Animate Objects",
+        "Bigby's Hand",
+        "Cloudkill",
+        "Cone of Cold",
+        "Control Winds",
+        "Creation",
+        "Dominate Person",
+        "Enervation",
+        "Far Step",
+        "Hold Monster",
+        "Immolation",
+        "Insect Plague",
+        "Seeming",
+        "Skill Empowerment",
+        "Summon Draconic Spirit",
+        "Synaptic Static",
+        "Telekinesis",
+        "Wall of Light",
+        "Wall of Stone"
+      ],
+      "custom": []
+    },
+    "6": {
+      "spells": [
+        "Chain Lightning",
+        "Circle of Death",
+        "Disintegrate",
+        "Eyebite",
+        "Fizban's Platinum Shield",
+        "Flesh to Stone",
+        "Globe of Invulnerability",
+        "Investiture of Flame",
+        "Investiture of Ice",
+        "Investiture of Stone",
+        "Investiture of Wind",
+        "Mass Suggestion",
+        "Mental Prison",
+        "Move Earth",
+        "Otiluke's Freezing Sphere",
+        "Scatter",
+        "Sunbeam",
+        "Tasha's Otherworldly Guise",
+        "True Seeing"
+      ],
+      "custom": []
+    },
+    "7": {
+      "spells": [
+        "Crown of Stars",
+        "Delayed Blast Fireball",
+        "Draconic Transformation",
+        "Dream of the Blue Veil",
+        "Etherealness",
+        "Finger of Death",
+        "Fire Storm",
+        "Power Word: Pain",
+        "Prismatic Spray",
+        "Reverse Gravity"
+      ],
+      "custom": []
+    },
+    "8": {
+      "spells": [
+        "Abi-Dalzim's Horrid Wilting",
+        "Dominate Monster",
+        "Earthquake",
+        "Incendiary Cloud",
+        "Power Word: Stun",
+        "Sunburst"
+      ],
+      "custom": []
+    },
+    "9": {
+      "spells": [
+        "Blade of Disaster",
+        "Flame Emperor",
+        "Island Shaking",
+        "Mass Polymorph",
+        "Meteor Swarm",
+        "Power Word: Kill",
+        "Psychic Scream",
+        "Time Stop"
+      ],
+      "custom": [
+        "Flame Emperor",
+        "Island Shaking"
+      ]
+    }
+  },
+  "marksman": {
+    "1": {
+      "spells": [
+        "Absorb Elements",
+        "Alarm",
+        "Animal Friendship",
+        "Beast Bond",
+        "Cure Wounds",
+        "Detect Magic",
+        "Detect Poison and Disease",
+        "Ensnaring Strike",
+        "Entangle",
+        "Fog Cloud",
+        "Hail of Thorns",
+        "Hunter's Mark",
+        "Jump",
+        "Longstrider",
+        "Searing Smite",
+        "Snare",
+        "Speak with Animals",
+        "Zephyr Strike"
+      ],
+      "custom": []
+    },
+    "2": {
+      "spells": [
+        "Aid",
+        "Air Bubble",
+        "Animal Messenger",
+        "Barkskin",
+        "Beast Sense",
+        "Cordon of Arrows",
+        "Darkvision",
+        "Enhance Ability",
+        "Find Traps",
+        "Gust of Wind",
+        "Lesser Restoration",
+        "Locate Animals or Plants",
+        "Locate Object",
+        "Magic Weapon",
+        "Pass Without Trace",
+        "Protection from Poison",
+        "Silence",
+        "Spike Growth",
+        "Summon Beast"
+      ],
+      "custom": []
+    },
+    "3": {
+      "spells": [
+        "Ashardalon's Stride",
+        "Conjure Animals",
+        "Conjure Barrage",
+        "Daylight",
+        "Elemental Weapon",
+        "Flame Arrows",
+        "Lightning Arrow",
+        "Nondetection",
+        "Protection from Energy",
+        "Revivify",
+        "Soap Bubble",
+        "Speak with Plants",
+        "Summon Fey",
+        "Water Breathing",
+        "Water Walk",
+        "Wind Wall"
+      ],
+      "custom": [
+        "Soap Bubble"
+      ]
+    },
+    "4": {
+      "spells": [
+        "Conjure Woodland Beings",
+        "Dominate Beast",
+        "Freedom of Movement",
+        "Grasping Vine",
+        "Locate Creature",
+        "Stoneskin",
+        "Summon Elemental"
+      ],
+      "custom": []
+    },
+    "5": {
+      "spells": [
+        "Commune With Nature",
+        "Conjure Volley",
+        "Great Heaven Splitter",
+        "Greater Restoration",
+        "Steel Wind Strike",
+        "Swift Quiver"
+      ],
+      "custom": [
+        "Great Heaven Splitter"
+      ]
+    }
+  },
+  "priest": {
+    "cantrips": {
+      "spells": [
+        "Guidance",
+        "Light",
+        "Mending",
+        "Resistance",
+        "Sacred Flame",
+        "Spare the Dying",
+        "Thaumaturgy",
+        "Toll the Dead",
+        "Word of Radiance"
+      ],
+      "custom": []
+    },
+    "1": {
+      "spells": [
+        "Bane",
+        "Bless",
+        "Ceremony",
+        "Command",
+        "Create or Destroy Water",
+        "Cure Wounds",
+        "Detect Evil and Good",
+        "Detect Magic",
+        "Detect Poison and Disease",
+        "Guiding Bolt",
+        "Healing Word",
+        "Inflict Wounds",
+        "Protection from Evil and Good",
+        "Purify Food and Drink",
+        "Sanctuary",
+        "Shield of Faith"
+      ],
+      "custom": []
+    },
+    "2": {
+      "spells": [
+        "Aid",
+        "Augury",
+        "Blindness/Deafness",
+        "Borrowed Knowledge",
+        "Calm Emotions",
+        "Continual Flame",
+        "Enhance Ability",
+        "Find Traps",
+        "Gentle Repose",
+        "Hold Person",
+        "Lesser Restoration",
+        "Locate Object",
+        "Prayer of Healing",
+        "Protection from Poison",
+        "Silence",
+        "Spiritual Weapon",
+        "Warding Bond",
+        "Zone of Truth"
+      ],
+      "custom": []
+    },
+    "3": {
+      "spells": [
+        "Animate Dead",
+        "Aura of Vitality",
+        "Beacon of Hope",
+        "Bestow Curse",
+        "Clairvoyance",
+        "Create Food and Water",
+        "Daylight",
+        "Dispel Magic",
+        "Fast Friends",
+        "Feign Death",
+        "Glyph of Warding",
+        "Incite Greed",
+        "Life Transference",
+        "Magic Circle",
+        "Mass Healing Word",
+        "Meld Into Stone",
+        "Motivational Speech",
+        "Protection from Energy",
+        "Remove Curse",
+        "Revivify",
+        "Sending",
+        "Speak with Dead",
+        "Spirit Guardians",
+        "Spirit Shroud",
+        "Water Walk"
+      ],
+      "custom": []
+    },
+    "4": {
+      "spells": [
+        "Aura of Life",
+        "Aura of Purity",
+        "Death Ward",
+        "Divination",
+        "Freedom of Movement",
+        "Guardian of Faith",
+        "Locate Creature",
+        "Stone Shape"
+      ],
+      "custom": []
+    },
+    "5": {
+      "spells": [
+        "Commune",
+        "Contagion",
+        "Dawn",
+        "Dispel Evil and Good",
+        "Flame Strike",
+        "Geas",
+        "Greater Restoration",
+        "Hallow",
+        "Holy Weapon",
+        "Insect Plague",
+        "Legend Lore",
+        "Mass Cure Wounds",
+        "Planar Binding",
+        "Raise Dead",
+        "Scrying",
+        "Summon Celestial"
+      ],
+      "custom": []
+    },
+    "6": {
+      "spells": [
+        "Blade Barrier",
+        "Create Undead",
+        "Find the Path",
+        "Forbiddance",
+        "Harm",
+        "Heal",
+        "Heroes' Feast",
+        "Sunbeam",
+        "True Seeing"
+      ],
+      "custom": []
+    },
+    "7": {
+      "spells": [
+        "Conjure Celestial",
+        "Divine Word",
+        "Etherealness",
+        "Fire Storm",
+        "Regenerate",
+        "Resurrection",
+        "Symbol",
+        "Temple of the Gods"
+      ],
+      "custom": []
+    },
+    "8": {
+      "spells": [
+        "Antimagic Field",
+        "Control Weather",
+        "Earthquake",
+        "Holy Aura",
+        "Poison Giant: Hell's Judgement",
+        "Sunburst"
+      ],
+      "custom": [
+        "Poison Giant: Hell's Judgement"
+      ]
+    },
+    "9": {
+      "spells": [
+        "Flame Emperor",
+        "Island Shaking",
+        "Locate Devil Fruit Power",
+        "Mass Heal",
+        "Power Word: Heal",
+        "True Resurrection"
+      ],
+      "custom": [
+        "Flame Emperor",
+        "Island Shaking",
+        "Locate Devil Fruit Power"
+      ]
+    }
+  },
+  "skald": {
+    "cantrips": {
+      "spells": [
+        "Blade Ward",
+        "Dancing Lights",
+        "Friends",
+        "Light",
+        "Mending",
+        "Message",
+        "Minor Illusion",
+        "Prestidigitation",
+        "Thunderclap",
+        "True Strike",
+        "Vicious Mockery"
+      ],
+      "custom": []
+    },
+    "1": {
+      "spells": [
+        "Animal Friendship",
+        "Bane",
+        "Charm Person",
+        "Color Spray",
+        "Command",
+        "Cure Wounds",
+        "Detect Magic",
+        "Disguise Self",
+        "Dissonant Whispers",
+        "Distort Value",
+        "Earth Tremor",
+        "Faerie Fire",
+        "Feather Fall",
+        "Healing Word",
+        "Heroism",
+        "Identify",
+        "Illusory Script",
+        "Longstrider",
+        "Silent Image",
+        "Silvery Barbs",
+        "Sleep",
+        "Speak with Animals",
+        "Tasha's Hideous Laughter",
+        "Thunderwave"
+      ],
+      "custom": []
+    },
+    "2": {
+      "spells": [
+        "Aid",
+        "Animal Messenger",
+        "Blindness/Deafness",
+        "Borrowed Knowledge",
+        "Calm Emotions",
+        "Cloud of Daggers",
+        "Crown of Madness",
+        "Detect Thoughts",
+        "Enhance Ability",
+        "Enthrall",
+        "Gift of Gab",
+        "Heat Metal",
+        "Hold Person",
+        "Invisibility",
+        "Kinetic Jaunt",
+        "Knock",
+        "Lesser Restoration",
+        "Locate Animals or Plants",
+        "Locate Object",
+        "Mirror Image",
+        "Nathair's Mischief",
+        "Phantasmal Force",
+        "Pyrotechnics",
+        "See Invisbility",
+        "Shatter",
+        "Silence",
+        "Skywrite",
+        "Suggestion",
+        "Warding Wind"
+      ],
+      "custom": []
+    },
+    "3": {
+      "spells": [
+        "Bestow Curse",
+        "Catnap",
+        "Clairvoyance",
+        "Dispel Magic",
+        "Enemies Abound",
+        "Fast Friends",
+        "Fear",
+        "Feign Death",
+        "Glyph of Warding",
+        "Hypnotic Pattern",
+        "Intellect Fortress",
+        "Leomund's Tiny Hut",
+        "Major Image",
+        "Mass Healing Word",
+        "Motivational Speech",
+        "Nondetection",
+        "Plant Growth",
+        "Sending",
+        "Slow",
+        "Speak with Dead",
+        "Speak with Plants",
+        "Stinking Cloud"
+      ],
+      "custom": []
+    },
+    "4": {
+      "spells": [
+        "Charm Monster",
+        "Compulsion",
+        "Confusion",
+        "Freedom of Movement",
+        "Greater Invisibility",
+        "Hallucinatory Terrain",
+        "Locate Creature",
+        "Phantasmal Killer",
+        "Raulothim's Psychic Lance"
+      ],
+      "custom": []
+    },
+    "5": {
+      "spells": [
+        "Dominate Person",
+        "Dream",
+        "Geas",
+        "Greater Restoration",
+        "Great Heaven Splitter",
+        "Hold Monster",
+        "Legend Lore",
+        "Mass Cure Wounds",
+        "Mislead",
+        "Modify Memory",
+        "Planar Binding",
+        "Rary's Telepathic Bond",
+        "Scrying",
+        "Skill Empowerment",
+        "Synaptic Static"
+      ],
+      "custom": [
+        "Great Heaven Splitter"
+      ]
+    },
+    "6": {
+      "spells": [
+        "Eyebite",
+        "Find the Path",
+        "Heroes' Feast",
+        "Mass Suggestion",
+        "Otto's Irresistable Dance",
+        "Programmed Illusion",
+        "True Seeing"
+      ],
+      "custom": []
+    },
+    "7": {
+      "spells": [
+        "Forcecage",
+        "Mirage Arcane",
+        "Mordenkainen's Sword",
+        "Prismatic Spray",
+        "Project Image",
+        "Regenerate",
+        "Resurrection",
+        "Symbol"
+      ],
+      "custom": []
+    },
+    "8": {
+      "spells": [
+        "Antpathy/Sympathy",
+        "Dominate Monster",
+        "Feeblemind",
+        "Gibness",
+        "Mind Blank",
+        "Power Word: Stun"
+      ],
+      "custom": []
+    },
+    "9": {
+      "spells": [
+        "Foresight",
+        "Power Word: Heal",
+        "Power Word: Kill",
+        "Psychic Scream"
+      ],
+      "custom": []
+    }
+  },
+  "tinkerer": {
+    "cantrips": {
+      "spells": [
+        "Acid Splash",
+        "Blade Ward",
+        "Booming Blade",
+        "Chill Touch",
+        "Control Flames",
+        "Create Bonfire",
+        "Dancing Lights",
+        "Encode Thoughts",
+        "Fire Bolt",
+        "Friends",
+        "Frostbite",
+        "Green-Flame Blade",
+        "Gust",
+        "Infestation",
+        "Light",
+        "Lightning Lure",
+        "Mage Hand",
+        "Mending",
+        "Message",
+        "Mind Sliver",
+        "Minor Illusion",
+        "Mold Earth",
+        "Poison Spray",
+        "Prestidigitation",
+        "Ray of Frost",
+        "Sapping Sting",
+        "Shocking Grasp",
+        "Sword Burst",
+        "Thunderclap",
+        "Toll the Dead",
+        "True Strike"
+      ],
+      "custom": []
+    },
+    "1": {
+      "spells": [
+        "Absorb Elements",
+        "Alarm",
+        "Burning Hands",
+        "Catapult",
+        "Cause Fear",
+        "Charm Person",
+        "Chromatic Orb",
+        "Color Spray",
+        "Detect Magic",
+        "Disguise Self",
+        "Distort Value",
+        "Earth Tremor",
+        "Expeditious Retreat",
+        "False Life",
+        "Feather Fall",
+        "Find Familiar",
+        "Fog Cloud",
+        "Frost Fingers",
+        "Gift of Alacrity",
+        "Grease",
+        "Ice Knife",
+        "Identify",
+        "Illusory Script",
+        "Jump",
+        "Longstrider",
+        "Mage Armor",
+        "Magic Missile",
+        "Magnify Gravity",
+        "Protection from Evil and Good",
+        "Ray of Sickness",
+        "Shield",
+        "Silent Image",
+        "Silvery Barbs",
+        "Sleep",
+        "Snare",
+        "Tasha's Caustic Brew",
+        "Tasha's Hideous Laughter",
+        "Tenser's Floating Disk",
+        "Thunderwave",
+        "Unseen Servant",
+        "Witch Bolt"
+      ],
+      "custom": []
+    },
+    "2": {
+      "spells": [
+        "Aganazzar's Scorcher",
+        "Air Bubble",
+        "Alter Self",
+        "Arcane Lock",
+        "Augury",
+        "Blindness/Deafness",
+        "Blur",
+        "Borrowed Knowledge",
+        "Cloud of Daggers",
+        "Continual Flame",
+        "Crown of Madness",
+        "Darkness",
+        "Darkvision",
+        "Detect Thoughts",
+        "Dragon's Breath",
+        "Dust Devil",
+        "Earthbind",
+        "Enhance Ability",
+        "Enlarge/Reduce",
+        "Flaming Sphere",
+        "Flock of Familiars",
+        "Fortune's Favor",
+        "Gentle Repose",
+        "Gift of Gab",
+        "Gust of Wind",
+        "Hold Person",
+        "Immovable Object",
+        "Invisibility",
+        "Kinetic Jaunt",
+        "Knock",
+        "Levitate",
+        "Locate Object",
+        "Magic Mouth",
+        "Magic Weapon",
+        "Maximillian's Earthern Grasp",
+        "Melf's Acid Arrow",
+        "Mind Spike",
+        "Mirror Image",
+        "Misty Step",
+        "Nathair's Mischief",
+        "Phantasmal Force",
+        "Pyrotechnics",
+        "Ray of Enfeeblement",
+        "Rime's Binding Ice",
+        "Rope Trick",
+        "Scorching Ray",
+        "See Invisibility",
+        "Shadow Blade",
+        "Shatter",
+        "Skywrite",
+        "Snilloc's Snowball Storm",
+        "Spider Climb",
+        "Suggestion",
+        "Tasha's Mind Whip",
+        "Vortex Warp",
+        "Warding Wind",
+        "Web",
+        "Wither and Bloom",
+        "Wristpocket"
+      ],
+      "custom": []
+    },
+    "3": {
+      "spells": [
+        "Animate Dead",
+        "Ashardalon's Stride",
+        "Bestow Curse",
+        "Blink",
+        "Catnap",
+        "Clairvoyance",
+        "Counterspell",
+        "Dispel Magic",
+        "Enemies Abound",
+        "Erupting Earth",
+        "Fast Friends",
+        "Fear",
+        "Feign Death",
+        "Fireball",
+        "Flame Arrows",
+        "Fly",
+        "Gaseous Form",
+        "Glyph of Warding",
+        "Haste",
+        "Hypnotic Pattern",
+        "Incite Greed",
+        "Intellect Fortress",
+        "Leomund's Tiny Hut",
+        "Life Transference",
+        "Lightning Bolt",
+        "Magic Circle",
+        "Major Image",
+        "Melf's Minute Meteors",
+        "Nondetection",
+        "Phantom Steed",
+        "Protection from Energy",
+        "Pulse Wave",
+        "Remove Curse",
+        "Sending",
+        "Sleet Storm",
+        "Slow",
+        "Soap Bubble",
+        "Speak With Dead",
+        "Spirit Shroud",
+        "Stinking Cloud",
+        "Summon Fey",
+        "Summon Lesser Demons",
+        "Summon Shadowspawn",
+        "Summon Undead",
+        "Thunder Step",
+        "Slime Wave",
+        "Tiny Servant",
+        "Vampiric Touch",
+        "Wall of Sand",
+        "Wall of Goo",
+        "Water Breathing"
+      ],
+      "custom": [
+        "Soap Bubble",
+        "Slime Wave",
+        "Wall of Goo"
+      ]
+    },
+    "4": {
+      "spells": [
+        "Arcane Eye",
+        "Blight",
+        "Charm Monster",
+        "Confusion",
+        "Conjure Minor Elementals",
+        "Dimension Door",
+        "Divination",
+        "Elemental Bane",
+        "Evard's Black Tentacles",
+        "Fabricate",
+        "Fire Shield",
+        "Gravity Sinkhole",
+        "Greater Invisibility",
+        "Hallucinatory Terrain",
+        "Ice Storm",
+        "Leomund's Secret Chest",
+        "Locate Creature",
+        "Mordenkainen's Faithful Hound",
+        "Otiluke's Resilient Sphere",
+        "Phantasmal Killer",
+        "Polymorph",
+        "Raulothim's Psychic Lance",
+        "Sickening Radiance",
+        "Stone Shape",
+        "Stoneskin",
+        "Storm Sphere",
+        "Summon Abberration",
+        "Summon Construct",
+        "Summon Elemental",
+        "Summon Greater Demon",
+        "Swamp Sphere",
+        "Vitriolic Sphere",
+        "Wall of Fire"
+      ],
+      "custom": [
+        "Swamp Sphere"
+      ]
+    },
+    "5": {
+      "spells": [
+        "Animate Objects",
+        "Bigby's Hand",
+        "Cloudkill",
+        "Cone of Cold",
+        "Conjure Elemental",
+        "Control Winds",
+        "Creation",
+        "Danse Macabre",
+        "Dawn",
+        "Dominate Person",
+        "Dream",
+        "Enervation",
+        "Far Step",
+        "Geas",
+        "Great Heaven Splitter",
+        "Hold Monster",
+        "Immolation",
+        "Infernal Calling",
+        "Legend Lore",
+        "Mislead",
+        "Modify Memory",
+        "Negative Energy Flood",
+        "Passwall",
+        "Planar Binding",
+        "Rary's Telepathic Bond",
+        "Scrying",
+        "Seeming",
+        "Skill Empowerment",
+        "Steel Wind Strike",
+        "Summon Draconic Spirit",
+        "Synaptic Static",
+        "Telekinesis",
+        "Temporal Shunt",
+        "Transmute Rock",
+        "Wall of Force",
+        "Wall of Light",
+        "Wall of Stone"
+      ],
+      "custom": [
+        "Great Heaven Splitter"
+      ]
+    },
+    "6": {
+      "spells": [
+        "Chain Lightning",
+        "Circle of Death",
+        "Contingency",
+        "Create Homunculus",
+        "Create Undead",
+        "Disintegrate",
+        "Drawmij's Instant Summons",
+        "Eyebite",
+        "Fizban's Platinum Shield",
+        "Flesh to Stone",
+        "Globe of Invulnerability",
+        "Gravity Fissure",
+        "Guards and Wards",
+        "Investiture of Flame",
+        "Investiture of Ice",
+        "Investiture of Stone",
+        "Investiture of Wind",
+        "Magic Jar",
+        "Mass Suggestion",
+        "Mental Prison",
+        "Move Earth",
+        "Otiluke's Freezing Sphere",
+        "Otto's Irresistable Dance",
+        "Programmed Illusion",
+        "Scatter",
+        "Soul Cage",
+        "Summon Fiend",
+        "Sunbeam",
+        "Tasha's Otherworldly Guise",
+        "Tenser's Transformation",
+        "True Seeing",
+        "Wall of Ice"
+      ],
+      "custom": []
+    },
+    "7": {
+      "spells": [
+        "Create Magen",
+        "Crown of Stars",
+        "Delayed Blast Fireball",
+        "Draconic Transformation",
+        "Finger of Death",
+        "Forcecage",
+        "Mirage Arcane",
+        "Power Word: Pain",
+        "Prismatic Spray",
+        "Project Image",
+        "Reverse Gravity",
+        "Sequester",
+        "Simulacrum",
+        "Symbol",
+        "Tether Essence",
+        "Whirlwind"
+      ],
+      "custom": []
+    },
+    "8": {
+      "spells": [
+        "Abi-Dalzim's Horrid Wilting",
+        "Antimagic Field",
+        "Antipathy/Sympathy",
+        "Clone",
+        "Control Weather",
+        "Dark Star",
+        "Domiante Monster",
+        "Feeblemind",
+        "Illusory Dragon",
+        "Incendiary Cloud",
+        "Maddening Darkness",
+        "Maze",
+        "Mighty Fortress",
+        "Mind Blank",
+        "Poison Giant: Hell's Judgement",
+        "Power Word: Stun",
+        "Reality Break",
+        "Sunburst",
+        "Telepathy"
+      ],
+      "custom": [
+        "Poison Giant: Hell's Judgement"
+      ]
+    },
+    "9": {
+      "spells": [
+        "Blade of Disaster",
+        "Flame Emperor",
+        "Foresight",
+        "Ice Age",
+        "Imprisonment",
+        "Invulnerability",
+        "Locate Devil Fruit Power",
+        "Mass Polymorph",
+        "Meteor Swarm",
+        "Power Word: Kill",
+        "Prismatic Wall",
+        "Psychic Scream",
+        "Ravenous Void",
+        "Shapechange",
+        "Time Ravage",
+        "Time Stop",
+        "True Polymorph",
+        "Weird"
+      ],
+      "custom": [
+        "Flame Emperor",
+        "Ice Age",
+        "Locate Devil Fruit Power"
+      ]
+    }
+  }
+}

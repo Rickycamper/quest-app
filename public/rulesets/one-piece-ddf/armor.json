@@ -1,0 +1,119 @@
+[
+  {
+    "armor": "Dense Coat",
+    "cost": "฿50,000",
+    "armor-class-ac": "11 + Dex modifier",
+    "strength": "-",
+    "stealth": "Disadvantage",
+    "weight": "8 lb.",
+    "category": "Light Armor"
+  },
+  {
+    "armor": "Thick Shirt",
+    "cost": "฿100,000",
+    "armor-class-ac": "11 + Dex modifier",
+    "strength": "-",
+    "stealth": "-",
+    "weight": "6 lb.",
+    "category": "Light Armor"
+  },
+  {
+    "armor": "Light Bulletproof Shirt",
+    "cost": "฿450,000",
+    "armor-class-ac": "12 + Dex modifier",
+    "strength": "-",
+    "stealth": "-",
+    "weight": "9 lb.",
+    "category": "Light Armor"
+  },
+  {
+    "armor": "Hide",
+    "cost": "฿100,000",
+    "armor-class-ac": "12 + Dex modifier (max 2)",
+    "strength": "-",
+    "stealth": "-",
+    "weight": "12 lb.",
+    "category": "Medium Armor"
+  },
+  {
+    "armor": "Bulletproof Jacket",
+    "cost": "฿500,000",
+    "armor-class-ac": "13 + Dex modifier (max 2)",
+    "strength": "-",
+    "stealth": "-",
+    "weight": "11 lb.",
+    "category": "Medium Armor"
+  },
+  {
+    "armor": "Scale Mail",
+    "cost": "฿500,000",
+    "armor-class-ac": "14 + Dex modifier (max 2)",
+    "strength": "-",
+    "stealth": "Disadvantage",
+    "weight": "45 lb.",
+    "category": "Medium Armor"
+  },
+  {
+    "armor": "Bulletproof Suit",
+    "cost": "฿4,000,000",
+    "armor-class-ac": "14 + Dex modifier (max 2)",
+    "strength": "-",
+    "stealth": "-",
+    "weight": "14 lb.",
+    "category": "Medium Armor"
+  },
+  {
+    "armor": "Sea King Half Plate",
+    "cost": "฿7,500,000",
+    "armor-class-ac": "15 + Dex modifier (max 2)",
+    "strength": "-",
+    "stealth": "Disadvantage",
+    "weight": "40 lb.",
+    "category": "Medium Armor"
+  },
+  {
+    "armor": "Ring Mail",
+    "cost": "฿300,000",
+    "armor-class-ac": "14",
+    "strength": "-",
+    "stealth": "Disadvantage",
+    "weight": "40 lb.",
+    "category": "Heavy Armor"
+  },
+  {
+    "armor": "Chain Mail",
+    "cost": "฿750,000",
+    "armor-class-ac": "16",
+    "strength": "Str 13",
+    "stealth": "Disadvantage",
+    "weight": "55 lb.",
+    "category": "Heavy Armor"
+  },
+  {
+    "armor": "Splint",
+    "cost": "฿2,000,000",
+    "armor-class-ac": "17",
+    "strength": "Str 15",
+    "stealth": "Disadvantage",
+    "weight": "60 lb.",
+    "category": "Heavy Armor"
+  },
+  {
+    "armor": "Steel Wootz Armor",
+    "cost": "฿15,000,000",
+    "armor-class-ac": "18",
+    "strength": "Str 15",
+    "stealth": "Disadvantage",
+    "weight": "65 lb.",
+    "category": "Heavy Armor"
+  },
+  {
+    "armor": "Shield",
+    "cost": "฿100,000",
+    "armor-class-ac": "+2",
+    "strength": "-",
+    "stealth": "-",
+    "weight": "6 lb.",
+    "category": "Shield"
+  }
+]

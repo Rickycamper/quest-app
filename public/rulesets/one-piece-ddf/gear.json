@@ -1,0 +1,1054 @@
+[
+  {
+    "item": "Abacus",
+    "cost": "฿20,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Acid (vial)",
+    "cost": "฿250,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Ammunition",
+    "cost": "",
+    "weight": "",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Arrows (20)",
+    "cost": "฿10,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Bazooka Rounds (20)",
+    "cost": "฿100,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Blowgun Needles (50)",
+    "cost": "฿10,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Gun Bullets (20)",
+    "cost": "฿10,000",
+    "weight": "1 1/2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Sling Bullets (20)",
+    "cost": "฿400",
+    "weight": "1 1/2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Antitoxin (vial)",
+    "cost": "฿500,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Attack Cuisine",
+    "cost": "฿500,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Backpack",
+    "cost": "฿20,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Ball bearings (bag of 1,000)",
+    "cost": "฿10,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Barrel",
+    "cost": "฿20,000",
+    "weight": "70 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Basket",
+    "cost": "฿4,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Bedroll",
+    "cost": "฿10,000",
+    "weight": "7 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Bell",
+    "cost": "฿10,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Blanket",
+    "cost": "฿5,000",
+    "weight": "3 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Block and tackle",
+    "cost": "฿10,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Book",
+    "cost": "฿250,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Bottle, glass",
+    "cost": "฿20,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Bucket",
+    "cost": "฿500",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Caltrops (bag of 20)",
+    "cost": "฿10,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Candle",
+    "cost": "฿100",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Case, gun bullets",
+    "cost": "฿10,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Case, map or scroll",
+    "cost": "฿10,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Chain (10 feet)",
+    "cost": "฿50,000",
+    "weight": "10 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Chalk (1 piece)",
+    "cost": "฿100",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Chest",
+    "cost": "฿50,000",
+    "weight": "25 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Climber's Kit",
+    "cost": "฿250,000",
+    "weight": "12 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Clothes, common",
+    "cost": "฿5,000",
+    "weight": "3 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Clothes, costume",
+    "cost": "฿50,000",
+    "weight": "4 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Clothes, fine",
+    "cost": "฿150,000",
+    "weight": "6 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Clothes, traveler's",
+    "cost": "฿20,000",
+    "weight": "4 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Component Pouch",
+    "cost": "฿250,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Crowbar",
+    "cost": "฿20,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Fire Explosive",
+    "cost": "฿500,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Fishing tackle",
+    "cost": "฿10,000",
+    "weight": "4 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Flask or tankard",
+    "cost": "฿200",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Grappling hook",
+    "cost": "฿20,000",
+    "weight": "4 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Hammer",
+    "cost": "฿10,000",
+    "weight": "3 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Hammer, sledge",
+    "cost": "฿20,000",
+    "weight": "10 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Handcuffs",
+    "cost": "฿20,000",
+    "weight": "6 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Healer's Kit",
+    "cost": "฿50,000",
+    "weight": "3 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Holy Symbol",
+    "cost": "฿50,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Holy water (flask)",
+    "cost": "฿250,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Hourglass",
+    "cost": "฿250,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Hunting Trap",
+    "cost": "฿50,000",
+    "weight": "25 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Ink (1 ounce bottle)",
+    "cost": "฿100,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Ink pen",
+    "cost": "฿200",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Ladder (10-foot)",
+    "cost": "฿1,000",
+    "weight": "25 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Lamp",
+    "cost": "฿5,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Lantern, bullseye",
+    "cost": "฿100,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Lantern, hooded",
+    "cost": "฿50,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Lock",
+    "cost": "฿100,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Log pose",
+    "cost": "฿500,000",
+    "weight": "1/4 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Mess Kit",
+    "cost": "฿2,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Mirror, steel",
+    "cost": "฿50,000",
+    "weight": "1/2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Oil (flask)",
+    "cost": "฿1,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Paper (one sheet)",
+    "cost": "฿2,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Parchment (one sheet)",
+    "cost": "฿1,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Perfume (vial)",
+    "cost": "฿50,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Pick, miner's",
+    "cost": "฿20,000",
+    "weight": "10 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Piton",
+    "cost": "฿500",
+    "weight": "1/4 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Poison, basic (vial)",
+    "cost": "฿1,000,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Pole (10-foot)",
+    "cost": "฿500",
+    "weight": "7 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Pot, iron",
+    "cost": "฿20,000",
+    "weight": "10 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Pouch",
+    "cost": "฿5,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Power Source",
+    "cost": "฿100,000",
+    "weight": "3 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Quiver",
+    "cost": "฿10,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Ram, portable",
+    "cost": "฿40,000",
+    "weight": "35 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Rations (1 day)",
+    "cost": "฿5,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Robes",
+    "cost": "฿10,000",
+    "weight": "4 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Rope, hempen (50 feet)",
+    "cost": "฿10,000",
+    "weight": "10 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Rope, silk (50 feet)",
+    "cost": "฿100,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Sack",
+    "cost": "฿100",
+    "weight": "1/2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Scale, merchant’s",
+    "cost": "฿50,000",
+    "weight": "3 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Sealing wax",
+    "cost": "฿5,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Shovel",
+    "cost": "฿20,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Signet ring",
+    "cost": "฿50,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Soap",
+    "cost": "฿200",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Spikes, iron (10)",
+    "cost": "฿10,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Spyglass",
+    "cost": "฿1,000,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Tent, two-person",
+    "cost": "฿20,000",
+    "weight": "20 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Tinderbox",
+    "cost": "฿5,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Torch",
+    "cost": "฿100",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Vial",
+    "cost": "฿10,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Waterskin",
+    "cost": "฿2,000",
+    "weight": "5 lb. (full)",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Whetstone",
+    "cost": "฿100",
+    "weight": "1",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Artisan's Tools",
+    "cost": "",
+    "weight": "",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Alchemist’s supplies",
+    "cost": "฿500,000",
+    "weight": "8 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Brewer’s supplies",
+    "cost": "฿200,000",
+    "weight": "9 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Calligrapher's supplies",
+    "cost": "฿100,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Carpenter’s tools",
+    "cost": "฿80,000",
+    "weight": "6 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Cartographer’s tools",
+    "cost": "฿150,000",
+    "weight": "6 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Cobbler’s tools",
+    "cost": "฿50,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Cook’s utensils",
+    "cost": "฿10,000",
+    "weight": "8 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Glassblower's tools",
+    "cost": "฿300,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Jeweler’s tools",
+    "cost": "฿250,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Leatherworker’s tools",
+    "cost": "฿50,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Mason’s tools",
+    "cost": "฿100,000",
+    "weight": "8 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Painter’s supplies",
+    "cost": "฿100,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Potter’s tools",
+    "cost": "฿100,000",
+    "weight": "3 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Smith’s tools",
+    "cost": "฿200,000",
+    "weight": "8 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Tinker’s tools",
+    "cost": "฿500,000",
+    "weight": "10 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Weaver’s tools",
+    "cost": "฿10,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Woodcarver's tools",
+    "cost": "฿10,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Disguise kit",
+    "cost": "฿250,000",
+    "weight": "3 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Forgery kit",
+    "cost": "฿150,000",
+    "weight": "5 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Gaming set",
+    "cost": "",
+    "weight": "",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Dice set",
+    "cost": "฿1,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Chess set",
+    "cost": "฿10,000",
+    "weight": "1/2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Playing card set",
+    "cost": "฿5,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Poker set",
+    "cost": "฿50,000",
+    "weight": "-",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Herbalism kit",
+    "cost": "฿10,000",
+    "weight": "3 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Musical instrument",
+    "cost": "",
+    "weight": "",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Bagpipes",
+    "cost": "฿300,000",
+    "weight": "6 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Concertina",
+    "cost": "฿200,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Drum",
+    "cost": "฿60,000",
+    "weight": "3 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Flute",
+    "cost": "฿20,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Guitar",
+    "cost": "฿300,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Lute",
+    "cost": "฿350,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Lyre",
+    "cost": "฿300,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Horn",
+    "cost": "฿30,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Pan flute",
+    "cost": "฿120,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Piano",
+    "cost": "฿2,000,000",
+    "weight": "300 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Viol",
+    "cost": "฿300,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Navigator’s tools",
+    "cost": "฿250,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Poisoner’s kit",
+    "cost": "฿500,000",
+    "weight": "2 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "Thieves’ tools",
+    "cost": "฿250,000",
+    "weight": "1 lb.",
+    "section": "Adventuring Gear"
+  },
+  {
+    "item": "**Bananawani (F-wani)**",
+    "cost": "฿4,500,000",
+    "speed": "60 ft.",
+    "carrying-capacity": "580 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Camel",
+    "cost": "฿500,000",
+    "speed": "50 ft.",
+    "carrying-capacity": "480 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Donkey or mule",
+    "cost": "฿80,000",
+    "speed": "40 ft.",
+    "carrying-capacity": "420 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Elephant",
+    "cost": "฿2,000,000",
+    "speed": "40 ft.",
+    "carrying-capacity": "1,320 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "**Flying Fish**",
+    "cost": "฿10,000,000",
+    "speed": "50 ft. (swim & fly)",
+    "carrying-capacity": "520 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Horse, draft",
+    "cost": "฿500,000",
+    "speed": "40 ft.",
+    "carrying-capacity": "540 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Horse, riding",
+    "cost": "฿750,000",
+    "speed": "60 ft.",
+    "carrying-capacity": "480 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "**Komadane**",
+    "cost": "฿6,500,000",
+    "speed": "60 ft.",
+    "carrying-capacity": "590 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "**Komashika**",
+    "cost": "฿6,000,000",
+    "speed": "60 ft.",
+    "carrying-capacity": "570 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "**Komatori**",
+    "cost": "฿5,500,000",
+    "speed": "60 ft.",
+    "carrying-capacity": "550 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Mastiff",
+    "cost": "฿250,000",
+    "speed": "40 ft.",
+    "carrying-capacity": "195 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Pony",
+    "cost": "฿250,000",
+    "speed": "40 ft.",
+    "carrying-capacity": "225 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "**Super Spot-Billed Duck**",
+    "cost": "฿400,000",
+    "speed": "60 ft.",
+    "carrying-capacity": "275 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Warhorse",
+    "cost": "฿4,000,000",
+    "speed": "60 ft.",
+    "carrying-capacity": "540 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "**Yagara Bull**",
+    "cost": "฿5,000,000",
+    "speed": "40 ft. (swim)",
+    "carrying-capacity": "620 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Barding",
+    "cost": "x4",
+    "weight": "x2",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Bit and Bridle",
+    "cost": "฿20,000",
+    "weight": "1 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Carriage",
+    "cost": "฿1,000,000",
+    "weight": "600 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Cart",
+    "cost": "฿150,000",
+    "weight": "200 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Chariot",
+    "cost": "฿2,500,000",
+    "weight": "100 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Feed (per day)",
+    "cost": "฿500",
+    "weight": "10 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Saddle",
+    "cost": "",
+    "weight": "",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Colossal",
+    "cost": "฿14,500,000",
+    "weight": "900 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Exotic",
+    "cost": "฿600,000",
+    "weight": "40 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Military",
+    "cost": "฿200,000",
+    "weight": "30 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Pack",
+    "cost": "฿50,000",
+    "weight": "15 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Riding",
+    "cost": "฿100,000",
+    "weight": "25 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Saddlebags",
+    "cost": "฿40,000",
+    "weight": "8 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Sled",
+    "cost": "฿200,000",
+    "weight": "300 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Stabling (per day)",
+    "cost": "฿5,000",
+    "weight": "-",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Wagon",
+    "cost": "฿350,000",
+    "weight": "400 lb.",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "**Waver**",
+    "cost": "฿5,000,000",
+    "crew-max": "1",
+    "speed": "25 mph",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Rowboat",
+    "cost": "฿500,000",
+    "crew-max": "2",
+    "speed": "3 mph",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Sloop",
+    "cost": "฿30,000,000",
+    "crew-max": "3",
+    "speed": "3 mph",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Caravel",
+    "cost": "฿50,000,000",
+    "crew-max": "8",
+    "speed": "4 mph",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "**Submarine**",
+    "cost": "฿600,000,000",
+    "crew-max": "20",
+    "speed": "5 mph",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Cog",
+    "cost": "฿100,000,000",
+    "crew-max": "20",
+    "speed": "4 mph",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Brig",
+    "cost": "฿150,000,000",
+    "crew-max": "30",
+    "speed": "5 mph",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Carrack",
+    "cost": "฿300,000,000",
+    "crew-max": "100",
+    "speed": "3 mph",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "Galleon",
+    "cost": "฿500,000,000",
+    "crew-max": "200",
+    "speed": "4 mph",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "**Man-o-War**",
+    "cost": "฿1,000,000,000",
+    "crew-max": "400",
+    "speed": "3 mph",
+    "section": "Mounts and Vehciles"
+  },
+  {
+    "item": "**Battleship**",
+    "cost": "฿3,000,000,000",
+    "crew-max": "1000",
+    "speed": "5 mph",
+    "section": "Mounts and Vehciles"
+  }
+]

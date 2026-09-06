@@ -1,0 +1,283 @@
+{
+  "startingEquipment": "Every character starts with a selection of equipment and adventuring gear in their inventory. When creating your character, after selecting your class and background, you may decide to start with the equipment listed in your class's starting equipment or start with a set amount of **Belly (฿)** to spend on equipment of your choice listed in this chapter.\n\nIf you opt to forgo taking your class's starting equipment, you may roll the amount of starting wealth you have on the table below based on your class. Then, buy any amount of equipment you'd like from the stores listed in this chapter, *not including exotic or black market equipment*.",
+  "startingWealthByClass": [
+    {
+      "header": [
+        "Class",
+        "Funds"
+      ],
+      "rows": [
+        [
+          "Bruiser",
+          "2d4 x ฿100,000"
+        ],
+        [
+          "Chemist",
+          "2d4 x ฿100,000"
+        ],
+        [
+          "Hybrid",
+          "3d4 x ฿100,000"
+        ],
+        [
+          "Marksman",
+          "5d4 x ฿100,000"
+        ],
+        [
+          "Martial Artist",
+          "5d4 x ฿10,000"
+        ],
+        [
+          "Priest",
+          "5d4 x ฿100,000"
+        ],
+        [
+          "Rogue",
+          "4d4 x ฿100,000"
+        ],
+        [
+          "Skald",
+          "5d4 x ฿100,000"
+        ],
+        [
+          "Tinkerer",
+          "4d4 x ฿100,000"
+        ],
+        [
+          "Warrior",
+          "5d4 x ฿100,000"
+        ]
+      ]
+    }
+  ],
+  "currency": {
+    "name": "Belly",
+    "symbol": "฿",
+    "text": "While Belly (฿) is the primary currency used for buying goods and services, wealth can appear in many forms in the One Piece world. Rare weapons, devil fruits, gemstones, gold, treasure, and other valuables can all be exchanged for other equivalent items or for a portion of their value in Belly (depending on bartering skills). \n\nBecause Belly is the world's primary monetary unit, it is what most islands and nations use to trade. You are free in most places to trade an item that is considered to be worth a set amount in Belly for an item of equivalent value in Belly. Occasionally, other forms of currency may be found and used on different islands around the world (typically if they are secluded from other major islands and nations). Some of these currencies have unknown conversion rates in canon, but you may choose to use the conversion tables down below.",
+    "sections": [
+      {
+        "name": "Belly (฿) Paper and Coins",
+        "text": "Belly is a currency that is given value by the world government and various nations and kingdoms around the world. Not all islands use Belly as the standard currency, though most will be willing convert it over to their nation's currency. Belly has six known coin denominations and three known paper denominations, with no fractional units (though the DM may make additional denominations if desired). The denominations are as follows: \n* Coin: ฿1, ฿5, ฿10, ฿50, ฿100, and ฿500\n* Paper: ฿1,000, ฿5,000, and ฿10,000"
+      },
+      {
+        "name": "Belly (฿) Conversion",
+        "text": "Converting different currencies, such as Belly in the One Piece world and the precious metal coins in the Forgotten Realms is a simple process. This conversion isn't considered canon, but it is solid approximation of the worth of each currency when converted to a different type of currency.\n\n#### Exchange Rates\n\n| Currency | ฿ | cp | sp | ep | gp | pp |\n|---|---|---|---|---|---|---|\n| Belly (฿) | 1 | 1/100 | 1/1,000 | 1/5,000 | 1/10,000 | 1/100,000 |\n| Copper (cp) | 100 | 1 | 1/10 | 1/50 | 1/100 | 1/1,000 |\n| Silver (sp) | 1,000 | 10 | 1 | 1/5 | 1/10 | 1/100 |\n| Electrum (ep) | 5,000 | 50 | 5 | 1 | 1/2 | 1/20 |\n| Gold (gp) | 10,000 | 100 | 10 | 2 | 1 | 1/10 |\n| Platinum (pp) | 100,000 | 1,000 | 100 | 20 | 10 | 1 |\n\n#### Additional Currencies and Exchange Rates\nMany islands and nations separated from the rest of the world often use alternate forms of currency that can be used for trading within their borders. Additionally, most of the time you can exchange Belly (฿) for an amount of that nation's currency equal to the number of Belly (฿) exchanged.\n\n##### Extol\nExtol is the currency used in Skypiea. This currency can be use and traded with across a number of sky islands, and can also be exchanged for Belly (฿). \n\nThe standard exchange rates is **10,000 Extol = 1 Belly (฿)**.\n\n##### Gor\nGor is the currency used in Amazon Lily. Although the exchange rate isn't officially defined in canon, you may use the below exchange rate.\n\nThe standard exchange rate is **100 Gor = 1 Belly (฿)**.\n\n##### Silver, Gold, and Platinum\nSilver, Gold, and Platnium are the standard currencies used in Wano Kuni. You may use the above table of exchange rates for corresponding precious metal coins to determine exchange rates within Wano Kuni."
+      },
+      {
+        "name": "Selling Treasure",
+        "text": "After journeying across several islands and uncovering various hidden treasures, you may decide to sell what you don't wish to keep in exchange for a large sum of Belly (฿), provided that you find buyers who can afford to do so.\n\n**Arms, Armor, and Other Equipment.** Undamaged armor and weapons will typically sell for half of their cost when sold to any market. Any standard damaged or used equipment won't have much value to any buyer.\n\n**Devil Fruits, Cursed/Named Weapons, and Other Rare Items.** Unlike ordinary equipment, devil fruits and special weapons or equipment aren't easily damaged and can be sold for extremely high prices in a black market. The price they are sold for may depend on how legitimate the buyer is or how desperate they are to obtain it. Underground auctions are another way to get a large sum of money for any rare item. Ordinary markets or civilians will not be able to afford these types of items.\n\n**Gems, Precious Metals, Jewelry, and Art Objects.** These items may be found inside treasure chests, sunken ships, or unexplored ancient ruins. Regardless, these items retain their full value in any reputable marketplace. For large amounts of treasure and valuables, your DM may require you to find a particularly wealthy buyer or marketplace in a large city.\n\n**Trade Goods.** Across most islands and continents, raw materials such as ore, salt, grain, and livestock will often retain their full value in any market across the world, much like Gems, Precious Metals, Jewelry, and Art Objects."
+      }
+    ]
+  },
+  "expenses": [
+    {
+      "name": "Lifestyle expenses",
+      "text": "Maintaining a decent home or ship cabin, purchasing food and water, maintaining your gear and equipment, and covering transportation each day in a village or city will vary in cost depending on the quality of these goods and services required by a character. \n\nSomeone who decides to live with spending on only the bare minimum will pay far less than someone maintaining an elite noble lifestyle, for example. The cost of living for each lifestyle preference is listed in the table below.\n\n#### Lifestyle Expenses\n\n| Lifestyle | Price per day |\n|---|---|\n| Wretched | - |\n| Poor | ฿2,000 |\n| Comfortable | ฿10,000 |\n| Wealthy | ฿40,000 |\n| Rich | ฿100,000 |\n| Noble | ฿1,000,000 minimum |\n\n**Wretched.** You choose to live in horrible conditions, often stealing scraps of food or dumpster diving for survival. Your gear is never maintained and you almost never care for your appearance. You may reek of body odor and look to be suffering from malnutrition.\n\n**Poor.** You have found ways to live for very cheap, albeit in not very comfortable conditions. Only being able to afford the bare necessities, such as a few slices of bread each day, some water, and a small room or place to stay in for shelter. Your gear is poorly maintained, and you may not appear particularly clean.\n\n**Comfortable.** You are considered roughly middle-class and can afford a decent house in a modest part of town, or a small room on a ship or in an inn. You have access to clean water, average food, and other basic necessities. You take care of your equipment and your appearance is clean and acceptable.\n\n**Wealthy.** A step up from the comfortable lifestyle, you belong on the upper tiers of society. You may own a large house, have a decent-sized living space on a ship, or regularly lodge at a high-quality inn. Your equipment is kept in great condition and your appearance and cleanliness is certainly well above-average.\n\n**Rich.** You live a life of luxury, and might even be popular throughout your homeland or other nearby towns. Perhaps you are a prestigious pirate, aristocrat, or successful business owner. You may own a mansion, stay in a large room on a ship, or even own an inn or two. Your equipment is kept in mint condition and you always dress in the best clothes available.\n\n**Noble.** Nobles are often world-class elites, top pirates, or celestial dragons that have access to nearly infinite sums of money at their disposal. The lifestyle of a noble allows for just about any expense to be easily covered. You may own several homes, ships, or buildings all around the world. Nobles have immediate access to the best clothes, the best perfumes, some of the finest weapons, and always keep their equipment in perfect shape.",
+      "tables": [
+        {
+          "header": [
+            "Lifestyle",
+            "Price per day"
+          ],
+          "rows": [
+            [
+              "Wretched",
+              "-"
+            ],
+            [
+              "Poor",
+              "฿2,000"
+            ],
+            [
+              "Comfortable",
+              "฿10,000"
+            ],
+            [
+              "Wealthy",
+              "฿40,000"
+            ],
+            [
+              "Rich",
+              "฿100,000"
+            ],
+            [
+              "Noble",
+              "฿1,000,000 minimum"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Food, Drink, and Lodging",
+      "text": "The table below will give prices for food and drink as well as inn fees for a single night's lodging. These prices are automatically included in your lifestyle expenses during downtime.\n\n#### Food, Drink, and Lodging\n\n| Item | Cost |\n|---|---|\n| Banquet (per person) | ฿100,000 |\n| Bread, loaf | ฿200 |\n| Cheese, hunk | ฿1,000 |\n| Inn stay (per day) |  |\n| Poor | ฿1,000 |\n| Comfortable | ฿5,000 |\n| Wealthy | ฿20,000 |\n| Rich | ฿40,000 |\n| Noble | ฿400,000 |\n| Meals (per day) |  |\n| Poor | ฿600 |\n| Comfortable | ฿3,000 |\n| Wealthy | ฿8,000 |\n| Rich | ฿20,000 |\n| Noble | ฿200,000 |\n| Meat, chunk | ฿3,000 |\n| Rum |  |\n| Gallon | ฿2,000 |\n| Mug | ฿400 |\n| Sake |  |\n| Common (pitcher) | ฿1,000 |\n| Fine (Bottle) | ฿30,000 |\n| Common (pitcher) | ฿2,000 |\n| Fine (Bottle) | ฿100,000 |",
+      "tables": [
+        {
+          "header": [
+            "Item",
+            "Cost"
+          ],
+          "rows": [
+            [
+              "Banquet (per person)",
+              "฿100,000"
+            ],
+            [
+              "Bread, loaf",
+              "฿200"
+            ],
+            [
+              "Cheese, hunk",
+              "฿1,000"
+            ],
+            [
+              "Inn stay (per day)",
+              ""
+            ],
+            [
+              "Poor",
+              "฿1,000"
+            ],
+            [
+              "Comfortable",
+              "฿5,000"
+            ],
+            [
+              "Wealthy",
+              "฿20,000"
+            ],
+            [
+              "Rich",
+              "฿40,000"
+            ],
+            [
+              "Noble",
+              "฿400,000"
+            ],
+            [
+              "Meals (per day)",
+              ""
+            ],
+            [
+              "Poor",
+              "฿600"
+            ],
+            [
+              "Comfortable",
+              "฿3,000"
+            ],
+            [
+              "Wealthy",
+              "฿8,000"
+            ],
+            [
+              "Rich",
+              "฿20,000"
+            ],
+            [
+              "Noble",
+              "฿200,000"
+            ],
+            [
+              "Meat, chunk",
+              "฿3,000"
+            ],
+            [
+              "Rum",
+              ""
+            ],
+            [
+              "Gallon",
+              "฿2,000"
+            ],
+            [
+              "Mug",
+              "฿400"
+            ],
+            [
+              "Sake",
+              ""
+            ],
+            [
+              "Common (pitcher)",
+              "฿1,000"
+            ],
+            [
+              "Fine (Bottle)",
+              "฿30,000"
+            ],
+            [
+              "Common (pitcher)",
+              "฿2,000"
+            ],
+            [
+              "Fine (Bottle)",
+              "฿100,000"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Services",
+      "text": "Within a city or nation, even the best pirates may need to utilize the services provided by the people in the local area. These services may come in the form of transportation, medical attention, hiring lackeys, or getting around town faster. The table below lists individual services and their cost.\n\n#### Services\n\n| Service | Pay |\n|---|---|\n| Appraisal (Identify) | ฿100,000-500,000 per item |\n| Basic healing (Cure Wounds) | ฿100,000-500,000 per use |\n| Coach cab |  |\n| Between towns | ฿300 per mile |\n| Within a city | ฿100 |\n| Hireling |  |\n| Skilled | ฿20,000 per day |\n| Untrained | ฿2,000 per day |\n| Messenger | ฿200 per mile |\n| Road or gate toll | ฿100 |\n| Ship's passage | ฿1,000 per mile |",
+      "tables": [
+        {
+          "header": [
+            "Service",
+            "Pay"
+          ],
+          "rows": [
+            [
+              "Appraisal (Identify)",
+              "฿100,000-500,000 per item"
+            ],
+            [
+              "Basic healing (Cure Wounds)",
+              "฿100,000-500,000 per use"
+            ],
+            [
+              "Coach cab",
+              ""
+            ],
+            [
+              "Between towns",
+              "฿300 per mile"
+            ],
+            [
+              "Within a city",
+              "฿100"
+            ],
+            [
+              "Hireling",
+              ""
+            ],
+            [
+              "Skilled",
+              "฿20,000 per day"
+            ],
+            [
+              "Untrained",
+              "฿2,000 per day"
+            ],
+            [
+              "Messenger",
+              "฿200 per mile"
+            ],
+            [
+              "Road or gate toll",
+              "฿100"
+            ],
+            [
+              "Ship's passage",
+              "฿1,000 per mile"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "weaponProperties": "The different types of special weapon properties are listed on the different Weapons table. These include **ammunition, finesse, heavy, light, loading, range, reach, special, thrown, two-handed,** and **versatile**. These properties function the same as they do in standard 5th edition D&D rules.",
+  "packs": [],
+  "tools": []
+}

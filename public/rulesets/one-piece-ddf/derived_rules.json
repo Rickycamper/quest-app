@@ -1,0 +1,107 @@
+{
+  "description": "Todo lo de aqui se calcula al vuelo desde character + ruleset. No se guarda en la fila del personaje: si se guarda, se desincroniza.",
+  "formulas": [
+    {
+      "id": "abilityModifier",
+      "formula": "floor((score - 10) / 2)",
+      "note": "coincide con core.abilityModifierTable; usar la tabla como fuente de verdad"
+    },
+    {
+      "id": "proficiencyBonus",
+      "formula": "core.advancement[totalLevel].proficiencyBonus"
+    },
+    {
+      "id": "totalLevel",
+      "formula": "sum(classes[].level)"
+    },
+    {
+      "id": "finalAbilityScore",
+      "formula": "base + race.asi + subrace.asi + sum(abilityScoreImprovements) + feats",
+      "note": "tope 20 salvo que un feature diga lo contrario"
+    },
+    {
+      "id": "maxHp",
+      "formula": "clase primaria: hitDie + conMod; cada nivel siguiente: avg(hitDie) + conMod  (avg = hitDie/2 + 1)",
+      "note": "algunos features suman PV extra (ej. feat Tough); aplicarlos despues"
+    },
+    {
+      "id": "armorClass",
+      "formula": "el mayor entre: 10 + dexMod; armadura equipada; y las formulas de Unarmored Defense de la clase",
+      "note": "Bruiser: 10 + dexMod + conMod. Martial Artist: 10 + dexMod + wisMod. Haki Soul Armor: 13 + conMod. Elegir el maximo, no sumar."
+    },
+    {
+      "id": "savingThrow",
+      "formula": "abilityMod + (proficiencyBonus si la clase primaria da esa salvacion)"
+    },
+    {
+      "id": "skillCheck",
+      "formula": "abilityMod + (pb si competente) + (pb extra si tiene expertise)"
+    },
+    {
+      "id": "passivePerception",
+      "formula": "10 + skillCheck(Perception)"
+    },
+    {
+      "id": "initiative",
+      "formula": "dexMod + bonos"
+    },
+    {
+      "id": "spellSaveDC",
+      "formula": "8 + proficiencyBonus + spellcastingAbilityMod"
+    },
+    {
+      "id": "spellAttackBonus",
+      "formula": "proficiencyBonus + spellcastingAbilityMod"
+    },
+    {
+      "id": "hakiSaveDC",
+      "formula": "8 + proficiencyBonus + mod(color.spellcastingAbility)",
+      "note": "Armament -> CON, Observation -> WIS, Supreme King -> CHA"
+    },
+    {
+      "id": "furySaveDC",
+      "formula": "8 + proficiencyBonus + conMod",
+      "note": "Bruiser"
+    },
+    {
+      "id": "activeFeatures",
+      "formula": "para cada clase: features cuyo level <= classLevel, mas las de la subclase elegida"
+    },
+    {
+      "id": "carryingCapacity",
+      "formula": "strScore * 15",
+      "note": "Powerful Build y tamaños grandes lo duplican"
+    }
+  ],
+  "unarmoredDefense": [
+    {
+      "classId": "bruiser",
+      "formula": "10 + dex + con"
+    },
+    {
+      "classId": "martial-artist",
+      "formula": "10 + dex + wis"
+    }
+  ],
+  "nonLevelProgression": {
+    "note": "La diferencia estructural mas grande contra 5e estandar: Haki y Devil Fruits NO se desbloquean por nivel. El DM los otorga en Spirit Surge Events, con una rareza maxima segun el CR del desafio. La hoja necesita un libro mayor de concesiones separado de la progresion de clase, y el DM necesita poder otorgar.",
+    "spiritSurgeRarityByCR": [
+      {
+        "rarity": "Uncommon",
+        "cr": "1-4"
+      },
+      {
+        "rarity": "Rare",
+        "cr": "5-10"
+      },
+      {
+        "rarity": "Very Rare",
+        "cr": "11-17"
+      },
+      {
+        "rarity": "Legendary",
+        "cr": "18+"
+      }
+    ]
+  }
+}

@@ -1,0 +1,2018 @@
+[
+  {
+    "roll": 1,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Mini Mini no Mi",
+    "meaning": "Shrinking",
+    "model": null,
+    "id": "mini-mini-no-mi-shrinking"
+  },
+  {
+    "roll": 2,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Bara Bara no Mi",
+    "meaning": "Dividing",
+    "model": null,
+    "id": "bara-bara-no-mi-dividing"
+  },
+  {
+    "roll": 3,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Sube Sube no Mi",
+    "meaning": "Smooth",
+    "model": null,
+    "id": "sube-sube-no-mi-smooth"
+  },
+  {
+    "roll": 4,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Toge Toge no Mi",
+    "meaning": "Spikes",
+    "model": null,
+    "id": "toge-toge-no-mi-spikes"
+  },
+  {
+    "roll": 5,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Bane Bane no Mi",
+    "meaning": "Springs",
+    "model": null,
+    "id": "bane-bane-no-mi-springs"
+  },
+  {
+    "roll": 6,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Doa Doa no Mi",
+    "meaning": "Door",
+    "model": null,
+    "id": "doa-doa-no-mi-door"
+  },
+  {
+    "roll": 7,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Awa Awa no Mi",
+    "meaning": "Bubble",
+    "model": null,
+    "id": "awa-awa-no-mi-bubble"
+  },
+  {
+    "roll": 8,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Shari Shari no Mi",
+    "meaning": "Wheel",
+    "model": null,
+    "id": "shari-shari-no-mi-wheel"
+  },
+  {
+    "roll": 9,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Beri Beri no Mi",
+    "meaning": "Orb",
+    "model": null,
+    "id": "beri-beri-no-mi-orb"
+  },
+  {
+    "roll": 10,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Woshu Woshu no Mi",
+    "meaning": "Wash",
+    "model": null,
+    "id": "woshu-woshu-no-mi-wash"
+  },
+  {
+    "roll": 11,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Mato Mato no Mi",
+    "meaning": "Mark",
+    "model": null,
+    "id": "mato-mato-no-mi-mark"
+  },
+  {
+    "roll": 12,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Guru Guru no Mi",
+    "meaning": "Spin",
+    "model": null,
+    "id": "guru-guru-no-mi-spin"
+  },
+  {
+    "roll": 13,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Nui Nui no Mi",
+    "meaning": "Sewing",
+    "model": null,
+    "id": "nui-nui-no-mi-sewing"
+  },
+  {
+    "roll": 14,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Trashu Trashu no Mi",
+    "meaning": "Trash",
+    "model": null,
+    "id": "trashu-trashu-no-mi-trash"
+  },
+  {
+    "roll": 15,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Bri Bri no Mi",
+    "meaning": "Brightness",
+    "model": null,
+    "id": "bri-bri-no-mi-brightness"
+  },
+  {
+    "roll": 16,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Tendri Tendri no Mi",
+    "meaning": "Tendrils",
+    "model": null,
+    "id": "tendri-tendri-no-mi-tendrils"
+  },
+  {
+    "roll": 17,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Splito Splito no Mi",
+    "meaning": "Split",
+    "model": null,
+    "id": "splito-splito-no-mi-split"
+  },
+  {
+    "roll": 18,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Naku Naku no Mi",
+    "meaning": "Crying",
+    "model": null,
+    "id": "naku-naku-no-mi-crying"
+  },
+  {
+    "roll": 19,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Wrapu Wrapu no Mi",
+    "meaning": "Wrapping",
+    "model": null,
+    "id": "wrapu-wrapu-no-mi-wrapping"
+  },
+  {
+    "roll": 20,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Chizu Chizu no Mi",
+    "meaning": "Cheese",
+    "model": null,
+    "id": "chizu-chizu-no-mi-cheese"
+  },
+  {
+    "roll": 21,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Jake Jake no Mi",
+    "meaning": "Jacket",
+    "model": null,
+    "id": "jake-jake-no-mi-jacket"
+  },
+  {
+    "roll": 22,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Nagi Nagi no Mi",
+    "meaning": "Silence",
+    "model": null,
+    "id": "nagi-nagi-no-mi-silence"
+  },
+  {
+    "roll": 23,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Bisu Bisu no Mi",
+    "meaning": "Biscuit",
+    "model": null,
+    "id": "bisu-bisu-no-mi-biscuit"
+  },
+  {
+    "roll": 24,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Bata Bata no Mi",
+    "meaning": "Butter",
+    "model": null,
+    "id": "bata-bata-no-mi-butter"
+  },
+  {
+    "roll": 25,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Kuri Kuri no Mi",
+    "meaning": "Cream",
+    "model": null,
+    "id": "kuri-kuri-no-mi-cream"
+  },
+  {
+    "roll": 26,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Shibo Shibo no Mi",
+    "meaning": "Wring",
+    "model": null,
+    "id": "shibo-shibo-no-mi-wring"
+  },
+  {
+    "roll": 27,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Diggu Diggu no Mi",
+    "meaning": "Dig",
+    "model": null,
+    "id": "diggu-diggu-no-mi-dig"
+  },
+  {
+    "roll": 28,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Juku Juku no Mi",
+    "meaning": "Maturing",
+    "model": null,
+    "id": "juku-juku-no-mi-maturing"
+  },
+  {
+    "roll": 29,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Kachi Kachi no Mi",
+    "meaning": "Hard",
+    "model": null,
+    "id": "kachi-kachi-no-mi-hard"
+  },
+  {
+    "roll": 30,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Nemu Nemu no Mi",
+    "meaning": "Sleep",
+    "model": null,
+    "id": "nemu-nemu-no-mi-sleep"
+  },
+  {
+    "roll": 31,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Kyubu Kyubu no Mi",
+    "meaning": "Cube",
+    "model": null,
+    "id": "kyubu-kyubu-no-mi-cube"
+  },
+  {
+    "roll": 32,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Ropu Ropu no Mi",
+    "meaning": "Rope",
+    "model": null,
+    "id": "ropu-ropu-no-mi-rope"
+  },
+  {
+    "roll": 33,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Pottu Pottu no Mi",
+    "meaning": "Pot",
+    "model": null,
+    "id": "pottu-pottu-no-mi-pot"
+  },
+  {
+    "roll": 34,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Tsuri Tsuri no Mi",
+    "meaning": "Fishing",
+    "model": null,
+    "id": "tsuri-tsuri-no-mi-fishing"
+  },
+  {
+    "roll": 35,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Choco Choco no Mi",
+    "meaning": "Chocolate",
+    "model": null,
+    "id": "choco-choco-no-mi-chocolate"
+  },
+  {
+    "roll": 36,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Poke Poke no Mi",
+    "meaning": "Pocket",
+    "model": null,
+    "id": "poke-poke-no-mi-pocket"
+  },
+  {
+    "roll": 37,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Jingu Jingu no Mi",
+    "meaning": "Jingle",
+    "model": null,
+    "id": "jingu-jingu-no-mi-jingle"
+  },
+  {
+    "roll": 38,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Kutsu Kutsu no Mi",
+    "meaning": "Shoe",
+    "model": null,
+    "id": "kutsu-kutsu-no-mi-shoe"
+  },
+  {
+    "roll": 39,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Mane Mane no Mi",
+    "meaning": "Imitation",
+    "model": null,
+    "id": "mane-mane-no-mi-imitation"
+  },
+  {
+    "roll": 40,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Maki Maki no Mi",
+    "meaning": "Scroll",
+    "model": null,
+    "id": "maki-maki-no-mi-scroll"
+  },
+  {
+    "roll": 41,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Hira Hira no Mi",
+    "meaning": "Flag",
+    "model": null,
+    "id": "hira-hira-no-mi-flag"
+  },
+  {
+    "roll": 42,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Jigu Jigu no Mi",
+    "meaning": "Jiggle",
+    "model": null,
+    "id": "jigu-jigu-no-mi-jiggle"
+  },
+  {
+    "roll": 43,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Daicu Daicu no Mi",
+    "meaning": "Dice",
+    "model": null,
+    "id": "daicu-daicu-no-mi-dice"
+  },
+  {
+    "roll": 44,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Lardu Lardu no Mi",
+    "meaning": "Lard",
+    "model": null,
+    "id": "lardu-lardu-no-mi-lard"
+  },
+  {
+    "roll": 45,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Bottu Bottu no Mi",
+    "meaning": "Bottle",
+    "model": null,
+    "id": "bottu-bottu-no-mi-bottle"
+  },
+  {
+    "roll": 46,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Dimmu Dimmu no Mi",
+    "meaning": "Dimming",
+    "model": null,
+    "id": "dimmu-dimmu-no-mi-dimming"
+  },
+  {
+    "roll": 47,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Dullu Dullu no Mi",
+    "meaning": "Dulling",
+    "model": null,
+    "id": "dullu-dullu-no-mi-dulling"
+  },
+  {
+    "roll": 48,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Dansu Dansu no Mi",
+    "meaning": "Dancing",
+    "model": null,
+    "id": "dansu-dansu-no-mi-dancing"
+  },
+  {
+    "roll": 49,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Stinku Stinku no Mi",
+    "meaning": "Stink",
+    "model": null,
+    "id": "stinku-stinku-no-mi-stink"
+  },
+  {
+    "roll": 50,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Kosui Kosui no Mi",
+    "meaning": "Perfume",
+    "model": null,
+    "id": "kosui-kosui-no-mi-perfume"
+  },
+  {
+    "roll": 51,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Boxu Boxu no Mi",
+    "meaning": "Box",
+    "model": null,
+    "id": "boxu-boxu-no-mi-box"
+  },
+  {
+    "roll": 52,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Haku Haku no Mi",
+    "meaning": "Vomit",
+    "model": null,
+    "id": "haku-haku-no-mi-vomit"
+  },
+  {
+    "roll": 53,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Kagi Kagi no Mi",
+    "meaning": "Key",
+    "model": null,
+    "id": "kagi-kagi-no-mi-key"
+  },
+  {
+    "roll": 54,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Ikari Ikari no Mi",
+    "meaning": "Anger",
+    "model": null,
+    "id": "ikari-ikari-no-mi-anger"
+  },
+  {
+    "roll": 55,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Rubbu Rubbu no Mi",
+    "meaning": "Friction",
+    "model": null,
+    "id": "rubbu-rubbu-no-mi-friction"
+  },
+  {
+    "roll": 56,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Garas Garas no Mi",
+    "meaning": "Glass",
+    "model": null,
+    "id": "garas-garas-no-mi-glass"
+  },
+  {
+    "roll": 57,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Warau Warau no Mi",
+    "meaning": "Laughter",
+    "model": null,
+    "id": "warau-warau-no-mi-laughter"
+  },
+  {
+    "roll": 58,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Kiku Kiku no Mi",
+    "meaning": "Hearing",
+    "model": null,
+    "id": "kiku-kiku-no-mi-hearing"
+  },
+  {
+    "roll": 59,
+    "rarity": "Uncommon",
+    "type": "Paramecia",
+    "name": "Snapu Snapu no Mi",
+    "meaning": "Snapping",
+    "model": null,
+    "id": "snapu-snapu-no-mi-snapping"
+  },
+  {
+    "roll": 60,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Inu Inu no Mi",
+    "meaning": null,
+    "model": "Dalmation",
+    "id": "inu-inu-no-mi-dalmation"
+  },
+  {
+    "roll": 61,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Hebi Hebi no Mi",
+    "meaning": null,
+    "model": "Lizard",
+    "id": "hebi-hebi-no-mi-lizard"
+  },
+  {
+    "roll": 62,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Ushi Ushi no Mi",
+    "meaning": null,
+    "model": "Pig",
+    "id": "ushi-ushi-no-mi-pig"
+  },
+  {
+    "roll": 63,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Ushi Ushi no Mi",
+    "meaning": null,
+    "model": "Cow",
+    "id": "ushi-ushi-no-mi-cow"
+  },
+  {
+    "roll": 64,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Uma Uma no Mi",
+    "meaning": null,
+    "model": "Pony",
+    "id": "uma-uma-no-mi-pony"
+  },
+  {
+    "roll": 65,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Hito Hito no Mi",
+    "meaning": null,
+    "model": "Human",
+    "id": "hito-hito-no-mi-human"
+  },
+  {
+    "roll": 66,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Uma Uma no Mi",
+    "meaning": null,
+    "model": "Camel",
+    "id": "uma-uma-no-mi-camel"
+  },
+  {
+    "roll": 67,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Nezu Nezu no Mi",
+    "meaning": null,
+    "model": "Rat",
+    "id": "nezu-nezu-no-mi-rat"
+  },
+  {
+    "roll": 68,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Kani Kani no Mi",
+    "meaning": null,
+    "model": "Crab",
+    "id": "kani-kani-no-mi-crab"
+  },
+  {
+    "roll": 69,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Yagi Yagi no Mi",
+    "meaning": null,
+    "model": "Deer",
+    "id": "yagi-yagi-no-mi-deer"
+  },
+  {
+    "roll": 70,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Guwa Guwa no Mi",
+    "meaning": null,
+    "model": "Frog",
+    "id": "guwa-guwa-no-mi-frog"
+  },
+  {
+    "roll": 71,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Kumo Kumo no Mi",
+    "meaning": null,
+    "model": "Wolf Spider",
+    "id": "kumo-kumo-no-mi-wolf-spider"
+  },
+  {
+    "roll": 72,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Mushi Mushi no Mi",
+    "meaning": null,
+    "model": "Millipede",
+    "id": "mushi-mushi-no-mi-millipede"
+  },
+  {
+    "roll": 73,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Ushi Ushi no Mi",
+    "meaning": null,
+    "model": "Rothe",
+    "id": "ushi-ushi-no-mi-rothe"
+  },
+  {
+    "roll": 74,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Guma Guma no Mi",
+    "meaning": null,
+    "model": "Honey Badger",
+    "id": "guma-guma-no-mi-honey-badger"
+  },
+  {
+    "roll": 75,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Hebi Hebi no Mi",
+    "meaning": null,
+    "model": "Mamba",
+    "id": "hebi-hebi-no-mi-mamba"
+  },
+  {
+    "roll": 76,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Guma Guma no Mi",
+    "meaning": null,
+    "model": "Weasel",
+    "id": "guma-guma-no-mi-weasel"
+  },
+  {
+    "roll": 77,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Yagi Yagi no Mi",
+    "meaning": null,
+    "model": "Goat",
+    "id": "yagi-yagi-no-mi-goat"
+  },
+  {
+    "roll": 78,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Tori Tori no Mi",
+    "meaning": null,
+    "model": "Axe Beak",
+    "id": "tori-tori-no-mi-axe-beak"
+  },
+  {
+    "roll": 79,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Inu Inu no Mi",
+    "meaning": null,
+    "model": "Jackal",
+    "id": "inu-inu-no-mi-jackal"
+  },
+  {
+    "roll": 80,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Uma Uma no Mi",
+    "meaning": null,
+    "model": "Horse",
+    "id": "uma-uma-no-mi-horse"
+  },
+  {
+    "roll": 81,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Shika Shika no Mi",
+    "meaning": null,
+    "model": "Elk",
+    "id": "shika-shika-no-mi-elk"
+  },
+  {
+    "roll": 82,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Uma Uma no Mi",
+    "meaning": null,
+    "model": "Mule",
+    "id": "uma-uma-no-mi-mule"
+  },
+  {
+    "roll": 83,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Neko Neko no Mi",
+    "meaning": null,
+    "model": "Cat",
+    "id": "neko-neko-no-mi-cat"
+  },
+  {
+    "roll": 84,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Inu Inu no Mi",
+    "meaning": null,
+    "model": "Chihuahua",
+    "id": "inu-inu-no-mi-chihuahua"
+  },
+  {
+    "roll": 85,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Inu Inu no Mi",
+    "meaning": null,
+    "model": "Golden Retriever",
+    "id": "inu-inu-no-mi-golden-retriever"
+  },
+  {
+    "roll": 86,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Neko Neko no Mi",
+    "meaning": null,
+    "model": "Lynx",
+    "id": "neko-neko-no-mi-lynx"
+  },
+  {
+    "roll": 87,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Sara Sara no Mi",
+    "meaning": null,
+    "model": "Axolotl",
+    "id": "sara-sara-no-mi-axolotl"
+  },
+  {
+    "roll": 88,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Neko Neko no Mi",
+    "meaning": null,
+    "model": "Panther",
+    "id": "neko-neko-no-mi-panther"
+  },
+  {
+    "roll": 89,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Nezu Nezu no Mi",
+    "meaning": null,
+    "model": "Porcupine",
+    "id": "nezu-nezu-no-mi-porcupine"
+  },
+  {
+    "roll": 90,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Kame Kame no Mi",
+    "meaning": null,
+    "model": "Turtle",
+    "id": "kame-kame-no-mi-turtle"
+  },
+  {
+    "roll": 91,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Kani Kani no Mi",
+    "meaning": null,
+    "model": "Lobster",
+    "id": "kani-kani-no-mi-lobster"
+  },
+  {
+    "roll": 92,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Mushi Mushi no Mi",
+    "meaning": null,
+    "model": "Ant",
+    "id": "mushi-mushi-no-mi-ant"
+  },
+  {
+    "roll": 93,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Ushi Ushi no Mi",
+    "meaning": null,
+    "model": "Ox",
+    "id": "ushi-ushi-no-mi-ox"
+  },
+  {
+    "roll": 94,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Buta Buta no Mi Model: Boar",
+    "meaning": null,
+    "model": null,
+    "id": "buta-buta-no-mi-model-boar"
+  },
+  {
+    "roll": 95,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Guma Guma no Mi",
+    "meaning": null,
+    "model": "Wolverine",
+    "id": "guma-guma-no-mi-wolverine"
+  },
+  {
+    "roll": 96,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Hebi Hebi no Mi",
+    "meaning": null,
+    "model": "Python",
+    "id": "hebi-hebi-no-mi-python"
+  },
+  {
+    "roll": 97,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Yagi Yagi no Mi",
+    "meaning": null,
+    "model": "Sheep",
+    "id": "yagi-yagi-no-mi-sheep"
+  },
+  {
+    "roll": 98,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Ushi Ushi no Mi",
+    "meaning": null,
+    "model": "Stench Kow",
+    "id": "ushi-ushi-no-mi-stench-kow"
+  },
+  {
+    "roll": 99,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Hebi Hebi no Mi",
+    "meaning": null,
+    "model": "Boa",
+    "id": "hebi-hebi-no-mi-boa"
+  },
+  {
+    "roll": 0,
+    "rarity": "Uncommon",
+    "type": "Zoan",
+    "name": "Uma Uma no Mi",
+    "meaning": null,
+    "model": "Zebra",
+    "id": "uma-uma-no-mi-zebra"
+  },
+  {
+    "roll": 1,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Chiyu Chiyu no Mi",
+    "meaning": "Healing",
+    "model": null,
+    "id": "chiyu-chiyu-no-mi-healing"
+  },
+  {
+    "roll": 2,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Choki Choki no Mi",
+    "meaning": "Scissor",
+    "model": null,
+    "id": "choki-choki-no-mi-scissor"
+  },
+  {
+    "roll": 3,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Pero Pero no Mi",
+    "meaning": "Candy Creation",
+    "model": null,
+    "id": "pero-pero-no-mi-candy-creation"
+  },
+  {
+    "roll": 4,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Doru Doru no Mi",
+    "meaning": "Wax",
+    "model": null,
+    "id": "doru-doru-no-mi-wax"
+  },
+  {
+    "roll": 5,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Bomu Bomu no Mi",
+    "meaning": "Bomb",
+    "model": null,
+    "id": "bomu-bomu-no-mi-bomb"
+  },
+  {
+    "roll": 6,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Baku Baku no Mi",
+    "meaning": "Munching",
+    "model": null,
+    "id": "baku-baku-no-mi-munching"
+  },
+  {
+    "roll": 7,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Ato Ato no Mi",
+    "meaning": "Art",
+    "model": null,
+    "id": "ato-ato-no-mi-art"
+  },
+  {
+    "roll": 8,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Beta Beta no Mi",
+    "meaning": "Sticky Substance",
+    "model": null,
+    "id": "beta-beta-no-mi-sticky-substance"
+  },
+  {
+    "roll": 9,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Buku Buku no Mi",
+    "meaning": "Book",
+    "model": null,
+    "id": "buku-buku-no-mi-book"
+  },
+  {
+    "roll": 10,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Nuke Nuke no Mi",
+    "meaning": "Phasing",
+    "model": null,
+    "id": "nuke-nuke-no-mi-phasing"
+  },
+  {
+    "roll": 11,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Giro Giro no Mi",
+    "meaning": "Insight",
+    "model": null,
+    "id": "giro-giro-no-mi-insight"
+  },
+  {
+    "roll": 12,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Gocha Gocha no Mi",
+    "meaning": "Combining",
+    "model": null,
+    "id": "gocha-gocha-no-mi-combining"
+  },
+  {
+    "roll": 13,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Hana Hana no Mi",
+    "meaning": "Limb Sprouting",
+    "model": null,
+    "id": "hana-hana-no-mi-limb-sprouting"
+  },
+  {
+    "roll": 14,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Hobi Hobi no Mi",
+    "meaning": "Toy Transforming",
+    "model": null,
+    "id": "hobi-hobi-no-mi-toy-transforming"
+  },
+  {
+    "roll": 15,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Horo Horo no Mi",
+    "meaning": "Ghost",
+    "model": null,
+    "id": "horo-horo-no-mi-ghost"
+  },
+  {
+    "roll": 16,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Horu Horu no Mi",
+    "meaning": "Hormones",
+    "model": null,
+    "id": "horu-horu-no-mi-hormones"
+  },
+  {
+    "roll": 17,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Hoya Hoya no Mi",
+    "meaning": "Genie Lamp",
+    "model": null,
+    "id": "hoya-hoya-no-mi-genie-lamp"
+  },
+  {
+    "roll": 18,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Ishi Ishi no Mi",
+    "meaning": "Stone Control",
+    "model": null,
+    "id": "ishi-ishi-no-mi-stone-control"
+  },
+  {
+    "roll": 19,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Noko Noko no Mi",
+    "meaning": "Mushroom Spores",
+    "model": null,
+    "id": "noko-noko-no-mi-mushroom-spores"
+  },
+  {
+    "roll": 20,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Kage Kage no Mi",
+    "meaning": "Shadows",
+    "model": null,
+    "id": "kage-kage-no-mi-shadows"
+  },
+  {
+    "roll": 21,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Kibi Kibi no Mi",
+    "meaning": "Beast Control",
+    "model": null,
+    "id": "kibi-kibi-no-mi-beast-control"
+  },
+  {
+    "roll": 22,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Kiro Kiro no Mi",
+    "meaning": "Kilogram",
+    "model": null,
+    "id": "kiro-kiro-no-mi-kilogram"
+  },
+  {
+    "roll": 23,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Kobu Kobu no Mi",
+    "meaning": "Encourage",
+    "model": null,
+    "id": "kobu-kobu-no-mi-encourage"
+  },
+  {
+    "roll": 24,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Memo Memo no Mi",
+    "meaning": "Memory Control",
+    "model": null,
+    "id": "memo-memo-no-mi-memory-control"
+  },
+  {
+    "roll": 25,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Mero Mero no Mi",
+    "meaning": "Love",
+    "model": null,
+    "id": "mero-mero-no-mi-love"
+  },
+  {
+    "roll": 26,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Mira Mira no Mi",
+    "meaning": "Mirror",
+    "model": null,
+    "id": "mira-mira-no-mi-mirror"
+  },
+  {
+    "roll": 27,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Modo Modo no Mi",
+    "meaning": "Reduce Age",
+    "model": null,
+    "id": "modo-modo-no-mi-reduce-age"
+  },
+  {
+    "roll": 28,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Netsu Netsu no Mi",
+    "meaning": "Heat",
+    "model": null,
+    "id": "netsu-netsu-no-mi-heat"
+  },
+  {
+    "roll": 29,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Frizu Frizu no Mi",
+    "meaning": "Cold",
+    "model": null,
+    "id": "frizu-frizu-no-mi-cold"
+  },
+  {
+    "roll": 30,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Noro Noro no Mi",
+    "meaning": "Slow",
+    "model": null,
+    "id": "noro-noro-no-mi-slow"
+  },
+  {
+    "roll": 31,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Ori Ori no Mi",
+    "meaning": "Cage",
+    "model": null,
+    "id": "ori-ori-no-mi-cage"
+  },
+  {
+    "roll": 32,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Oshi Oshi no Mi",
+    "meaning": "Pushing",
+    "model": null,
+    "id": "oshi-oshi-no-mi-pushing"
+  },
+  {
+    "roll": 33,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Oto Oto no Mi",
+    "meaning": "Sound",
+    "model": null,
+    "id": "oto-oto-no-mi-sound"
+  },
+  {
+    "roll": 34,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Sabi Sabi no Mi",
+    "meaning": "Rusting",
+    "model": null,
+    "id": "sabi-sabi-no-mi-rusting"
+  },
+  {
+    "roll": 35,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Shiro Shiro no Mi",
+    "meaning": "Castle",
+    "model": null,
+    "id": "shiro-shiro-no-mi-castle"
+  },
+  {
+    "roll": 36,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Suke Suke no Mi",
+    "meaning": "Invisibility",
+    "model": null,
+    "id": "suke-suke-no-mi-invisibility"
+  },
+  {
+    "roll": 37,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Supa Supa no Mi",
+    "meaning": "Bladed",
+    "model": null,
+    "id": "supa-supa-no-mi-bladed"
+  },
+  {
+    "roll": 38,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Toki Toki no Mi",
+    "meaning": "Future",
+    "model": null,
+    "id": "toki-toki-no-mi-future"
+  },
+  {
+    "roll": 39,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Wara Wara no Mi",
+    "meaning": "Straw",
+    "model": null,
+    "id": "wara-wara-no-mi-straw"
+  },
+  {
+    "roll": 40,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Yomi Yomi no Mi",
+    "meaning": "Resurrection",
+    "model": null,
+    "id": "yomi-yomi-no-mi-resurrection"
+  },
+  {
+    "roll": 41,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Ele Ele No Mi",
+    "meaning": "Electricity",
+    "model": null,
+    "id": "ele-ele-no-mi-electricity"
+  },
+  {
+    "roll": 42,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Wobba Wobba no Mi",
+    "meaning": "Wobbling",
+    "model": null,
+    "id": "wobba-wobba-no-mi-wobbling"
+  },
+  {
+    "roll": 43,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Gami Gami no Mi",
+    "meaning": "Origami",
+    "model": null,
+    "id": "gami-gami-no-mi-origami"
+  },
+  {
+    "roll": 44,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Shuffu Shuffu no Mi",
+    "meaning": "Playing Cards",
+    "model": null,
+    "id": "shuffu-shuffu-no-mi-playing-cards"
+  },
+  {
+    "roll": 45,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Moa Moa no Mi",
+    "meaning": "Increasing Quality",
+    "model": null,
+    "id": "moa-moa-no-mi-increasing-quality"
+  },
+  {
+    "roll": 46,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Buki Buki no Mi",
+    "meaning": "Armory",
+    "model": null,
+    "id": "buki-buki-no-mi-armory"
+  },
+  {
+    "roll": 47,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Senko Seno no Mi",
+    "meaning": "Flash",
+    "model": null,
+    "id": "senko-seno-no-mi-flash"
+  },
+  {
+    "roll": 48,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Pamu Pamu no Mi",
+    "meaning": "Rupture",
+    "model": null,
+    "id": "pamu-pamu-no-mi-rupture"
+  },
+  {
+    "roll": 49,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Wapu Wapu no Mi",
+    "meaning": "Teleporting",
+    "model": null,
+    "id": "wapu-wapu-no-mi-teleporting"
+  },
+  {
+    "roll": 50,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Fude Fude no Mi",
+    "meaning": "Paintbrush",
+    "model": null,
+    "id": "fude-fude-no-mi-paintbrush"
+  },
+  {
+    "roll": 51,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Ito Ito no Mi",
+    "meaning": "String",
+    "model": null,
+    "id": "ito-ito-no-mi-string"
+  },
+  {
+    "roll": 52,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Haipa Haipa no Mi",
+    "meaning": "Super Speed",
+    "model": null,
+    "id": "haipa-haipa-no-mi-super-speed"
+  },
+  {
+    "roll": 53,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Raki Raki no Mi",
+    "meaning": "Luck",
+    "model": null,
+    "id": "raki-raki-no-mi-luck"
+  },
+  {
+    "roll": 54,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Peto Peto no Mi",
+    "meaning": "Mind Control",
+    "model": null,
+    "id": "peto-peto-no-mi-mind-control"
+  },
+  {
+    "roll": 55,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Hemo Hemo no Mi",
+    "meaning": "Blood Manipulation",
+    "model": null,
+    "id": "hemo-hemo-no-mi-blood-manipulation"
+  },
+  {
+    "roll": 56,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Ton Ton no Mi",
+    "meaning": "Ton",
+    "model": null,
+    "id": "ton-ton-no-mi-ton"
+  },
+  {
+    "roll": 57,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Bigu Bigu no Mi",
+    "meaning": "Growing in Size",
+    "model": null,
+    "id": "bigu-bigu-no-mi-growing-in-size"
+  },
+  {
+    "roll": 58,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Mosa Mosa no Mi",
+    "meaning": "Plant Growth",
+    "model": null,
+    "id": "mosa-mosa-no-mi-plant-growth"
+  },
+  {
+    "roll": 59,
+    "rarity": "Rare",
+    "type": "Paramecia",
+    "name": "Shiku Shiku no Mi",
+    "meaning": "Sick",
+    "model": null,
+    "id": "shiku-shiku-no-mi-sick"
+  },
+  {
+    "roll": 60,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Inu Inu no Mi",
+    "meaning": null,
+    "model": "Wolf",
+    "id": "inu-inu-no-mi-wolf"
+  },
+  {
+    "roll": 61,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Ushi Ushi no Mi",
+    "meaning": null,
+    "model": "Giraffe",
+    "id": "ushi-ushi-no-mi-giraffe"
+  },
+  {
+    "roll": 62,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Neko Neko no Mi",
+    "meaning": null,
+    "model": "Lion",
+    "id": "neko-neko-no-mi-lion"
+  },
+  {
+    "roll": 63,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Neko Neko no Mi",
+    "meaning": null,
+    "model": "Leopard",
+    "id": "neko-neko-no-mi-leopard"
+  },
+  {
+    "roll": 64,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Guwa Guwa no Mi",
+    "meaning": null,
+    "model": "Toad",
+    "id": "guwa-guwa-no-mi-toad"
+  },
+  {
+    "roll": 65,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Tori Tori no Mi",
+    "meaning": null,
+    "model": "Vulture",
+    "id": "tori-tori-no-mi-vulture"
+  },
+  {
+    "roll": 66,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Ushi Ushi no Mi",
+    "meaning": null,
+    "model": "Bull",
+    "id": "ushi-ushi-no-mi-bull"
+  },
+  {
+    "roll": 67,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Tori Tori no Mi",
+    "meaning": null,
+    "model": "Falcon",
+    "id": "tori-tori-no-mi-falcon"
+  },
+  {
+    "roll": 68,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Inu Inu no Mi",
+    "meaning": null,
+    "model": "Giant Hyena",
+    "id": "inu-inu-no-mi-giant-hyena"
+  },
+  {
+    "roll": 69,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Saru Saru no Mi",
+    "meaning": null,
+    "model": "Ape",
+    "id": "saru-saru-no-mi-ape"
+  },
+  {
+    "roll": 70,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Zou Zou no Mi",
+    "meaning": null,
+    "model": "Elephant",
+    "id": "zou-zou-no-mi-elephant"
+  },
+  {
+    "roll": 71,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Mūsu Mūsu no Mi",
+    "meaning": null,
+    "model": "Moose",
+    "id": "musu-musu-no-mi-moose"
+  },
+  {
+    "roll": 72,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Kuma Kuma no Mi",
+    "meaning": null,
+    "model": "Black Bear",
+    "id": "kuma-kuma-no-mi-black-bear"
+  },
+  {
+    "roll": 73,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Kuma Kuma no Mi",
+    "meaning": null,
+    "model": "Brown Bear",
+    "id": "kuma-kuma-no-mi-brown-bear"
+  },
+  {
+    "roll": 74,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Kuma Kuma no Mi",
+    "meaning": null,
+    "model": "Polar Bear",
+    "id": "kuma-kuma-no-mi-polar-bear"
+  },
+  {
+    "roll": 75,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Mushi Mushi no Mi",
+    "meaning": null,
+    "model": "Wasp",
+    "id": "mushi-mushi-no-mi-wasp"
+  },
+  {
+    "roll": 76,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Neko Neko no Mi",
+    "meaning": null,
+    "model": "Tiger",
+    "id": "neko-neko-no-mi-tiger"
+  },
+  {
+    "roll": 77,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Buta Buta no Mi Model: Giant Boar",
+    "meaning": null,
+    "model": null,
+    "id": "buta-buta-no-mi-model-giant-boar"
+  },
+  {
+    "roll": 78,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Tori Tori no Mi",
+    "meaning": null,
+    "model": "Eagle",
+    "id": "tori-tori-no-mi-eagle"
+  },
+  {
+    "roll": 79,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Tori Tori no Mi",
+    "meaning": null,
+    "model": "Hawk",
+    "id": "tori-tori-no-mi-hawk"
+  },
+  {
+    "roll": 80,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Uma Uma no Mi",
+    "meaning": null,
+    "model": "Rhinoceros",
+    "id": "uma-uma-no-mi-rhinoceros"
+  },
+  {
+    "roll": 81,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Kumo Kumo no Mi, model: Tarantula",
+    "meaning": null,
+    "model": null,
+    "id": "kumo-kumo-no-mi-model-tarantula"
+  },
+  {
+    "roll": 82,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Hebi Hebi no Mi",
+    "meaning": null,
+    "model": "King Cobra",
+    "id": "hebi-hebi-no-mi-king-cobra"
+  },
+  {
+    "roll": 83,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Toka Toka no Mi",
+    "meaning": null,
+    "model": "Komodo Dragon",
+    "id": "toka-toka-no-mi-komodo-dragon"
+  },
+  {
+    "roll": 84,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Wani Wani no Mi",
+    "meaning": null,
+    "model": "Crocodile",
+    "id": "wani-wani-no-mi-crocodile"
+  },
+  {
+    "roll": 85,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Kuma Kuma no Mi",
+    "meaning": null,
+    "model": "Panda",
+    "id": "kuma-kuma-no-mi-panda"
+  },
+  {
+    "roll": 86,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Mushi Mushi no Mi",
+    "meaning": null,
+    "model": "Praying Mantis",
+    "id": "mushi-mushi-no-mi-praying-mantis"
+  },
+  {
+    "roll": 87,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Kaba Kaba no Mi",
+    "meaning": null,
+    "model": "Hippo",
+    "id": "kaba-kaba-no-mi-hippo"
+  },
+  {
+    "roll": 88,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Batto Batto no Mi",
+    "meaning": null,
+    "model": "Vampire Bat",
+    "id": "batto-batto-no-mi-vampire-bat"
+  },
+  {
+    "roll": 89,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Shika Shika no Mi",
+    "meaning": null,
+    "model": "Giant Elk",
+    "id": "shika-shika-no-mi-giant-elk"
+  },
+  {
+    "roll": 90,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Uma Uma no Mi",
+    "meaning": null,
+    "model": "Warhorse",
+    "id": "uma-uma-no-mi-warhorse"
+  },
+  {
+    "roll": 91,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Kame Kame no Mi",
+    "meaning": null,
+    "model": "Snapping Turtle",
+    "id": "kame-kame-no-mi-snapping-turtle"
+  },
+  {
+    "roll": 92,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Ushi Ushi no Mi",
+    "meaning": null,
+    "model": "Bison",
+    "id": "ushi-ushi-no-mi-bison"
+  },
+  {
+    "roll": 93,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Hebi Hebi no Mi",
+    "meaning": null,
+    "model": "Anaconda",
+    "id": "hebi-hebi-no-mi-anaconda"
+  },
+  {
+    "roll": 94,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Mushi Mushi no Mi",
+    "meaning": null,
+    "model": "Centipede",
+    "id": "mushi-mushi-no-mi-centipede"
+  },
+  {
+    "roll": 95,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Mushi Mushi no Mi",
+    "meaning": null,
+    "model": "Scorpion",
+    "id": "mushi-mushi-no-mi-scorpion"
+  },
+  {
+    "roll": 96,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Mogu Mogu no Mi",
+    "meaning": null,
+    "model": "Giant Mole",
+    "id": "mogu-mogu-no-mi-giant-mole"
+  },
+  {
+    "roll": 97,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Mushi Mushi no Mi",
+    "meaning": null,
+    "model": "Giant Hornet",
+    "id": "mushi-mushi-no-mi-giant-hornet"
+  },
+  {
+    "roll": 98,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Tori Tori no Mi",
+    "meaning": null,
+    "model": "Albatross",
+    "id": "tori-tori-no-mi-albatross"
+  },
+  {
+    "roll": 99,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Tori Tori no Mi",
+    "meaning": null,
+    "model": "Ostrich",
+    "id": "tori-tori-no-mi-ostrich"
+  },
+  {
+    "roll": 0,
+    "rarity": "Rare",
+    "type": "Zoan",
+    "name": "Tori Tori no Mi",
+    "meaning": null,
+    "model": "Owl",
+    "id": "tori-tori-no-mi-owl"
+  },
+  {
+    "roll": 1,
+    "rarity": "Very Rare",
+    "type": "Paramecia",
+    "name": "Nikyu Nikyu no Mi",
+    "meaning": "Paw Repel",
+    "model": null,
+    "id": "nikyu-nikyu-no-mi-paw-repel"
+  },
+  {
+    "roll": 2,
+    "rarity": "Very Rare",
+    "type": "Paramecia",
+    "name": "Kira Kira no Mi",
+    "meaning": "Diamond",
+    "model": null,
+    "id": "kira-kira-no-mi-diamond"
+  },
+  {
+    "roll": 3,
+    "rarity": "Very Rare",
+    "type": "Paramecia",
+    "name": "Goru Goru no Mi",
+    "meaning": "Gold Manipulation",
+    "model": null,
+    "id": "goru-goru-no-mi-gold-manipulation"
+  },
+  {
+    "roll": 5,
+    "rarity": "Very Rare",
+    "type": "Paramecia",
+    "name": "Bari Bari no Mi",
+    "meaning": "Barrier",
+    "model": null,
+    "id": "bari-bari-no-mi-barrier"
+  },
+  {
+    "roll": 6,
+    "rarity": "Very Rare",
+    "type": "Paramecia",
+    "name": "Jiki Jiki no Mi",
+    "meaning": "Magnetism",
+    "model": null,
+    "id": "jiki-jiki-no-mi-magnetism"
+  },
+  {
+    "roll": 7,
+    "rarity": "Very Rare",
+    "type": "Paramecia",
+    "name": "Doku Doku no Mi",
+    "meaning": "Poison",
+    "model": null,
+    "id": "doku-doku-no-mi-poison"
+  },
+  {
+    "roll": 16,
+    "rarity": "Very Rare",
+    "type": "Logia",
+    "name": "Moku Moku no Mi",
+    "meaning": "Smoke",
+    "model": null,
+    "id": "moku-moku-no-mi-smoke"
+  },
+  {
+    "roll": 17,
+    "rarity": "Very Rare",
+    "type": "Logia",
+    "name": "Yuki Yuki no Mi",
+    "meaning": "Snow",
+    "model": null,
+    "id": "yuki-yuki-no-mi-snow"
+  },
+  {
+    "roll": 18,
+    "rarity": "Very Rare",
+    "type": "Logia",
+    "name": "Numa Numa no Mi",
+    "meaning": "Swamp",
+    "model": null,
+    "id": "numa-numa-no-mi-swamp"
+  },
+  {
+    "roll": 19,
+    "rarity": "Very Rare",
+    "type": "Logia",
+    "name": "Gasu Gasu no Mi",
+    "meaning": "Gas",
+    "model": null,
+    "id": "gasu-gasu-no-mi-gas"
+  },
+  {
+    "roll": 20,
+    "rarity": "Very Rare",
+    "type": "Logia",
+    "name": "Suna suna no Mi",
+    "meaning": "Sand",
+    "model": null,
+    "id": "suna-suna-no-mi-sand"
+  },
+  {
+    "roll": 1,
+    "rarity": "Legendary",
+    "type": "Paramecia",
+    "name": "Ope Ope no Mi",
+    "meaning": "Surgery",
+    "model": null,
+    "id": "ope-ope-no-mi-surgery"
+  },
+  {
+    "roll": 2,
+    "rarity": "Legendary",
+    "type": "Paramecia",
+    "name": "Gura Gura no Mi",
+    "meaning": "Earthquake",
+    "model": null,
+    "id": "gura-gura-no-mi-earthquake"
+  },
+  {
+    "roll": 3,
+    "rarity": "Legendary",
+    "type": "Paramecia",
+    "name": "Uta Uta no Mi",
+    "meaning": "Song",
+    "model": null,
+    "id": "uta-uta-no-mi-song"
+  },
+  {
+    "roll": 4,
+    "rarity": "Legendary",
+    "type": "Paramecia",
+    "name": "Soru Soru no Mi",
+    "meaning": "Soul Manipulation",
+    "model": null,
+    "id": "soru-soru-no-mi-soul-manipulation"
+  },
+  {
+    "roll": 5,
+    "rarity": "Legendary",
+    "type": "Paramecia",
+    "name": "Zushi Zushi no Mi",
+    "meaning": "Gravity",
+    "model": null,
+    "id": "zushi-zushi-no-mi-gravity"
+  },
+  {
+    "roll": 6,
+    "rarity": "Legendary",
+    "type": "Paramecia",
+    "name": "Fuwa Fuwa no Mi",
+    "meaning": "Floating",
+    "model": null,
+    "id": "fuwa-fuwa-no-mi-floating"
+  },
+  {
+    "roll": 7,
+    "rarity": "Legendary",
+    "type": "Paramecia",
+    "name": "Shima Shima no Mi",
+    "meaning": "Island Control",
+    "model": null,
+    "id": "shima-shima-no-mi-island-control"
+  },
+  {
+    "roll": 15,
+    "rarity": "Legendary",
+    "type": "Logia",
+    "name": "Pika Pika no Mi",
+    "meaning": "Light",
+    "model": null,
+    "id": "pika-pika-no-mi-light"
+  },
+  {
+    "roll": 16,
+    "rarity": "Legendary",
+    "type": "Logia",
+    "name": "Goro Goro no Mi",
+    "meaning": "Lightning",
+    "model": null,
+    "id": "goro-goro-no-mi-lightning"
+  },
+  {
+    "roll": 17,
+    "rarity": "Legendary",
+    "type": "Logia",
+    "name": "Hie Hie no Mi",
+    "meaning": "Ice",
+    "model": null,
+    "id": "hie-hie-no-mi-ice"
+  },
+  {
+    "roll": 18,
+    "rarity": "Legendary",
+    "type": "Logia",
+    "name": "Magu Magu no Mi",
+    "meaning": "Magma",
+    "model": null,
+    "id": "magu-magu-no-mi-magma"
+  },
+  {
+    "roll": 19,
+    "rarity": "Legendary",
+    "type": "Logia",
+    "name": "Mera Mera no Mi",
+    "meaning": "Fire",
+    "model": null,
+    "id": "mera-mera-no-mi-fire"
+  },
+  {
+    "roll": 20,
+    "rarity": "Legendary",
+    "type": "Logia",
+    "name": "Yami Yami no Mi",
+    "meaning": "Darkness",
+    "model": null,
+    "id": "yami-yami-no-mi-darkness"
+  }
+]

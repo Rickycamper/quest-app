@@ -1,0 +1,505 @@
+[
+  {
+    "name": "Club",
+    "cost": "฿1,000",
+    "damage": "1d4 bludgeoning",
+    "weight": "2 lb.",
+    "properties": [
+      "light"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Dagger",
+    "cost": "฿20,000",
+    "damage": "1d4 piercing",
+    "weight": "1 lb.",
+    "properties": [
+      "Finesse",
+      "light",
+      "thrown (range 20/60)"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Greatclub",
+    "cost": "฿2,000",
+    "damage": "1d8 bludgeoning",
+    "weight": "10 lb.",
+    "properties": [
+      "Two-handed"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Handaxe",
+    "cost": "฿50,000",
+    "damage": "1d6 slashing",
+    "weight": "2 lb.",
+    "properties": [
+      "Light",
+      "thrown (range 20/60)"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Javelin",
+    "cost": "฿5,000",
+    "damage": "1d6 piercing",
+    "weight": "2 lb.",
+    "properties": [
+      "Thrown (range 30/120)"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Light hammer",
+    "cost": "฿20,000",
+    "damage": "1d4 bludgeoning",
+    "weight": "2 lb.",
+    "properties": [
+      "Light",
+      "thrown (range 20/60)"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Mace",
+    "cost": "฿50,000",
+    "damage": "1d6 bludgeoning",
+    "weight": "4 lb.",
+    "properties": [
+      "-"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Quarterstaff",
+    "cost": "฿2,000",
+    "damage": "1d6 bludgeoning",
+    "weight": "4 lb.",
+    "properties": [
+      "Versatile (1d8)"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Sickle",
+    "cost": "฿10,000",
+    "damage": "1d4 slashing",
+    "weight": "2 lb.",
+    "properties": [
+      "Light"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Spear",
+    "cost": "฿10,000",
+    "damage": "1d6 piercing",
+    "weight": "3 lb.",
+    "properties": [
+      "Thrown (range 20/60)",
+      "versatile (1d8)"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Unarmed strike",
+    "cost": "-",
+    "damage": "1 blugdeoning",
+    "weight": "-",
+    "properties": [
+      "-"
+    ],
+    "category": "Simple Melee Weapons"
+  },
+  {
+    "name": "Battleaxe",
+    "cost": "฿100,000",
+    "damage": "1d8 slashing",
+    "weight": "4 lb.",
+    "properties": [
+      "Versatile (1d10)"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Cutlass",
+    "cost": "฿300,000",
+    "damage": "1d6 slashing",
+    "weight": "3 lb.",
+    "properties": [
+      "Light"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Flail",
+    "cost": "฿100,000",
+    "damage": "1d8 bludgeoning",
+    "weight": "2 lb.",
+    "properties": [
+      "-"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Glaive",
+    "cost": "฿200,000",
+    "damage": "1d10 slashing",
+    "weight": "6 lb.",
+    "properties": [
+      "Heavy",
+      "reach",
+      "two-handed"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Greataxe",
+    "cost": "฿300,000",
+    "damage": "1d12 slashing",
+    "weight": "7 lb.",
+    "properties": [
+      "Heavy",
+      "two-handed"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Greatsword",
+    "cost": "฿500,000",
+    "damage": "2d6 slashing",
+    "weight": "6 lb.",
+    "properties": [
+      "Heavy",
+      "two-handed"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Halberd",
+    "cost": "฿200,000",
+    "damage": "1d10 slashing",
+    "weight": "6 lb.",
+    "properties": [
+      "Heavy",
+      "reach",
+      "two-handed"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Katana",
+    "cost": "฿200,000",
+    "damage": "1d8 slashing",
+    "weight": "3 lb.",
+    "properties": [
+      "Versatile (1d10)"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Katana, light",
+    "cost": "฿300,000",
+    "damage": "1d8 slashing",
+    "weight": "2 lb.",
+    "properties": [
+      "Finesse"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Lance",
+    "cost": "฿100,000",
+    "damage": "1d12 piercing",
+    "weight": "6 lb.",
+    "properties": [
+      "Reach",
+      "special"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Longsword",
+    "cost": "฿150,000",
+    "damage": "1d8 slashing",
+    "weight": "3 lb.",
+    "properties": [
+      "Versatile (1d10)"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Maul",
+    "cost": "฿100,000",
+    "damage": "2d6 bludgeoning",
+    "weight": "10 lb.",
+    "properties": [
+      "Heavy",
+      "two-handed"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Morningstar",
+    "cost": "฿150,000",
+    "damage": "1d8 piercing",
+    "weight": "4 lb.",
+    "properties": [
+      "-"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Pike",
+    "cost": "฿50,000",
+    "damage": "1d10 piercing",
+    "weight": "18 lb.",
+    "properties": [
+      "Heavy",
+      "reach",
+      "two-handed"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Rapier",
+    "cost": "฿250,000",
+    "damage": "1d8 piercing",
+    "weight": "2 lb.",
+    "properties": [
+      "Finesse"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Saber",
+    "cost": "฿300,000",
+    "damage": "1d8 slashing",
+    "weight": "3 lb.",
+    "properties": [
+      "Finesse"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Scimitar",
+    "cost": "฿250,000",
+    "damage": "1d6 slashing",
+    "weight": "3 lb.",
+    "properties": [
+      "Finesse",
+      "light"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Shortsword",
+    "cost": "฿100,000",
+    "damage": "1d6 piercing",
+    "weight": "2 lb.",
+    "properties": [
+      "Finesse",
+      "light"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Trident",
+    "cost": "฿50,000",
+    "damage": "1d6 piercing",
+    "weight": "4 lb.",
+    "properties": [
+      "Thrown (range 20/60)",
+      "versatile (1d8)"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "War Pick",
+    "cost": "฿50,000",
+    "damage": "1d8 piercing",
+    "weight": "2 lb.",
+    "properties": [
+      "-"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Warhammer",
+    "cost": "฿150,000",
+    "damage": "1d8 bludgeoning",
+    "weight": "2 lb.",
+    "properties": [
+      "Versatile (1d10)"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Whip",
+    "cost": "฿20,000",
+    "damage": "1d4 slashing",
+    "weight": "3 lb.",
+    "properties": [
+      "Finesse",
+      "reach"
+    ],
+    "category": "Martial Melee Weapons"
+  },
+  {
+    "name": "Dart",
+    "cost": "฿500",
+    "damage": "1d4 piercing",
+    "weight": "1/4 lb.",
+    "properties": [
+      "Finesse",
+      "thrown (range 20/60)"
+    ],
+    "category": "Simple Ranged Weapons"
+  },
+  {
+    "name": "Musket",
+    "cost": "฿250,000",
+    "damage": "1d10 bludgeoning",
+    "weight": "8 lb.",
+    "properties": [
+      "Ammunition (range 80/320)",
+      "loading",
+      "two-handed"
+    ],
+    "category": "Simple Ranged Weapons"
+  },
+  {
+    "name": "Shortbow",
+    "cost": "฿250,000",
+    "damage": "1d6 piercing",
+    "weight": "2 lb.",
+    "properties": [
+      "Ammunition (range 80/320)",
+      "two-handed"
+    ],
+    "category": "Simple Ranged Weapons"
+  },
+  {
+    "name": "Sling",
+    "cost": "฿1,000",
+    "damage": "1d4 bludgeoning",
+    "weight": "-",
+    "properties": [
+      "Ammunition (range 30/120)"
+    ],
+    "category": "Simple Ranged Weapons"
+  },
+  {
+    "name": "Bazooka",
+    "cost": "฿5,000,000",
+    "damage": "2d6 fire",
+    "weight": "18 lb.",
+    "properties": [
+      "Ammunition (range 60/300)",
+      "heavy",
+      "loading",
+      "two-handed"
+    ],
+    "category": "Martial Ranged Weapons"
+  },
+  {
+    "name": "Blowgun",
+    "cost": "฿100,000",
+    "damage": "1 piercing",
+    "weight": "1 lb.",
+    "properties": [
+      "Ammunition (range 25/100)",
+      "loading"
+    ],
+    "category": "Martial Ranged Weapons"
+  },
+  {
+    "name": "Longbow",
+    "cost": "฿500,000",
+    "damage": "1d8 piercing",
+    "weight": "2 lb.",
+    "properties": [
+      "Ammunition (range 150/600)",
+      "heavy",
+      "two-handed"
+    ],
+    "category": "Martial Ranged Weapons"
+  },
+  {
+    "name": "Machine Gun",
+    "cost": "฿2,500,000",
+    "damage": "3d4 piercing",
+    "weight": "18 lb.",
+    "properties": [
+      "Ammunition (range 80/320)",
+      "heavy",
+      "loading",
+      "two-handed"
+    ],
+    "category": "Martial Ranged Weapons"
+  },
+  {
+    "name": "Net",
+    "cost": "฿10,000",
+    "damage": "-",
+    "weight": "3 lb.",
+    "properties": [
+      "Special",
+      "thrown (range 5/15)"
+    ],
+    "category": "Martial Ranged Weapons"
+  },
+  {
+    "name": "Pistol",
+    "cost": "฿750,000",
+    "damage": "1d10 piercing",
+    "weight": "3 lb.",
+    "properties": [
+      "Ammunition (range 30/120)",
+      "light",
+      "loading"
+    ],
+    "category": "Martial Ranged Weapons"
+  },
+  {
+    "name": "Rifle",
+    "cost": "฿1,000,000",
+    "damage": "1d12 piercing",
+    "weight": "18 lb.",
+    "properties": [
+      "Ammunition (range 80/320)",
+      "heavy",
+      "loading",
+      "two-handed"
+    ],
+    "category": "Martial Ranged Weapons"
+  },
+  {
+    "name": "Rifle, sniper",
+    "cost": "฿5,000,000",
+    "damage": "2d6 piercing",
+    "weight": "18 lb.",
+    "properties": [
+      "Ammunition (range 150/600)",
+      "heavy",
+      "loading",
+      "two-handed"
+    ],
+    "category": "Martial Ranged Weapons"
+  },
+  {
+    "name": "Sling, giant",
+    "cost": "฿150,000",
+    "damage": "1d8 bludgeoning",
+    "weight": "5 lb.",
+    "properties": [
+      "Ammunition (range 60/600)",
+      "heavy",
+      "two-handed"
+    ],
+    "category": "Martial Ranged Weapons"
+  }
+]

@@ -1,0 +1,694 @@
+[
+  {
+    "id": "human",
+    "name": "Human",
+    "optional": false,
+    "description": "In the world of One Piece, humans can be considered highly invasive and territorial to most other races and creatures. While there are many good-spirited humans out there, the World Government and Navy often tarnish the reputation of humans among non-humans. Due to this fact, most non-human races don't get along well with humans on average. However, there can very well be brotherhood among these races in certain circumstances, so long as compassion and friendship is shown. \n\n**Conquerors.** Humans will settle in and take control of just about anywhere they can reach. The exception to this rule may be places like Fish-man Island or Zou, which are too inconvenient and out-of-reach to settle on for most human civilizations. Most of the world is conquered and ruled by humans under the World Government. \n\n**Great Kingdoms.** As humans have expanded over the centuries, they have established many large cities, kingdoms, and fortresses across various islands and continents. Human culture can also be very different depending on where you look. While some human settlements can be more open-minded and accepting, other places may be far less tolerant toward outsiders and different ideas or cultures.",
+    "size": "Medium",
+    "speed": {
+      "walk": 30
+    },
+    "abilityScoreIncrease": {
+      "str": 1,
+      "dex": 1,
+      "con": 1,
+      "int": 1,
+      "wis": 1,
+      "cha": 1
+    },
+    "traits": [],
+    "age": "Humans reach adulthood in their teens and live for around a century.",
+    "alignment": "There is no clear alignment that is consistent among all humans. Just about any alignment can be justified.",
+    "subraces": [
+      {
+        "id": "human-variant",
+        "name": "Human Variant",
+        "description": "Some humans can be noticeably different in their abilities and skills. For this reason, you may choose to instead replace the standard Human Ability Score Increase with these traits instead:\n\n**Ability Score Increase.** Two different ability scores of your choice increase by 1.\n\n**Skills.** You gain proficiency in one skill of your choice.\n\n**Feat.** You gain one Character Feat of your choice that you meet the prerequisite for in **Chapter 6**. You may only choose a Haki-related feat if you receive DM permission.",
+        "abilityScoreIncrease": {
+          "choice": {
+            "count": 2,
+            "amount": 1
+          }
+        },
+        "speed": {},
+        "size": null,
+        "replacesBaseAbilityScoreIncrease": true,
+        "traits": [
+          {
+            "name": "Skills",
+            "text": "You gain proficiency in one skill of your choice."
+          },
+          {
+            "name": "Feat",
+            "text": "You gain one Character Feat of your choice that you meet the prerequisite for in **Chapter 6**. You may only choose a Haki-related feat if you receive DM permission."
+          }
+        ]
+      },
+      {
+        "id": "human-giant",
+        "name": "Human Giant",
+        "description": "Very rarely, some humans may grow to be astonishingly larger than most others in the One Piece world, sometimes even doubling the average human height and weight. If your human character happens to fall under this category, you may choose to replace the standard Human Ability Score Increase with these traits instead:\n\n**Ability Score Increase.** You increase your Strength score by 2.\n\n**Size.** Human giants are between 7 and 8 feet tall and weigh between 280 and 340 pounds. Your size is Medium.\n\n**Natural Athlete.** You have proficiency in the Athletics skill.\n\n**Warrior Training.** You have proficiency with the Battleaxe, Handaxe, Light Hammer, Longsword, Club, and Spear.\n\n**Giant's Endurance.** You can focus yourself to occasionally shrug off injury. When you take damage, you can use your reaction to roll a d12. Add your Constitution modifier to the number rolled, and reduce the damage by that total. After you use this trait, you can’t use it again until you finish a short or long rest.\n\n**Powerful Build.** You count as one size larger when determining your carrying capacity and the weight you can push, drag, or lift.\n\n<div style='margin-top:254px'></div>",
+        "abilityScoreIncrease": {},
+        "speed": {},
+        "size": "Medium",
+        "replacesBaseAbilityScoreIncrease": true,
+        "traits": [
+          {
+            "name": "Natural Athlete",
+            "text": "You have proficiency in the Athletics skill."
+          },
+          {
+            "name": "Warrior Training",
+            "text": "You have proficiency with the Battleaxe, Handaxe, Light Hammer, Longsword, Club, and Spear."
+          },
+          {
+            "name": "Giant's Endurance",
+            "text": "You can focus yourself to occasionally shrug off injury. When you take damage, you can use your reaction to roll a d12. Add your Constitution modifier to the number rolled, and reduce the damage by that total. After you use this trait, you can’t use it again until you finish a short or long rest."
+          },
+          {
+            "name": "Powerful Build",
+            "text": "You count as one size larger when determining your carrying capacity and the weight you can push, drag, or lift.\n\n<div style='margin-top:254px'></div>"
+          }
+        ]
+      },
+      {
+        "id": "kuja",
+        "name": "Kuja",
+        "description": "If your human character is female, you may choose to take this Kuja variant subrace. If you do so, you may choose to replace the standard Human Ability Score Increase with these traits instead:\n\n**Ability Score Increase.** You increase your constitution, wisdom, or charisma score by 2.\n\n**Skills.** You gain proficiency with longbows, shortbows, shortswords, and spears.\n\n**Beginner Haki.** You can choose to take the Color of Armament Training feat if you meet the prerequisite.",
+        "abilityScoreIncrease": {},
+        "speed": {},
+        "size": null,
+        "replacesBaseAbilityScoreIncrease": true,
+        "traits": [
+          {
+            "name": "Skills",
+            "text": "You gain proficiency with longbows, shortbows, shortswords, and spears."
+          },
+          {
+            "name": "Beginner Haki",
+            "text": "You can choose to take the Color of Armament Training feat if you meet the prerequisite."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fishman",
+    "name": "Fishman",
+    "optional": false,
+    "description": "Fishmen, along with Merfolk, are one of the two races of humanoids that inhabit the sea. Fishmen are a roughly equal mix of Human and Fish, with human-like appendages and faces crossed with sea creatures such as sharks, blowfish, and other fish. They also have gills between their shoulders and necks, as well as often having webbed hands. Some species of fish-men may have extra appendages depending what on what species of fish they represent.\n\nFishmen have both lungs and gills, which allow them to breathe underwater and on land. Their webbed fingers and agile bodies allow them to move quickly in water for as long as they want. Some fishmen use their naturally strong bodies and unique features as a reason to believe they are superior to Humans. Despite these beliefs, fish-men often end up being the ones to become enslaved and oppressed by Humans, which drives their hatred for them even further. However, not all fish-men think this way and can actually get along well with humans as equals.\n\n**Hybrids.** Fishmen have the ability to interbreed with other races, much like other humanoid races. It is not impossible to find half-humna or half-giant fishmen in places such as the grand line. Furthermore, fishmen can have children with merfolk, resulting in either a fishman or merfolk child being born.\n\n**Oppressed.** Like other non-human races, fish-men are the victims of world-wide oppression by humans. Due to this, many fish-men stay within the confines of fish-man island and only occasionally leave. Some evil fish-men have opted to be pirates to seek revenge against humanity. Unfortunately, several also end up as slaves under the world government. Even on islands not directly under world government jurisdiction, humans still treat fish-men very unfairly. For this reason, playing a fish-man can prove very different when visiting various human-inhabited islands around the sea.\n\n**Domination.** Though they are often misunderstood, many fish-men do hold the belief that they should rule over all other fish in the sea. And due to the cruel treatment they receive from humans, some grow to also want to conquer and rule over humanity as a whole. This isn't true of all fish-men though, as many do exhibit the desire to co-exist with other races and species.\n\n**Extraordinary Strength.** As well as being born with bodies that provide natural weapons in battles, such as razor-sharp teeth, fish-men have incredibly strong bodies compared to average people. From birth, fish-men are ten times stronger than humans. Additionally, fish-men can be even more troublesome in underwater combat. Being even stronger underwater, they can easily devastate a human who isn't proficient at swimming. Unfortunately, this strength can be negated if a fish-man happens to be a Devil Fruit user.",
+    "size": "Medium",
+    "speed": {
+      "walk": 30,
+      "swim": 35
+    },
+    "abilityScoreIncrease": {
+      "con": 1
+    },
+    "traits": [
+      {
+        "name": "Amphibious",
+        "text": "You can breathe air and water."
+      },
+      {
+        "name": "Underwater Athlete",
+        "text": "You have proficiency in the Athletics skill. While underwater, you face no penalties or disadvantage as a result of underwater combat rules."
+      },
+      {
+        "name": "Adapted to the Sea",
+        "text": "With the ability to adapt to extreme underwater depths, you have Resistance to cold damage."
+      }
+    ],
+    "age": "Fish-men reach adulthood in their teens and live for around a century.",
+    "alignment": "Most fish-men are lawful and many stay true to their values, though some lean toward being neutral. Fish-men can live in harmony with other sea creatures, but may turn violent against humans. For this reason, a fish-man can range from being good to evil.",
+    "subraces": [
+      {
+        "id": "shark",
+        "name": "Shark",
+        "description": "These fish-men are known to have sharp shark-like teeth, light blue-tinted skin, large back fins, and extreme strength.\n\n**Ability Score Increase.** Your Strength score increases by 2.\n\n**Apex Predtaor** You have proficiency in the Intimidation skill.\n\n**Bite.** Your razor-sharp teeth are a natural weapon, which you can use to make unarmed strikes. If you hit with it, you deal piercing damage equal to 1d6 + your Strength modifier, instead of the bludgeoning damage normal for an Unarmed Strike.",
+        "abilityScoreIncrease": {
+          "str": 2
+        },
+        "speed": {},
+        "size": null,
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Apex Predtaor",
+            "text": "You have proficiency in the Intimidation skill."
+          },
+          {
+            "name": "Bite",
+            "text": "Your razor-sharp teeth are a natural weapon, which you can use to make unarmed strikes. If you hit with it, you deal piercing damage equal to 1d6 + your Strength modifier, instead of the bludgeoning damage normal for an Unarmed Strike."
+          }
+        ]
+      },
+      {
+        "id": "manta-ray",
+        "name": "Manta Ray",
+        "description": "These fish-men are known to have wide side-fins and light-blue skin, moving at high speeds underwater.\n\n**Ability Score Increase.** Your Dexterity score increases by 2.\n\n**Underwater Acrobatics** You gain proficiency in the Acrobatics skill. You have advantage on acrobatics check made while underwater.\n\n**Sea Glide.** You have a Swimming speed of 40 feet.",
+        "abilityScoreIncrease": {
+          "dex": 2
+        },
+        "speed": {
+          "swim": 40
+        },
+        "size": null,
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Underwater Acrobatics",
+            "text": "You gain proficiency in the Acrobatics skill. You have advantage on acrobatics check made while underwater."
+          },
+          {
+            "name": "Sea Glide",
+            "text": "You have a Swimming speed of 40 feet."
+          }
+        ]
+      },
+      {
+        "id": "octopus",
+        "name": "Octopus",
+        "description": "Octopus fish-men tend to have six arms and red or brown-tinted skin, with a lot of flexibility with their multiple appendages.\n\n**Ability Score Increase.** Your Strength and Dexterity scores both increase by 1.\n\n**Deadly Precision** You gain proficiency in one of the following: sleight of hand or an Artisan's tool of your choice.\n\n**Multi-Armed.** You have four additional arms, six in total. While you cannot efficiently wield weapons with these arms, you may use them to hold smaller items such as potions and trinkets. Additionally, you have advantage on grapple checks with your arms.",
+        "abilityScoreIncrease": {
+          "str": 1,
+          "dex": 1
+        },
+        "speed": {},
+        "size": null,
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Deadly Precision",
+            "text": "You gain proficiency in one of the following: sleight of hand or an Artisan's tool of your choice."
+          },
+          {
+            "name": "Multi-Armed",
+            "text": "You have four additional arms, six in total. While you cannot efficiently wield weapons with these arms, you may use them to hold smaller items such as potions and trinkets. Additionally, you have advantage on grapple checks with your arms."
+          }
+        ]
+      },
+      {
+        "id": "smelt-whiting",
+        "name": "Smelt-Whiting",
+        "description": "Smelt-whiting fish-men are known to have more dominant fish-like characteristics compared to other fish-men, and can spit water at their enemies.\n\n**Ability Score Increase.** Your Charisma score increases by 2.\n\n**Big-Mouthed.** You gain proficiency in the Deception or Persuasion skill (your choice).\n\n**Hydro Cannon** You have the natural ability to shoot concentrated blasts of water out of your mouth. You can cast ray of frost with this trait. Starting at 3rd Level, you can cast Ice Knife with it. Once you Cast a Spell with this trait, you can't cast that spell with it again until you finish a Long Rest. Charisma is your Spellcasting Ability for these Spells.",
+        "abilityScoreIncrease": {
+          "cha": 2
+        },
+        "speed": {},
+        "size": null,
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Big-Mouthed",
+            "text": "You gain proficiency in the Deception or Persuasion skill (your choice)."
+          },
+          {
+            "name": "Hydro Cannon",
+            "text": "You have the natural ability to shoot concentrated blasts of water out of your mouth. You can cast ray of frost with this trait. Starting at 3rd Level, you can cast Ice Knife with it. Once you Cast a Spell with this trait, you can't cast that spell with it again until you finish a Long Rest. Charisma is your Spellcasting Ability for these Spells."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "merfolk",
+    "name": "Merfolk",
+    "optional": false,
+    "description": "Merfolk, along with fish-men, are one of the two races of humanoids that inhabit the sea. Merfolk have the upper body of a human and the lower body of a fish. Both races are ruled by the undersea king, King Neptune.\n\nMerfolk have access to various skills while underwater, such as extremely fast swimming speeds, weapon proficiency, and the ability to communicate with many sea creatures. Very rarely, a mermaid can be born with the ability to speak with Sea Kings. Only a mermaid princess possesses this power, however.\n\n**Peaceful.** Unlike fish-men, merfolk are far more peaceful and prefer to live in secret away from most other races. Despite their differences, merfolk and fish-men get along very well. \n\n**Sea to Land.** Due to their lack of legs, they move very slowly on land. This makes sea travel their primary method of getting around, and they're very proficient at it. However, upon reaching the age of 30, their tails will split and allow them to walk on land much easier.\n\n**Victims of Slavery.** Despite their efforts to stay away from the surface, some merfolk still end up captured and sold into slavery. Because of their rarity, many can sell for incredibly high prices if they are under 30.\n\n**Beauty and Grace.** Merfolk are all considered incredibly beautiful by the standards of humans. This beauty is mostly lost when they reach the age of 30 when their tail splits. They are also far less brutish than fish-men, making them a bit less likely to be involved in physical altercations. Merfolk are more commonly involved in activities or occupations that involve their speed or intelligence. Though, many are stilled trained in the military and can use a fighting style known as Merman Combat.",
+    "size": "Medium",
+    "speed": {
+      "walk": 10,
+      "swim": 50
+    },
+    "abilityScoreIncrease": {
+      "cha": 1
+    },
+    "traits": [
+      {
+        "name": "Amphibious",
+        "text": "You can breathe air and water."
+      },
+      {
+        "name": "Merfolk Training⁠",
+        "text": ". You have proficiency with the spear, Trident, and net."
+      },
+      {
+        "name": "Merfolk Combat",
+        "text": "Being trained in underwater combat, you can control the flow of water to attack your enemies (ice and cold damage is treated as water). You can cast Ray of Frost with this trait. Starting at 3rd Level, you can cast Ice Knife with it, and starting at 5th Level, you can also cast Rime's Binding Ice with it. Once you Cast a Spell with this trait, you can't cast that spell with it again until you finish a Long Rest. Charisma is your Spellcasting Ability for these Spells."
+      },
+      {
+        "name": "Adapted to the Sea",
+        "text": "With the ability to adapt to extreme underwater depths, you have Resistance to cold damage."
+      },
+      {
+        "name": "Languages",
+        "text": "Merfolk can all speak and understand the universal spoken language of this world. Additionally, using gestures and sounds, you can communicate simple ideas with any beast that has an innate Swimming speed."
+      }
+    ],
+    "age": "Merfolk reach adulthood in their teens, mature considerably in their 30s, and live for around a century.",
+    "alignment": "Most merfolk are neutral or lawful good. However, few may turn violent against humans and become evil. They are rarely chaotic in nature.",
+    "subraces": []
+  },
+  {
+    "id": "sky-islander",
+    "name": "Sky Islander",
+    "optional": false,
+    "description": "Those who live up in the Sky Islands have adapted and adjusted to live in such an environment. There are three main factions that exist up here: Shandians, Birkans, and Skypieans. All three of these groups descended from a moon, sometimes referred to as \"Fairy Vearth\". On this moon, a great civilization existed named Shandoria. These three groups were a part of this civilization and were believed to have worked in unison.\n\nCenturies after leaving the moon, these races have split apart and can be considered mostly divided into different tribes. These tribes now live mostly on Sky Islands and form civilizations in the clouds with their own cultures and technology. Some use a seemingly magical power called Mantra, which is actually Observation Haki.\n\nSome sky islanders descent from the skies down to land, known as \"Vearth\" to them, and can interact with the various other races.\n\nThese three tribes can be described in the following ways:",
+    "size": "Medium",
+    "speed": {
+      "walk": 30
+    },
+    "abilityScoreIncrease": {
+      "dex": 1
+    },
+    "traits": [
+      {
+        "name": "Protection of the Clouds",
+        "text": "You are able to form fluffy floating clouds around you to reduce the speed of your fall. You gain the ability to cast Feather Fall. Once you use this ability, you cannot use it again until you complete a Short or Long rest."
+      },
+      {
+        "name": "Dial Proficiency",
+        "text": "You innately understand dials that have came from sky islands and can carry one with you. Roll once on the Simple Dial Table in Chapter 5 to determine which one you start with."
+      },
+      {
+        "name": "Languages",
+        "text": "Sky islanders can all speak and understand the universal spoken language of this world."
+      }
+    ],
+    "age": "Sky islanders reach adulthood in their teens and live for around a century.",
+    "alignment": "Sky islanders vary in alignment, ranging from good to evil, lawful to chaotic, but are typically neutral in some way.",
+    "subraces": [
+      {
+        "id": "shandians",
+        "name": "Shandians",
+        "description": "Your Shandian heritage has gifted you with great strength and combat expertise.\n\n**Ability Score Increase.** Your Strength score increases by 2.\n\n**Shandian Weapon Training.** You have proficiency with the quarterstaff, halberd, pike, glaive, spear, and heavy firearms.",
+        "abilityScoreIncrease": {
+          "str": 2
+        },
+        "speed": {},
+        "size": null,
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Shandian Weapon Training",
+            "text": "You have proficiency with the quarterstaff, halberd, pike, glaive, spear, and heavy firearms."
+          }
+        ]
+      },
+      {
+        "id": "birkans",
+        "name": "Birkans",
+        "description": "Your Birkan heritage has gifted you with powerful observation and foresight through mantra.\n\n**Ability Score Increase.** Your Wisdom score increases by 2.\n\n**Mantra Specialist.** You can choose to take the Color of Observation Training feat if you meet the prerequisite.",
+        "abilityScoreIncrease": {
+          "wis": 2
+        },
+        "speed": {},
+        "size": null,
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Mantra Specialist",
+            "text": "You can choose to take the Color of Observation Training feat if you meet the prerequisite."
+          }
+        ]
+      },
+      {
+        "id": "skypieans",
+        "name": "Skypieans",
+        "description": "Your Skypiean heritage has gifted you with great knowledge of dials.\n\n**Ability Score Increase.** Your Intelligence score increases by 2.\n\n**Advanced Dial Proficiency.** You start with an additional Dial, allowing you to roll once more on the Simple Dial Table to determine what other Dial you start with. Additionally, you gain advantage on all checks made to find a dial.",
+        "abilityScoreIncrease": {
+          "int": 2
+        },
+        "speed": {},
+        "size": null,
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Advanced Dial Proficiency",
+            "text": "You start with an additional Dial, allowing you to roll once more on the Simple Dial Table to determine what other Dial you start with. Additionally, you gain advantage on all checks made to find a dial."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mink",
+    "name": "Mink",
+    "optional": false,
+    "description": "Much like fish-men and merfolk, minks appear to have a mixture of animal-like and human features. Each mink resembles a certain type of furry mammalian animal. Their features and appendages are very human-like, but often have paws and padded paws. Male minks look much more bestial and hairy, while female minks appear more human-like.\n\n**Strength of the Animal Kingdom.** They are considered fearsome and powerful by many, and rightfully so. Minks are born with immense power, speed, stealth, and instincts. Their abilities are far superior to ordinary humans, even at a young age. Every mink, regardless of if they are young or old, is a powerful warrior in battle. This power is greatly elevated when their Sulong Form is activated under a full moon.\n\n**Victims of Slavery.** Much like many other non-human races, Minks are sometimes victims of slavery and are valued for their exotic appearance and strength. Additionally, many humans may treat minks with similar amounts of hatred to how they treat other non-humans. This can lead to some degree of resentment between both races, though likely not quite as extreme as certain fish-men. Many minks have the ability to get along with humans if there is some level of understanding and respect.\n\n**Residents of Zou.** Most minks reside on a city atop an ancient island-sized elephant named Zunesha. This city is referred to as Zou, which exists somewhere in the New World. This city is incredibly difficult to locate, allowing minks to live away from pirates and the reaches of the World Government. However, some minks do venture outside of Zou, sometimes as pirates, or decide to live in Totto Land.",
+    "size": "Medium",
+    "speed": {
+      "walk": 30,
+      "climb": 20
+    },
+    "abilityScoreIncrease": {
+      "wis": 1
+    },
+    "traits": [
+      {
+        "name": "Darkvision",
+        "text": "You have an animal’s keen Senses, especially in the dark. You can see in dim light within 60 feet of you as if it were bright light, and in Darkness as if it were dim light. You can’t discern color in Darkness, only Shades of Gray."
+      },
+      {
+        "name": "Beast’s Slash",
+        "text": "Because of your beast-like features, you have a climbing speed of 20 feet. In addition, your body is a natural Weapon, which you can use to make unarmed strikes. You can choose to deal slashing for your unarmed strikes, and your unarmed strike damage dice becomes a minimum of 1d6."
+      },
+      {
+        "name": "Animal Instinct",
+        "text": "You have proficiency in the Perception and Stealth Skills."
+      },
+      {
+        "name": "Electro",
+        "text": "You know the Shocking Grasp cantrip. Wisdom is your Spellcasting Ability for this Spell. Additionally, you are Resistant to lightning damage."
+      },
+      {
+        "name": "Sulong Transformation",
+        "text": "Starting at 3rd Level, you can use your action to channel moonlight energy into your body and transform into a powerful bright white primal form with longer hair and enhanced size, bolstering your strength, speed, and electro.\n\nYour transformation lasts for 1 minute or until you end it as a Bonus Action. During it, your speed increases by 10 feet, you have advantage on strength checks, and once on each of your turns, you can deal extra electric damage to one target when you deal damage to it with an Attack or a spell. The extra electric damage equals your level.\n\nOnce you use this trait, you can’t use it again until you finish a Long Rest."
+      }
+    ],
+    "age": "Minks reach adulthood in their teens and live for around a century.",
+    "alignment": "Most minks are neutral or lawful good. However, few may turn chaotic and give into their primal urges if exposed to the full moon for long enough.",
+    "subraces": []
+  },
+  {
+    "id": "yokai-tribesman",
+    "name": "Yokai Tribesman",
+    "optional": false,
+    "description": "There are several races of human-like tribes that have greatly moderated or exaggerated features that set them apart from regular people. These races are called the yokai tribes (though not officially), due to their resemblance to certain yokai in Japanese folklore. Only so much is known about these tribes in the One Piece world.\n\nThere are three main types of yokai tribes to choose from: the longleg tribe, the longarm tribe, and the three-eye tribe.",
+    "size": null,
+    "speed": {},
+    "abilityScoreIncrease": {
+      "cha": 1
+    },
+    "traits": [
+      {
+        "name": "Tribal Charisma",
+        "text": "The pride of your race and features has made you unbelievably confident in conversations. You have proficiency in the Intimidation and Persuasion skills."
+      },
+      {
+        "name": "Crafty",
+        "text": "You gain proficiency in one tool or instrument of your choice."
+      }
+    ],
+    "age": "Yokai Tribesmen reach adulthood in their teens and live for around a century.",
+    "alignment": "Yokai Tribesmen display various alignments, but many are seen as evil. However, any alignment can be reasonably chosen.",
+    "subraces": [
+      {
+        "id": "longleg-tribesman",
+        "name": "Longleg Tribesman",
+        "description": "Your longleg tribesman has been gifted with magnificent long legs that grant them the following traits.\n\n**Ability Score Increase.** Your Dexterity score increases by 2.\n\n**Size.** Longleg tribesmen in the One Piece World are typically 7-8 feet tall. Some can rest far outside this range, but your size will count as medium.\n\n**Speed.** Your base walking speed is 35 feet.\n\n**Longleg Stride.** Your massive legs allow you to move with a burst of speed. When you move on Your Turn in Combat, you can double your speed until the end of the turn. Once you use this trait, you can’t use it again until you move 0 feet on one of your turns.",
+        "abilityScoreIncrease": {
+          "dex": 2
+        },
+        "speed": {
+          "walk": 35
+        },
+        "size": "Medium",
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Speed",
+            "text": "Your base walking speed is 35 feet."
+          },
+          {
+            "name": "Longleg Stride",
+            "text": "Your massive legs allow you to move with a burst of speed. When you move on Your Turn in Combat, you can double your speed until the end of the turn. Once you use this trait, you can’t use it again until you move 0 feet on one of your turns."
+          }
+        ]
+      },
+      {
+        "id": "longarm-tribesman",
+        "name": "Longarm Tribesman",
+        "description": "Your longarm tribesman has been gifted with long and lanky arms that grant immense strength and reach.\n\n**Ability Score Increase.** Your Strength score increases by 2.\n\n**Size.** Longarm tribesmen in the One Piece World are typically 5-6 feet tall. Some can rest far outside this range, but your size will count as medium.\n\n**Speed.** Your base walking speed is 30 feet.\n\n**Long-Limbed.** When you make a melee Attack on Your Turn, your reach for it is 5 feet greater than normal. \n\n**Powerful Build.** You count as one size larger when determining your carrying Capacity and the weight you can push, drag, or lift.",
+        "abilityScoreIncrease": {
+          "str": 2
+        },
+        "speed": {
+          "walk": 30
+        },
+        "size": "Medium",
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Speed",
+            "text": "Your base walking speed is 30 feet."
+          },
+          {
+            "name": "Long-Limbed",
+            "text": "When you make a melee Attack on Your Turn, your reach for it is 5 feet greater than normal."
+          },
+          {
+            "name": "Powerful Build",
+            "text": "You count as one size larger when determining your carrying Capacity and the weight you can push, drag, or lift."
+          }
+        ]
+      },
+      {
+        "id": "snakeneck-tribesman",
+        "name": "Snakeneck Tribesman",
+        "description": "Your snakeneck tribesman is gifted with a very long snake-like neck.\n\n**Ability Score Increase.** Your Intelligence score increases by 2.\n\n**Size.** Snakeneck tribesmen in the One Piece World are typically 6-8 feet tall due to their long neck. Some can rest far outside this range, but your size will count as medium.\n\n**Speed.** Your base walking speed is 30 feet.\n\n**Quick Reflexes.** You can add your proficiency bonus to your initiative rolls.\n\n**Serpentine Senses.** You have proficiency in the Perception skill.",
+        "abilityScoreIncrease": {
+          "int": 2
+        },
+        "speed": {
+          "walk": 30
+        },
+        "size": "Medium",
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Speed",
+            "text": "Your base walking speed is 30 feet."
+          },
+          {
+            "name": "Quick Reflexes",
+            "text": "You can add your proficiency bonus to your initiative rolls."
+          },
+          {
+            "name": "Serpentine Senses",
+            "text": "You have proficiency in the Perception skill."
+          }
+        ]
+      },
+      {
+        "id": "three-eyed-tribesman",
+        "name": "Three-eyed Tribesman",
+        "description": "Your three-eyed tribesman is gifted with a third eye on the center of their forehead which grants them mysterious powers.\n\n**Ability Score Increase.** Your Wisdom score increases by 2.\n\n**Size.** Three-eyed tribesmen in the One Piece World are typically 5-6 feet tall. Some can rest far outside this range, but your size will count as medium.\n\n**Speed.** Your base walking speed is 30 feet.\n\n**Darkvision.** You can see in dim light within 60 feet of you as if it were bright light, and in Darkness as if it were dim light. You can’t discern color in Darkness, only Shades of Gray.\n\n  \n\n**All-Seeing.** You have blindsight with a range of 10 feet. Within that range, you can effectively see anything that isn’t behind total cover, even if you’re blinded or in darkness.\n\n**Third Eye (Optional).** Three-eyed tribesmen can all speak and understand the universal spoken language of this world. Additionally, some can awaken their third eye to be able to read and understand the language of the Poneglyphs (up to DM discretion).",
+        "abilityScoreIncrease": {
+          "wis": 2
+        },
+        "speed": {
+          "walk": 30
+        },
+        "size": "Medium",
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Speed",
+            "text": "Your base walking speed is 30 feet."
+          },
+          {
+            "name": "Darkvision",
+            "text": "You can see in dim light within 60 feet of you as if it were bright light, and in Darkness as if it were dim light. You can’t discern color in Darkness, only Shades of Gray."
+          },
+          {
+            "name": "All-Seeing",
+            "text": "You have blindsight with a range of 10 feet. Within that range, you can effectively see anything that isn’t behind total cover, even if you’re blinded or in darkness."
+          },
+          {
+            "name": "Third Eye (Optional)",
+            "text": "Three-eyed tribesmen can all speak and understand the universal spoken language of this world. Additionally, some can awaken their third eye to be able to read and understand the language of the Poneglyphs (up to DM discretion)."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cyborg",
+    "name": "Cyborg",
+    "optional": false,
+    "description": "As the name would imply, this race includes any human or life form that has had their body altered using metal or robotic parts. Typically, this might only include surface-level alterations, such as steel skin or a robotic hand. However, cyborgs may vary in how much of their body has been modified. Regardless of the degree of modification, they will always still have several parts of them that remain organic.",
+    "size": "Medium",
+    "speed": {
+      "walk": 30,
+      "swim": 25,
+      "fly": 10
+    },
+    "abilityScoreIncrease": {
+      "con": 2
+    },
+    "traits": [
+      {
+        "name": "Steel Skin",
+        "text": "Your body has a layer of defensive metal beneath or replacing your skin, which can be enhanced with armor:\n\n* You gain a +1 bonus to Armor Class.\n* To reinforce your metal skin, first you must disassemble a piece of mundane or magical armor. After doing so, you must spend an hour consistently incorporating these parts into your skin. Once you are finished, you gain the AC and bonuses of your chosen armor as if you were wearing it, as well as all of the side-effects of that armor. To remove this armor, you must spend an hour replacing it with artificial skin.\n* This metal skin cannot be removed from your body against your will."
+      },
+      {
+        "name": "Robotic Resistance",
+        "text": "You have advantage on Saving Throws against being Poisoned, and you have Resistance to poison damage."
+      },
+      {
+        "name": "Refueling",
+        "text": "In place of eating food and drinking water each day, you must instead consume an equivalent amount of fuel to what a normal creature of your size would eat. The type of fuel you use can range from cola to gasoline (your choice), which costs roughly ฿5,000. Starvation rules apply to consuming fuel as they would with food for another race."
+      },
+      {
+        "name": "Maintenance",
+        "text": "Instead of sleeping each day, you instead conduct maintenance on your body during a Long Rest. This includes oiling your joints, repairing any dents or broken parts, or fixing anything else you'd need to maintain. This takes at least six hours to complete. You are able to see and hear normally while you complete these tasks."
+      },
+      {
+        "name": "Cyborg Upgrades",
+        "text": "You install a weapon or tool feature of your choice listed below into your body. Each time you level up, you can choose to completely replace one of these features with another one. At 5th level, you can install and use a second upgrade feature of your choice:\n\n* **Flail Arm.** When you make a unarmed strike or melee weapon attack on your turn that requires your arms to use, you can choose to extend its reach for that attack by 5 feet. You can only use this once on a single melee attack per turn.\n* **Flame Breath.** You learn the Create Bonfire cantrip, which you produce from your mouth. Constitution is your Spellcasting Ability for this Spell. \n* **Refrigerated Stomach.** You may store up to 30 pounds of gear in your body, concealed and protected by your metallic flesh. This also acts to chill and preserve any food or fuel you may want to store.\n* **Air Blast.** You learn the Thunder Clap cantrip, which you produce from air emitted from your body. Constitution is your Spellcasting Ability for this Spell. \n* **Propeller Body** Your limbs can rotate at extreme speeds in water, acting as a boat propeller. You gain a swimming speed of 25 feet.\n* **Centaur Form** Using an action to morph your lower body into the form of a horse, your speed increases by 10 feet for one minute. Additionally, you have advantage on all Strength checks and you can allow a medium or smaller creature to use you as a mount for the duration. Once you use this feature, you cannot use it again until you complete a short or long rest.\n* **Shape-Memory Alloy Body.** You gain one skill proficiency and one tool proficiency of your choice, which you can choose to swap out each time you level up.\n* **Arsenal Infusion.** You can spend an hour incorporating a single weapon you are proficient with into your body. Upon doing so, you can use this weapon as you normally would. Additionally, this weapon cannot be taken or removed from your body against your will. You may spend an hour to remove this weapon from your body.\n\n* **Night Lens.** You can see in dim light within 60 feet of you as if it were bright light, and in Darkness as if it were dim light. You can’t discern color in Darkness, only Shades of Gray.\n* **Headlights.** Lights on your body emit bright light in a 20-foot radius and dim light for an additional 20 feet.\n* **Extended Flail.** This is an upgrade of the Flail Arm Feature, meaning you must also have that upgrade learned in order to learn and use this one as well. Your Flail Arm reach extends to 10 feet.\n* **Flamethrower.** This is an upgrade of the Flame Breath Feature, meaning you must also have that upgrade learned in order to learn and use this one as well. You learn the Burning Hands spell cast at the 2nd-Level, which acts as a powerful spray of fire emitted from your body. Constitution is your Spellcasting Ability for this Spell. Once you use this feature, you cannot use it again until you complete a long rest.\n* **Radical Beam.** This is an upgrade of the Air Blast Feature, meaning you must also have that upgrade learned in order to learn and use this one as well. You learn the Moonbeam spell, which acts as a powerful explosive laser beam emitted from you body. Constitution is your Spellcasting Ability for this Spell. Once you use this feature, you cannot use it again until you complete a long rest.\n* **General Cannon.** This is an upgrade of the Air Blast Feature, meaning you must also have that upgrade learned in order to learn and use this one as well. You learn the Shatter spell, which you produce from air emitted from your body. Constitution is your Spellcasting Ability for this Spell. Once you use this feature, you cannot use it again until you complete a long rest.\n* **Larger Propellers.** This is an upgrade of the Propeller Body Feature, meaning you must also have that upgrade learned in order to learn and use this one as well. You can now spin parts of your body like a propeller to lift you into the air. You now have a flying speed of 10 feet.\n* **General Form.** This is an upgrade of the Centaur Form Feature, meaning you must also have that upgrade learned in order to learn and use this one as well. You can now transform your body into a larger robotic form until you run out of energy. You can cast the Enlarge/Reduce spell on yourself once with this trait, using only the spell's enlarge option, appearing to transform into a larger metal version of yourself. You regain the ability to cast this spell with this trait when you finish a long rest. \n* **Advanced Shape-Memory Alloy.** This is an upgrade of the Shape-Memory Alloy Body Feature, meaning you must also have that upgrade learned in order to learn and use this one as well. You learn an additional Skill of your choice. Additionally, you learn the Shield spell. Once you use this feature, you cannot use it again until you complete a long rest.\n* **Grand Arsenal.** This is an upgrade of the Arsenal Infusion Feature, meaning you must also have that Upgrade learned in order to learn and use this one as well. You are able to implement one more weapon into your body using Arsenal Infusion."
+      }
+    ],
+    "age": "Depending on how much of their body has been modified, cyborgs may have longer lifespans compared to other races. In theory, they are should still remain mortal so long as parts of them still remain organic.",
+    "alignment": "It can be assumed that many cyborgs act Lawfully, but they can technically fall under any alignment.",
+    "subraces": []
+  },
+  {
+    "id": "dwarf",
+    "name": "Dwarf",
+    "optional": true,
+    "description": "Dwarves are a race of smaller humanoids, some small enough to fit into the palms of many medium-sized races' hands. Many can be considered gullible and are often convinced or tricked into work for others. \n\n**Work as Slaves.** Despite how cute and innocent they appear, many are still abused and preyed on by humans and other races. Dwarves can often be sold as slaves, as they are seen on a list of slave prices. For this reason, many of them try to live in secret away from outside societies. \n\n**Strength and Speed.** Dwarves possess immense strength that allows them to shatter stone with ease. Additionally, they are incredibly slippery and hard to spot, allowing them to evade just about any attempt to catch them. For these reasons, they are often considered to be akin to the stories of fairies.",
+    "size": null,
+    "speed": {
+      "walk": 30
+    },
+    "abilityScoreIncrease": {
+      "dex": 1
+    },
+    "traits": [],
+    "age": "Dwarves reach adulthood in their teens and live for around a century.",
+    "alignment": "Dwarves are typically Lawful Good, though they may sometimes fall under different alignments.",
+    "subraces": [
+      {
+        "id": "tontatta-tribe",
+        "name": "Tontatta Tribe",
+        "description": "Your tontatta tribesman has been granted supernatural agility, strength, and mastery over cultivating plants.\n\n**Ability Score Increase.** Your Strength score increases by 2.\n\n**Size.** Dwarves in the One Piece World are typically 6-12 inches tall. Your size is tiny.\n\n**Hard to Detect.** Your tiny size and evasiveness gives you proficiency in the Stealth and Acrobatics skills.\n\n**Glass Cannon** Your hit point maximum decreases by 1, and it decreases by 1 every time you gain a level.\n\n**Super Strength.** You are considered medium size when calculating push, pull, drag, or carry weight. You also roll normally on grapple checks and saves.\n\n**Swift Fury.** When you reach 3rd level, you can cast the Zephyr Strike spell as a 1st-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the Kinetic Jaunt spell once with this trait and regain the ability to do so when you finish a long rest.\n\n**Master Cultivators.** Your mastery of plants and plant products grants you resistance to poison damage and immunity to the Poisoned condition.",
+        "abilityScoreIncrease": {
+          "str": 2
+        },
+        "speed": {},
+        "size": "Tiny",
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Hard to Detect",
+            "text": "Your tiny size and evasiveness gives you proficiency in the Stealth and Acrobatics skills."
+          },
+          {
+            "name": "Glass Cannon",
+            "text": "Your hit point maximum decreases by 1, and it decreases by 1 every time you gain a level."
+          },
+          {
+            "name": "Super Strength",
+            "text": "You are considered medium size when calculating push, pull, drag, or carry weight. You also roll normally on grapple checks and saves."
+          },
+          {
+            "name": "Swift Fury",
+            "text": "When you reach 3rd level, you can cast the Zephyr Strike spell as a 1st-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the Kinetic Jaunt spell once with this trait and regain the ability to do so when you finish a long rest."
+          },
+          {
+            "name": "Master Cultivators",
+            "text": "Your mastery of plants and plant products grants you resistance to poison damage and immunity to the Poisoned condition."
+          }
+        ]
+      },
+      {
+        "id": "automata",
+        "name": "Automata",
+        "description": "Your automata is a race of robots that resemble dwarves and have the ability to travel through outer space and live on the moon.\n\n**Ability Score Increase.** Your Constitution score increases by 2.\n\n**Size.** Automata are between 3 and 4 feet tall. Your size is small.\n\n**Programmed Minds.** You are immune to abilities that allow other creatures to read your thoughts.\n\n**Robotic Resilience.** You were created to have remarkable Fortitude, represented by the following benefits:\n\n* You have advantage on Saving Throws against being Poisoned, and you have Resistance to poison damage.\n* You don’t need to eat, drink, or breathe.\n* You are immune to disease.\n* You don’t need to sleep, and magic can’t put you to sleep.\n\n**Militaristic Design.** You gain one skill proficiency and one weapon proficiency of your choice.\n\n**Electric-Powered.** You are immune to lightning damage. Additionally, if you are hit by an ability that would deal lightning damage, your attack rolls have advantage until the end of your next turn\n\n**Iron Shell.** Your metallic body grants you a +1 bonus to Armor Class.",
+        "abilityScoreIncrease": {
+          "con": 2
+        },
+        "speed": {},
+        "size": "Small",
+        "replacesBaseAbilityScoreIncrease": false,
+        "traits": [
+          {
+            "name": "Programmed Minds",
+            "text": "You are immune to abilities that allow other creatures to read your thoughts."
+          },
+          {
+            "name": "Robotic Resilience",
+            "text": "You were created to have remarkable Fortitude, represented by the following benefits:\n\n* You have advantage on Saving Throws against being Poisoned, and you have Resistance to poison damage.\n* You don’t need to eat, drink, or breathe.\n* You are immune to disease.\n* You don’t need to sleep, and magic can’t put you to sleep."
+          },
+          {
+            "name": "Militaristic Design",
+            "text": "You gain one skill proficiency and one weapon proficiency of your choice."
+          },
+          {
+            "name": "Electric-Powered",
+            "text": "You are immune to lightning damage. Additionally, if you are hit by an ability that would deal lightning damage, your attack rolls have advantage until the end of your next turn"
+          },
+          {
+            "name": "Iron Shell",
+            "text": "Your metallic body grants you a +1 bonus to Armor Class."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "lunarian",
+    "name": "Lunarian",
+    "optional": true,
+    "description": "Lunarians are a nearly extinct race of humanoids with feathered wings and the ability to control and produce fire to use as a weapon. Very few, if any, exist in the world as most of them suddenly disappeared and were thought to be eradicated.\n\n**Race of Gods.** Lunarians were once revered as a tribe of \"gods\" living on the planet. Living on the Red Line long before the Celestial Dragons, they had a kingdom built on it referred to as \"Kami no Kuni\" or \"Land of the Gods\". However, at some point the tribe was thought to have went extinct. Though there are thought to be a few survivors to this day, the World Government viciously hunts any Lunarians and will place large bounties on any they can't locate themselves.\n\n**Physical Features.** Lunarians are large humanoids with feathered black wings. Their wings have no real limitations, and allow them to fly at blinding speeds. The ones that exist today have dark skin with silver-white hair. They also have a large fire plume emanating from their upper back which ignites and burns out occasionally. Their height and physique is typically massive, although it may vary accross individuals. These incredible features grant them superhuman powers, durability, and the ability to travel and live in just about any location above land.\n\n**Burning Bodies.** Producing red flames from their bodies using their ability to \"hakka\" or ignite, they can also manipulate these flames in a variety of ways. The flame on the back of a lunarian reflects the speed and durability of its body, with its flame appearing larger when its fighting defensively or appearing smaller when its prioritizing agility. A Lunarian's flame can also be used to coat its limbs or weapons so that it can be used effectively in combat.",
+    "size": "Medium",
+    "speed": {
+      "walk": 25,
+      "fly": 50
+    },
+    "abilityScoreIncrease": {
+      "dex": 2,
+      "con": 1
+    },
+    "traits": [
+      {
+        "name": "Flight",
+        "text": "You have a flying speed of 50 feet. To use this speed, you can't be wearing medium or heavy armor."
+      },
+      {
+        "name": "Fire Resistance",
+        "text": "You have resistance to fire damage."
+      },
+      {
+        "name": "Ignite",
+        "text": "You know the Produce Flame cantrip. When you reach 3rd level, you can cast the Burning Hands spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the Flame Blade spell once with this trait and regain the ability to do so when you finish a long rest. Constitution is your spellcasting ability for these spells."
+      }
+    ],
+    "age": "Lunarians live for an unknown period of time, but it can be assumed that they reach adulthood in their teens and live for around a century.",
+    "alignment": "There is no clear alignment that is consistent among all lunarians. Just about any alignment can be justified.",
+    "subraces": []
+  },
+  {
+    "id": "elbaf-giant",
+    "name": "Elbaf Giant",
+    "optional": true,
+    "description": "Elbaf giants are a race of massive humanoids that possess otherworldly strength and abilities. Many are dozens of feet tall and can be more than ten times the size of a regular sized person. Regular humans and non-humans are nowhere near as strong as them, making most giants some of the fiercest and deadliest warriors on the planet.\n\n**Residents of Elbaf.** Elbaf is a large kingdom inhabited by giants, often famed for its unmatched strength when compared to other countries around the world. Many brave and nearly invincible warriors hail from here, leading many other races to either greatly fear or respect Elbaf as a whole. Having the warriors of elbaf as an ally is a surefire way to win almost any war. Even the marines often show fear of Elbaf's army, which shows how truly unmatched their warriors are.\n\n**Super Giants.** While giants are already nearly unbeatable, the much larger *Ancient Giants* have also been rumored to have existed in the past. Due to their sheer size and strength, they are capable of sizing up battleships or even fortresses. Allegedly, some ancient giants could move entire islands or continents. These giants often stand many times taller than even the tallest ordinary giant, sometimes up to 200 feet tall. Their appearance alone has the power to send fear through any solider or pirate, often resembling a colossal ogre or oni. Very few of these giants still exist today, as many have gone extinct.",
+    "size": "Gargantuan",
+    "speed": {
+      "walk": 40
+    },
+    "abilityScoreIncrease": {
+      "str": 4,
+      "con": 4
+    },
+    "traits": [
+      {
+        "name": "Warrior Training",
+        "text": "You have proficiency with the Battleaxe, Handaxe, Light Hammer, Longsword, Club, and Spear."
+      },
+      {
+        "name": "Sheer Size",
+        "text": "You have proficiency in the Athletics and Intimidation skills."
+      },
+      {
+        "name": "Overwhelming Charisma",
+        "text": "Tales of you and your race's pride have spread throughout the world. Not only are you constantly oozing confidence in these things, but you can use your words to inspire and raise the spirits of your allies. Whenever you complete a Long Rest with your party, you can choose to spend 5 minutes making an inspiring speech, granting up to 5 allied creatures of your choice gain temporary HP equal to your proficiency bonus.\n\n*(Note: Once again, this race is incredibly overpowered so I wouldn't recommend using it in a balanced campaign. However, you may still choose to include this player race in your game if you so desire. Or you can decide to use it for NPC or enemy stat sheets.)*"
+      }
+    ],
+    "age": "Giants can live for up to 300+ years.",
+    "alignment": "It can be assumed that many giants are neutral, but they can technically fall under any alignment.",
+    "subraces": []
+  }
+]

@@ -1,0 +1,752 @@
+{
+  "description": "In the world of One Piece, Haki is a type of spiritual energy that exists in every living creature. Channeling this energy through one's body allows one to achieve a greater tier of power. Haki can exponentially improve a creature's abilities in a variety of ways. It can amplify one's own body, weapons, and ammunition. It can also heighten a creature's senses or even allow for it to develop a \"sixth sense\". Creatures born with \"Qualities of a King\" through sheer luck, however, may instead awaken an incredibly rare form of haki known as \"Haoshoku Haki\" or \"King's Haki\". Though the chances of a creature being born with King's Haki is around one in a million. Each color of haki can be learned and improved through training and combat experience.\n\nEach type of Haki is categorized as a separate \"Color\" of Haki. These categories of Haki can be developed instead of Devil Fruit powers through Spirit Surge Events, or might be advanced through other character creation options. There are three known Colors of Haki, as listed below:\n\n* **Color of Armament (or Busoshoku Haki):** A creature that develops this type of haki is able to use its spirit as a weapon or suit of armor it can form around its body and weapons. Weapons and attacks coated with this spiritual energy are able affect Devil Fruit users in ways they normally couldn't, such as being able to damage Logia users through their immunity to physical attacks. This normally invisible or transparent energy can also harden on a creature's body or weapons to become a much darker metallic coating which further amplifies its offensive or defensive abilities. Alternatively, it can be channeled through attacks to emit bursts of spiritual energy and destroy objects or creatures from the inside. Creatures that master this haki become nearly unstoppable juggernauts that deal devastating damage.\n\n* **Color of Observation (or Kenbunshoku Haki):** A creature that develops this type of haki is able to greatly increase its own senses. Creatures using this haki can detect the auras, presence, strength, and emotions of other creatures around them. When developed over time, creatures can even develop a powerful sixth sense that will allow them to see even when blinded or deafened. Furthermore, at its highest level, this haki allows creatures to see into the future to avoid danger. Creatures that master this form of haki will become nearly impossible to evade or hit with ordinary attacks.\n\n* **Color of the Supreme King (or Haoshoku Haki):** A creature that develops this type of haki is able to use their powerful spirit to force others into submission. Users of this haki are able to easily dominate creatures with weaker willpowers both physically and mentally through unleashing their auras. Creatures dominated by this power may either submit, flee, or become fully incapacitated by it. This haki can also be used like the Color of Armament to imbue attacks with energy, making them far stronger than normal. Only a handful of creatures on the planet can master this form of haki, allowing them to achieve heights very few have reached in power.",
+  "spiritSurge": [
+    {
+      "header": [
+        "Rarity",
+        "Challenge Rating",
+        "Example"
+      ],
+      "rows": [
+        [
+          "Uncommon",
+          "1 - 4",
+          "Defeating a Manticore in its lair."
+        ],
+        [
+          "Rare",
+          "5 - 10",
+          "Taking down a famous Grand Line pirate crew and their captain."
+        ],
+        [
+          "Very Rare",
+          "11 - 17",
+          "Surviving and nearly slaying an infamous Sea King."
+        ],
+        [
+          "Legendary",
+          "18+",
+          "Defeating a Warlord of the sea."
+        ]
+      ]
+    },
+    {
+      "header": [
+        "Spirit Surge Rarity",
+        "Training Time",
+        "Training Fee"
+      ],
+      "rows": [
+        [
+          "Uncommon",
+          "1 week",
+          "฿5,000,000"
+        ],
+        [
+          "Rare",
+          "3 months",
+          "฿50,000,000"
+        ],
+        [
+          "Very Rare",
+          "6 months",
+          "฿500,000,000"
+        ],
+        [
+          "Legendary",
+          "1 year",
+          "฿5,000,000,000"
+        ]
+      ]
+    },
+    {
+      "header": [
+        "Spirit Surge Rarity",
+        "Solo Training Time",
+        "Training Cost"
+      ],
+      "rows": [
+        [
+          "Uncommon",
+          "2 weeks",
+          "฿2,500,000"
+        ],
+        [
+          "Rare",
+          "6 months",
+          "฿25,000,000"
+        ],
+        [
+          "Very Rare",
+          "1 year",
+          "฿250,000,000"
+        ],
+        [
+          "Legendary",
+          "2 years",
+          "฿2,500,000,000"
+        ]
+      ]
+    }
+  ],
+  "advancementRules": [
+    {
+      "name": "Spiritual Advancement",
+      "text": "Whole crews or individual characters may occasionally find themselves coming out of dangerous encounters just barely alive and declaring victory. In this situation, simple treasure or XP may not be enough to reward their bravery and luck.\n\nAs an additional way to reflect such intense character growth, and with the DM's approval, players may be granted a special advancement to their abilities as a gift. When a victory warrants such a reward, it is considered a \"Spirit Surge Event\". Defeating especially tough bosses, powerful organizations, or overcoming other dangerous encounters might automatically trigger a Spirit Surge Event. Depending on how each player wishes to develop their character, the player may choose between unlocking a Haki or Devil Fruit advancement feature. The rarity of the Spirit Surge Event depends on the level of the challenge each character faced, and it will determine the rarity of the advancement feature unlocked. For example, receiving a Rare Spirit Surge will allow you to unlock a Rare or lower Haki Advancement feat. Use the Spirit Surge Event table below to determine the maximum rarity category of the advancement feature a character is permitted to pick. Keep in mind, you do not always have to use Challenge Rating (CR) to determine the rarity of the Spirit surge Event. Spirit surges can also be handed out to all players as a gift from the DM as an alternative to magic items or other special loot.\n\n#### Spirit Surge Event\n\n| Rarity | Challenge Rating | Example |\n|---|---|---|\n| Uncommon | 1 - 4 | Defeating a Manticore in its lair. |\n| Rare | 5 - 10 | Taking down a famous Grand Line pirate crew and their captain. |\n| Very Rare | 11 - 17 | Surviving and nearly slaying an infamous Sea King. |\n| Legendary | 18+ | Defeating a Warlord of the sea. |",
+      "tables": [
+        {
+          "header": [
+            "Rarity",
+            "Challenge Rating",
+            "Example"
+          ],
+          "rows": [
+            [
+              "Uncommon",
+              "1 - 4",
+              "Defeating a Manticore in its lair."
+            ],
+            [
+              "Rare",
+              "5 - 10",
+              "Taking down a famous Grand Line pirate crew and their captain."
+            ],
+            [
+              "Very Rare",
+              "11 - 17",
+              "Surviving and nearly slaying an infamous Sea King."
+            ],
+            [
+              "Legendary",
+              "18+",
+              "Defeating a Warlord of the sea."
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Training Surges and Tutors",
+      "text": "While the thrill of adventure and the heat of battle can certainly shape a character, more deliberate forms of learning have their place in the journey of character growth. Training provides a way for characters to continue to grow their Haki and Devil Fruit techniques during downtime, but for a price.\n\n#### Training Surges\n\nA Training Surge represents a concentrated period of guided training and practice. These periods can occur during downtime, between quests, or during long sea voyages. They allow characters to focus on honing their abilities, exploring the extent of their powers, or developing new strategies for battle.\n\nTo initiate a Training Surge—an alternate method to activating Spirit Surges—a set of prerequisites must first be met. Primarily, a tutor is necessary to begin the process. Locating a qualified tutor can be a challenging task, and the level of Spirit Surge they can impart through training will vary based on their expertise. Although a tutor can instruct multiple students simultaneously, they will charge an individual fee for each trainee. Some tutors may work for free if characters are in their good graces. Once a tutor has been identified and compensated, the trainee must devote a substantial and consistent period to the training, as specified in the 'Training Fees and Time' table provided below.\n\n#### Training Fees and Time\n\n| Spirit Surge Rarity | Training Time | Training Fee |\n|---|---|---|\n| Uncommon | 1 week | ฿5,000,000 |\n| Rare | 3 months | ฿50,000,000 |\n| Very Rare | 6 months | ฿500,000,000 |\n| Legendary | 1 year | ฿5,000,000,000 |\n\nDuring the training period, a character is considered to be in downtime and cannot participate in other activities, adventures, or battles.  They are fully committed to the training and the development of their powers. However, they will be rewarded with enhanced abilities and a deeper understanding of their Haki or Devil Fruit powers at the end of the process.\n\nOnce the total training time has gone by without any issues, any creature participating in the training will receive a spirit surge according to the type of training they chose using the table above. \n\n#### Optional Rule: Solo Training\n\nThe DM can alternatively allow a character to train without the guidance of a tutor or mentor. If so, use the table below to calculate training time and cost. The cost represents expenses needed for resources and equipment while training.\n\n#### Solo Training Time and Cost\n\n| Spirit Surge Rarity | Solo Training Time | Training Cost |\n|---|---|---|\n| Uncommon | 2 weeks | ฿2,500,000 |\n| Rare | 6 months | ฿25,000,000 |\n| Very Rare | 1 year | ฿250,000,000 |\n| Legendary | 2 years | ฿2,500,000,000 |",
+      "tables": [
+        {
+          "header": [
+            "Spirit Surge Rarity",
+            "Training Time",
+            "Training Fee"
+          ],
+          "rows": [
+            [
+              "Uncommon",
+              "1 week",
+              "฿5,000,000"
+            ],
+            [
+              "Rare",
+              "3 months",
+              "฿50,000,000"
+            ],
+            [
+              "Very Rare",
+              "6 months",
+              "฿500,000,000"
+            ],
+            [
+              "Legendary",
+              "1 year",
+              "฿5,000,000,000"
+            ]
+          ]
+        },
+        {
+          "header": [
+            "Spirit Surge Rarity",
+            "Solo Training Time",
+            "Training Cost"
+          ],
+          "rows": [
+            [
+              "Uncommon",
+              "2 weeks",
+              "฿2,500,000"
+            ],
+            [
+              "Rare",
+              "6 months",
+              "฿25,000,000"
+            ],
+            [
+              "Very Rare",
+              "1 year",
+              "฿250,000,000"
+            ],
+            [
+              "Legendary",
+              "2 years",
+              "฿2,500,000,000"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "colors": [
+    {
+      "id": "color-of-armament",
+      "name": "Color of Armament",
+      "spellcastingAbility": "con",
+      "description": "When deciding to advance your Color of Armament Haki during a Spirit Surge Event, you may choose any of the following features below. The rarity of the haki advancement feature you may choose is determined by the Spirit Surge Event.\n\n*In order to gain a Color of Armament Haki Advancement feature, you are required to have a minimum Constitution score of 11 and meet any other prerequisites mentioned.*",
+      "notes": [
+        {
+          "name": "Armament Haki Spellcasting Ability",
+          "text": "Constitution is your spellcasting ability for your color of armament spells, since the strength of this haki is determined by your overall toughness. You use your Constitution whenever an Armament Haki spell refers to your spellcasting ability. In addition, you use your Constitution modifier when setting the saving throw DC for an armament haki spell you cast and when making an attack roll with one.\n\n**Armament Haki save DC** = 8 + your proficiency bonus + your Constitution modifier\n\n**Armament Haki attack modifier** = your proficiency bonus + your Constitution modifier\n\n### Aura of Life\n*Haki Advancement, Uncommon*\n\nYou are able to increase your willpower to bolster the toughness of your body using your spirit.\n\nYou can spend an action to gain 1d6 + your Constitution score + your character level in temporary hit points. You can use this feature a number of times equal to your proficiency bonus. You cannot use this feature again until you finish a long rest.\n\n### Soul Armor\n*Haki Advancement, Uncommon*\n\nYou can form a thin coating of invisible armor around your body using your soul.\n\nAs an action, you surround your body with this armor, making your AC equal to 13 + your Constitution modifier when you aren't wearing armor. This armor lasts for 8 hours. You cannot use this feature agian until you finish a long rest.\n\n### Spirit Blast\n*Haki Advancement, Uncommon*\n\nYou gain the ability to send bursts of energy through your enemies using your spirit.\n\nWhen you hit a creature with a melee weapon Attack or unarmed strike, you can unleash a surge of spirit energy from your body to deal extra 2d8 force damage to the target, in addition to the attack's normal damage. You can only amplify an attack this way once per round during your turn. Once you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest.\n\n### Weapon Hardening\n*Haki Advancement, Uncommon*\n\nYou gain the ability to coat your weapons and attacks with your spirit. The heavier the application, the darker the coating is.\n\nAs a bonus action, you channel haki into your body or a weapon of your choice. If you choose your body, you choose either your unarmed strikes or a natural weapon. For 1 minute, your attacks with the chosen weapon are considered magical with a +1 bonus to Attack rolls and Damage Rolls. \n\nIf the attack already has a bonus to its attack and damage rolls, this feature replaces the bonus unless it is greater, in which case it does not gain this feature’s benefit.\n\nThis effect ends early if you fall unconscious, use it again, end it as a bonus action, or start your turn not holding or touching the weapon you coated. Once you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest.\n\nIf the Spirit Surge Event has a rarity higher than Rare, use these bonuses:\n\n**Rare.** The chosen weapon gains a +2 bonus to Attack rolls and Damage Rolls instead.\n\n**Very Rare.** The chosen weapon gains a +3 bonus to Attack rolls and Damage Rolls instead.\n\n### Vessel of Resilience\n*Haki Advancement, Uncommon*\n\nYou learn to imbue your spirit with such resilience that it enhances your physical form.\n\nAs an action, you can bolster your defenses for 1 minute. During this time, you have resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks, and you have advantage on Constitution saving throws. Once you use this feature, you cannot use it again until you finish a long rest.\n\n### Soul Ravage\n*Haki Advancement, Rare*\n\nYou have learned how to directly channel lethal energy into any living creature through touch, even to the point of ravaging the devils inside Devil Fruit users.\n\nYou can use an action to make a Melee Armament Haki spell attack against a creature you can reach. On a hit, the target takes 3d10 force damage. Additionally, if the target is a Devil Fruit user, it must make a Constitution saving throw. On a failed save, the target is unable to use Devil Fruit abilities, spells, or forms until the end of its next turn. Any Devil Fruit spells that use concentration and any Devil Fruit forms or abilities the creature has active are also ended early, as if it was touched by seastone.\n\nOnce you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest.\n\nIf the Spirit Surge Event has a rarity higher than Rare, use these bonuses:\n\n**Very Rare.** You deal 4d10 force damage instead.\n\n**Legendary.** You deal 5d10 force damage instead.\n\n### Soul Shield\n*Haki Advancement, Rare*\n\nYou are capable of coating dense amounts of spirit energy around your body and armor to temporarily protect you from incoming attacks.\n\nYou can cast the Shield spell on yourself, without expending a spell slot. Once you use this ability a number of times equal to half your proficiency bonus (rounded down), you can't use it again until you finish a long rest.\n\n### Internal Destruction\n*Haki Advancement, Rare*\n\n**Prerequisite:** Spirit Blast, Dexterity 13 or Strength 13\n\nYour mastery of Haki allows you to let your spirit energy linger, echoing your strikes with unyielding force.\n\nWhen you hit a creature with a melee attack or unarmed strike and activate your Spirit Blast, your spirit energy reverberates through the target causing it to take additional force damage equal to your Constitution modifier at the start of each of its turns for the next minute. The creature can make a Constitution saving throw at the end of each of its turns, ending the effect early on a success.\n\nIf you hit the same creature with this effect again before the duration ends, the damage increases by your Constitution modifier, and the duration resets. The damage cannot exceed a total of 3 times your Constitution modifier per turn.\n\nOnce you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest.\n\nIf the Spirit Surge Event has a rarity higher than Rare, use these bonuses:\n\n**Very Rare.** The damage per turn can increase up to a total of 4 times your Constitution modifier.\n\n**Legendary.** The damage per turn can increase up to a total of 5 times your Constitution modifier.\n\n### Force of Will\n*Haki Advancement, Rare*\n\n**Prerequisite:** Dexterity 13 or Strength 13\n\nYour iron-will enables you to unleash devastating shockwaves of Haki energy.\n\nAs an action, you can slam your foot or fist into the ground, causing a shockwave of spirit energy to radiate from you. Each creature within 30 feet of you must make a Strength saving throw. On a failed save, a creature takes 4d10 force damage and is knocked prone. On a successful save, the creature takes half as much damage and isn't knocked prone. Structures and nonmagical objects within the area take the same damage. Once you use this ability, you can't use it again until you finish a long rest.\n\n### Shield of Vengeance\n*Haki Advancement, Rare*\n\nYou form a powerful retaliation shield that lashes out at attackers with spiritual force.\n\nAs a reaction, when you are hit by an attack, you can cast the spell Hellish Rebuke, targeting the attacker. The damage type for the spell is force, and the spell's level is equal to your proficiency bonus. Once you use this ability a number of times equal to half your proficiency bonus (rounded down), you can't use it again until you finish a long rest.\n\n### Spirit Shot\n*Haki Advancement, Rare*\n\nYou have honed your Haki to imbue your ranged weapons with a potent burst of spirit energy.\n\nAs a bonus action, you can imbue a ranged weapon attack with your Haki. The next time you hit with that weapon, the attack deals an additional 2d8 force damage. The imbued weapon retains this energy until you hit a target or until 1 hour has passed. You can use this feature a number of times equal to your proficiency bonus, and regain all expended uses when you finish a long rest.\n\n### Spirit Emission\n*Haki Advancement, Very Rare*\n\nYou concentrate your Haki into a potent beam of energy, piercing through multiple enemies.\n\nAs an action, you can fire a beam of energy in a line that is 60 feet long and 5 feet wide. Each creature in the line must make a Dexterity saving throw. A creature takes 10d6 force damage on a failed save, or half as much damage on a successful one. This beam penetrates through creatures and objects, potentially hitting multiple targets in its path. Once you use this ability, you can't use it again until you finish a long rest.\n\n### Bullet of Will\n*Haki Advancement, Very Rare*\n\n**Prerequisite:** Spirit Shot, Dexterity 13\n\nYour control over your Haki extends beyond your body, imbuing your ranged attacks with potent force.\n\nWhen you make a ranged attack, you can use a bonus action to imbue your projectile with your Haki, causing it to deal an additional 4d8 force damage on a hit. Furthermore, the attack has a maximum range of 600 feet with no disadvantage due to long-range. Once you use this ability, you can't use it again until you finish a short or long rest.\n\n### Titan's Grip\n*Haki Advancement, Very Rare*\n\nYour spiritual force can now grip even the intangible, enabling you to grasp any attack and withstand its damage.\n\nAs a reaction, when you or a creature within 30 feet of you is targeted by a spell or ability that deals damage, you can use your Haki to intercept the attack. The damage is redirected to you, but you only take half damage (rounded down). Once you use this ability a number of times equal to half your proficiency bonus (rounded down), you can't use it again until you finish a long rest.\n\n### Blackened Fist of Ruin\n*Haki Advancement, Very Rare*\n\n**Prerequisite:** Spirit Blast, Dexterity 15 or Strength 15\n\nYour spiritual energy can focus into a single devastating punch that shatters any defense.\n\nAs an action, you can make a single melee weapon attack against a creature within reach. If this attack hits, it deals an additional 10d10 force damage, and if the target is a creature, it must succeed on a Strength saving throw or be knocked back 30 feet and knocked prone. Once you use this ability, you can't use it again until you finish a long rest.\n\n### Crippling Blast\n*Haki Advancement, Very Rare*\n\n**Prerequisite:** Spirit Blast\n\nYou enhance your ability to send bursts of energy through your attacks and can now physically destroy your enemies from the inside.\n\nWhen you use your Spirit Blast feature to deal extra damage to a creature, you deal an extra 1d8 force damage and force the target to make a Constitution saving throw. On a failed save, it has disadvantage on attack rolls and ability checks, and can’t take reactions, until the end of its next turn.\n\n### Dark Armor\n*Haki Advancement, Legendary*\n\nYou can create a nearly indestructible coat of Haki that guards you from all harm.\n\nAs an action, you can envelop yourself in a layer of super-dense Haki. For the next 10 minutes, you gain resistance to all types of damage except force, your Armor Class can't be less than 20, regardless of what kind of armor you are wearing, and you are immune to being grappled or restrained. Once you use this ability, you can't use it again until you finish a long rest.\n\n### Galaxy Impact\n*Haki Advancement, Legendary*\n\n**Prerequisite:** Dexterity 15 or Strength 15\n\nYou have reached the pinnacle of Armament Haki, gaining the ability to impose your spirit's might on the world around you.\n\nAs an action, you can cause a burst of pure force to radiate from you. All creatures and objects within a 30-foot radius must make a Constitution saving throw against your Armament Haki save DC. On a failed save, a creature takes 10d10 force damage and is knocked prone. On a successful save, a creature takes half as much damage and isn't knocked prone. Unworn objects automatically fail their saving throw and take full damage. Once you use this feature, you cannot use it again until you finish a long rest.\n\n### Element Infusion\n*Haki Advancement, Legendary*\n\n**Prerequisite:** Weapon Hardening\n\nYour understanding of elemental energies and spirit manipulation has evolved to such an extent that you can saturate your weapons with massive amounts of destructive force.\n\nWhen you activate your Weapon Hardening feature on a weapon you are using, you can choose to infuse it with a primal element, causing it to crackle with raw energy. Choose one of the following damage types: acid, cold, fire, lightning, or thunder.\n\nFor the duration of your Weapon Hardening, each of your successful attacks with the infused weapon deal an extra 5d6 damage of the chosen type. The extra damage applies to every successful hit, even if you make multiple attacks in a turn.\n\nIn addition, the weapon sheds bright light in a color corresponding to the chosen element in a 40-foot radius, and dim light for an additional 40 feet.\n\nOnce you use this feature, you cannot use it again until you finish a long rest.\n\n### Abyssal Hole\n*Haki Advancement, Legendary*\n\n**Prerequisite:** Spirit Blast, Dexterity 15 or Strength 15\n\nYou've refined your Armament Haki to a point where you can channel both its overwhelming force and your intimidating spirit into a single destructive blow, capable of sending foes plummeting into an abyss.\n\nAs an action, you can make a melee attack against an opponent within reach. If the attack hits, you envelop your hand in concentrated Haki and smash your opponent into the ground, dealing 10d10 force damage and forcing them to make a Strength saving throw against your Armament Haki save DC. On a failed save, the enemy is sent crashing downwards 50 feet, taking any additional fall damage, and creating a gaping hole in the ground if the area is able to be destroyed, and is knocked prone and stunned until the end of its next turn.\n\nIf used on a surface not connected to a substantial amount of earth (such as the deck of a ship or a wooden floor), this ability will instead break through the surface and cause the enemy to fall through, dealing the same amount of force damage to any objects hit. \n\nOnce you use this feature, you cannot use it again until you finish a long rest.\n\n### Permanent Black Weapon\n*Haki Advancement, Legendary*\n\n**Prerequisite:** Weapon Hardening\n\nYou coat a weapon with a permanent layer of dark energy that never leaves it.\n\nChoose a weapon that is separate from your body. You spend 1 hour infusing it with your spirit. It receives the bonuses from Weapon Hardening and is considered magical permanently or until you end it by spending 1 hour to remove it. Only one weapon can receive the benefits permanent infusion at a time, and it only receives the benefits from the Weapon Hardening advancement feature and no other additional haki advancement features that have been applied to it. If a creature other than you attempts to use this weapon, it must attune to the weapon to gain its benefits. You can still use Weapon Hardening normally on separate weapons while this infusion is active.\n\nYou can't use this feature again to create a permanently infused weapon until you finish a long rest.\n\n### Thunderbolt Volley\nHaki Advancement, Legendary\n\n**Prerequisite:** Spirit Shot, Dexterity 15\n\nYou have harnessed the strength of your spirit to such a degree that you can channel it into your ranged attacks, causing them to hit with the force of a thunderbolt.\n\nAs an action, select one target you can see within range of your chosen weapon. You fire a single shot imbued with your Haki, which splits into multiple thundering energy bolts mid-flight. Make a single weapon attack roll. On a hit, the target suffers the normal effects of the weapon attack, and it takes an additional 4d10 force damage.\n\nThen, up to six other targets of your choice that you can see within 30 feet of the original target each take force damage equal to the additional force damage roll.\n\nAfter the attack, the force of the unleashed energy causes a thunderous boom that is audible up to 600 feet.\n\nOnce you use this feature, you can't use it again until you finish a long rest.\n\n### Divine Departure\n*Haki Advancement, Legendary*\n\n**Prerequisite:** Spirit Blast, Dexterity 15 or Strength 15\n\nYou have mastered the art of channeling your Haki into an explosive leap, propelling yourself towards your enemy and delivering a devastating blow.\n\nAs an action, you can choose a point you can see within 60 feet of you. You leap to that point, and you can make one melee attack against a creature within 5 feet of your landing spot. This attack is made with advantage, and if the attack hits, it deals an additional 4d10 force damage. The force from your landing also creates a shockwave that spreads out from the point of impact. All creatures within a 15-foot radius of your landing point must make a Dexterity saving throw. On a failed save, they take 3d10 force damage and are knocked prone. On a successful save, they take half as much damage and are not knocked prone.\n\nOnce you use this feature, you can't use it again until you finish a long rest.\n\n### King's Conquest\n*Haki Advancement, Legendary*\n\n**Prerequisites:** Qualities of a King, Weapon Hardening\n\nThrough rigorous training and self-discovery, you have learned to manifest your Armament and King's Haki in their most potent form, transforming your weapon into an extension of your indomitable will.\n\nWhen you use your Weapon Hardening feature on a weapon you are currently wielding, you may choose to activate King's Conquest. For the next minute, your reach with that weapon increases by 10 feet. When you attack and hit a creature with this weapon, you can choose to push the creature up to 10 feet away from you, in addition to the attack's normal effects. The creature is also stunned until the start of your next turn, unless it succeeds on a Constitution saving throw against your Armament Haki save DC.\n\nMoreover, once per round on your turn when you hit a creature with the imbued weapon, you can choose to channel the full power of your Haki, dealing additional force damage equal to twice your Proficiency bonus + your Constitution modifier.\n\nOnce you use this ability, you can't use it again until you finish a long rest."
+        }
+      ],
+      "advancements": [
+        {
+          "id": "aura-of-life",
+          "name": "Aura of Life",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You are able to increase your willpower to bolster the toughness of your body using your spirit.\n\nYou can spend an action to gain 1d6 + your Constitution score + your character level in temporary hit points. You can use this feature a number of times equal to your proficiency bonus. You cannot use this feature again until you finish a long rest."
+        },
+        {
+          "id": "soul-armor",
+          "name": "Soul Armor",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You can form a thin coating of invisible armor around your body using your soul.\n\nAs an action, you surround your body with this armor, making your AC equal to 13 + your Constitution modifier when you aren't wearing armor. This armor lasts for 8 hours. You cannot use this feature agian until you finish a long rest."
+        },
+        {
+          "id": "spirit-blast",
+          "name": "Spirit Blast",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You gain the ability to send bursts of energy through your enemies using your spirit.\n\nWhen you hit a creature with a melee weapon Attack or unarmed strike, you can unleash a surge of spirit energy from your body to deal extra 2d8 force damage to the target, in addition to the attack's normal damage. You can only amplify an attack this way once per round during your turn. Once you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "weapon-hardening",
+          "name": "Weapon Hardening",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You gain the ability to coat your weapons and attacks with your spirit. The heavier the application, the darker the coating is.\n\nAs a bonus action, you channel haki into your body or a weapon of your choice. If you choose your body, you choose either your unarmed strikes or a natural weapon. For 1 minute, your attacks with the chosen weapon are considered magical with a +1 bonus to Attack rolls and Damage Rolls. \n\nIf the attack already has a bonus to its attack and damage rolls, this feature replaces the bonus unless it is greater, in which case it does not gain this feature’s benefit.\n\nThis effect ends early if you fall unconscious, use it again, end it as a bonus action, or start your turn not holding or touching the weapon you coated. Once you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest.\n\nIf the Spirit Surge Event has a rarity higher than Rare, use these bonuses:\n\n**Rare.** The chosen weapon gains a +2 bonus to Attack rolls and Damage Rolls instead.\n\n**Very Rare.** The chosen weapon gains a +3 bonus to Attack rolls and Damage Rolls instead."
+        },
+        {
+          "id": "vessel-of-resilience",
+          "name": "Vessel of Resilience",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You learn to imbue your spirit with such resilience that it enhances your physical form.\n\nAs an action, you can bolster your defenses for 1 minute. During this time, you have resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks, and you have advantage on Constitution saving throws. Once you use this feature, you cannot use it again until you finish a long rest."
+        },
+        {
+          "id": "soul-ravage",
+          "name": "Soul Ravage",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "You have learned how to directly channel lethal energy into any living creature through touch, even to the point of ravaging the devils inside Devil Fruit users.\n\nYou can use an action to make a Melee Armament Haki spell attack against a creature you can reach. On a hit, the target takes 3d10 force damage. Additionally, if the target is a Devil Fruit user, it must make a Constitution saving throw. On a failed save, the target is unable to use Devil Fruit abilities, spells, or forms until the end of its next turn. Any Devil Fruit spells that use concentration and any Devil Fruit forms or abilities the creature has active are also ended early, as if it was touched by seastone.\n\nOnce you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest.\n\nIf the Spirit Surge Event has a rarity higher than Rare, use these bonuses:\n\n**Very Rare.** You deal 4d10 force damage instead.\n\n**Legendary.** You deal 5d10 force damage instead."
+        },
+        {
+          "id": "soul-shield",
+          "name": "Soul Shield",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "You are capable of coating dense amounts of spirit energy around your body and armor to temporarily protect you from incoming attacks.\n\nYou can cast the Shield spell on yourself, without expending a spell slot. Once you use this ability a number of times equal to half your proficiency bonus (rounded down), you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "internal-destruction",
+          "name": "Internal Destruction",
+          "rarity": "Rare",
+          "prerequisite": "Spirit Blast, Dexterity 13 or Strength 13",
+          "text": "**Prerequisite:** Spirit Blast, Dexterity 13 or Strength 13\n\nYour mastery of Haki allows you to let your spirit energy linger, echoing your strikes with unyielding force.\n\nWhen you hit a creature with a melee attack or unarmed strike and activate your Spirit Blast, your spirit energy reverberates through the target causing it to take additional force damage equal to your Constitution modifier at the start of each of its turns for the next minute. The creature can make a Constitution saving throw at the end of each of its turns, ending the effect early on a success.\n\nIf you hit the same creature with this effect again before the duration ends, the damage increases by your Constitution modifier, and the duration resets. The damage cannot exceed a total of 3 times your Constitution modifier per turn.\n\nOnce you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest.\n\nIf the Spirit Surge Event has a rarity higher than Rare, use these bonuses:\n\n**Very Rare.** The damage per turn can increase up to a total of 4 times your Constitution modifier.\n\n**Legendary.** The damage per turn can increase up to a total of 5 times your Constitution modifier."
+        },
+        {
+          "id": "force-of-will",
+          "name": "Force of Will",
+          "rarity": "Rare",
+          "prerequisite": "Dexterity 13 or Strength 13",
+          "text": "**Prerequisite:** Dexterity 13 or Strength 13\n\nYour iron-will enables you to unleash devastating shockwaves of Haki energy.\n\nAs an action, you can slam your foot or fist into the ground, causing a shockwave of spirit energy to radiate from you. Each creature within 30 feet of you must make a Strength saving throw. On a failed save, a creature takes 4d10 force damage and is knocked prone. On a successful save, the creature takes half as much damage and isn't knocked prone. Structures and nonmagical objects within the area take the same damage. Once you use this ability, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "shield-of-vengeance",
+          "name": "Shield of Vengeance",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "You form a powerful retaliation shield that lashes out at attackers with spiritual force.\n\nAs a reaction, when you are hit by an attack, you can cast the spell Hellish Rebuke, targeting the attacker. The damage type for the spell is force, and the spell's level is equal to your proficiency bonus. Once you use this ability a number of times equal to half your proficiency bonus (rounded down), you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "spirit-shot",
+          "name": "Spirit Shot",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "You have honed your Haki to imbue your ranged weapons with a potent burst of spirit energy.\n\nAs a bonus action, you can imbue a ranged weapon attack with your Haki. The next time you hit with that weapon, the attack deals an additional 2d8 force damage. The imbued weapon retains this energy until you hit a target or until 1 hour has passed. You can use this feature a number of times equal to your proficiency bonus, and regain all expended uses when you finish a long rest."
+        },
+        {
+          "id": "spirit-emission",
+          "name": "Spirit Emission",
+          "rarity": "Very Rare",
+          "prerequisite": null,
+          "text": "You concentrate your Haki into a potent beam of energy, piercing through multiple enemies.\n\nAs an action, you can fire a beam of energy in a line that is 60 feet long and 5 feet wide. Each creature in the line must make a Dexterity saving throw. A creature takes 10d6 force damage on a failed save, or half as much damage on a successful one. This beam penetrates through creatures and objects, potentially hitting multiple targets in its path. Once you use this ability, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "bullet-of-will",
+          "name": "Bullet of Will",
+          "rarity": "Very Rare",
+          "prerequisite": "Spirit Shot, Dexterity 13",
+          "text": "**Prerequisite:** Spirit Shot, Dexterity 13\n\nYour control over your Haki extends beyond your body, imbuing your ranged attacks with potent force.\n\nWhen you make a ranged attack, you can use a bonus action to imbue your projectile with your Haki, causing it to deal an additional 4d8 force damage on a hit. Furthermore, the attack has a maximum range of 600 feet with no disadvantage due to long-range. Once you use this ability, you can't use it again until you finish a short or long rest."
+        },
+        {
+          "id": "titan-s-grip",
+          "name": "Titan's Grip",
+          "rarity": "Very Rare",
+          "prerequisite": null,
+          "text": "Your spiritual force can now grip even the intangible, enabling you to grasp any attack and withstand its damage.\n\nAs a reaction, when you or a creature within 30 feet of you is targeted by a spell or ability that deals damage, you can use your Haki to intercept the attack. The damage is redirected to you, but you only take half damage (rounded down). Once you use this ability a number of times equal to half your proficiency bonus (rounded down), you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "blackened-fist-of-ruin",
+          "name": "Blackened Fist of Ruin",
+          "rarity": "Very Rare",
+          "prerequisite": "Spirit Blast, Dexterity 15 or Strength 15",
+          "text": "**Prerequisite:** Spirit Blast, Dexterity 15 or Strength 15\n\nYour spiritual energy can focus into a single devastating punch that shatters any defense.\n\nAs an action, you can make a single melee weapon attack against a creature within reach. If this attack hits, it deals an additional 10d10 force damage, and if the target is a creature, it must succeed on a Strength saving throw or be knocked back 30 feet and knocked prone. Once you use this ability, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "crippling-blast",
+          "name": "Crippling Blast",
+          "rarity": "Very Rare",
+          "prerequisite": "Spirit Blast",
+          "text": "**Prerequisite:** Spirit Blast\n\nYou enhance your ability to send bursts of energy through your attacks and can now physically destroy your enemies from the inside.\n\nWhen you use your Spirit Blast feature to deal extra damage to a creature, you deal an extra 1d8 force damage and force the target to make a Constitution saving throw. On a failed save, it has disadvantage on attack rolls and ability checks, and can’t take reactions, until the end of its next turn."
+        },
+        {
+          "id": "dark-armor",
+          "name": "Dark Armor",
+          "rarity": "Legendary",
+          "prerequisite": null,
+          "text": "You can create a nearly indestructible coat of Haki that guards you from all harm.\n\nAs an action, you can envelop yourself in a layer of super-dense Haki. For the next 10 minutes, you gain resistance to all types of damage except force, your Armor Class can't be less than 20, regardless of what kind of armor you are wearing, and you are immune to being grappled or restrained. Once you use this ability, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "galaxy-impact",
+          "name": "Galaxy Impact",
+          "rarity": "Legendary",
+          "prerequisite": "Dexterity 15 or Strength 15",
+          "text": "**Prerequisite:** Dexterity 15 or Strength 15\n\nYou have reached the pinnacle of Armament Haki, gaining the ability to impose your spirit's might on the world around you.\n\nAs an action, you can cause a burst of pure force to radiate from you. All creatures and objects within a 30-foot radius must make a Constitution saving throw against your Armament Haki save DC. On a failed save, a creature takes 10d10 force damage and is knocked prone. On a successful save, a creature takes half as much damage and isn't knocked prone. Unworn objects automatically fail their saving throw and take full damage. Once you use this feature, you cannot use it again until you finish a long rest."
+        },
+        {
+          "id": "element-infusion",
+          "name": "Element Infusion",
+          "rarity": "Legendary",
+          "prerequisite": "Weapon Hardening",
+          "text": "**Prerequisite:** Weapon Hardening\n\nYour understanding of elemental energies and spirit manipulation has evolved to such an extent that you can saturate your weapons with massive amounts of destructive force.\n\nWhen you activate your Weapon Hardening feature on a weapon you are using, you can choose to infuse it with a primal element, causing it to crackle with raw energy. Choose one of the following damage types: acid, cold, fire, lightning, or thunder.\n\nFor the duration of your Weapon Hardening, each of your successful attacks with the infused weapon deal an extra 5d6 damage of the chosen type. The extra damage applies to every successful hit, even if you make multiple attacks in a turn.\n\nIn addition, the weapon sheds bright light in a color corresponding to the chosen element in a 40-foot radius, and dim light for an additional 40 feet.\n\nOnce you use this feature, you cannot use it again until you finish a long rest."
+        },
+        {
+          "id": "abyssal-hole",
+          "name": "Abyssal Hole",
+          "rarity": "Legendary",
+          "prerequisite": "Spirit Blast, Dexterity 15 or Strength 15",
+          "text": "**Prerequisite:** Spirit Blast, Dexterity 15 or Strength 15\n\nYou've refined your Armament Haki to a point where you can channel both its overwhelming force and your intimidating spirit into a single destructive blow, capable of sending foes plummeting into an abyss.\n\nAs an action, you can make a melee attack against an opponent within reach. If the attack hits, you envelop your hand in concentrated Haki and smash your opponent into the ground, dealing 10d10 force damage and forcing them to make a Strength saving throw against your Armament Haki save DC. On a failed save, the enemy is sent crashing downwards 50 feet, taking any additional fall damage, and creating a gaping hole in the ground if the area is able to be destroyed, and is knocked prone and stunned until the end of its next turn.\n\nIf used on a surface not connected to a substantial amount of earth (such as the deck of a ship or a wooden floor), this ability will instead break through the surface and cause the enemy to fall through, dealing the same amount of force damage to any objects hit. \n\nOnce you use this feature, you cannot use it again until you finish a long rest."
+        },
+        {
+          "id": "permanent-black-weapon",
+          "name": "Permanent Black Weapon",
+          "rarity": "Legendary",
+          "prerequisite": "Weapon Hardening",
+          "text": "**Prerequisite:** Weapon Hardening\n\nYou coat a weapon with a permanent layer of dark energy that never leaves it.\n\nChoose a weapon that is separate from your body. You spend 1 hour infusing it with your spirit. It receives the bonuses from Weapon Hardening and is considered magical permanently or until you end it by spending 1 hour to remove it. Only one weapon can receive the benefits permanent infusion at a time, and it only receives the benefits from the Weapon Hardening advancement feature and no other additional haki advancement features that have been applied to it. If a creature other than you attempts to use this weapon, it must attune to the weapon to gain its benefits. You can still use Weapon Hardening normally on separate weapons while this infusion is active.\n\nYou can't use this feature again to create a permanently infused weapon until you finish a long rest."
+        },
+        {
+          "id": "thunderbolt-volley",
+          "name": "Thunderbolt Volley",
+          "rarity": "Legendary",
+          "prerequisite": "Spirit Shot, Dexterity 15",
+          "text": "**Prerequisite:** Spirit Shot, Dexterity 15\n\nYou have harnessed the strength of your spirit to such a degree that you can channel it into your ranged attacks, causing them to hit with the force of a thunderbolt.\n\nAs an action, select one target you can see within range of your chosen weapon. You fire a single shot imbued with your Haki, which splits into multiple thundering energy bolts mid-flight. Make a single weapon attack roll. On a hit, the target suffers the normal effects of the weapon attack, and it takes an additional 4d10 force damage.\n\nThen, up to six other targets of your choice that you can see within 30 feet of the original target each take force damage equal to the additional force damage roll.\n\nAfter the attack, the force of the unleashed energy causes a thunderous boom that is audible up to 600 feet.\n\nOnce you use this feature, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "divine-departure",
+          "name": "Divine Departure",
+          "rarity": "Legendary",
+          "prerequisite": "Spirit Blast, Dexterity 15 or Strength 15",
+          "text": "**Prerequisite:** Spirit Blast, Dexterity 15 or Strength 15\n\nYou have mastered the art of channeling your Haki into an explosive leap, propelling yourself towards your enemy and delivering a devastating blow.\n\nAs an action, you can choose a point you can see within 60 feet of you. You leap to that point, and you can make one melee attack against a creature within 5 feet of your landing spot. This attack is made with advantage, and if the attack hits, it deals an additional 4d10 force damage. The force from your landing also creates a shockwave that spreads out from the point of impact. All creatures within a 15-foot radius of your landing point must make a Dexterity saving throw. On a failed save, they take 3d10 force damage and are knocked prone. On a successful save, they take half as much damage and are not knocked prone.\n\nOnce you use this feature, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "king-s-conquest",
+          "name": "King's Conquest",
+          "rarity": "Legendary",
+          "prerequisite": "Qualities of a King, Weapon Hardening",
+          "text": "**Prerequisites:** Qualities of a King, Weapon Hardening\n\nThrough rigorous training and self-discovery, you have learned to manifest your Armament and King's Haki in their most potent form, transforming your weapon into an extension of your indomitable will.\n\nWhen you use your Weapon Hardening feature on a weapon you are currently wielding, you may choose to activate King's Conquest. For the next minute, your reach with that weapon increases by 10 feet. When you attack and hit a creature with this weapon, you can choose to push the creature up to 10 feet away from you, in addition to the attack's normal effects. The creature is also stunned until the start of your next turn, unless it succeeds on a Constitution saving throw against your Armament Haki save DC.\n\nMoreover, once per round on your turn when you hit a creature with the imbued weapon, you can choose to channel the full power of your Haki, dealing additional force damage equal to twice your Proficiency bonus + your Constitution modifier.\n\nOnce you use this ability, you can't use it again until you finish a long rest."
+        }
+      ]
+    },
+    {
+      "id": "color-of-observation",
+      "name": "Color of Observation",
+      "spellcastingAbility": "wis",
+      "description": "When deciding to advance your Color of Observation Haki during a Spirit Surge Event, you may choose any of the following features below. The rarity of the haki advancement feature you may choose is determined by the Spirit Surge Event.\n\n*In order to gain a Color of Observation Haki Advancement feature, you are required to have a minimum Wisdom score of 11 and meet any other prerequisites mentioned.*",
+      "notes": [
+        {
+          "name": "Observation Haki Spellcasting Ability",
+          "text": "Wisdom is your spellcasting ability for your Color of Observation spells, since the strength of this haki is determined by your perceptiveness and overall awareness. You use your Wisdom whenever an Observation Haki spell refers to your spellcasting ability. In addition, you use your Wisdom modifier when setting the saving throw DC for an observation haki spell you cast.\n\n**Observation Haki save DC** = 8 + your proficiency bonus + your Wisdom modifier\n\n**Observation Haki attack modifier** = your proficiency bonus + your Wisdom modifier\n\n### Vision of Light\n*Haki Advancement, Uncommon*\n\nBy enhancing your vision, you can now see through darkness more clearly, granting you Darkvision.\n\nYou can see in dim light within 120 feet of you as if it were bright light, and in darkness as if it were dim light. You can’t discern color in darkness, only Shades of Gray. \n\n### Aura Detection\n*Haki Advancement, Uncommon*\n\nYou begin to see auras that you can identify around magical objects and spell effects.\n\nYou can cast Detect Magic at will, without expending a spell slot or material components.\n\n### Predict Outcome\n*Haki Advancement, Uncommon*\n\nYou can see a tiny glimpse into the future to determine the potential negative outcome of a situation and avoid it.\n\nWhen you make an attack roll, an ability check, or a saving throw, you can choose to reroll the d20. You must reroll the die before the outcome of the initial roll is determined.\n\nAlternatively, when a creature you can see makes an attack against you or makes a saving throw against one of your spells or features, you can force that creature to reroll the attack roll or saving throw.\n\nIf the roll that triggers the reroll is made with advantage or disadvantage, both d20s are rerolled. Once you use this feature, you can’t use it again until you finish a long rest.\n\n### Spirit Sense\n*Haki Advancement, Uncommon*\n\nYou have trained your haki to feel the presence of beings who are invisible, hidden or disguised.\n\nAs an action, you can sense the presence of creatures you can't see within 60 feet of you, provided that you and the creature aren't separated by total cover. You can use this feature a number of times equal to your proficiency bonus. You regain all expended uses when you finish a long rest.\n\n### Predictive Strike\n*Haki Advancement, Uncommon*\n\nThrough honing your perception, you can predict your opponent's movements, turning their offense into an opportunity for counterattack.\n\nWhen a creature misses you with a melee attack, you can use your reaction to make a melee attack against the creature. You can use this feature a number of times equal to your proficiency bonus. You regain all expended uses when you finish a long rest.\n\n### Aura Reading\n*Haki Advancement, Uncommon*\n\nYou are able to detect the presence and potential threat level of dangerous creatures or hazards around you.\n\nYou can cast the Detect Poison and Disease or Detect Evil and Good spells, without expending a spell slot or material components. Once you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest.\n\n### Far Sight\n*Haki Advancement, Uncommon*\n\nYour observation haki allows you to perceive threats from a significant distance.\n\nAs a bonus action, you can extend your ranged weapon range for 1 minute or until you're incapacitated. The range of your ranged weapon attacks is doubled and you suffer no disadvantage for making ranged weapon attacks at long range for the duration. Once you use this ability, you can't use it again until you finish a long rest. \n\n### Echoing Shot\n*Haki Advancement, Uncommon*\n\nYou have learned to channel your Observation Haki into your ranged attacks, enabling your shots to curve mid-air.\n\nWhen you make a ranged weapon attack and miss, you can use your bonus action to reroll the attack against a different creature within range. The new attack ricochets off a solid surface, such as a wall or a ceiling, before heading towards the new target. You can use this feature a number of times equal to your proficiency bonus. You regain all expended uses when you finish a long rest.\n\n### X-Ray Vision\n*Haki Advancement, Rare*\n\nBy amplifying your vision with your spirit, you are able to see through physical objects.\n\nAs an action, you gain the ability to see through solid objects to a range of 30 feet. Within that range, you have darkvision if you don’t already have it. This special sight lasts for 1 minute or until your concentration ends (as if you were concentrating on a spell). During that time, you perceive objects as ghostly, transparent images.\n\nOnce you use this feature, you can’t use it again until you finish a short or long rest.\n\n### Aura Analysis\n*Haki Advancement, Rare*\n\n**Prerequisites:** Aura Reading\n\nBy further concentrating your focus onto creatures you can see, you can get a better read on them.\n\nWhen using Aura Reading, you also have the option to cast Detect Thoughts instead, without expending a spell slot or material components.\n\n### Echo of Futures Past\n*Haki Advancement, Rare*\n\nYou've honed your Observation Haki to a point where you can glimpse further into the future, anticipating your enemies' actions before they even occur.\n\nWhen you roll for initiative, you can choose to gain advantage on all your attack rolls until the end of your first turn. Additionally, you can take the Dodge action as a bonus action on your first turn.\n\n### Hawk's Gaze\n*Haki Advancement, Rare*\n\nYour Observation Haki gives you sight beyond sight, allowing you to spot distant threats and targets with ease.\n\nYou gain advantage on Wisdom (Perception) checks that rely on sight. In addition, you can make out details of even extremely distant creatures and objects as small as 2 feet across.\n\n### Empathic Resonance\n*Haki Advancement, Rare*\n\nYour heightened observational skills allow you to understand the emotional state of those around you.\n\nAs an action, you can focus your senses on any creatures you can see within 60 feet of you. You immediately learn each creature's emotional state and general intentions for their next action (such as attack, flee, or negotiate).\n\n### Echolocation\n*Haki Advancement, Rare*\n\nBy concentrating your Haki, you create a pulse that reverberates off nearby objects and creatures.\n\nAs an action, you can emit a pulse of energy that allows you to effectively \"see\" in all directions. For 1 minute, you gain blindsight out to a range of 30 feet. You can use this feature a number of times equal to your proficiency bonus, and regain all expended uses after a long rest.\n\n### Imminent Sense\n*Haki Advancement, Rare*\n\nYour ability to predict danger has reached new heights, allowing you to effectively dodge even the deadliest strikes.\n\nWhen you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.\n\n### Predictive Shot\n*Haki Advancement, Rare*\n\nYour haki allows you to predict the trajectory of your shots with uncanny precision, even accounting for the slightest movements of your target.\n\nOnce per turn when you make a ranged attack, you can choose to use this feature before the attack roll. The attack ignores cover and the target's Dexterity modifier to AC (if any) and critically hits on a roll of 19 or 20. On a hit, the attack deals an additional 2d6 of its damage type.\n\nOnce you use this feature, you can't use it again until you finish a short or long rest.\n\n### Soul Gaze\n*Haki Advancement, Very Rare*\n\n**Prerequisites:** Aura Reading\n\nYou've refined your Observation Haki to perceive the spirit and intentions of those around you.\n\nYou gain advantage on all Wisdom (Insight) checks, and you can use your action to learn specific aspects about a creature you can see. You learn the creature's current hit points, all its immunities, resistances, and vulnerabilities, and whether it has any spellcasting or supernatural abilities. The DM may also choose to share additional information with you.\n\n### Chronostasis\n*Haki Advancement, Very Rare*\n\nYou perceive time in a unique way, allowing you to analyze your surroundings and react to threats with greater precision.\n\nYou can take the 'Ready' action as a bonus action on your turn. The action you ready must be a melee or ranged attack.\n\n### Glimpse Into the Future\n*Haki Advancement, Very Rare*\n\n**Prerequisites:** Predict Outcome\n\nBy developing your sixth sense, you can see further into the future. \n\nWhen you finish a long rest, roll two d20s and record the numbers rolled. You can replace any attack roll, saving throw, or ability check made by you or a creature that you can see with one of these foretelling rolls. You must choose to do so before the roll, and you can replace a roll in this way only once per turn.\n\nEach foretelling roll can be used only once. When you finish a long rest, you lose any unused foretelling rolls.\n\nIf the Spirit Surge Event has a rarity higher than Very Rare, use these bonuses:\n\n**Legendary.** You roll three d20s instead.\n\n### Infinite Sight\n*Haki Advancement, Very Rare*\n\n**Prerequisites:** X-Ray Vision or Far Sight\n\nBy focusing your spiritual awareness on distant surroundings, you can focus on specific areas to see or hear targets from far away.\n\nYou can cast the Clairvoyance spell, without expending a spell slot or material components. You can't use this feature again until you finish a short or long rest.\n\n### Preemptive Strike\n*Haki Advancement, Very Rare*\n\nYour heightened observation skills allow you to react to threats with lightning speed, attacking before your enemy can even strike.\n\nAs a reaction when a creature you can see within range initiates an attack against you, you can make one weapon attack against the creature. If your attack hits, the creature's attack is cancelled and they lose their action. This feature doesn't prevent the creature from using a bonus action or reaction.\n\nYou can use this feature a number of times equal to your Wisdom modifier (minimum of once). You regain all expended uses when you finish a long rest.\n\n### Absolute Perception\n*Haki Advancement, Very Rare*\n\n**Prerequisites:** Echolocation\n\nYou can extend your senses to an uncanny degree, becoming aware of every detail in your surroundings.\n\nAs an action, you gain truesight and blindsight out to a range of 120 feet for 10 minutes. You can see in normal and magical darkness, see invisible creatures and objects, automatically detect visual illusions and succeed on saving throws against them, and perceive the original form of a shapechanger or a creature transformed by magic.\n\nOnce you use this feature, you can't use it again until you finish a long rest.\n\n### Traveling Gaze\n*Haki Advancement, Legendary*\n\n**Prerequisites:** Far Sight\n\nYour focus on distant surroundings has been permanently increased.\n\nYou can cast the Arcane Eye spell at will, without expending a spell slot or material components.\n\n### The Zone\n*Haki Advancement, Legendary*\n\n**Prerequisites:** Predict Outcome\n\nIn the heat of battle, you can enter a state of total spatial awareness and the ability to see clearly into the future for a prolonged period of time.\n\nYou can spend an action to center your focus around your sixth sense and gain the benefits of the Foresight spell for 1 minute. This effect ends early if you fall unconscious or end it as a bonus action.\n\nOnce you use this feature, you can’t use it again until you finish a long rest.\n\n### The Voice of All Things\n*Haki Advancement, Legendary*\n\n**Prerequisites:** Qualities of a King, Aura Detection or Aura Reading\n\nYou have learned to use your rare natural talent to tune into the wavelengths of all forms of communication in the world. \n\nYou can read and understand all languages, written or verbal, including any writing on poneglyphs. You can also cast the Speak With Animals spell at will, without expending a spell slot. When using this spell, you can communicate with all types of creatures in the same way you would be able to with a beast.\n\nAdditionally, you can speak telepathically with any creauture within 120 feet of you.\n\n### Aura of All Things\n*Haki Advancement, Legendary*\n\nYou can sense the aura of all life, land, and climate around you.\n\nYou can cast the Commune With Nature spell at will, without expending a spell slot or material components.\n\n### Clairvoyant Strike\n*Haki Advancement, Legendary*\n\nYour foresight enables you to strike where your enemies are most vulnerable.\n\nWhen you make an attack, you can declare it to be a clairvoyant strike. You can give yourself a +20 bonus to an attack roll you make. Once you use this feature, you can't use it again until you finish a short rest."
+        }
+      ],
+      "advancements": [
+        {
+          "id": "vision-of-light",
+          "name": "Vision of Light",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "By enhancing your vision, you can now see through darkness more clearly, granting you Darkvision.\n\nYou can see in dim light within 120 feet of you as if it were bright light, and in darkness as if it were dim light. You can’t discern color in darkness, only Shades of Gray."
+        },
+        {
+          "id": "aura-detection",
+          "name": "Aura Detection",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You begin to see auras that you can identify around magical objects and spell effects.\n\nYou can cast Detect Magic at will, without expending a spell slot or material components."
+        },
+        {
+          "id": "predict-outcome",
+          "name": "Predict Outcome",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You can see a tiny glimpse into the future to determine the potential negative outcome of a situation and avoid it.\n\nWhen you make an attack roll, an ability check, or a saving throw, you can choose to reroll the d20. You must reroll the die before the outcome of the initial roll is determined.\n\nAlternatively, when a creature you can see makes an attack against you or makes a saving throw against one of your spells or features, you can force that creature to reroll the attack roll or saving throw.\n\nIf the roll that triggers the reroll is made with advantage or disadvantage, both d20s are rerolled. Once you use this feature, you can’t use it again until you finish a long rest."
+        },
+        {
+          "id": "spirit-sense",
+          "name": "Spirit Sense",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You have trained your haki to feel the presence of beings who are invisible, hidden or disguised.\n\nAs an action, you can sense the presence of creatures you can't see within 60 feet of you, provided that you and the creature aren't separated by total cover. You can use this feature a number of times equal to your proficiency bonus. You regain all expended uses when you finish a long rest."
+        },
+        {
+          "id": "predictive-strike",
+          "name": "Predictive Strike",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "Through honing your perception, you can predict your opponent's movements, turning their offense into an opportunity for counterattack.\n\nWhen a creature misses you with a melee attack, you can use your reaction to make a melee attack against the creature. You can use this feature a number of times equal to your proficiency bonus. You regain all expended uses when you finish a long rest."
+        },
+        {
+          "id": "aura-reading",
+          "name": "Aura Reading",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You are able to detect the presence and potential threat level of dangerous creatures or hazards around you.\n\nYou can cast the Detect Poison and Disease or Detect Evil and Good spells, without expending a spell slot or material components. Once you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "far-sight",
+          "name": "Far Sight",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "Your observation haki allows you to perceive threats from a significant distance.\n\nAs a bonus action, you can extend your ranged weapon range for 1 minute or until you're incapacitated. The range of your ranged weapon attacks is doubled and you suffer no disadvantage for making ranged weapon attacks at long range for the duration. Once you use this ability, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "echoing-shot",
+          "name": "Echoing Shot",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You have learned to channel your Observation Haki into your ranged attacks, enabling your shots to curve mid-air.\n\nWhen you make a ranged weapon attack and miss, you can use your bonus action to reroll the attack against a different creature within range. The new attack ricochets off a solid surface, such as a wall or a ceiling, before heading towards the new target. You can use this feature a number of times equal to your proficiency bonus. You regain all expended uses when you finish a long rest."
+        },
+        {
+          "id": "x-ray-vision",
+          "name": "X-Ray Vision",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "By amplifying your vision with your spirit, you are able to see through physical objects.\n\nAs an action, you gain the ability to see through solid objects to a range of 30 feet. Within that range, you have darkvision if you don’t already have it. This special sight lasts for 1 minute or until your concentration ends (as if you were concentrating on a spell). During that time, you perceive objects as ghostly, transparent images.\n\nOnce you use this feature, you can’t use it again until you finish a short or long rest."
+        },
+        {
+          "id": "aura-analysis",
+          "name": "Aura Analysis",
+          "rarity": "Rare",
+          "prerequisite": "Aura Reading",
+          "text": "**Prerequisites:** Aura Reading\n\nBy further concentrating your focus onto creatures you can see, you can get a better read on them.\n\nWhen using Aura Reading, you also have the option to cast Detect Thoughts instead, without expending a spell slot or material components."
+        },
+        {
+          "id": "echo-of-futures-past",
+          "name": "Echo of Futures Past",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "You've honed your Observation Haki to a point where you can glimpse further into the future, anticipating your enemies' actions before they even occur.\n\nWhen you roll for initiative, you can choose to gain advantage on all your attack rolls until the end of your first turn. Additionally, you can take the Dodge action as a bonus action on your first turn."
+        },
+        {
+          "id": "hawk-s-gaze",
+          "name": "Hawk's Gaze",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "Your Observation Haki gives you sight beyond sight, allowing you to spot distant threats and targets with ease.\n\nYou gain advantage on Wisdom (Perception) checks that rely on sight. In addition, you can make out details of even extremely distant creatures and objects as small as 2 feet across."
+        },
+        {
+          "id": "empathic-resonance",
+          "name": "Empathic Resonance",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "Your heightened observational skills allow you to understand the emotional state of those around you.\n\nAs an action, you can focus your senses on any creatures you can see within 60 feet of you. You immediately learn each creature's emotional state and general intentions for their next action (such as attack, flee, or negotiate)."
+        },
+        {
+          "id": "echolocation",
+          "name": "Echolocation",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "By concentrating your Haki, you create a pulse that reverberates off nearby objects and creatures.\n\nAs an action, you can emit a pulse of energy that allows you to effectively \"see\" in all directions. For 1 minute, you gain blindsight out to a range of 30 feet. You can use this feature a number of times equal to your proficiency bonus, and regain all expended uses after a long rest."
+        },
+        {
+          "id": "imminent-sense",
+          "name": "Imminent Sense",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "Your ability to predict danger has reached new heights, allowing you to effectively dodge even the deadliest strikes.\n\nWhen you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail."
+        },
+        {
+          "id": "predictive-shot",
+          "name": "Predictive Shot",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "Your haki allows you to predict the trajectory of your shots with uncanny precision, even accounting for the slightest movements of your target.\n\nOnce per turn when you make a ranged attack, you can choose to use this feature before the attack roll. The attack ignores cover and the target's Dexterity modifier to AC (if any) and critically hits on a roll of 19 or 20. On a hit, the attack deals an additional 2d6 of its damage type.\n\nOnce you use this feature, you can't use it again until you finish a short or long rest."
+        },
+        {
+          "id": "soul-gaze",
+          "name": "Soul Gaze",
+          "rarity": "Very Rare",
+          "prerequisite": "Aura Reading",
+          "text": "**Prerequisites:** Aura Reading\n\nYou've refined your Observation Haki to perceive the spirit and intentions of those around you.\n\nYou gain advantage on all Wisdom (Insight) checks, and you can use your action to learn specific aspects about a creature you can see. You learn the creature's current hit points, all its immunities, resistances, and vulnerabilities, and whether it has any spellcasting or supernatural abilities. The DM may also choose to share additional information with you."
+        },
+        {
+          "id": "chronostasis",
+          "name": "Chronostasis",
+          "rarity": "Very Rare",
+          "prerequisite": null,
+          "text": "You perceive time in a unique way, allowing you to analyze your surroundings and react to threats with greater precision.\n\nYou can take the 'Ready' action as a bonus action on your turn. The action you ready must be a melee or ranged attack."
+        },
+        {
+          "id": "glimpse-into-the-future",
+          "name": "Glimpse Into the Future",
+          "rarity": "Very Rare",
+          "prerequisite": "Predict Outcome",
+          "text": "**Prerequisites:** Predict Outcome\n\nBy developing your sixth sense, you can see further into the future. \n\nWhen you finish a long rest, roll two d20s and record the numbers rolled. You can replace any attack roll, saving throw, or ability check made by you or a creature that you can see with one of these foretelling rolls. You must choose to do so before the roll, and you can replace a roll in this way only once per turn.\n\nEach foretelling roll can be used only once. When you finish a long rest, you lose any unused foretelling rolls.\n\nIf the Spirit Surge Event has a rarity higher than Very Rare, use these bonuses:\n\n**Legendary.** You roll three d20s instead."
+        },
+        {
+          "id": "infinite-sight",
+          "name": "Infinite Sight",
+          "rarity": "Very Rare",
+          "prerequisite": "X-Ray Vision or Far Sight",
+          "text": "**Prerequisites:** X-Ray Vision or Far Sight\n\nBy focusing your spiritual awareness on distant surroundings, you can focus on specific areas to see or hear targets from far away.\n\nYou can cast the Clairvoyance spell, without expending a spell slot or material components. You can't use this feature again until you finish a short or long rest."
+        },
+        {
+          "id": "preemptive-strike",
+          "name": "Preemptive Strike",
+          "rarity": "Very Rare",
+          "prerequisite": null,
+          "text": "Your heightened observation skills allow you to react to threats with lightning speed, attacking before your enemy can even strike.\n\nAs a reaction when a creature you can see within range initiates an attack against you, you can make one weapon attack against the creature. If your attack hits, the creature's attack is cancelled and they lose their action. This feature doesn't prevent the creature from using a bonus action or reaction.\n\nYou can use this feature a number of times equal to your Wisdom modifier (minimum of once). You regain all expended uses when you finish a long rest."
+        },
+        {
+          "id": "absolute-perception",
+          "name": "Absolute Perception",
+          "rarity": "Very Rare",
+          "prerequisite": "Echolocation",
+          "text": "**Prerequisites:** Echolocation\n\nYou can extend your senses to an uncanny degree, becoming aware of every detail in your surroundings.\n\nAs an action, you gain truesight and blindsight out to a range of 120 feet for 10 minutes. You can see in normal and magical darkness, see invisible creatures and objects, automatically detect visual illusions and succeed on saving throws against them, and perceive the original form of a shapechanger or a creature transformed by magic.\n\nOnce you use this feature, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "traveling-gaze",
+          "name": "Traveling Gaze",
+          "rarity": "Legendary",
+          "prerequisite": "Far Sight",
+          "text": "**Prerequisites:** Far Sight\n\nYour focus on distant surroundings has been permanently increased.\n\nYou can cast the Arcane Eye spell at will, without expending a spell slot or material components."
+        },
+        {
+          "id": "the-zone",
+          "name": "The Zone",
+          "rarity": "Legendary",
+          "prerequisite": "Predict Outcome",
+          "text": "**Prerequisites:** Predict Outcome\n\nIn the heat of battle, you can enter a state of total spatial awareness and the ability to see clearly into the future for a prolonged period of time.\n\nYou can spend an action to center your focus around your sixth sense and gain the benefits of the Foresight spell for 1 minute. This effect ends early if you fall unconscious or end it as a bonus action.\n\nOnce you use this feature, you can’t use it again until you finish a long rest."
+        },
+        {
+          "id": "the-voice-of-all-things",
+          "name": "The Voice of All Things",
+          "rarity": "Legendary",
+          "prerequisite": "Qualities of a King, Aura Detection or Aura Reading",
+          "text": "**Prerequisites:** Qualities of a King, Aura Detection or Aura Reading\n\nYou have learned to use your rare natural talent to tune into the wavelengths of all forms of communication in the world. \n\nYou can read and understand all languages, written or verbal, including any writing on poneglyphs. You can also cast the Speak With Animals spell at will, without expending a spell slot. When using this spell, you can communicate with all types of creatures in the same way you would be able to with a beast.\n\nAdditionally, you can speak telepathically with any creauture within 120 feet of you."
+        },
+        {
+          "id": "aura-of-all-things",
+          "name": "Aura of All Things",
+          "rarity": "Legendary",
+          "prerequisite": null,
+          "text": "You can sense the aura of all life, land, and climate around you.\n\nYou can cast the Commune With Nature spell at will, without expending a spell slot or material components."
+        },
+        {
+          "id": "clairvoyant-strike",
+          "name": "Clairvoyant Strike",
+          "rarity": "Legendary",
+          "prerequisite": null,
+          "text": "Your foresight enables you to strike where your enemies are most vulnerable.\n\nWhen you make an attack, you can declare it to be a clairvoyant strike. You can give yourself a +20 bonus to an attack roll you make. Once you use this feature, you can't use it again until you finish a short rest."
+        }
+      ]
+    },
+    {
+      "id": "color-of-the-supreme-king",
+      "name": "Color of the Supreme King",
+      "spellcastingAbility": "cha",
+      "description": "When deciding to advance your Color of the Supreme King Haki during a Spirit Surge Event, you may choose any of the following features below. The rarity of the haki advancement feature you may choose is determined by the Spirit Surge Event.\n\n*In order to gain a King's Haki Advancement feature, you are required to have \"Qualities of a King\" (see below), have a minimum Charisma score of 11, and meet any other prerequisites mentioned.*",
+      "notes": [
+        {
+          "name": "Qualities of a King",
+          "text": "To determine if you are born with the rare ability to awaken King's Haki, you must roll a d20 before or during character creation. If the result is 20, you are born with this gift. \n\nAlternatively, the DM may choose to permit certain player characters or NPCs to use King's Haki without needing to roll, or simply allow the entire group to use it by default."
+        },
+        {
+          "name": "King's Haki Spellcasting Ability",
+          "text": "Charisma is your spellcasting ability for your Color of the Supreme King spells, since the strength of this haki is determined by your ability to assert your will and authority onto others. You use your Charisma whenever a King's Haki spell refers to your spellcasting ability. In addition, you use your Charisma modifier when setting the saving throw DC for an King's Haki spell you cast.\n\n**King's Haki save DC** = 8 + your proficiency bonus + your Charisma modifier\n\n**King's Haki attack modifier** = your proficiency bonus + your Charisma modifier\n\n### Voice of Influence\n*King's Haki Advancement, Uncommon*\n\nBeing born with qualities of a king, you find it easy to spread your ideas to others and influence their behavior.\n\nYou gain proficiency in the Deception and Persuasion skills. You can cast the Charm Person spell, without expending a spell slot or material components. Once you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest.\n\n### Lord's Demand\nKing's Haki Advancement, Uncommon\n\nYour haki-infused words compel obedience, manipulating others into doing your bidding.\n\nAs an action, you can speak a command to a creature you can see within 60 feet of you. The command must be a sentence of no more than ten words. The target must succeed on a Wisdom saving throw or follow the command on its next turn to the best of its ability. Once you use this feature, you can't use it again until you finish a short or long rest.\n\n### King's Resolve\n*King's Haki Advancement, Uncommon*\n\nYour indomitable spirit can overcome even the most dire circumstances.\n\nAs a reaction when you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. Once you use this ability, you can't use it again until you finish a long rest.\n\n### Roar of the Monarch\n*King's Haki Advancement, Uncommon*\n\nYour powerful will resonates through your voice, making it a weapon on its own.\n\nAs an action, you can release a thunderous yell. Each creature within a 15-foot cone must make a Constitution saving throw or be deafened and stunned until the end of your next turn. Once you use this feature, you can't use it again until you finish a long rest.\n\n### Frightening Gaze\n*King's Haki Advancement, Uncommon*\n\nBy exerting your willpower, other creatures may be overwhelmed by a feeling of helplessness when standing before you.\n\nYou gain proficiency in the Intimidation skill. You can cast the Cause Fear spell, without expending a spell slot or material components. Once you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest.\n\n### King's Companion\n*King's Haki Advancement, Uncommon*\n\nYou are able to influence the souls of tiny magical spirits around you, gaining their assistance and occasional servitude.\n\nYou can cast the Find Familiar spell as a ritual without using any material components. The familiar must take on one of the stat blocks listed by the spell, but can appear as any tiny creature you desire, perhaps representing your spirit animal.\n\nAdditionally, when you take the Attack action on your turn, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction.\n\n### Leader of the Animal Kingdom\n*King's Haki Advancement, Rare*\n\nThrough becoming familiar with various beasts and monsters, you have learned to pacify or influence them with your overwhelming charisma.\n\nYou can cast the Animal Friendship spell at will, without expending a spell slot or material components.\n\nYou can also cast the Charm Monster spell, without expending a spell slot. You can't use this spell again until you finish a short or long rest.\n\n### King's Radiance\n*King's Haki Advancement, Rare*\n\nYour spirit's energy radiates from you, making it difficult for enemies to approach.\n\nAs an action, you can cause a burst of Haki energy to radiate from you for an extended duration. For 1 minute or until your fall unconscious, you emit a 15-foot radius of bright light, and when the creature enters the area for the first time on a turn or starts its turn there, it must make a Wisdom saving throw against your King's Haki save DC. On a failed save, a creature takes 2d8 psychic damage and falls prone. On a successful save, it takes half as much damage and doesn't fall prone. You must also concentrate on this ability as if it were a spell. Once you use this feature, you can't use it again until you finish a long rest.\n\n### Command the Battlefield\n*King's Haki Advancement, Rare*\n\nYour King's Haki is so potent that it affects the battlefield, tipping the scales in your favor.\n\nAs an action, you can issue a command that affects the terrain in a 60-foot radius centered on you for 1 minute. The effect is determined by the command you choose:\n\n* Hold: The ground becomes difficult terrain for your enemies.\n* Fall: Small fissures appear, causing your enemies to have disadvantage on Dexterity saving throws.\n* Rise: Small walls of earth provide cover for you and your allies, giving half cover.\n\nFor the duration of this ability, you may spend an additional action during your turn to change the current command to a different one. Once the duration ends, you can't use this feature again until you finis a long rest.\n\n### King's Wrath\n*King's Haki Advancement, Rare*\n\nThe sheer force of your kingly spirit is enough to harm those who oppose you.\n\nAs an action, you can unleash a burst of spiritual energy. Each creature of your choice within a 20-foot radius centered on you must make a Constitution saving throw against your King's Haki save DC. On a failed save, a creature takes 2d10 psychic damage and is stunned until the end of your next turn. On a successful save, a creature takes half as much damage and isn't stunned. Once you use this feature, you can't use it again until you finish a long rest.\n\n### Supreme Terror\n*King's Haki Advancement, Rare*\n\nYou exert your powerful spirit, inciting an overwhelming sense of fear in those who dare oppose you.\n\nAs an action, you can force all creatures of your choice within a 60-foot radius of you to make a Wisdom saving throw against your King's Haki save DC. On a failed save, the creature is frightened of you for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to your Supreme Terror for the next 24 hours.\n\nOnce you use this feature, you can't use it again until you finish a long rest.\n\n### Resonating Presence\n*King's Haki Advancement, Very Rare*\n\nYour spirit resonates with such intensity that it physically manifests, influencing the world around you.\n\nAs an action, you can activate this feature to create a visible aura around yourself for 1 minute. The aura extends 15 feet from you in all directions, but not through total cover.\n\nWhenever a hostile creature starts its turn in the aura, it must make a Wisdom saving throw. On a failed save, the creature is stunned until the start of its next turn as it's overwhelmed by your presence. On a successful save, the creature is not stunned and is immune to your aura for the next 24 hours.\n\nOnce you use this feature, you can't use it again until you finish a long rest.\n\n### Sovereign's Resolve\n*King's Haki Advancement, Very Rare*\n\nYour willpower is so profound that it acts as a bulwark against mental intrusions and manipulation.\n\nYou have advantage on saving throws against spells and effects that would charm, frighten, or possess you. Moreover, if you succeed on a saving throw against such a spell or effect, the creature who cast the spell or caused the effect must make a Wisdom saving throw against your King's Haki save DC or be frightened of you for 1 minute.\n\n### Willpower Ravage\n*King's Haki Advancement, Very Rare*\n\nBy focusing all of your willpower and spirit onto a single creature within range, you are able to cripple its mind and soul, including the soul of the devil inside it if it is a Devil Fruit user.\n\nYou can cast the Phantasmal Killer spell, without expending a spell slot. While a creature is influenced by this spell on a failed save using this feature, it is unable to use Devil Fruit abilities, spells, or forms until the spell ends. Any Devil Fruit spells that use concentration and any Devil Fruit forms or abilities the creature has active are also ended early. You can't use this feature again until you finish a long rest.\n\n### Dread Sovereign's Roar\n*King's Haki Advancement, Very Rare*\n\n**Prerequisites:** Supreme Terror\n\nWith a shout imbued with the force of your indomitable spirit, you evoke primal fear in those who dare to oppose you.\n\nAs an action, you can unleash a powerful roar that resonates with your King's Haki. Each creature of your choice within 120 feet of you that can hear you must succeed on a Wisdom saving throw against your King's Haki save DC or become frightened of you for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.\n\nIn addition, a creature that fails its saving throw by 5 or more falls prone and is paralyzed with fear until the end of its next turn. A creature immune to being frightened automatically succeeds.\n\nOnce you use this ability, you can't use it again until you finish a long rest.\n\n### Observation Killer\n*King's Haki Advancement, Very Rare*\n\nYour supreme will creates an aura that confuses and disorients the senses of others, effectively countering their Observation Haki.\n\nAs a bonus action, you can create a 30-foot radius aura centered on you that lasts for 1 minute or until you're incapacitated. While you are within this aura, any creature other than you that relies on Observation Haki to gain information or to enhance their abilities is negated if they try to affect another creature or space in this aura. Additionally, they cannot use any features, advantages, or spells that require or benefit from Observation Haki against a creature in this aura.\n\nCreatures of your choice with the Color of Observation haki features that try to use an Observation Haki ability from within the aura must make a Wisdom saving throw against your King's Haki save DC. On a failed save, they are disoriented and can't use observation haki abilities and take disadvantage on attack rolls, ability checks, and saving throws until the start of their next turn.\n\nOnce you use this ability, you can't use it again until you finish a long rest. \n\n### Conqueror's Bulwark\n*King's Haki Advancement, Legendary*\n\nYou can fortify not just yourself, but also your allies against the crushing force of other conquerors. Your indomitable spirit stands as a testament of your unyielding resolve.\n\nAfter taking this feat, you are immune to the frightened condition. You are also immune to any effects that can incapacitate or stun you by means of Conqueror's Haki.\n\nMoreover, as an action, you can extend this powerful protection to your comrades. All allied creatures within a 60-foot radius of you gain immunity to the frightened condition and cannot be incapacitated or stunned by Conqueror's Haki. This effect lasts for 1 hour.\n\nOnce you use this ability, you can't use it again until you finish a long rest.\n\n### Overpower Devil Fruit Effects\n*King's Haki Advancement, Legendary*\n\nYou are able to nullify any active devil fruit effects by breaking them with your willpower.\n\nYou can cast the Dispel Magic spell at will, without expending a spell slot. This only works on active spells or effects caused or created by Devil Fruit powers.\n\n### Unyielding Conqueror's Wrath\nKing's Haki Advancement, Legendary\n\nThe sheer force of your indomitable spirit is a deadly tempest that can devastate those who oppose you.\n\nAs an action, you can release an all-consuming wave of pure willpower that resonates from your very core. All creatures within a 120-foot radius must make a Constitution saving throw against your King's Haki save DC. On a failed save, a creature takes 10d10 force damage, is knocked prone, and is stunned until the end of your next turn. On a successful save, a creature takes half as much damage and isn't knocked prone or stunned. Creatures with an Intelligence score of 3 or lower automatically fail their saving throw.\n\nStructures within the area of effect take twice the damage, and the force of your will can create a massive crater in the landscape, a testament to your potent and unstoppable spirit.\n\nOnce you use this ability, you can't use it again until you finish a long rest.\n\n### Complete Willpower Domination\n*King's Haki Advancement, Legendary*\n\nYour ability to influence other creatures has been mastered to such a degree that you can completely control their very souls.\n\nYou can cast the Dominate Monster spell, without expending a spell slot. You can't use this feature again until you finish a long rest.\n\n### Lord's Mirror\n*King's Haki Advancement, Legendary*\n\nYour strong spirit can be used to deflect harmful effects back to their origin. When you succeed on a saving throw against a spell or other harmful effect that targets only you (not an area effect), you can use your reaction to force the originator to make a saving throw using the same DC. On a failure, the originator is affected by the spell or effect as if they were the original target. After using this feature, you must finish a long rest before using it again.\n\n### Conqueror's Maelstrom\n*King's Haki Advancement, Legendary*\n\n**Prerequisites:** Dread Sovereign's Roar or Resonating Presence\n\nYour will is a force of nature, an untamed storm that can bring even the skies to submission. Your potent Haki can resonate with the atmosphere itself, causing the elements to dance to the rhythm of your spirit.\n\nAs an action, you can choose to unleash the full might of your Haki, creating a spectacular atmospheric phenomenon known as a Conqueror's Maelstrom. A column of vibrant azure splits the sky directly above you, creating a heavenly chasm that can be seen for miles around. This imposing rift lasts for an hour, if you fall unconscious, or until you choose to dispel it (no action required).\n\nThis monumental shift in the atmosphere carries with it the following potent effects:\n\n* Authority of the Skies: Every creature within a 1-mile radius that can see the sky becomes instinctively aware of your imposing presence and your exact location. The sight of the split sky leaves an indelible impression of your might, potentially changing attitudes of creatures toward you at the DM's discretion.\n\n* Stormbinder's Will: You gain control over the weather in a 1-mile radius centered on you. As an action, you can change the weather conditions: from stormy to calm, from calm to a tempest, or create specific meteorological phenomena such as rain, snow, or dense fog. These conditions persist for the duration and revert to their previous state when the Conqueror's Maelstrom ends.\n\n* Shockwave of Supremacy: While Conqueror's Maelstrom is active, you can send forth a powerful shockwave of your haki as an action. Each creature of your choice that you can see within 300 feet of you must succeed on a Wisdom saving throw against your King's Haki save DC or be frightened until the end of your next turn. On a failure by 5 or more, a creature is also stunned until the end of your next turn, overwhelmed by the sheer might of your will.\n\nOnce you use this feature, you can't use it again until you finish a long rest."
+        }
+      ],
+      "advancements": [
+        {
+          "id": "voice-of-influence",
+          "name": "Voice of Influence",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "Being born with qualities of a king, you find it easy to spread your ideas to others and influence their behavior.\n\nYou gain proficiency in the Deception and Persuasion skills. You can cast the Charm Person spell, without expending a spell slot or material components. Once you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "lord-s-demand",
+          "name": "Lord's Demand",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "Your haki-infused words compel obedience, manipulating others into doing your bidding.\n\nAs an action, you can speak a command to a creature you can see within 60 feet of you. The command must be a sentence of no more than ten words. The target must succeed on a Wisdom saving throw or follow the command on its next turn to the best of its ability. Once you use this feature, you can't use it again until you finish a short or long rest."
+        },
+        {
+          "id": "king-s-resolve",
+          "name": "King's Resolve",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "Your indomitable spirit can overcome even the most dire circumstances.\n\nAs a reaction when you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. Once you use this ability, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "roar-of-the-monarch",
+          "name": "Roar of the Monarch",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "Your powerful will resonates through your voice, making it a weapon on its own.\n\nAs an action, you can release a thunderous yell. Each creature within a 15-foot cone must make a Constitution saving throw or be deafened and stunned until the end of your next turn. Once you use this feature, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "frightening-gaze",
+          "name": "Frightening Gaze",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "By exerting your willpower, other creatures may be overwhelmed by a feeling of helplessness when standing before you.\n\nYou gain proficiency in the Intimidation skill. You can cast the Cause Fear spell, without expending a spell slot or material components. Once you use this ability a number of times equal to your proficiency bonus, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "king-s-companion",
+          "name": "King's Companion",
+          "rarity": "Uncommon",
+          "prerequisite": null,
+          "text": "You are able to influence the souls of tiny magical spirits around you, gaining their assistance and occasional servitude.\n\nYou can cast the Find Familiar spell as a ritual without using any material components. The familiar must take on one of the stat blocks listed by the spell, but can appear as any tiny creature you desire, perhaps representing your spirit animal.\n\nAdditionally, when you take the Attack action on your turn, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction."
+        },
+        {
+          "id": "leader-of-the-animal-kingdom",
+          "name": "Leader of the Animal Kingdom",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "Through becoming familiar with various beasts and monsters, you have learned to pacify or influence them with your overwhelming charisma.\n\nYou can cast the Animal Friendship spell at will, without expending a spell slot or material components.\n\nYou can also cast the Charm Monster spell, without expending a spell slot. You can't use this spell again until you finish a short or long rest."
+        },
+        {
+          "id": "king-s-radiance",
+          "name": "King's Radiance",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "Your spirit's energy radiates from you, making it difficult for enemies to approach.\n\nAs an action, you can cause a burst of Haki energy to radiate from you for an extended duration. For 1 minute or until your fall unconscious, you emit a 15-foot radius of bright light, and when the creature enters the area for the first time on a turn or starts its turn there, it must make a Wisdom saving throw against your King's Haki save DC. On a failed save, a creature takes 2d8 psychic damage and falls prone. On a successful save, it takes half as much damage and doesn't fall prone. You must also concentrate on this ability as if it were a spell. Once you use this feature, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "command-the-battlefield",
+          "name": "Command the Battlefield",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "Your King's Haki is so potent that it affects the battlefield, tipping the scales in your favor.\n\nAs an action, you can issue a command that affects the terrain in a 60-foot radius centered on you for 1 minute. The effect is determined by the command you choose:\n\n* Hold: The ground becomes difficult terrain for your enemies.\n* Fall: Small fissures appear, causing your enemies to have disadvantage on Dexterity saving throws.\n* Rise: Small walls of earth provide cover for you and your allies, giving half cover.\n\nFor the duration of this ability, you may spend an additional action during your turn to change the current command to a different one. Once the duration ends, you can't use this feature again until you finis a long rest."
+        },
+        {
+          "id": "king-s-wrath",
+          "name": "King's Wrath",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "The sheer force of your kingly spirit is enough to harm those who oppose you.\n\nAs an action, you can unleash a burst of spiritual energy. Each creature of your choice within a 20-foot radius centered on you must make a Constitution saving throw against your King's Haki save DC. On a failed save, a creature takes 2d10 psychic damage and is stunned until the end of your next turn. On a successful save, a creature takes half as much damage and isn't stunned. Once you use this feature, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "supreme-terror",
+          "name": "Supreme Terror",
+          "rarity": "Rare",
+          "prerequisite": null,
+          "text": "You exert your powerful spirit, inciting an overwhelming sense of fear in those who dare oppose you.\n\nAs an action, you can force all creatures of your choice within a 60-foot radius of you to make a Wisdom saving throw against your King's Haki save DC. On a failed save, the creature is frightened of you for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to your Supreme Terror for the next 24 hours.\n\nOnce you use this feature, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "resonating-presence",
+          "name": "Resonating Presence",
+          "rarity": "Very Rare",
+          "prerequisite": null,
+          "text": "Your spirit resonates with such intensity that it physically manifests, influencing the world around you.\n\nAs an action, you can activate this feature to create a visible aura around yourself for 1 minute. The aura extends 15 feet from you in all directions, but not through total cover.\n\nWhenever a hostile creature starts its turn in the aura, it must make a Wisdom saving throw. On a failed save, the creature is stunned until the start of its next turn as it's overwhelmed by your presence. On a successful save, the creature is not stunned and is immune to your aura for the next 24 hours.\n\nOnce you use this feature, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "sovereign-s-resolve",
+          "name": "Sovereign's Resolve",
+          "rarity": "Very Rare",
+          "prerequisite": null,
+          "text": "Your willpower is so profound that it acts as a bulwark against mental intrusions and manipulation.\n\nYou have advantage on saving throws against spells and effects that would charm, frighten, or possess you. Moreover, if you succeed on a saving throw against such a spell or effect, the creature who cast the spell or caused the effect must make a Wisdom saving throw against your King's Haki save DC or be frightened of you for 1 minute."
+        },
+        {
+          "id": "willpower-ravage",
+          "name": "Willpower Ravage",
+          "rarity": "Very Rare",
+          "prerequisite": null,
+          "text": "By focusing all of your willpower and spirit onto a single creature within range, you are able to cripple its mind and soul, including the soul of the devil inside it if it is a Devil Fruit user.\n\nYou can cast the Phantasmal Killer spell, without expending a spell slot. While a creature is influenced by this spell on a failed save using this feature, it is unable to use Devil Fruit abilities, spells, or forms until the spell ends. Any Devil Fruit spells that use concentration and any Devil Fruit forms or abilities the creature has active are also ended early. You can't use this feature again until you finish a long rest."
+        },
+        {
+          "id": "dread-sovereign-s-roar",
+          "name": "Dread Sovereign's Roar",
+          "rarity": "Very Rare",
+          "prerequisite": "Supreme Terror",
+          "text": "**Prerequisites:** Supreme Terror\n\nWith a shout imbued with the force of your indomitable spirit, you evoke primal fear in those who dare to oppose you.\n\nAs an action, you can unleash a powerful roar that resonates with your King's Haki. Each creature of your choice within 120 feet of you that can hear you must succeed on a Wisdom saving throw against your King's Haki save DC or become frightened of you for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.\n\nIn addition, a creature that fails its saving throw by 5 or more falls prone and is paralyzed with fear until the end of its next turn. A creature immune to being frightened automatically succeeds.\n\nOnce you use this ability, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "observation-killer",
+          "name": "Observation Killer",
+          "rarity": "Very Rare",
+          "prerequisite": null,
+          "text": "Your supreme will creates an aura that confuses and disorients the senses of others, effectively countering their Observation Haki.\n\nAs a bonus action, you can create a 30-foot radius aura centered on you that lasts for 1 minute or until you're incapacitated. While you are within this aura, any creature other than you that relies on Observation Haki to gain information or to enhance their abilities is negated if they try to affect another creature or space in this aura. Additionally, they cannot use any features, advantages, or spells that require or benefit from Observation Haki against a creature in this aura.\n\nCreatures of your choice with the Color of Observation haki features that try to use an Observation Haki ability from within the aura must make a Wisdom saving throw against your King's Haki save DC. On a failed save, they are disoriented and can't use observation haki abilities and take disadvantage on attack rolls, ability checks, and saving throws until the start of their next turn.\n\nOnce you use this ability, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "conqueror-s-bulwark",
+          "name": "Conqueror's Bulwark",
+          "rarity": "Legendary",
+          "prerequisite": null,
+          "text": "You can fortify not just yourself, but also your allies against the crushing force of other conquerors. Your indomitable spirit stands as a testament of your unyielding resolve.\n\nAfter taking this feat, you are immune to the frightened condition. You are also immune to any effects that can incapacitate or stun you by means of Conqueror's Haki.\n\nMoreover, as an action, you can extend this powerful protection to your comrades. All allied creatures within a 60-foot radius of you gain immunity to the frightened condition and cannot be incapacitated or stunned by Conqueror's Haki. This effect lasts for 1 hour.\n\nOnce you use this ability, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "overpower-devil-fruit-effects",
+          "name": "Overpower Devil Fruit Effects",
+          "rarity": "Legendary",
+          "prerequisite": null,
+          "text": "You are able to nullify any active devil fruit effects by breaking them with your willpower.\n\nYou can cast the Dispel Magic spell at will, without expending a spell slot. This only works on active spells or effects caused or created by Devil Fruit powers."
+        },
+        {
+          "id": "unyielding-conqueror-s-wrath",
+          "name": "Unyielding Conqueror's Wrath",
+          "rarity": "Legendary",
+          "prerequisite": null,
+          "text": "The sheer force of your indomitable spirit is a deadly tempest that can devastate those who oppose you.\n\nAs an action, you can release an all-consuming wave of pure willpower that resonates from your very core. All creatures within a 120-foot radius must make a Constitution saving throw against your King's Haki save DC. On a failed save, a creature takes 10d10 force damage, is knocked prone, and is stunned until the end of your next turn. On a successful save, a creature takes half as much damage and isn't knocked prone or stunned. Creatures with an Intelligence score of 3 or lower automatically fail their saving throw.\n\nStructures within the area of effect take twice the damage, and the force of your will can create a massive crater in the landscape, a testament to your potent and unstoppable spirit.\n\nOnce you use this ability, you can't use it again until you finish a long rest."
+        },
+        {
+          "id": "complete-willpower-domination",
+          "name": "Complete Willpower Domination",
+          "rarity": "Legendary",
+          "prerequisite": null,
+          "text": "Your ability to influence other creatures has been mastered to such a degree that you can completely control their very souls.\n\nYou can cast the Dominate Monster spell, without expending a spell slot. You can't use this feature again until you finish a long rest."
+        },
+        {
+          "id": "lord-s-mirror",
+          "name": "Lord's Mirror",
+          "rarity": "Legendary",
+          "prerequisite": null,
+          "text": "Your strong spirit can be used to deflect harmful effects back to their origin. When you succeed on a saving throw against a spell or other harmful effect that targets only you (not an area effect), you can use your reaction to force the originator to make a saving throw using the same DC. On a failure, the originator is affected by the spell or effect as if they were the original target. After using this feature, you must finish a long rest before using it again."
+        },
+        {
+          "id": "conqueror-s-maelstrom",
+          "name": "Conqueror's Maelstrom",
+          "rarity": "Legendary",
+          "prerequisite": "Dread Sovereign's Roar or Resonating Presence",
+          "text": "**Prerequisites:** Dread Sovereign's Roar or Resonating Presence\n\nYour will is a force of nature, an untamed storm that can bring even the skies to submission. Your potent Haki can resonate with the atmosphere itself, causing the elements to dance to the rhythm of your spirit.\n\nAs an action, you can choose to unleash the full might of your Haki, creating a spectacular atmospheric phenomenon known as a Conqueror's Maelstrom. A column of vibrant azure splits the sky directly above you, creating a heavenly chasm that can be seen for miles around. This imposing rift lasts for an hour, if you fall unconscious, or until you choose to dispel it (no action required).\n\nThis monumental shift in the atmosphere carries with it the following potent effects:\n\n* Authority of the Skies: Every creature within a 1-mile radius that can see the sky becomes instinctively aware of your imposing presence and your exact location. The sight of the split sky leaves an indelible impression of your might, potentially changing attitudes of creatures toward you at the DM's discretion.\n\n* Stormbinder's Will: You gain control over the weather in a 1-mile radius centered on you. As an action, you can change the weather conditions: from stormy to calm, from calm to a tempest, or create specific meteorological phenomena such as rain, snow, or dense fog. These conditions persist for the duration and revert to their previous state when the Conqueror's Maelstrom ends.\n\n* Shockwave of Supremacy: While Conqueror's Maelstrom is active, you can send forth a powerful shockwave of your haki as an action. Each creature of your choice that you can see within 300 feet of you must succeed on a Wisdom saving throw against your King's Haki save DC or be frightened until the end of your next turn. On a failure by 5 or more, a creature is also stunned until the end of your next turn, overwhelmed by the sheer might of your will.\n\nOnce you use this feature, you can't use it again until you finish a long rest."
+        }
+      ]
+    }
+  ]
+}
