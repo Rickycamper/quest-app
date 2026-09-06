@@ -98,6 +98,9 @@ CREATE OR REPLACE VIEW public.unclaimed_import_names AS
   JOIN public.tournament_imports ti ON ti.id = ir.import_id
   WHERE ir.user_id IS NULL
   GROUP BY ti.game, ir.name_norm;
+-- Supabase le da SELECT a anon en toda vista nueva por default privileges:
+-- se lo sacamos explícito. Reclamar exige sesión, así que anon no la necesita.
+REVOKE ALL ON public.unclaimed_import_names FROM PUBLIC, anon;
 GRANT SELECT ON public.unclaimed_import_names TO authenticated, service_role;
 
 -- ── Importar un CSV (solo equipo) ──
