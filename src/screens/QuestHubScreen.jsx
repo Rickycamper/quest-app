@@ -180,11 +180,13 @@ function SucursalesView({ onBack }) {
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 32px' }}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: '#4B5563', lineHeight: 1.5 }}>
-          Encuéntranos en nuestras 3 sucursales en Panamá.
+          Encuéntranos en nuestras sucursales de David y Chitré.
         </div>
       </div>
 
-      {['Panama', 'David', 'Chitre'].map(branch => {
+      {/* Panamá se sacó de acá a pedido del dueño (sep 2026): no hay que
+          mandar gente a esa sucursal. El tracking la sigue usando. */}
+      {['David', 'Chitre'].map(branch => {
         const bs   = BRANCH_STYLES[branch]
         const info = BRANCH_INFO[branch]
         return (
