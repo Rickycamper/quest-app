@@ -9,6 +9,7 @@ import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES, getGameUsername } from '..
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
 import ImportCsvModal from './ImportCsvModal'
+import { FEATURES } from '../lib/features'
 import ClaimNameSheet, { ClaimNameBanner } from './ClaimNameSheet'
 import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, ShareIcon, PAID_ROLES, SACalendar, SAClock, SAUsers } from '../components/Icons'
 import { useToast } from '../components/Toast'
@@ -343,13 +344,13 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
             color: COLOR.textTertiary, letterSpacing: '0.12em',
             textTransform: 'uppercase',
           }}>
-            Temporada activa
+            {FEATURES.seasons ? 'Temporada activa' : 'Ranking general'}
           </div>
           <div style={{
             fontSize: 17, fontWeight: WEIGHT.bold, color: COLOR.text,
             letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: 2,
           }}>
-            Ranking {game} · Global
+            Ranking {game}{FEATURES.rankingBranches ? ' · Global' : ''}
           </div>
         </div>
       </div>
@@ -467,7 +468,8 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
         </div>
       )}
 
-      {/* ── Branches breakdown ───────────────────────────────────────── */}
+      {/* ── Branches breakdown (apagado por FEATURES.rankingBranches) ── */}
+      {FEATURES.rankingBranches && (
       <div style={{
         background: COLOR.surface,
         border: `1px solid ${COLOR.border}`,
@@ -600,15 +602,18 @@ function RankingsOverview({ entries, game, onSelectBranch, canEdit = false, onEd
           })}
         </div>
       </div>
+      )}
 
-      {/* ── Footer hint — explicit affordance to drill in ────────────── */}
-      <div style={{
-        textAlign: 'center', padding: '4px 0 0',
-        fontSize: 11.5, color: COLOR.textQuaternary,
-        fontWeight: WEIGHT.medium, letterSpacing: '-0.005em',
-      }}>
-        Tap una sucursal para ver el ranking completo
-      </div>
+      {/* ── Footer hint — solo tiene sentido con ranking por sucursal ── */}
+      {FEATURES.rankingBranches && (
+        <div style={{
+          textAlign: 'center', padding: '4px 0 0',
+          fontSize: 11.5, color: COLOR.textQuaternary,
+          fontWeight: WEIGHT.medium, letterSpacing: '-0.005em',
+        }}>
+          Tap una sucursal para ver el ranking completo
+        </div>
+      )}
     </div>
   )
 }
@@ -1267,7 +1272,7 @@ function ChampionsByTcg({ champions, branchChampions = {}, branchTotals = {}, on
           misma card. Suma TODOS los puntos de todos los jugadores en
           cada sucursal (across all TCGs). Da sensación de escala antes
           de leer la lista de campeones de abajo. */}
-      {(() => {
+      {FEATURES.rankingBranches && (() => {
         const branchItems = BRANCHES.map(b => ({
           branch:  b,
           total:   branchTotals[b]?.total   ?? 0,
@@ -1613,6 +1618,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
   //     → branchTotals, used by the 'Puntos por sucursal' chart below.
   useEffect(() => {
     if (game) return
+    if (!FEATURES.rankingBranches) return   // un solo ranking general
     if (Object.keys(branchChampions).length === BRANCHES.length) return
     let cancelled = false
     Promise.all(
@@ -1717,7 +1723,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
     <div style={{ padding: '12px 14px 32px', display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.25s ease' }}>
 
       {/* ── Season announcement — collapsible, adapts to current season ── */}
-      <SeasonOverviewCard season={activeSeason} />
+      {FEATURES.seasons && <SeasonOverviewCard season={activeSeason} />}
 
       {/* ── Campeones por TCG — top 1 de cada juego ────────────────────
           Para cada TCG mostramos al #1 global + sucursal a la que pertenece.
@@ -2129,9 +2135,9 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
                   {entry.verified && <span style={{ fontSize: 10, color: COLOR.blue }}>✓</span>}
                   {PAID_ROLES.has(entry.role) && <PremiumBadge size={12} role={entry.role} />}
                   <RoleBadge isOwner={entry.is_owner} role={entry.role} size={12} />
-                  <SeasonBadgePill badges={entry.season_badges} game={game} branch={branch} />
+                  {FEATURES.seasons && <SeasonBadgePill badges={entry.season_badges} game={game} branch={branch} />}
                 </div>
-                {entry.branch && (
+                {FEATURES.rankingBranches && entry.branch && (
                   <div style={{
                     fontSize: 11, color: BRANCH_STYLES[entry.branch]?.color ?? COLOR.textTertiary,
                     display: 'flex', alignItems: 'center', gap: 4, marginTop: 2,
@@ -4402,7 +4408,7 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
 
   // Load active season once on mount
   useEffect(() => {
-    getActiveSeason().then(setActiveSeason).catch(() => {})
+    if (FEATURES.seasons) getActiveSeason().then(setActiveSeason).catch(() => {})
   }, [])
 
   // Auto-stop pulsing after 3 s; restart brief pulse on tab change
@@ -4627,8 +4633,12 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
           {tabsRow}
           <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
           {gameRow}
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
-          {branchRow}
+          {FEATURES.rankingBranches && (
+            <>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 -4px' }} />
+              {branchRow}
+            </>
+          )}
         </div>
       </div>
     )
@@ -4639,7 +4649,7 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
       {renderFilters()}
 
       {/* Season banner — compact version, only when a game is selected (empty state has its own full version) */}
-      {tab === 'leaderboard' && game && <SeasonBanner season={activeSeason} />}
+      {FEATURES.seasons && tab === 'leaderboard' && game && <SeasonBanner season={activeSeason} />}
       {tab === 'leaderboard' && game && (
         <ClaimNameBanner key={`${game}-${rankRefresh}`} game={game} onOpen={() => setShowClaimName(true)} />
       )}

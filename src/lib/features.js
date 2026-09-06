@@ -14,6 +14,13 @@
 //   sucursalPanama → tarjeta de la sucursal Panamá en "Sucursales" (dirección,
 //                    horario, WhatsApp, cómo llegar). El TRACKING sigue usando
 //                    Panamá como origen/destino sin importar este flag.
+//   rankingBranches → ranking dividido por sucursal (tabs Global/Panamá/David/
+//                    Chitré, "Puntos por sucursal", pin de sucursal en cada
+//                    fila). Apagado = un solo ranking general.
+//   seasons        → temporadas del ranking (banner, tarjeta de temporada,
+//                    insignias por temporada). OJO: el cron de Supabase
+//                    'reset-season-quarterly' reinicia el ranking cada 1 de
+//                    ene/may/sep — hay que desprogramarlo (ver ESTADO.md).
 //
 export const FEATURES = {
   membresia:      false,
@@ -21,4 +28,6 @@ export const FEATURES = {
   decks:          false,
   liveStream:     false,
   sucursalPanama: false,
+  rankingBranches: false,
+  seasons:         false,
 }

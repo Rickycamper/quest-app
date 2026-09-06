@@ -198,6 +198,19 @@ El dueño pidió sacar de la app lo que nadie usaba o no funcionaba (sep 2026).
 Ojo: `sucursalPanama` NO toca el tracking — Panamá sigue siendo origen/destino
 válido de envíos, por pedido explícito del dueño.
 
+Apagados después (sep 2026), mismo mecanismo:
+
+| flag | qué prende |
+|---|---|
+| `rankingBranches` | ranking por sucursal: tabs Global/Panamá/David/Chitré, "Puntos por sucursal", pin de sucursal en cada fila. Apagado = **un solo ranking general** |
+| `seasons` | temporadas: banner, tarjeta "Temporada activa", insignias por temporada |
+
+**⚠️ Cron de temporadas.** En Supabase hay un job `reset-season-quarterly`
+(pg_cron) que cada 1 de enero/mayo/septiembre llama a la edge function
+`reset-season`, que REINICIA el ranking. Con las temporadas apagadas hay que
+desprogramarlo, si no el 1 de enero se borra todo:
+`SELECT cron.unschedule('reset-season-quarterly');`
+
 ---
 
 ## 8. Torneos por CSV + reclamo de nombres (sep 2026)
