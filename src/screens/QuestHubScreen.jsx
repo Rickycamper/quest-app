@@ -1813,26 +1813,9 @@ const TILES = [
     border:  'rgba(251,146,60,0.2)',
     enabled: true,
   },
-  {
-    id:      'membresia',
-    icon:    'gem',
-    label:   'Membresía',
-    desc:    'Planes y beneficios',
-    color:   '#A78BFA',
-    bg:      'rgba(167,139,250,0.08)',
-    border:  'rgba(167,139,250,0.2)',
-    enabled: true,
-  },
-  {
-    id:      'folder',
-    icon:    'folder',
-    label:   'Folder',
-    desc:    'Tu colección',
-    color:   '#34D399',
-    bg:      'rgba(52,211,153,0.08)',
-    border:  'rgba(52,211,153,0.2)',
-    enabled: true,
-  },
+  // Membresía y Folder se sacaron del Hub a pedido del dueño (sep 2026):
+  // nadie los usaba. Las pantallas siguen en el código (MembresiaView,
+  // FolderScreen) por si vuelven; solo se quitó la puerta de entrada.
   {
     id:      'record',
     icon:    'chart',
