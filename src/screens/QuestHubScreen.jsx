@@ -1826,16 +1826,8 @@ const TILES = [
     border:  'rgba(74,222,128,0.2)',
     enabled: true,
   },
-  {
-    id:      'decks',
-    icon:    'deck',
-    label:   'Mis Decks',
-    desc:    'Guardá tus decks',
-    color:   '#FB923C',
-    bg:      'rgba(251,146,60,0.08)',
-    border:  'rgba(251,146,60,0.2)',
-    enabled: true,
-  },
+  // Mis Decks también se sacó (sep 2026), mismo motivo que Membresía y
+  // Folder. DecksView sigue en el código.
 ]
 
 // ── Main component ────────────────────────────
