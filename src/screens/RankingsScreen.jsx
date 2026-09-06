@@ -8,6 +8,8 @@ import { GAMES, GAME_STYLES, BRANCHES, BRANCH_STYLES, getGameUsername } from '..
 // ClaimModal lives in App.jsx level — see src/screens/ClaimModal.jsx
 import Avatar from '../components/Avatar'
 import GameIcon from '../components/GameIcon'
+import ImportCsvModal from './ImportCsvModal'
+import ClaimNameSheet, { ClaimNameBanner } from './ClaimNameSheet'
 import { PremiumBadge, RoleBadge, MapPinIcon, SearchIcon, ShareIcon, PAID_ROLES, SACalendar, SAClock, SAUsers } from '../components/Icons'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/Confirm'
@@ -4411,6 +4413,11 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
     return () => clearTimeout(pulseTimer.current)
   }, [tab])
 
+  // Torneos por CSV: el equipo importa; los jugadores reclaman su nombre.
+  const [showCsv,       setShowCsv]       = useState(false)
+  const [showClaimName, setShowClaimName] = useState(false)
+  const [rankRefresh,   setRankRefresh]   = useState(0)
+
   const handlePlusClick = () => {
     setPulsing(false)
     clearTimeout(pulseTimer.current)
@@ -4464,6 +4471,14 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
             )
           })}
         </div>
+        {tab === 'tournaments' && isStaff && (
+          <button onClick={() => setShowCsv(true)} title="Importar torneo desde CSV" style={{
+            flexShrink: 0, height: 34, padding: '0 11px', borderRadius: 9,
+            border: '1.5px solid rgba(167,139,250,0.45)', background: 'rgba(167,139,250,0.10)',
+            color: '#C4B5FD', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            letterSpacing: '0.04em',
+          }}>CSV</button>
+        )}
         {tab === 'leaderboard' || (tab === 'tournaments' && isStaff) || (tab === 'liga' && isStaff) ? (
           <button
             onClick={handlePlusClick}
@@ -4625,6 +4640,17 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
 
       {/* Season banner — compact version, only when a game is selected (empty state has its own full version) */}
       {tab === 'leaderboard' && game && <SeasonBanner season={activeSeason} />}
+      {tab === 'leaderboard' && game && (
+        <ClaimNameBanner key={`${game}-${rankRefresh}`} game={game} onOpen={() => setShowClaimName(true)} />
+      )}
+      {showCsv && (
+        <ImportCsvModal game={game} branch={branch || undefined} onClose={() => setShowCsv(false)}
+                        onDone={() => setRankRefresh(k => k + 1)} />
+      )}
+      {showClaimName && (
+        <ClaimNameSheet game={game} onClose={() => setShowClaimName(false)}
+                        onClaimed={() => setRankRefresh(k => k + 1)} />
+      )}
 
       {['leaderboard', 'tournaments', 'liga'].map(t => (
         <div key={t} style={{ display: t === tab ? 'block' : 'none' }}>
@@ -4632,7 +4658,7 @@ export default function RankingsScreen({ profile, isStaff, isAdminOrOwner = fals
               (excluía owners y staff aunque la DB los autoriza); ahora usamos isStaff
               del AuthContext que ya cubre admin + staff + is_owner=true y matchea
               exactamente las policies de profiles_update / ranking_claims / rpo_write. */}
-          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}`} branch={branch} game={game} isAdmin={isStaff} activeSeason={activeSeason} onSelectBranch={setBranch} onSelectGame={setGame} />}
+          {t === 'leaderboard' && <LeaderboardTab key={`${game}-${branch}-${rankRefresh}`} branch={branch} game={game} isAdmin={isStaff} activeSeason={activeSeason} onSelectBranch={setBranch} onSelectGame={setGame} />}
           {t === 'tournaments' && <TournamentsTab game={game} branch={branch} onViewProfile={onViewProfile} isAdmin={isStaff} openTournamentId={openTournamentId} />}
           {t === 'liga' && <LeagueTab key={`${game}-${branch}`} game={game} branch={branch} profile={profile} isStaff={isStaff} onViewProfile={onViewProfile} onCreateLeague={onCreateLeague} openLeagueId={openLeagueId} />}
         </div>

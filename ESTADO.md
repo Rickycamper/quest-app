@@ -197,3 +197,26 @@ El dueño pidió sacar de la app lo que nadie usaba o no funcionaba (sep 2026).
 
 Ojo: `sucursalPanama` NO toca el tracking — Panamá sigue siendo origen/destino
 válido de envíos, por pedido explícito del dueño.
+
+---
+
+## 8. Torneos por CSV + reclamo de nombres (sep 2026)
+
+Migración: `supabase/migrations/20260905_torneos_csv.sql` — **hay que correrla**.
+
+Flujo: el equipo importa el CSV (Rankings → Torneos → botón **CSV**), elige
+juego/sucursal/nombre/fecha y confirma qué columna es posición y cuál nombre.
+Cada fila cuyo nombre ya fue reclamado se vuelve un `ranking_claims` aprobado
+(el leaderboard la suma igual que un claim manual: 3/2/1, resto 1 punto). Las
+demás quedan en `tournament_import_rows` sin dueño. El jugador ve el banner
+"¿Jugaste un torneo y no aparecés?" en Rankings, busca su nombre y toca
+"Este soy yo": `claim_player_name` le asigna todos sus resultados y guarda
+el alias en `player_aliases` — los CSV futuros lo reconocen solos. El equipo
+recibe notificación de cada reclamo y puede revertirlo con
+`revoke_player_alias(id)` (por ahora solo por SQL o RPC; no hay UI).
+
+Trampas: un torneo con mismo juego+nombre+fecha no se importa dos veces
+(evita puntos dobles). Los nombres se comparan normalizados
+(`norm_name`: sin acentos/mayúsculas). Si `ranking_claims.position` tiene un
+CHECK acotado, el CSV grande falla — la verificación al final del SQL lo
+muestra.
