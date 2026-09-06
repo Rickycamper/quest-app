@@ -199,7 +199,7 @@ export default function ImportCsvModal({ game: initialGame, branch: initialBranc
               {busy ? 'Importando…' : `Importar ${jugadores.length || ''} jugadores`}
             </button>
             <div style={{ fontSize: 11, color: '#4B5563', marginTop: 8, lineHeight: 1.5 }}>
-              Puntos: 1° = 3 · 2° = 2 · 3° = 1 · resto = 1 por participar. Un torneo con el mismo nombre y fecha no se importa dos veces.
+              Puntos: 1° = 4 · 2° = 3 · 3° = 2 · 4° = 1 · el resto no suma. Un torneo con el mismo nombre y fecha no se importa dos veces.
             </div>
           </>
         )}

@@ -7,7 +7,7 @@ import { submitClaim, getTournaments } from '../lib/supabase'
 import { GAME_STYLES } from '../lib/constants'
 import GameIcon from '../components/GameIcon'
 
-const PTS    = { 1: 3, 2: 2, 3: 1 }
+const PTS    = { 1: 4, 2: 3, 3: 2, 4: 1 }
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
 export default function ClaimModal({ onClose, isStaff = false }) {
@@ -253,7 +253,7 @@ export default function ClaimModal({ onClose, isStaff = false }) {
                   <div style={{ marginBottom: 14 }}>
                     <span style={labelStyle}>TU POSICIÓN</span>
                     <div style={{ display: 'flex', gap: 10 }}>
-                      {[1, 2, 3].map(p => {
+                      {[1, 2, 3, 4].map(p => {
                         const taken = takenPositions.includes(p)
                         const active = position === p && !taken
                         return (

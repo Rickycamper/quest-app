@@ -34,7 +34,7 @@ const PencilIcon = ({ size = 12, color = 'currentColor' }) => (
   </svg>
 )
 
-const PTS = { 1: 3, 2: 2, 3: 1 }
+const PTS = { 1: 4, 2: 3, 3: 2, 4: 1 }
 
 // Parse a Supabase date field safely: handles full ISO strings, plain dates, stale years.
 // Returns a corrected YYYY-MM-DD string (advances year if date is clearly in the past).
@@ -1907,7 +1907,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
     <div style={{ margin: '16px 20px', padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13 }}>{error}</div>
   )
 
-  const PTS_MAP = { 1: 3, 2: 2, 3: 1 }
+  const PTS_MAP = { 1: 4, 2: 3, 3: 2, 4: 1 }
 
   return (
     <div style={{ padding: '8px 0' }}>
@@ -1985,7 +1985,7 @@ function LeaderboardTab({ branch, game, isAdmin, activeSeason, onSelectBranch, o
                   2. POSICIÓN
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {[1, 2, 3].map(pos => {
+                  {[1, 2, 3, 4].map(pos => {
                     const pts = PTS_MAP[pos]
                     const active = awardPosition === pos
                     const colors = { 1: '#F59E0B', 2: '#9CA3AF', 3: '#B87333' }

@@ -1216,7 +1216,7 @@ export async function staffAwardRankingPoints(targetUserId, { game, branch, posi
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) throw new Error('No hay sesión activa')
 
-  const pts = RANKING_PTS[position] ?? 1
+  const pts = RANKING_PTS[position] ?? 0
 
   // Paper trail first: insert approved claim. La RLS de ranking_claims
   // (ranking_claims_staff_insert) ya incluye is_owner OR role IN
@@ -1444,7 +1444,7 @@ export async function submitClaim({ tournamentName, tournamentId = null, game, b
 
   // If auto-approved (staff), add points immediately — use atomic adjustUserPoints
   if (autoApprove && data) {
-    const pts = RANKING_PTS[position] ?? 1
+    const pts = RANKING_PTS[position] ?? 0
     await adjustUserPoints(session.user.id, pts)
   }
 
@@ -1500,7 +1500,7 @@ export async function reviewClaim(claimId, status) {
 
   if (!claim) throw new Error('Claim no encontrado')
 
-  const pts = RANKING_PTS[claim.position] ?? 1
+  const pts = RANKING_PTS[claim.position] ?? 0
   const isApproved = status === 'approved'
 
   // Antes corría updateClaim + adjustUserPoints en Promise.all. Problema:
