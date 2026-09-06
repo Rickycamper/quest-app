@@ -7,7 +7,7 @@ import {
   ABILITIES, ABILITY_ES, POINT_BUY_COST, POINT_BUY_TOTAL, STANDARD_ARRAY,
   mod, fmtMod, skillId, abilityId, finalScores, derive, newCharacter, rollWealth, fmtBelly, hitDie, texto,
 } from '../../rollplayer/engine'
-import { C, FONT, card, label, field, btn, Chip, Md } from './ui'
+import { C, FONT, DISPLAY, TEXTURA, card, label, field, btn, Chip, Md } from './ui'
 
 const PASOS = ['Ruleset', 'Identidad', 'Clase', 'Puntuaciones', 'Trasfondo', 'Equipo', 'Resumen']
 
@@ -59,14 +59,14 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
   const scores = finalScores(rs, ch)
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 300, background: C.bg, display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
+    <div style={{ position: 'absolute', inset: 0, zIndex: 300, background: TEXTURA, display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
       {/* Cabecera con progreso */}
       <div style={{ padding: '12px 16px 10px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={paso > 1 ? () => setPaso(p => p - 1) : onClose} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>‹</button>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10.5, fontWeight: 800, color: C.acc, letterSpacing: '0.1em' }}>PASO {paso} DE {PASOS.length - 1}</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: C.text }}>{PASOS[paso]}</div>
+            <div style={{ fontFamily: DISPLAY, fontSize: 12, letterSpacing: '0.16em', color: C.gold }}>PASO {paso} DE {PASOS.length - 1}</div>
+            <div style={{ fontFamily: DISPLAY, fontSize: 26, lineHeight: 1, letterSpacing: '0.03em', color: C.text }}>{PASOS[paso]}</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 20, cursor: 'pointer' }}>✕</button>
         </div>
@@ -93,10 +93,10 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                 return (
                   <button key={r.id} onClick={() => up({ race: { id: r.id, subraceId: null, choices: {} } })} style={{ ...card, textAlign: 'left', cursor: 'pointer', borderColor: on ? C.accBorder : C.border, background: on ? C.accBg : C.card, fontFamily: FONT }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: C.text }}>{r.name}{r.optional && <span style={{ fontSize: 10, color: C.warn, marginLeft: 6 }}>OPCIONAL</span>}</span>
+                      <span style={{ fontFamily: DISPLAY, fontSize: 20, letterSpacing: '0.04em', color: C.text }}>{r.name}{r.optional && <span style={{ fontSize: 11, color: C.warn, marginLeft: 8 }}>OPCIONAL</span>}</span>
                       <span style={{ fontSize: 11, color: C.dim }}>{r.size} · {Object.entries(r.speed ?? {}).map(([k, v]) => `${k} ${v}`).join(' / ')}</span>
                     </div>
-                    <div style={{ fontSize: 11.5, color: C.acc2, marginTop: 3 }}>{asi || 'Bonos según subraza'}</div>
+                    <div style={{ fontFamily: DISPLAY, fontSize: 12.5, letterSpacing: '0.08em', color: C.gold, marginTop: 4 }}>{asi || 'Bonos según subraza'}</div>
                     {on && <div style={{ marginTop: 8 }}><Md text={texto(r.description).split('\n\n')[0]} size={12} /></div>}
                   </button>
                 )
@@ -157,7 +157,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                 return (
                   <button key={k.id} onClick={() => elegirClase(k)} style={{ ...card, textAlign: 'left', cursor: 'pointer', borderColor: on ? C.accBorder : C.border, background: on ? C.accBg : C.card, fontFamily: FONT }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: C.text }}>{k.name}</span>
+                      <span style={{ fontFamily: DISPLAY, fontSize: 20, letterSpacing: '0.04em', color: C.text }}>{k.name}</span>
                       <span style={{ fontSize: 11, color: C.dim }}>d{hitDie(k)} · {(k.proficiencies?.savingThrows ?? []).map(s => ABILITY_ES[abilityId(s)]?.slice(0, 3) ?? s).join(' + ')}</span>
                     </div>
                     <div style={{ fontSize: 12, color: C.sub, marginTop: 4, lineHeight: 1.5 }}>{(texto(k.flavor) || texto(k.description)).split('\n')[0].slice(0, 160)}…</div>
@@ -241,7 +241,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                 const on = ch.backgroundId === b.id
                 return (
                   <button key={b.id} onClick={() => up({ backgroundId: b.id })} style={{ ...card, textAlign: 'left', cursor: 'pointer', borderColor: on ? C.accBorder : C.border, background: on ? C.accBg : C.card, fontFamily: FONT }}>
-                    <div style={{ fontSize: 14.5, fontWeight: 800, color: C.text }}>{b.name}</div>
+                    <div style={{ fontFamily: DISPLAY, fontSize: 19, letterSpacing: '0.04em', color: C.text }}>{b.name}</div>
                     <div style={{ fontSize: 11.5, color: C.acc2, marginTop: 2 }}>{b.skillProficiencies}{b.feature?.name ? ` · ${b.feature.name}` : ''}</div>
                     {on && <div style={{ marginTop: 8 }}><Md text={texto(b.feature?.text)} size={12} /></div>}
                   </button>
@@ -304,8 +304,8 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
           return (
             <>
               <div style={{ ...card, borderColor: C.accBorder, background: C.accBg, marginBottom: 12 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: C.text }}>{ch.name}</div>
-                <div style={{ fontSize: 13, color: C.acc2, marginTop: 2 }}>{race?.name}{sub ? ` (${sub.name})` : ''} · {clase?.name} nivel 1 · {bg?.name}</div>
+                <div style={{ fontFamily: DISPLAY, fontSize: 32, lineHeight: 1, letterSpacing: '0.03em', color: C.text }}>{ch.name}</div>
+                <div style={{ fontFamily: DISPLAY, fontSize: 13, letterSpacing: '0.1em', color: C.gold, marginTop: 4, textTransform: 'uppercase' }}>{race?.name}{sub ? ` (${sub.name})` : ''} · {clase?.name} nivel 1 · {bg?.name}</div>
                 {ch.crew.name && <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{ch.crew.name}{ch.crewRoleId ? ` · ${rs.byId.crewRole[ch.crewRoleId]?.name}` : ''}</div>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>

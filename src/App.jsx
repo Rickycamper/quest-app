@@ -743,9 +743,9 @@ const needsTerms = profile && !profile.terms_accepted_at
       )}
       {showRollPlayer && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 200, background: '#0A0A0A', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)', animation: 'slideUp 0.22s ease' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px 12px', background: '#0D0D0D', borderBottom: '1px solid #1A1A1A', flexShrink: 0 }}>
-            <button onClick={() => setShowRollPlayer(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, padding: '0 2px' }}>←</button>
-            <span style={{ fontSize: 17, fontWeight: 800, color: '#FFF', fontFamily: 'Inter, sans-serif' }}>🎲 Roll Player</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px 10px', background: '#0F0E0C', borderBottom: '1px solid #3A3226', boxShadow: 'inset 0 -3px 0 #C53131', flexShrink: 0 }}>
+            <button onClick={() => setShowRollPlayer(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B816C', fontSize: 20, lineHeight: 1, padding: '0 2px' }}>←</button>
+            <span style={{ fontFamily: '"Bebas Neue", "Roboto Condensed", Impact, sans-serif', fontSize: 24, letterSpacing: '0.1em', color: '#F2E9D6', lineHeight: 1 }}>🎲 Roll Player</span>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
             <Suspense fallback={<div style={{ padding: 24, color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>Cargando…</div>}>

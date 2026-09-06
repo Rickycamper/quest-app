@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import {
   ABILITIES, ABILITY_ES, derive, fmtMod, fmtBelly, asiLevels, subclassLevel, hitDie, mod, texto,
 } from '../../rollplayer/engine'
-import { C, FONT, card, label, field, btn, Chip, Md, Sheet, Expand, Stat } from './ui'
+import { C, FONT, DISPLAY, TEXTURA, card, label, field, btn, Chip, Md, Sheet, Expand, Stat, Tabs, SectionTitle, AbilityBox, Shield, Portrait, Frame } from './ui'
 
 const TABS = [['hoja', 'Hoja'], ['rasgos', 'Rasgos'], ['poder', 'Haki & Fruta'], ['equipo', 'Equipo'], ['historia', 'Historia']]
 const CONDICIONES = ['Blinded', 'Charmed', 'Deafened', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious']
@@ -26,24 +26,24 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
   const setHp = (v) => upCs({ currentHp: Math.max(0, Math.min(d.maxHp, v)) })
 
   return (
-    <div style={{ fontFamily: FONT, paddingBottom: 90 }}>
+    <div style={{ fontFamily: FONT, paddingBottom: 90, minHeight: '100%', background: TEXTURA }}>
       {/* Cabecera */}
       <div style={{ padding: '12px 16px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={onBack} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>‹</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: 0 }}>‹</button>
+          <Portrait name={ch.name} url={ch.roleplay?.portraitUrl} size={58} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 20, fontWeight: 900, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</div>
-            <div style={{ fontSize: 12, color: C.acc2 }}>
-              {d.race?.name}{d.sub ? ` (${d.sub.name})` : ''} · {def?.name ?? '—'} {primary?.level ?? 1}
+            <div style={{ fontFamily: DISPLAY, fontSize: 28, lineHeight: 1, letterSpacing: '0.03em', color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</div>
+            <div style={{ fontFamily: DISPLAY, fontSize: 13, letterSpacing: '0.1em', color: C.gold, marginTop: 3, textTransform: 'uppercase' }}>
+              {d.race?.name}{d.sub ? ` · ${d.sub.name}` : ''} · {def?.name ?? '—'} {primary?.level ?? 1}
               {primary?.subclassId ? ` · ${def?.subclasses?.find(s => s.id === primary.subclassId)?.name ?? ''}` : ''}
             </div>
+            <div style={{ fontSize: 10.5, color: saving ? C.warn : C.faint, marginTop: 2 }}>{saving ? 'guardando…' : 'guardado'}{ch.crew?.name ? ` · ${ch.crew.name}` : ''}</div>
           </div>
-          <span style={{ fontSize: 10.5, color: saving ? C.warn : C.faint }}>{saving ? 'guardando…' : 'guardado'}</span>
+          <button onClick={onOpenRules} title="Manual" style={{ background: C.goldBg, border: `1px solid ${C.goldDim}`, borderRadius: 4, color: C.gold, cursor: 'pointer', fontFamily: DISPLAY, fontSize: 13, letterSpacing: '0.08em', padding: '7px 9px' }}>📖 REGLAS</button>
         </div>
-        <div style={{ display: 'flex', gap: 6, marginTop: 10, overflowX: 'auto', paddingBottom: 4 }}>
-          {TABS.map(([id, t]) => <Chip key={id} active={tab === id} onClick={() => setTab(id)} small>{t}</Chip>)}
-          <span style={{ flex: 1 }} />
-          <Chip small onClick={onOpenRules} color={C.gold}>📖 Reglas</Chip>
+        <div style={{ marginTop: 10 }}>
+          <Tabs items={TABS} value={tab} onChange={setTab} />
         </div>
       </div>
 
@@ -51,40 +51,30 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
         {/* ════ HOJA ════ */}
         {tab === 'hoja' && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6, marginBottom: 10 }}>
-              {ABILITIES.map(a => (
-                <div key={a} style={{ ...card, padding: '8px 2px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 9, fontWeight: 800, color: C.dim, letterSpacing: '0.08em' }}>{a.toUpperCase()}</div>
-                  <div style={{ fontSize: 19, fontWeight: 900, color: C.acc2 }}>{fmtMod(d.mods[a])}</div>
-                  <div style={{ fontSize: 10.5, color: C.faint }}>{d.scores[a]}</div>
-                </div>
-              ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 5, marginBottom: 12 }}>
+              {ABILITIES.map(a => <AbilityBox key={a} abbr={a.toUpperCase()} name={ABILITY_ES[a]} mod={fmtMod(d.mods[a])} score={d.scores[a]} />)}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 10 }}>
-              <Stat label="CA" value={d.ac.value} sub={d.ac.source.split(' (')[0]} accent />
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr 1fr', gap: 8, marginBottom: 12, alignItems: 'stretch' }}>
+              <Shield value={d.ac.value} sub={d.ac.source.split(' (')[0]} />
               <Stat label="Iniciativa" value={fmtMod(d.initiative)} />
               <Stat label="Velocidad" value={d.speed.walk ?? 30} sub={d.speed.swim ? `nado ${d.speed.swim}` : d.speed.fly ? `vuelo ${d.speed.fly}` : null} />
-              <Stat label="Comp." value={fmtMod(d.pb)} />
+              <Stat label="Competencia" value={fmtMod(d.pb)} />
             </div>
 
             {/* PV */}
-            <div style={{ ...card, marginBottom: 10, borderColor: hpActual <= d.maxHp / 4 ? 'rgba(239,68,68,0.5)' : C.border }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={label}>Puntos de vida</div>
-                  <div style={{ fontSize: 30, fontWeight: 900, color: hpActual <= d.maxHp / 4 ? C.bad : C.text, lineHeight: 1 }}>
-                    {hpActual}<span style={{ fontSize: 14, color: C.dim }}> / {d.maxHp}</span>
-                    {cs.temporaryHp > 0 && <span style={{ fontSize: 13, color: C.ok, marginLeft: 8 }}>+{cs.temporaryHp} temp</span>}
+            <Frame accent={hpActual <= d.maxHp / 4 ? C.acc : C.goldDim} style={{ marginBottom: 12 }} pad={12}>
+              <SectionTitle>Puntos de golpe</SectionTitle>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, textAlign: 'center' }}>
+                {[['Actual', hpActual, hpActual <= d.maxHp / 4 ? C.bad : C.text], ['Máx', d.maxHp, C.sub], ['Temp', cs.temporaryHp || 0, cs.temporaryHp > 0 ? C.ok : C.faint]].map(([l, v, col]) => (
+                  <div key={l} style={{ background: '#0C0B09', border: `1px solid ${C.border}`, borderRadius: 4, padding: '6px 4px' }}>
+                    <div style={{ fontFamily: DISPLAY, fontSize: 30, lineHeight: 1, color: col }}>{v}</div>
+                    <div style={{ fontFamily: DISPLAY, fontSize: 10.5, letterSpacing: '0.12em', color: C.dim, marginTop: 3 }}>{l.toUpperCase()}</div>
                   </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {[-5, -1].map(n => <button key={n} onClick={() => setHp(hpActual + n)} style={btn('danger', { padding: '7px 11px' })}>{n}</button>)}
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {[1, 5].map(n => <button key={n} onClick={() => setHp(hpActual + n)} style={btn('secondary', { padding: '7px 11px', color: C.ok })}>+{n}</button>)}
-                  </div>
-                </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 8, justifyContent: 'center' }}>
+                {[-5, -1].map(n => <button key={n} onClick={() => setHp(hpActual + n)} style={btn('danger', { padding: '7px 12px', fontSize: 14 })}>{n}</button>)}
+                {[1, 5].map(n => <button key={n} onClick={() => setHp(hpActual + n)} style={btn('secondary', { padding: '7px 12px', fontSize: 14, color: C.ok })}>+{n}</button>)}
               </div>
               <div style={{ height: 6, borderRadius: 3, background: C.border2, marginTop: 10, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${(hpActual / d.maxHp) * 100}%`, background: hpActual <= d.maxHp / 4 ? C.bad : hpActual <= d.maxHp / 2 ? C.warn : C.ok, transition: 'width .3s' }} />
@@ -96,7 +86,7 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
                 <span style={{ fontSize: 11.5, color: C.dim, marginLeft: 'auto' }}>Dados de golpe: {Object.values(cs.hitDiceRemaining ?? {}).reduce((a, b) => a + b, 0)}/{d.level} d{hitDie(def)}</span>
               </div>
               {hpActual === 0 && (
-                <div style={{ marginTop: 10, display: 'flex', gap: 14, alignItems: 'center' }}>
+                <div style={{ marginTop: 10, display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'center' }}>
                   {['successes', 'failures'].map(k => (
                     <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 11, color: k === 'successes' ? C.ok : C.bad, fontWeight: 800 }}>{k === 'successes' ? 'Éxitos' : 'Fallos'}</span>
@@ -105,11 +95,11 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
                   ))}
                 </div>
               )}
-            </div>
+            </Frame>
 
             {/* Condiciones */}
             <div style={{ ...card, marginBottom: 10 }}>
-              <div style={label}>Condiciones</div>
+              <SectionTitle>Condiciones</SectionTitle>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {CONDICIONES.map(cd => <Chip key={cd} small color={C.bad} active={(cs.conditions ?? []).includes(cd)} onClick={() => upCs({ conditions: (cs.conditions ?? []).includes(cd) ? cs.conditions.filter(x => x !== cd) : [...(cs.conditions ?? []), cd] })}>{cd}</Chip>)}
               </div>
@@ -122,7 +112,7 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
             {/* Salvaciones + destrezas */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 8 }}>
               <div style={card}>
-                <div style={label}>Salvaciones</div>
+                <SectionTitle>Salvaciones</SectionTitle>
                 {ABILITIES.map(a => <Row key={a} name={ABILITY_ES[a]} value={d.saves[a].value} prof={d.saves[a].proficient} />)}
                 <div style={{ ...label, marginTop: 12 }}>Pasiva</div>
                 <Row name="Percepción" value={d.passivePerception} raw />
@@ -130,7 +120,7 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
                 {d.haki.filter(h => h.unlocked).map(h => <div key={h.id}><div style={{ ...label, marginTop: 12 }}>{h.name.replace('Color of ', '')}</div><Row name="CD Haki" value={h.dc} raw /></div>)}
               </div>
               <div style={card}>
-                <div style={label}>Destrezas</div>
+                <SectionTitle>Destrezas</SectionTitle>
                 {d.skills.map(s => <Row key={s.id} name={s.name} sub={s.ability.toUpperCase()} value={s.value} prof={s.proficient} exp={s.expertise} />)}
               </div>
             </div>
@@ -306,9 +296,9 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
 function Row({ name, sub, value, prof, exp, raw }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderBottom: `1px solid ${C.border}` }}>
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: exp ? C.gold : prof ? C.acc : 'transparent', border: `1.5px solid ${exp ? C.gold : prof ? C.acc : C.border2}`, flexShrink: 0 }} />
-      <span style={{ flex: 1, fontSize: 12, color: prof ? C.text : C.sub, fontWeight: prof ? 700 : 500 }}>{name}{sub && <span style={{ color: C.faint, fontSize: 9.5, marginLeft: 4 }}>{sub}</span>}</span>
-      <span style={{ fontSize: 13, fontWeight: 800, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{raw ? value : fmtMod(value)}</span>
+      <span style={{ width: 9, height: 9, borderRadius: '50%', background: exp ? C.gold : prof ? C.acc : 'transparent', border: `1.5px solid ${exp ? C.gold : prof ? C.acc : C.border2}`, flexShrink: 0, boxShadow: prof ? `0 0 6px ${exp ? C.gold : C.acc}66` : 'none' }} />
+      <span style={{ flex: 1, fontSize: 12, color: prof ? C.text : C.sub, fontWeight: prof ? 700 : 500 }}>{name}{sub && <span style={{ fontFamily: DISPLAY, color: C.faint, fontSize: 10, letterSpacing: '0.08em', marginLeft: 5 }}>{sub}</span>}</span>
+      <span style={{ minWidth: 30, textAlign: 'center', padding: '1px 5px', borderRadius: 3, background: '#0C0B09', border: `1px solid ${C.border}`, fontFamily: DISPLAY, fontSize: 14, color: C.text }}>{raw ? value : fmtMod(value)}</span>
     </div>
   )
 }
