@@ -4,7 +4,16 @@
 import { useState } from 'react'
 import { parseCsv, detectColumns, rowsToPlayers } from '../lib/csv'
 import { importTournamentCsv } from '../lib/supabase'
-import { GAMES, BRANCHES } from '../lib/constants'
+import { GAMES } from '../lib/constants'
+
+// La región que ve el equipo. Chiriquí junta a todas las tiendas hermanas
+// que mandan su CSV; por dentro se guarda como 'David' (la sucursal de
+// siempre) para no tocar el ranking ni los datos existentes.
+const REGIONES = [
+  { value: 'David',  label: 'Chiriquí · todas las tiendas hermanas' },
+  { value: 'Chitre', label: 'Chitré' },
+  { value: 'Panama', label: 'Panamá' },
+]
 
 const hoy = () => new Date().toISOString().slice(0, 10)
 
@@ -17,7 +26,7 @@ const label = { fontSize: 11, fontWeight: 700, color: '#6B7280', letterSpacing: 
 
 export default function ImportCsvModal({ game: initialGame, branch: initialBranch, onClose, onDone }) {
   const [game,    setGame]    = useState(initialGame || GAMES[0])
-  const [branch,  setBranch]  = useState(initialBranch || BRANCHES[0])
+  const [branch,  setBranch]  = useState(REGIONES.some(r => r.value === initialBranch) ? initialBranch : 'David')
   const [nombre,  setNombre]  = useState('')
   const [fecha,   setFecha]   = useState(hoy())
   const [rows,    setRows]    = useState(null)    // filas crudas (sin header)
@@ -25,25 +34,30 @@ export default function ImportCsvModal({ game: initialGame, branch: initialBranc
   const [posCol,  setPosCol]  = useState('order')
   const [nameCol, setNameCol] = useState(-1)
   const [archivo, setArchivo] = useState('')
+  const [modo,    setModo]    = useState('pegar')   // 'pegar' | 'archivo'
+  const [pegado,  setPegado]  = useState('')
   const [busy,    setBusy]    = useState(false)
   const [error,   setError]   = useState('')
   const [result,  setResult]  = useState(null)
 
+  // Mismo camino para el archivo y para el texto pegado.
+  const cargarTexto = (texto, origen) => {
+    setError(''); setResult(null)
+    const all = parseCsv(texto)
+    if (all.length < 2) { setError('No encontré filas de jugadores. Pegá el CSV con su fila de encabezado.'); setRows(null); return }
+    const h = all[0]
+    const det = detectColumns(h)
+    setHeader(h); setRows(all.slice(1))
+    setPosCol(det.pos >= 0 ? det.pos : 'order')
+    setNameCol(det.name >= 0 ? det.name : 0)
+    setArchivo(origen)
+    if (!nombre && origen && origen !== 'pegado') setNombre(origen.replace(/\.csv$/i, '').replace(/[_-]+/g, ' ').slice(0, 60))
+  }
+
   const leerArchivo = (file) => {
     if (!file) return
-    setError(''); setResult(null)
     const reader = new FileReader()
-    reader.onload = () => {
-      const all = parseCsv(reader.result)
-      if (all.length < 2) { setError('El archivo no tiene filas de jugadores.'); return }
-      const h = all[0]
-      const det = detectColumns(h)
-      setHeader(h); setRows(all.slice(1))
-      setPosCol(det.pos >= 0 ? det.pos : 'order')
-      setNameCol(det.name >= 0 ? det.name : 0)
-      setArchivo(file.name)
-      if (!nombre) setNombre(file.name.replace(/\.csv$/i, '').replace(/[_-]+/g, ' ').slice(0, 60))
-    }
+    reader.onload = () => cargarTexto(reader.result, file.name)
     reader.onerror = () => setError('No se pudo leer el archivo.')
     reader.readAsText(file)
   }
@@ -89,11 +103,39 @@ export default function ImportCsvModal({ game: initialGame, branch: initialBranc
           </div>
         ) : (
           <>
-            <label style={{ display: 'block', marginBottom: 12 }}>
-              <div style={label}>ARCHIVO CSV</div>
-              <input type="file" accept=".csv,text/csv,text/plain" onChange={e => leerArchivo(e.target.files?.[0])} style={{ ...field, padding: 8 }} />
-              {archivo && <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{archivo} · {jugadores.length} jugadores</div>}
-            </label>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+              {[['pegar', '📋 Pegar el CSV'], ['archivo', '📎 Subir archivo']].map(([m, txt]) => (
+                <button key={m} onClick={() => setModo(m)} style={{
+                  flex: 1, padding: '9px 0', borderRadius: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  border: `1.5px solid ${modo === m ? 'rgba(167,139,250,0.6)' : '#2A2A2A'}`,
+                  background: modo === m ? 'rgba(167,139,250,0.12)' : 'transparent',
+                  color: modo === m ? '#C4B5FD' : '#6B7280', fontSize: 12.5, fontWeight: 800,
+                }}>{txt}</button>
+              ))}
+            </div>
+
+            {modo === 'pegar' ? (
+              <div style={{ marginBottom: 12 }}>
+                <div style={label}>PEGÁ ACÁ LO QUE TE MANDARON</div>
+                <textarea value={pegado} onChange={e => setPegado(e.target.value)}
+                  onBlur={() => pegado.trim() && cargarTexto(pegado, 'pegado')}
+                  placeholder={'Rank,Player,Points\n1,Juan Pérez,9\n2,Ana Gómez,6\n…'}
+                  rows={6} spellCheck={false}
+                  style={{ ...field, resize: 'vertical', fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12, lineHeight: 1.5 }} />
+                <button onClick={() => cargarTexto(pegado, 'pegado')} disabled={!pegado.trim()} style={{
+                  marginTop: 8, padding: '9px 14px', borderRadius: 10, border: 'none', cursor: pegado.trim() ? 'pointer' : 'default',
+                  background: pegado.trim() ? '#FFF' : '#1F1F1F', color: pegado.trim() ? '#111' : '#4B5563',
+                  fontSize: 12.5, fontWeight: 800, fontFamily: 'Inter, sans-serif',
+                }}>Leer lo pegado</button>
+                {rows && archivo === 'pegado' && <span style={{ fontSize: 11, color: '#9CA3AF', marginLeft: 10 }}>{jugadores.length} jugadores detectados</span>}
+              </div>
+            ) : (
+              <label style={{ display: 'block', marginBottom: 12 }}>
+                <div style={label}>ARCHIVO CSV</div>
+                <input type="file" accept=".csv,text/csv,text/plain" onChange={e => leerArchivo(e.target.files?.[0])} style={{ ...field, padding: 8 }} />
+                {archivo && archivo !== 'pegado' && <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{archivo} · {jugadores.length} jugadores</div>}
+              </label>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
               <div>
@@ -103,9 +145,9 @@ export default function ImportCsvModal({ game: initialGame, branch: initialBranc
                 </select>
               </div>
               <div>
-                <div style={label}>SUCURSAL</div>
+                <div style={label}>REGIÓN</div>
                 <select value={branch} onChange={e => setBranch(e.target.value)} style={field}>
-                  {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+                  {REGIONES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
