@@ -37,7 +37,7 @@ export default function RulesViewer({ rulesetId, onClose, initialQuery = '' }) {
           {q ? res.map(n => (
             <button key={n.id} onClick={() => setSel(n)} style={{ ...card, width: '100%', textAlign: 'left', cursor: 'pointer', marginBottom: 6, background: C.card2, fontFamily: FONT }}>
               <div style={{ fontSize: 13.5, fontWeight: 800, color: C.text }}>{n.name}</div>
-              <div style={{ fontSize: 10.5, color: C.faint }}>{n.camino.slice(0, -1).join(' › ')}</div>
+              <div style={{ fontSize: 11.5, color: C.faint }}>{n.camino.slice(0, -1).join(' › ')}</div>
             </button>
           )) : tree.map(ch => (
             <div key={ch.id} style={{ ...card, marginBottom: 8 }}>
@@ -53,7 +53,7 @@ export default function RulesViewer({ rulesetId, onClose, initialQuery = '' }) {
       {sel && (
         <>
           <button onClick={() => setSel(null)} style={{ background: 'none', border: 'none', color: C.acc2, cursor: 'pointer', fontFamily: FONT, fontSize: 12.5, padding: '0 0 8px' }}>‹ {q ? 'Resultados' : 'Índice'}</button>
-          <div style={{ fontSize: 10.5, color: C.faint }}>{sel.camino.slice(0, -1).join(' › ')}</div>
+          <div style={{ fontSize: 11.5, color: C.faint }}>{sel.camino.slice(0, -1).join(' › ')}</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: C.text, margin: '2px 0 10px' }}>{sel.name}</div>
           <Md text={sel.text} />
           {(sel.tables ?? []).map((t, i) => <Table key={i} t={t} />)}

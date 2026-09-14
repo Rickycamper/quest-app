@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 // Capa fina sobre src/lib/ui.js + design-tokens: mismas tarjetas, pills,
 // botón blanco, Inter/SF y los íconos de components/Icons. Nada propio.
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { COLOR, RADIUS, TYPE, WEIGHT, FONT_STACK, MOTION } from '../../lib/design-tokens'
 import { UI, ELEVATION } from '../../lib/ui'
 import Avatar from '../../components/Avatar'
@@ -11,7 +11,11 @@ import { ShieldIcon } from '../../components/Icons'
 
 export const C = {
   bg: COLOR.background, card: COLOR.surface, card2: COLOR.surfaceRaised, border: COLOR.border, border2: COLOR.borderStrong,
-  text: COLOR.text, sub: COLOR.textSecondary, dim: COLOR.textTertiary, faint: COLOR.textQuaternary,
+  text: COLOR.text, sub: COLOR.textSecondary,
+  // textTertiary (#6B7280) da 3.9:1 y textQuaternary (#4B5563) 2.5:1 sobre las
+  // tarjetas: no llegan al 4.5:1 mínimo para texto. Acá se usan dos grises que
+  // sí pasan (6.3:1 y 5.7:1) sin perder el escalón de jerarquía.
+  dim: '#8E96A3', faint: '#868E9B',
   acc: COLOR.purple, acc2: COLOR.purple, accBg: 'rgba(167,139,250,0.10)', accBorder: 'rgba(167,139,250,0.35)',
   gold: COLOR.gold, goldDim: COLOR.amber, goldBg: 'rgba(251,191,36,0.10)',
   ok: COLOR.green, warn: COLOR.amber, bad: COLOR.red,
@@ -22,7 +26,7 @@ export const TEXTURA = 'transparent'        // el fondo lo pone el overlay de la
 export const chamfer = () => 'none'
 
 export const card = { ...UI.card, padding: 14, overflow: 'visible' }
-export const label = { ...UI.caption, fontSize: 10, fontWeight: WEIGHT.bold, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }
+export const label = { ...UI.caption, fontSize: 11, fontWeight: WEIGHT.bold, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8E96A3', marginBottom: 6 }
 export const field = { ...UI.input, padding: '11px 12px', fontSize: TYPE.footnote + 1, colorScheme: 'dark' }
 
 export const btn = (kind = 'primary', extra = {}) => ({
@@ -35,11 +39,13 @@ export const btn = (kind = 'primary', extra = {}) => ({
   ...extra,
 })
 
-export function Chip({ active, onClick, children, color, small = false }) {
+export function Chip({ active, onClick, children, color, small = false, ...rest }) {
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick} className="pressable" {...rest} style={{
       ...UI.pill, ...(active ? UI.pillActive : {}),
-      padding: small ? '5px 10px' : '7px 12px', fontSize: small ? 11.5 : 12.5, whiteSpace: 'nowrap',
+      // 30/34 pt de alto: por encima del mínimo táctil de 28 pt
+      minHeight: small ? 30 : 34, padding: small ? '6px 11px' : '8px 13px',
+      fontSize: small ? 12 : 13, whiteSpace: 'nowrap', justifyContent: 'center',
       ...(active && color ? { background: color, border: `1px solid ${color}`, color: '#111111' } : {}),
     }}>{children}</button>
   )
@@ -48,8 +54,8 @@ export function Chip({ active, onClick, children, color, small = false }) {
 // Pestañas: la misma fila de pills que usan los filtros de la app
 export function Tabs({ items, value, onChange }) {
   return (
-    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
-      {items.map(([id, t]) => <Chip key={id} active={value === id} onClick={() => onChange(id)}>{t}</Chip>)}
+    <div role="tablist" style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+      {items.map(([id, t]) => <Chip key={id} role="tab" aria-selected={value === id} active={value === id} onClick={() => onChange(id)}>{t}</Chip>)}
     </div>
   )
 }
@@ -71,9 +77,9 @@ export function Frame({ children, accent, pad = 12, style = {}, inner = {} }) {
 export function AbilityBox({ abbr, name, mod, score }) {
   return (
     <div style={{ ...card, padding: '10px 4px', textAlign: 'center' }} title={name}>
-      <div style={{ ...UI.caption, fontSize: 10, fontWeight: WEIGHT.bold, letterSpacing: '0.08em' }}>{abbr}</div>
+      <div style={{ ...UI.caption, fontSize: 11, fontWeight: WEIGHT.bold, letterSpacing: '0.08em', color: C.dim }}>{abbr}</div>
       <div style={{ fontSize: 22, fontWeight: WEIGHT.bold, color: COLOR.text, lineHeight: 1.1, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>{mod}</div>
-      <div style={{ ...UI.caption, fontSize: 11, marginTop: 1 }}>{score}</div>
+      <div style={{ ...UI.caption, fontSize: 12, marginTop: 1, color: C.faint }}>{score}</div>
     </div>
   )
 }
@@ -83,10 +89,10 @@ export function Shield({ value, sub }) {
     <div style={{ ...card, padding: '10px 6px', textAlign: 'center', borderColor: 'rgba(167,139,250,0.35)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, color: COLOR.purple }}>
         <ShieldIcon size={13} />
-        <span style={{ ...UI.caption, fontSize: 10, fontWeight: WEIGHT.bold, letterSpacing: '0.08em', color: COLOR.purple }}>CA</span>
+        <span style={{ ...UI.caption, fontSize: 11, fontWeight: WEIGHT.bold, letterSpacing: '0.08em', color: COLOR.purple }}>CA</span>
       </div>
       <div style={{ fontSize: 24, fontWeight: WEIGHT.bold, color: COLOR.text, lineHeight: 1.1, marginTop: 2 }}>{value}</div>
-      {sub && <div style={{ ...UI.caption, fontSize: 10, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
+      {sub && <div style={{ ...UI.caption, fontSize: 11, marginTop: 1, color: C.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
     </div>
   )
 }
@@ -94,9 +100,9 @@ export function Shield({ value, sub }) {
 export function Stat({ label: l, value, sub, accent }) {
   return (
     <div style={{ ...card, padding: '10px 6px', textAlign: 'center', borderColor: accent ? 'rgba(167,139,250,0.35)' : COLOR.border }}>
-      <div style={{ ...UI.caption, fontSize: 10, fontWeight: WEIGHT.bold, letterSpacing: '0.08em', color: accent ? COLOR.purple : COLOR.textTertiary }}>{l}</div>
+      <div style={{ ...UI.caption, fontSize: 11, fontWeight: WEIGHT.bold, letterSpacing: '0.08em', color: accent ? COLOR.purple : C.dim }}>{l}</div>
       <div style={{ fontSize: 22, fontWeight: WEIGHT.bold, color: COLOR.text, lineHeight: 1.1, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-      {sub && <div style={{ ...UI.caption, fontSize: 10, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
+      {sub && <div style={{ ...UI.caption, fontSize: 11, marginTop: 1, color: C.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
     </div>
   )
 }
@@ -163,15 +169,26 @@ export function Table({ t }) {
 }
 
 export function Sheet({ title, onClose, children, wide = false }) {
+  // Deslizar hacia abajo desde la cabecera cierra la hoja (además del ✕).
+  const y0 = useRef(null)
+  const onTouchStart = (e) => { y0.current = e.touches?.[0]?.clientY ?? null }
+  const onTouchEnd = (e) => {
+    const y1 = e.changedTouches?.[0]?.clientY
+    if (y0.current != null && y1 != null && y1 - y0.current > 70) onClose?.()
+    y0.current = null
+  }
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9500, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+    <div onClick={onClose} role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : undefined} style={{ position: 'fixed', inset: 0, zIndex: 9500, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()} style={{
         width: '100%', maxWidth: wide ? 720 : 560, maxHeight: '92vh', display: 'flex', flexDirection: 'column',
         background: COLOR.surface, borderRadius: '20px 20px 0 0', border: `1px solid ${COLOR.borderStrong}`, borderBottom: 'none', fontFamily: FONT_STACK, boxShadow: ELEVATION.xl,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 18px 10px', flexShrink: 0 }}>
-          <div style={UI.title3}>{title}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLOR.textTertiary, fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: 4 }}>✕</button>
+        <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ flexShrink: 0 }}>
+          <div aria-hidden style={{ width: 36, height: 5, borderRadius: 3, background: COLOR.borderStrong, margin: '8px auto 0' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px 6px 18px' }}>
+            <div style={UI.title3}>{title}</div>
+            <button onClick={onClose} aria-label="Cerrar" style={{ width: 44, height: 44, background: 'none', border: 'none', color: C.dim, fontSize: 20, cursor: 'pointer', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          </div>
         </div>
         <div style={{ overflowY: 'auto', padding: '0 18px calc(20px + env(safe-area-inset-bottom, 0px))' }}>{children}</div>
       </div>
@@ -183,10 +200,10 @@ export function Expand({ title, meta, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
     <div style={{ borderBottom: `1px solid ${COLOR.border}` }}>
-      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: FONT_STACK }}>
+      <button onClick={() => setOpen(o => !o)} aria-expanded={open} style={{ width: '100%', minHeight: 44, display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: FONT_STACK }}>
         <span style={{ flex: 1, fontSize: 13.5, fontWeight: WEIGHT.semibold, color: COLOR.text }}>{title}</span>
         {meta && <span style={{ ...UI.caption }}>{meta}</span>}
-        <span style={{ color: COLOR.textQuaternary, fontSize: 11 }}>{open ? '▲' : '▼'}</span>
+        <span aria-hidden style={{ color: C.faint, fontSize: 11 }}>{open ? '▲' : '▼'}</span>
       </button>
       {open && <div style={{ paddingBottom: 12 }}>{children}</div>}
     </div>

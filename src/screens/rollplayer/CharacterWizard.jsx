@@ -35,6 +35,25 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
 
   function pointsUsed() { return ABILITIES.reduce((s, a) => s + (POINT_BUY_COST[ch.abilityScores[a]] ?? 99), 0) }
 
+  // Qué falta para seguir: se muestra al lado del botón apagado en vez de
+  // dejar a la persona adivinando.
+  const motivo = (() => {
+    if (ok) return ''
+    if (paso === 1) {
+      if (ch.name.trim().length < 2) return 'Escribe un nombre de al menos 2 letras'
+      if (!ch.race.id) return 'Elige una raza'
+      return 'Completa las elecciones de Human Variant'
+    }
+    if (paso === 2) {
+      if (!clase) return 'Elige una clase'
+      const n = (clase.proficiencies?.skills?.choose ?? 0) + (esVariant ? 1 : 0)
+      return `Elige ${n} destrezas`
+    }
+    if (paso === 3) return `Te pasaste de ${POINT_BUY_TOTAL} puntos`
+    if (paso === 4) return 'Elige un trasfondo'
+    return ''
+  })()
+
   const elegirClase = (def) => up(c => ({
     classes: [{ id: def.id, level: 1, subclassId: null, isPrimary: true, choices: {} }],
     proficiencies: { ...c.proficiencies, skills: c.race.choices?.skill ? [c.race.choices.skill] : [] },
@@ -63,19 +82,19 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
       {/* Cabecera con progreso */}
       <div style={{ padding: '12px 16px 10px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={paso > 1 ? () => setPaso(p => p - 1) : onClose} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>‹</button>
+          <button onClick={paso > 1 ? () => setPaso(p => p - 1) : onClose} aria-label={paso > 1 ? 'Paso anterior' : 'Cancelar'} style={{ width: 44, height: 44, marginLeft: -12, background: 'none', border: 'none', color: C.sub, fontSize: 24, cursor: 'pointer', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
           <div style={{ flex: 1 }}>
             <div style={label}>Paso {paso} de {PASOS.length - 1}</div>
             <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em', color: C.text }}>{PASOS[paso]}</div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 20, cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} aria-label="Cancelar y cerrar" style={{ width: 44, height: 44, marginRight: -12, background: 'none', border: 'none', color: C.sub, fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
         <div style={{ display: 'flex', gap: 4, marginTop: 10 }}>
           {PASOS.slice(1).map((_, i) => <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i + 1 <= paso ? C.acc : C.border2 }} />)}
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 110px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 150px' }}>
         {/* ── 1 · Identidad: nombre + raza ── */}
         {paso === 1 && (
           <>
@@ -126,12 +145,12 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                     </div>
                     <div style={label}>Una destreza extra</div>
                     <select value={ch.race.choices?.skill ?? ''} onChange={e => up(c => ({ race: { ...c.race, choices: { ...c.race.choices, skill: e.target.value || null } } }))} style={field}>
-                      <option value="">Elegí una…</option>
+                      <option value="">Elige una…</option>
                       {(rs.core?.skills ?? []).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                     <div style={{ ...label, marginTop: 10 }}>Un feat</div>
                     <select value={ch.race.choices?.featId ?? ''} onChange={e => up(c => ({ race: { ...c.race, choices: { ...c.race.choices, featId: e.target.value || null } }, featIds: e.target.value ? [e.target.value] : [] }))} style={field}>
-                      <option value="">Elegí uno…</option>
+                      <option value="">Elige uno…</option>
                       {(rs.feats ?? []).map(f => <option key={f.id} value={f.id}>{f.name}{f.prerequisite ? ` (req: ${f.prerequisite})` : ''}</option>)}
                     </select>
                   </div>
@@ -173,7 +192,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                   <div><strong style={{ color: C.text }}>Armas:</strong> {clase.proficiencies?.weapons}</div>
                   <div><strong style={{ color: C.text }}>Herramientas:</strong> {clase.proficiencies?.tools}</div>
                 </div>
-                <div style={{ ...label, marginTop: 12 }}>Destrezas · elegí {clase.proficiencies?.skills?.choose ?? 0}{esVariant ? ' (+1 de Human Variant)' : ''}</div>
+                <div style={{ ...label, marginTop: 12 }}>Destrezas · elige {clase.proficiencies?.skills?.choose ?? 0}{esVariant ? ' (+1 de Human Variant)' : ''}</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {(clase.proficiencies?.skills?.from ?? []).map(n => {
                     const id = skillId(rs, n)
@@ -228,7 +247,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                 )
               })}
             </div>
-            {modo === 'array' && <div style={{ fontSize: 11.5, color: C.dim, marginTop: 8 }}>Repartí 15, 14, 13, 12, 10 y 8 — uno por habilidad.</div>}
+            {modo === 'array' && <div style={{ fontSize: 11.5, color: C.dim, marginTop: 8 }}>Reparte 15, 14, 13, 12, 10 y 8 — uno por habilidad.</div>}
           </>
         )}
 
@@ -260,7 +279,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
             <input value={ch.crew.name ?? ''} onChange={e => up(c => ({ crew: { ...c.crew, name: e.target.value.slice(0, 40) } }))} placeholder="Opcional" style={field} />
             <div style={{ ...label, marginTop: 12 }}>Sueño</div>
             <select value={ch.crew.dream ?? ''} onChange={e => up(c => ({ crew: { ...c.crew, dream: e.target.value || null } }))} style={field}>
-              <option value="">Elegí uno (o escribilo abajo)…</option>
+              <option value="">Elige uno (o escríbelo abajo)…</option>
               {(rs.character_dreams ?? []).map(d => <option key={d} value={d}>{d}</option>)}
             </select>
             <input value={(rs.character_dreams ?? []).includes(ch.crew.dream) ? '' : (ch.crew.dream ?? '')} onChange={e => up(c => ({ crew: { ...c.crew, dream: e.target.value || null } }))} placeholder="…o tu propio sueño" style={{ ...field, marginTop: 8 }} />
@@ -276,7 +295,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                 {(clase?.startingEquipment ?? []).filter(l => /^\(a\)|^\(b\)|pack|weapon|armor|tool|set|kit|any /i.test(l) && l.length < 160).map((l, i) => <li key={i}>{l}</li>)}
               </ul>
               {bg?.equipment && <><div style={{ ...label, marginTop: 12 }}>Equipo del trasfondo</div><div style={{ fontSize: 12.5, color: C.sub, lineHeight: 1.6 }}>{bg.equipment}</div></>}
-              <div style={{ fontSize: 11, color: C.faint, marginTop: 10 }}>Podés cargar cada ítem en la pestaña Equipo de la hoja.</div>
+              <div style={{ fontSize: 11, color: C.faint, marginTop: 10 }}>Puedes cargar cada ítem en la pestaña Equipo de la hoja.</div>
             </div>
             <div style={{ ...card, marginTop: 12 }}>
               <div style={label}>Belly inicial</div>
@@ -288,7 +307,7 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
                     {expr && <div style={{ fontSize: 12.5, color: C.sub, marginBottom: 8 }}>Tirada de la clase: <strong style={{ color: C.text }}>{expr}</strong></div>}
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       {expr && <button onClick={() => up(c => ({ equipment: { ...c.equipment, belly: rollWealth(expr) ?? 0 } }))} style={btn('secondary')}>Tirar</button>}
-                      <input type="number" min={0} value={ch.equipment.belly || ''} onChange={e => up(c => ({ equipment: { ...c.equipment, belly: Math.max(0, Number(e.target.value) || 0) } }))} placeholder="o escribí el monto" style={{ ...field, flex: 1 }} />
+                      <input type="number" min={0} value={ch.equipment.belly || ''} onChange={e => up(c => ({ equipment: { ...c.equipment, belly: Math.max(0, Number(e.target.value) || 0) } }))} placeholder="o escribe el monto" style={{ ...field, flex: 1 }} />
                     </div>
                     <div style={{ fontSize: 18, fontWeight: 900, color: C.gold, marginTop: 10 }}>{fmtBelly(ch.equipment.belly)}</div>
                   </>
@@ -311,13 +330,13 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
                 {[['PV', d.maxHp], ['CA', d.ac.value], ['Iniciativa', fmtMod(d.initiative)], ['Bono comp.', fmtMod(d.pb)], ['Velocidad', `${d.speed.walk ?? 30}`], ['Belly', fmtBelly(ch.equipment.belly)]].map(([l, v]) => (
                   <div key={l} style={{ ...card, padding: '10px 8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 9.5, fontWeight: 800, color: C.dim, letterSpacing: '0.1em' }}>{l.toUpperCase()}</div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: C.dim, letterSpacing: '0.08em' }}>{l.toUpperCase()}</div>
                     <div style={{ fontSize: 18, fontWeight: 900, color: C.text, marginTop: 2 }}>{v}</div>
                   </div>
                 ))}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6, marginBottom: 12 }}>
-                {ABILITIES.map(a => <div key={a} style={{ ...card, padding: '8px 4px', textAlign: 'center' }}><div style={{ fontSize: 9.5, fontWeight: 800, color: C.dim }}>{a.toUpperCase()}</div><div style={{ fontSize: 16, fontWeight: 900, color: C.text }}>{d.scores[a]}</div><div style={{ fontSize: 11, color: C.acc2 }}>{fmtMod(d.mods[a])}</div></div>)}
+                {ABILITIES.map(a => <div key={a} style={{ ...card, padding: '8px 4px', textAlign: 'center' }}><div style={{ fontSize: 11, fontWeight: 800, color: C.dim }}>{a.toUpperCase()}</div><div style={{ fontSize: 16, fontWeight: 900, color: C.text }}>{d.scores[a]}</div><div style={{ fontSize: 11, color: C.acc2 }}>{fmtMod(d.mods[a])}</div></div>)}
               </div>
               <div style={{ ...card }}>
                 <div style={label}>Destrezas competentes</div>
@@ -330,7 +349,8 @@ export default function CharacterWizard({ rs, onSave, onClose }) {
       </div>
 
       {/* Pie fijo */}
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '10px 16px calc(14px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(180deg, rgba(10,10,10,0) 0%, #0A0A0A 30%)', display: 'flex', gap: 8 }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '10px 16px calc(14px + env(safe-area-inset-bottom, 0px))', background: C.bg, borderTop: `1px solid ${C.border}`, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {motivo && <div role="status" style={{ width: '100%', fontSize: 12.5, color: C.sub, textAlign: 'center' }}>{motivo}</div>}
         {paso > 1 && <button onClick={() => setPaso(p => p - 1)} style={btn('ghost', { flex: '0 0 auto' })}>Atrás</button>}
         {paso < 6
           ? <button onClick={() => ok && setPaso(p => p + 1)} disabled={!ok} style={btn('primary', { flex: 1, opacity: ok ? 1 : 0.45 })}>Siguiente</button>
