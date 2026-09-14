@@ -15,6 +15,7 @@ const RCOLOR = { Uncommon: '#4ADE80', Rare: '#60A5FA', 'Very Rare': '#A78BFA', L
 export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete, onBack, saving }) {
   const [tab, setTab] = useState('hoja')
   const [modal, setModal] = useState(null)   // 'levelup' | 'haki' | 'fruta' | 'item' | 'confirmDelete'
+  const [cant, setCant] = useState(5)         // cantidad libre de daño / curación
   const d = useMemo(() => derive(rs, ch), [rs, ch])
   const up = (patch) => onChange({ ...ch, ...(typeof patch === 'function' ? patch(ch) : patch) })
   const cs = ch.combatState ?? {}
@@ -30,7 +31,7 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
       {/* Cabecera */}
       <div style={{ padding: '12px 16px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={onBack} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: 0 }}>‹</button>
+          <button onClick={onBack} aria-label="Volver a tus personajes" style={{ width: 44, height: 44, marginLeft: -12, background: 'none', border: 'none', color: C.sub, fontSize: 24, cursor: 'pointer', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
           <Portrait name={ch.name} url={ch.roleplay?.portraitUrl} size={58} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</div>
@@ -73,16 +74,22 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 6, marginTop: 8, justifyContent: 'center' }}>
-                {[-5, -1].map(n => <button key={n} onClick={() => setHp(hpActual + n)} style={btn('danger', { padding: '7px 12px', fontSize: 14 })}>{n}</button>)}
-                {[1, 5].map(n => <button key={n} onClick={() => setHp(hpActual + n)} style={btn('secondary', { padding: '7px 12px', fontSize: 14, color: C.ok })}>+{n}</button>)}
+                {[-5, -1].map(n => <button key={n} onClick={() => setHp(hpActual + n)} aria-label={`Restar ${-n} puntos de vida`} style={btn('danger', { minHeight: 40, padding: '8px 14px', fontSize: 14 })}>{n}</button>)}
+                {[1, 5].map(n => <button key={n} onClick={() => setHp(hpActual + n)} aria-label={`Sumar ${n} puntos de vida`} style={btn('secondary', { minHeight: 40, padding: '8px 14px', fontSize: 14, color: C.ok })}>+{n}</button>)}
+              </div>
+              {/* Daño o curación de cualquier cantidad: en la mesa, "−7" no debería costar tres toques */}
+              <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center' }}>
+                <input type="number" min={0} inputMode="numeric" aria-label="Cantidad de puntos de vida" value={cant} onChange={e => setCant(Math.max(0, Number(e.target.value) || 0))} style={{ ...field, width: 74, minHeight: 40, textAlign: 'center' }} />
+                <button onClick={() => setHp(hpActual - cant)} style={btn('danger', { flex: 1, minHeight: 40 })}>Daño</button>
+                <button onClick={() => setHp(hpActual + cant)} style={btn('secondary', { flex: 1, minHeight: 40, color: C.ok })}>Curar</button>
               </div>
               <div style={{ height: 6, borderRadius: 3, background: C.border2, marginTop: 10, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${(hpActual / d.maxHp) * 100}%`, background: hpActual <= d.maxHp / 4 ? C.bad : hpActual <= d.maxHp / 2 ? C.warn : C.ok, transition: 'width .3s' }} />
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 11.5, color: C.dim }}>PV temporales</span>
-                <input type="number" min={0} value={cs.temporaryHp ?? 0} onChange={e => upCs({ temporaryHp: Math.max(0, Number(e.target.value) || 0) })} style={{ ...field, width: 70, padding: '6px 8px' }} />
-                <button onClick={() => setHp(d.maxHp)} style={btn('ghost', { padding: '6px 10px', fontSize: 11.5 })}>Descanso largo</button>
+                <input type="number" min={0} inputMode="numeric" aria-label="Puntos de vida temporales" value={cs.temporaryHp ?? 0} onChange={e => upCs({ temporaryHp: Math.max(0, Number(e.target.value) || 0) })} style={{ ...field, width: 74, minHeight: 40, padding: '6px 8px' }} />
+                <button onClick={() => setHp(d.maxHp)} style={btn('ghost', { minHeight: 40, padding: '8px 12px', fontSize: 12.5 })}>Descanso largo</button>
                 <span style={{ fontSize: 11.5, color: C.dim, marginLeft: 'auto' }}>Dados de golpe: {Object.values(cs.hitDiceRemaining ?? {}).reduce((a, b) => a + b, 0)}/{d.level} d{hitDie(def)}</span>
               </div>
               {hpActual === 0 && (
@@ -90,7 +97,17 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
                   {['successes', 'failures'].map(k => (
                     <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 11, color: k === 'successes' ? C.ok : C.bad, fontWeight: 800 }}>{k === 'successes' ? 'Éxitos' : 'Fallos'}</span>
-                      {[1, 2, 3].map(i => <button key={i} onClick={() => upCs({ deathSaves: { ...(cs.deathSaves ?? {}), [k]: (cs.deathSaves?.[k] ?? 0) >= i ? i - 1 : i } })} style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${k === 'successes' ? C.ok : C.bad}`, background: (cs.deathSaves?.[k] ?? 0) >= i ? (k === 'successes' ? C.ok : C.bad) : 'transparent', cursor: 'pointer' }} />)}
+                      {[1, 2, 3].map(i => {
+                        const on = (cs.deathSaves?.[k] ?? 0) >= i
+                        const col = k === 'successes' ? C.ok : C.bad
+                        return (
+                          <button key={i} onClick={() => upCs({ deathSaves: { ...(cs.deathSaves ?? {}), [k]: on ? i - 1 : i } })}
+                                  aria-label={`${k === 'successes' ? 'Éxito' : 'Fallo'} ${i} de 3${on ? ', marcado' : ''}`} aria-pressed={on}
+                                  style={{ width: 28, height: 28, borderRadius: '50%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span aria-hidden style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${col}`, background: on ? col : 'transparent', display: 'block' }} />
+                          </button>
+                        )
+                      })}
                     </div>
                   ))}
                 </div>
@@ -154,7 +171,7 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
         {/* ════ HAKI & FRUTA ════ */}
         {tab === 'poder' && (
           <>
-            <div style={{ fontSize: 11.5, color: C.dim, marginBottom: 10, lineHeight: 1.5 }}>El Haki y las frutas no dependen del nivel: el DM los otorga en <strong style={{ color: C.sub }}>Spirit Surge Events</strong>. Registrá acá lo que te concedieron.</div>
+            <div style={{ fontSize: 11.5, color: C.dim, marginBottom: 10, lineHeight: 1.5 }}>El Haki y las frutas no dependen del nivel: el DM los otorga en <strong style={{ color: C.sub }}>Spirit Surge Events</strong>. Registra acá lo que te concedieron.</div>
             {d.haki.map(h => {
               const col = (rs.haki?.colors ?? []).find(x => x.id === h.id)
               const adv = (ch.haki?.advancements ?? []).filter(a => a.colorId === h.id)
@@ -176,7 +193,7 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span style={{ flex: 1, fontSize: 13, fontWeight: 800, color: C.text }}>{def2?.name ?? a.advancementId}</span>
                               <span style={{ fontSize: 10, fontWeight: 800, color: RCOLOR[a.rarity] }}>{a.rarity}</span>
-                              <button onClick={() => up(c => ({ haki: { ...c.haki, advancements: c.haki.advancements.filter(x => x !== a) } }))} style={{ background: 'none', border: 'none', color: C.faint, cursor: 'pointer' }}>✕</button>
+                              <button onClick={() => up(c => ({ haki: { ...c.haki, advancements: c.haki.advancements.filter(x => x !== a) } }))} aria-label={`Quitar ${def2?.name ?? 'avance'}`} style={{ width: 36, height: 36, background: 'none', border: 'none', color: C.faint, cursor: 'pointer' }}>✕</button>
                             </div>
                             {a.note && <div style={{ fontSize: 11, color: C.dim }}>{a.note}</div>}
                             <Expand title="Texto"><Md text={def2?.text} size={12} /></Expand>
@@ -238,7 +255,7 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
                     {it.notes && <div style={{ fontSize: 11, color: C.dim }}>{it.notes}</div>}
                   </div>
                   {it.equippable && <Chip small active={it.equipped} onClick={() => up(c => ({ equipment: { ...c.equipment, items: c.equipment.items.map((x, j) => j === i ? { ...x, equipped: !x.equipped } : x) } }))}>{it.equipped ? 'Equipado' : 'Equipar'}</Chip>}
-                  <button onClick={() => up(c => ({ equipment: { ...c.equipment, items: c.equipment.items.filter((_, j) => j !== i) } }))} style={{ background: 'none', border: 'none', color: C.faint, cursor: 'pointer', fontSize: 16 }}>✕</button>
+                  <button onClick={() => up(c => ({ equipment: { ...c.equipment, items: c.equipment.items.filter((_, j) => j !== i) } }))} aria-label={`Quitar ${it.name}`} style={{ width: 40, height: 40, background: 'none', border: 'none', color: C.faint, cursor: 'pointer', fontSize: 16 }}>✕</button>
                 </div>
               ))}
               <button onClick={() => setModal({ t: 'item' })} style={btn('secondary', { marginTop: 10, width: '100%' })}>+ Agregar ítem</button>
@@ -296,8 +313,8 @@ export default function CharacterSheet({ rs, ch, onChange, onOpenRules, onDelete
 function Row({ name, sub, value, prof, exp, raw }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderBottom: `1px solid ${C.border}` }}>
-      <span style={{ width: 9, height: 9, borderRadius: '50%', background: exp ? C.gold : prof ? C.acc : 'transparent', border: `1.5px solid ${exp ? C.gold : prof ? C.acc : C.border2}`, flexShrink: 0, boxShadow: prof ? `0 0 6px ${exp ? C.gold : C.acc}66` : 'none' }} />
-      <span style={{ flex: 1, fontSize: 12, color: prof ? C.text : C.sub, fontWeight: prof ? 600 : 500 }}>{name}{sub && <span style={{ color: C.faint, fontSize: 9.5, marginLeft: 5 }}>{sub}</span>}</span>
+      <span aria-hidden title={exp ? 'Pericia' : prof ? 'Competente' : ''} style={{ width: 9, height: 9, borderRadius: '50%', background: exp ? C.gold : prof ? C.acc : 'transparent', border: `1.5px solid ${exp ? C.gold : prof ? C.acc : C.border2}`, flexShrink: 0 }} />
+      <span style={{ flex: 1, fontSize: 12.5, color: prof ? C.text : C.sub, fontWeight: prof ? 600 : 500 }}>{name}{sub && <span style={{ color: C.faint, fontSize: 11, marginLeft: 5 }}>{sub}</span>}</span>
       <span style={{ fontSize: 13, fontWeight: 700, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{raw ? value : fmtMod(value)}</span>
     </div>
   )
@@ -336,7 +353,7 @@ function LevelUp({ rs, ch, d, onClose, onApply }) {
   return (
     <Sheet title={`Nivel ${nuevo} de ${def.name}`} onClose={onClose}>
       <div style={{ ...card, marginBottom: 10 }}>
-        <div style={label}>Ganás</div>
+        <div style={label}>Ganas</div>
         <div style={{ fontSize: 13, color: C.sub, lineHeight: 1.6 }}>
           <div>+{Math.max(1, hpGanado)} PV (promedio d{hitDie(def)} + CON)</div>
           {(row?.features ?? []).map(f => <div key={f}>• {f}</div>)}
@@ -344,7 +361,7 @@ function LevelUp({ rs, ch, d, onClose, onApply }) {
       </div>
       {necesitaSub && (
         <div style={{ ...card, marginBottom: 10, borderColor: C.accBorder }}>
-          <div style={label}>Elegí tu {def.subclassLabel || 'subclase'}</div>
+          <div style={label}>Elige tu {def.subclassLabel || 'subclase'}</div>
           {(def.subclasses ?? []).map(s => (
             <button key={s.id} onClick={() => setSubId(s.id)} style={{ ...card, width: '100%', textAlign: 'left', cursor: 'pointer', marginBottom: 6, borderColor: subId === s.id ? C.accBorder : C.border, background: subId === s.id ? C.accBg : C.card2, fontFamily: FONT }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>{s.name}</div>
@@ -367,7 +384,7 @@ function LevelUp({ rs, ch, d, onClose, onApply }) {
           ) : (
             <>
               <select value={featId} onChange={e => { setFeatId(e.target.value); setFeatChoice(null) }} style={field}>
-                <option value="">Elegí un feat…</option>
+                <option value="">Elige un feat…</option>
                 {(rs.feats ?? []).filter(f => !ch.featIds?.includes(f.id)).map(f => <option key={f.id} value={f.id}>{f.name}{f.prerequisite ? ` (req: ${f.prerequisite})` : ''}</option>)}
               </select>
               {feat && <div style={{ marginTop: 8 }}><Md text={feat.text} size={12} /></div>}
